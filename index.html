@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FinPlan">
+<title>Uni Finance Planner</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;
+  --text:#e6edf3;--text2:#8b949e;--text3:#484f58;
+  --accent:#00c896;--accent2:#00a87d;--accent-dim:rgba(0,200,150,0.12);
+  --blue:#4a9eff;--blue-dim:rgba(74,158,255,0.12);
+  --amber:#f0a030;--amber-dim:rgba(240,160,48,0.12);
+  --coral:#ff6b6b;--coral-dim:rgba(255,107,107,0.12);
+  --purple:#a78bfa;--purple-dim:rgba(167,139,250,0.12);
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --radius:12px;--radius-sm:8px;--radius-lg:16px;
+  --font-head:'Syne',sans-serif;--font-mono:'DM Mono',monospace;
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font-head);}
+body{display:flex;flex-direction:column}
+
+/* HEADER */
+.app-header{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:14px 16px 12px;padding-top:calc(14px + env(safe-area-inset-top,0px));
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.app-logo{font-size:18px;font-weight:700;color:var(--accent);letter-spacing:-0.5px}
+.app-logo span{color:var(--text2);font-weight:400}
+.header-meta{font-size:11px;color:var(--text3);font-family:var(--font-mono)}
+
+/* SCROLL AREA */
+.scroll-area{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(80px + var(--safe-bottom))}
+
+/* BOTTOM NAV */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--bg2);border-top:1px solid var(--border);
+  display:flex;padding-bottom:var(--safe-bottom);z-index:100;flex-shrink:0;
+}
+.nav-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:10px 4px 8px;background:none;border:none;cursor:pointer;
+  color:var(--text3);font-family:var(--font-head);font-size:10px;font-weight:500;
+  transition:color .15s;
+}
+.nav-btn.active{color:var(--accent)}
+.nav-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* PAGES */
+.page{display:none;padding:16px}
+.page.active{display:block}
+
+/* SECTION CARD */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.card-title{font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card-title svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;opacity:.6}
+
+/* METRIC GRID */
+.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.metric{background:var(--bg3);border-radius:var(--radius-sm);padding:12px}
+.metric-label{font-size:11px;color:var(--text3);margin-bottom:4px;font-family:var(--font-mono)}
+.metric-value{font-size:20px;font-weight:700;color:var(--text);font-family:var(--font-mono)}
+.metric-value.accent{color:var(--accent)}
+.metric-value.blue{color:var(--blue)}
+.metric-value.amber{color:var(--amber)}
+.metric-sub{font-size:10px;color:var(--text3);margin-top:2px;font-family:var(--font-mono)}
+
+/* TAGS */
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;border-radius:20px;font-weight:600;font-family:var(--font-mono)}
+.tag-accent{background:var(--accent-dim);color:var(--accent)}
+.tag-blue{background:var(--blue-dim);color:var(--blue)}
+.tag-amber{background:var(--amber-dim);color:var(--amber)}
+.tag-coral{background:var(--coral-dim);color:var(--coral)}
+.tag-purple{background:var(--purple-dim);color:var(--purple)}
+
+/* SLIDERS */
+.sl-group{margin-bottom:16px}
+.sl-label-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.sl-label{font-size:13px;color:var(--text2);font-weight:500}
+.sl-val{font-size:14px;font-weight:700;color:var(--text);font-family:var(--font-mono)}
+.sl-invest .sl-label{color:var(--accent)}
+.sl-invest .sl-val{color:var(--accent)}
+input[type=range]{
+  width:100%;height:6px;-webkit-appearance:none;appearance:none;
+  background:var(--bg4);border-radius:3px;outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:22px;height:22px;border-radius:50%;
+  background:var(--accent);cursor:pointer;border:2px solid var(--bg);
+  box-shadow:0 0 0 2px var(--accent);
+}
+.sl-invest input[type=range]::-webkit-slider-thumb{background:var(--accent)}
+
+/* GOAL BARS */
+.goal-item{margin-bottom:18px}
+.goal-item:last-child{margin-bottom:0}
+.goal-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.goal-name{font-size:14px;font-weight:600;color:var(--text)}
+.goal-meta{font-size:11px;color:var(--text3);font-family:var(--font-mono)}
+.bar-track{height:8px;background:var(--bg4);border-radius:4px;overflow:hidden;margin-bottom:6px}
+.bar-fill{height:100%;border-radius:4px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+.goal-sub{font-size:11px;color:var(--text3);margin-bottom:8px;font-family:var(--font-mono)}
+.goal-input-row{display:flex;gap:8px}
+.goal-input-row input{
+  flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);
+  color:var(--text);font-size:14px;padding:9px 12px;font-family:var(--font-mono);
+  outline:none;-webkit-appearance:none;
+}
+.goal-input-row input:focus{border-color:var(--accent)}
+.goal-input-row input::placeholder{color:var(--text3)}
+.btn{
+  padding:9px 16px;border-radius:var(--radius-sm);border:none;cursor:pointer;
+  font-size:13px;font-weight:600;font-family:var(--font-head);
+  transition:opacity .15s,transform .1s;
+}
+.btn:active{transform:scale(.97);opacity:.85}
+.btn-accent{background:var(--accent);color:#000}
+.btn-ghost{background:var(--bg4);color:var(--text2)}
+.btn-sm{padding:7px 12px;font-size:12px}
+
+/* LOG */
+.log-list{margin-top:8px;max-height:80px;overflow-y:auto}
+.log-item{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:11px;font-family:var(--font-mono)}
+.log-item:last-child{border:none}
+.log-item-date{color:var(--text3)}
+.log-item-amt{color:var(--accent)}
+
+/* ALLOC TABLE */
+.alloc-table{width:100%;border-collapse:collapse;font-size:13px}
+.alloc-table td{padding:9px 0;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top}
+.alloc-table tr:last-child td{border:none}
+.alloc-table td:first-child{color:var(--text);font-weight:500;padding-right:8px}
+.alloc-table td:last-child{text-align:right;font-family:var(--font-mono);color:var(--text)}
+.alloc-table .total-row td{color:var(--text);font-weight:700;padding-top:12px}
+
+/* INVEST COMP */
+.comp-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.comp-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.comp-name{flex:1;font-size:13px;color:var(--text)}
+.comp-bar-wrap{flex:2;height:6px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.comp-bar{height:100%;border-radius:3px;transition:width .4s ease}
+.comp-pct{font-size:12px;color:var(--text3);min-width:36px;text-align:right;font-family:var(--font-mono)}
+
+/* GAP TABLE */
+.gap-table{width:100%;border-collapse:collapse;font-size:12px}
+.gap-table th{text-align:left;padding:6px 0;font-size:11px;color:var(--text3);font-weight:500;border-bottom:1px solid var(--border);font-family:var(--font-mono)}
+.gap-table td{padding:8px 0;border-bottom:1px solid var(--border);color:var(--text2);font-family:var(--font-mono)}
+.gap-table tr:last-child td{border:none}
+.gap-table td:first-child{color:var(--text);font-weight:600}
+.badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700}
+.badge-over{background:var(--coral-dim);color:var(--coral)}
+.badge-under{background:var(--accent-dim);color:var(--accent)}
+.badge-ok{background:var(--blue-dim);color:var(--blue)}
+
+/* TICKER SELECT */
+.ticker-select-row{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.ticker-btn{
+  padding:7px 12px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:var(--radius-sm);color:var(--text2);font-size:12px;font-weight:600;
+  cursor:pointer;font-family:var(--font-mono);transition:all .15s;
+}
+.ticker-btn.selected{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+
+/* DONUT */
+.donut-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px}
+.donut-wrap{text-align:center}
+.donut-label{font-size:11px;color:var(--text3);margin-bottom:8px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.05em}
+.donut-canvas-wrap{position:relative;width:100%;height:140px}
+.donut-legend{margin-top:8px;display:flex;flex-wrap:wrap;gap:4px 8px;justify-content:center}
+.donut-legend-item{font-size:10px;color:var(--text3);display:flex;align-items:center;gap:3px;font-family:var(--font-mono)}
+
+/* PHASE TIMELINE */
+.phase{border-left:2px solid var(--border2);padding-left:14px;margin-bottom:20px;position:relative}
+.phase::before{content:'';position:absolute;left:-5px;top:4px;width:8px;height:8px;border-radius:50%;background:var(--border2)}
+.phase.active-phase{border-color:var(--accent)}
+.phase.active-phase::before{background:var(--accent)}
+.phase-date{font-size:10px;color:var(--text3);margin-bottom:3px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.05em}
+.phase-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px}
+.phase-body{font-size:13px;color:var(--text2);line-height:1.55}
+
+/* RULES TABLE */
+.rules-table{width:100%;border-collapse:collapse;font-size:13px}
+.rules-table td{padding:10px 0;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.4}
+.rules-table tr:last-child td{border:none}
+.rules-table td:first-child{color:var(--accent);font-weight:600;padding-right:12px;width:45%;font-size:12px}
+.rules-table td:last-child{color:var(--text2)}
+
+/* ALERT BOXES */
+.alert{border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;line-height:1.5;margin-bottom:12px}
+.alert-warn{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(240,160,48,.25)}
+.alert-good{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(0,200,150,.25)}
+.alert-info{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(74,158,255,.25)}
+
+/* DIVIDER */
+.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
+
+/* OVERVIEW HERO */
+.hero{background:linear-gradient(135deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:12px;position:relative;overflow:hidden}
+.hero::after{content:'$';position:absolute;right:-10px;bottom:-20px;font-size:120px;font-weight:700;color:rgba(0,200,150,0.04);font-family:var(--font-mono);line-height:1}
+.hero-label{font-size:11px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.hero-value{font-size:36px;font-weight:700;color:var(--accent);font-family:var(--font-mono);letter-spacing:-1px;margin-bottom:4px}
+.hero-sub{font-size:12px;color:var(--text2)}
+.tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+
+/* TOTAL GOALS SUMMARY */
+.goals-summary-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.goals-summary-row:last-child{border:none;font-weight:700}
+.goals-summary-row .name{color:var(--text2)}
+.goals-summary-row .vals{color:var(--text);font-family:var(--font-mono);display:flex;align-items:center;gap:6px}
+
+/* CHART WRAPPER */
+.chart-wrap{position:relative;width:100%;height:200px;margin-top:8px}
+
+/* SECTION HEADERS */
+.section-label{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin:0 0 10px;font-family:var(--font-mono)}
+
+/* INSTALL BANNER */
+.install-banner{background:var(--accent-dim);border:1px solid rgba(0,200,150,.3);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--accent)}
+.install-banner button{margin-left:auto;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-logo">fin<span>plan</span></div>
+  <div class="header-meta" id="header-date"></div>
+</div>
+
+<div class="scroll-area" id="scroll-area">
+
+  <!-- OVERVIEW PAGE -->
+  <div class="page active" id="page-overview">
+    <div id="install-banner-wrap"></div>
+    <div class="hero">
+      <div class="hero-label">Portfolio value</div>
+      <div class="hero-value" id="ov-portfolio">$11,855</div>
+      <div class="hero-sub">+$533 base profit &nbsp;·&nbsp; 19 months to uni</div>
+      <div class="tag-row">
+        <span class="tag tag-blue">Uni $20k</span>
+        <span class="tag tag-amber">Holiday $3k</span>
+        <span class="tag tag-accent">PC $8k</span>
+        <span class="tag tag-purple">Invest monthly</span>
+      </div>
+    </div>
+
+    <div class="metric-grid">
+      <div class="metric">
+        <div class="metric-label">Monthly income</div>
+        <div class="metric-value accent" id="ov-income">$4,581</div>
+        <div class="metric-sub">FT + Kmart avg</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Monthly investing</div>
+        <div class="metric-value blue" id="ov-invest">$400</div>
+        <div class="metric-sub">Set in budget tab</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Est. Jan 2028</div>
+        <div class="metric-value" id="ov-est">—</div>
+        <div class="metric-sub">Portfolio + contribs</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Annual dividends</div>
+        <div class="metric-value amber" id="ov-div">—</div>
+        <div class="metric-sub">Blended yield</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Scenarios
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:12px">
+          <div style="font-size:11px;color:var(--accent);font-weight:700;margin-bottom:6px;font-family:var(--font-mono)">BEST CASE</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.5">$350/wk spend, $600+/mo investing, all goals hit with buffer.</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:12px">
+          <div style="font-size:11px;color:var(--blue);font-weight:700;margin-bottom:6px;font-family:var(--font-mono)">BASELINE</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.5">$600/wk spend, $300–400/mo investing, all goals by Jan 2028.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Time to goals
+      </div>
+      <div id="ov-goals-summary"></div>
+    </div>
+  </div>
+
+  <!-- BUDGET PAGE -->
+  <div class="page" id="page-budget">
+    <div class="section-label">Income</div>
+    <div class="card">
+      <div class="sl-group">
+        <div class="sl-label-row"><span class="sl-label">Kmart weekly earnings</span><span class="sl-val" id="out-kmart">$110</span></div>
+        <input type="range" min="0" max="400" step="5" value="110" id="sl-kmart" oninput="upAll()">
+      </div>
+    </div>
+
+    <div class="section-label">Fixed expenses</div>
+    <div class="card">
+      <div class="sl-group">
+        <div class="sl-label-row"><span class="sl-label">Rent / month</span><span class="sl-val" id="out-rent">$400</span></div>
+        <input type="range" min="0" max="800" step="50" value="400" id="sl-rent" oninput="upAll()">
+      </div>
+    </div>
+
+    <div class="section-label">Variable spending</div>
+    <div class="card">
+      <div class="sl-group">
+        <div class="sl-label-row"><span class="sl-label">Personal spend / week</span><span class="sl-val" id="out-spend">$600</span></div>
+        <input type="range" min="0" max="1500" step="10" value="600" id="sl-spend" oninput="upAll()">
+      </div>
+    </div>
+
+    <div class="section-label">Savings & investing</div>
+    <div class="card">
+      <div class="sl-group">
+        <div class="sl-label-row"><span class="sl-label">Goal savings / month</span><span class="sl-val" id="out-goals">$1,674</span></div>
+        <input type="range" min="0" max="3000" step="50" value="1674" id="sl-goals" oninput="upAll()">
+      </div>
+      <hr class="divider">
+      <div class="sl-group sl-invest">
+        <div class="sl-label-row"><span class="sl-label">★ Monthly investments</span><span class="sl-val" id="out-invest">$400</span></div>
+        <input type="range" min="0" max="4000" step="50" value="400" id="sl-invest" oninput="upAll()">
+      </div>
+    </div>
+
+    <div class="metric-grid">
+      <div class="metric"><div class="metric-label">Total income</div><div class="metric-value" id="bud-income">—</div></div>
+      <div class="metric"><div class="metric-label">Total committed</div><div class="metric-value" id="bud-committed">—</div></div>
+      <div class="metric"><div class="metric-label">Investing</div><div class="metric-value blue" id="bud-investing">—</div></div>
+      <div class="metric"><div class="metric-label">Unallocated</div><div class="metric-value" id="bud-surplus">—</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        Full allocation
+      </div>
+      <table class="alloc-table" id="alloc-table"></table>
+    </div>
+
+    <div id="bud-alert"></div>
+  </div>
+
+  <!-- GOALS PAGE -->
+  <div class="page" id="page-goals">
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        Goal tracker
+      </div>
+      <div id="goal-items"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        Total progress
+      </div>
+      <div id="goals-total"></div>
+    </div>
+  </div>
+
+  <!-- INVESTMENTS PAGE -->
+  <div class="page" id="page-invest">
+    <div class="metric-grid" id="inv-metrics"></div>
+
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+        Portfolio composition
+      </div>
+      <div class="donut-row">
+        <div class="donut-wrap">
+          <div class="donut-label">Current</div>
+          <div class="donut-canvas-wrap"><canvas id="currentDonut" role="img" aria-label="Current portfolio composition donut chart"></canvas></div>
+          <div class="donut-legend" id="current-legend"></div>
+        </div>
+        <div class="donut-wrap">
+          <div class="donut-label">Target</div>
+          <div class="donut-canvas-wrap"><canvas id="targetDonut" role="img" aria-label="Target portfolio composition donut chart"></canvas></div>
+          <div class="donut-legend" id="target-legend"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Allocation gap
+      </div>
+      <div id="gap-table-wrap"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Record contribution
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:10px;font-family:var(--font-mono)">Select ticker then enter amount</div>
+      <div class="ticker-select-row" id="ticker-btns"></div>
+      <div class="goal-input-row" style="margin-bottom:10px">
+        <input type="number" id="inv-amount" placeholder="Amount $" min="0" step="10">
+        <button class="btn btn-accent btn-sm" onclick="addInvestment()">Add</button>
+      </div>
+      <div class="log-list" id="inv-log"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Growth projection
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:8px;font-size:11px;color:var(--text3);font-family:var(--font-mono)">
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:3px;background:var(--accent);border-radius:2px"></span>With contribs</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:3px;background:var(--coral);border-radius:2px;opacity:.7"></span>No contribs</span>
+      </div>
+      <div class="chart-wrap"><canvas id="growthChart" role="img" aria-label="Portfolio growth projection to January 2028">Portfolio growth projection</canvas></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Suggested allocation guide
+      </div>
+      <div id="suggested-comp"></div>
+    </div>
+  </div>
+
+  <!-- TIMELINE PAGE -->
+  <div class="page" id="page-timeline">
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        Phases to university
+      </div>
+
+      <div class="phase active-phase">
+        <div class="phase-date">Jun – Sep 2026 · NOW</div>
+        <div class="phase-title">Phase 1 — Build the buffer</div>
+        <div class="phase-body">Priority: get bank from $600 → $3,000. Allocate ~$400/mo to emergency fund. Start holiday savings at $200/mo. Invest $300–400/mo. Cut weekly spend toward $500.</div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-date">Oct – Nov 2026</div>
+        <div class="phase-title">Phase 2 — Holiday funded</div>
+        <div class="phase-body">Holiday hits $3,000. Emergency buffer at $3k+. Redirect $200 holiday allocation to uni fund. PC fund begins in earnest.</div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-date">Dec 2026 – Jun 2027</div>
+        <div class="phase-title">Phase 3 — Acceleration</div>
+        <div class="phase-body">Uni fund ~$1,053/mo. PC/laptop ~$421/mo. If rent drops to $0, redirect $400 between investing and goals. Maintain consistent investing.</div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-date">Jul – Dec 2027</div>
+        <div class="phase-title">Phase 4 — Final push</div>
+        <div class="phase-body">Uni fund ~$12k by July. Final 6 months to close. PC fund on track. Review portfolio — hold steady and keep contributing.</div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-date">Jan 2028</div>
+        <div class="phase-title">Goal achieved</div>
+        <div class="phase-body">$20k uni fund ready. $8k PC/laptop purchased. Portfolio growing. Emergency buffer intact. University starts debt-free and financially prepared.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        Golden rules
+      </div>
+      <table class="rules-table">
+        <tr><td>Never sell investments for goals</td><td>Fund goals from income only. Portfolio compounds untouched.</td></tr>
+        <tr><td>HISA for all cash goal buckets</td><td>At 5%, $20k earns ~$500 in interest — free money before uni.</td></tr>
+        <tr><td>Automate on pay day</td><td>Move money before you see it. Non-negotiable bill.</td></tr>
+        <tr><td>Keep Kmart shifts up</td><td>$110/wk = $475/mo — nearly covers your holiday fund alone.</td></tr>
+        <tr><td>If rent drops to $0</td><td>Invest that $400/mo — $7,600 extra before uni starts.</td></tr>
+        <tr><td>Review monthly not daily</td><td>Reduces emotional decisions on market moves.</td></tr>
+      </table>
+    </div>
+  </div>
+
+</div><!-- end scroll area -->
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="showPage('overview',this)">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    Overview
+  </button>
+  <button class="nav-btn" onclick="showPage('budget',this)">
+    <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    Budget
+  </button>
+  <button class="nav-btn" onclick="showPage('goals',this)">
+    <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    Goals
+  </button>
+  <button class="nav-btn" onclick="showPage('invest',this)">
+    <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Invest
+  </button>
+  <button class="nav-btn" onclick="showPage('timeline',this)">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    Timeline
+  </button>
+</nav>
+
+<script>
+// ─── CONSTANTS ───────────────────────────────────────────────────────────────
+const TICKER_COLORS={VOO:'#4a9eff',VYM:'#00c896',VYMI:'#a78bfa',VAF:'#f0a030',VGB:'#ff6b6b',VGS:'#64748b'};
+const TICKER_LABELS={VOO:'VOO',VYM:'VYM',VYMI:'VYMI',VAF:'VAF',VGB:'VGB',VGS:'VGS/NDQ'};
+const TARGET_PCT={VOO:55,VYM:12,VYMI:10,VGB:8,VAF:8,VGS:7};
+const YIELD={VOO:0.013,VYM:0.029,VYMI:0.043,VAF:0.038,VGB:0.034,VGS:0.010};
+const TICKERS=['VOO','VYM','VYMI','VAF','VGB','VGS'];
+const GOALS_CFG={
+  emergency:{target:3000,start:600,color:'#ff6b6b',label:'Emergency buffer',tip:'~$400/mo · 3 months',due:''},
+  holiday:{target:3000,start:0,color:'#f0a030',label:'Holiday fund',tip:'~$200/mo · Nov 2026',due:' · Nov 2026'},
+  uni:{target:20000,start:0,color:'#4a9eff',label:'University fund',tip:'~$1,053/mo · 19 months',due:' · Jan 2028'},
+  pc:{target:8000,start:0,color:'#00c896',label:'PC & laptop fund',tip:'~$421/mo · 19 months',due:' · Jan 2028'}
+};
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let portfolio={VOO:7732.93,VYM:1118.04,VYMI:1108.72,VAF:1275.40,VGB:600.08,VGS:0};
+let goalState={};
+for(const k in GOALS_CFG) goalState[k]={saved:GOALS_CFG[k].start,log:[]};
+let invLog=[];
+let selectedTicker='VOO';
+let growthChart=null,currentDonutChart=null,targetDonutChart=null;
+let donutsBuilt=false;
+
+// ─── PERSISTENCE ─────────────────────────────────────────────────────────────
+function saveData(){
+  try{
+    localStorage.setItem('fp_portfolio',JSON.stringify(portfolio));
+    localStorage.setItem('fp_goals',JSON.stringify(goalState));
+    localStorage.setItem('fp_invlog',JSON.stringify(invLog));
+    localStorage.setItem('fp_sliders',JSON.stringify({
+      kmart:parseInt(document.getElementById('sl-kmart').value),
+      rent:parseInt(document.getElementById('sl-rent').value),
+      spend:parseInt(document.getElementById('sl-spend').value),
+      goals:parseInt(document.getElementById('sl-goals').value),
+      invest:parseInt(document.getElementById('sl-invest').value)
+    }));
+  }catch(e){}
+}
+function loadData(){
+  try{
+    const p=localStorage.getItem('fp_portfolio');
+    if(p) portfolio=JSON.parse(p);
+    const g=localStorage.getItem('fp_goals');
+    if(g) goalState=JSON.parse(g);
+    const il=localStorage.getItem('fp_invlog');
+    if(il) invLog=JSON.parse(il);
+    const sl=localStorage.getItem('fp_sliders');
+    if(sl){
+      const s=JSON.parse(sl);
+      document.getElementById('sl-kmart').value=s.kmart||110;
+      document.getElementById('sl-rent').value=s.rent||400;
+      document.getElementById('sl-spend').value=s.spend||600;
+      document.getElementById('sl-goals').value=s.goals||1674;
+      document.getElementById('sl-invest').value=s.invest||400;
+    }
+  }catch(e){}
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function fmtD(n){return '$'+Math.round(n).toLocaleString();}
+function fmtD1(n){return '$'+(Math.round(n*10)/10).toLocaleString(undefined,{minimumFractionDigits:1,maximumFractionDigits:1});}
+function pctN(s,t){return Math.min(100,Math.round(s/t*100));}
+function portfolioTotal(){return Object.values(portfolio).reduce((a,v)=>a+v,0);}
+function annualDiv(){let d=0;for(const k in portfolio)d+=portfolio[k]*(YIELD[k]||0);return d;}
+function getSliders(){
+  return{
+    kmart:parseInt(document.getElementById('sl-kmart').value)||0,
+    rent:parseInt(document.getElementById('sl-rent').value)||0,
+    spend:parseInt(document.getElementById('sl-spend').value)||0,
+    goals:parseInt(document.getElementById('sl-goals').value)||0,
+    invest:parseInt(document.getElementById('sl-invest').value)||0
+  };
+}
+function estJan2028(investMo){
+  const r=Math.pow(1.07,1/12)-1;
+  let v=portfolioTotal();
+  for(let i=0;i<19;i++)v=v*(1+r)+investMo;
+  return Math.round(v);
+}
+
+// ─── NAVIGATION ──────────────────────────────────────────────────────────────
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+  document.getElementById('scroll-area').scrollTop=0;
+  if(id==='invest'){buildInvestPage();}
+  if(id==='goals'){buildGoalsPage();}
+  if(id==='overview'){buildOverview();}
+}
+
+// ─── MAIN UPDATE ─────────────────────────────────────────────────────────────
+function upAll(){
+  const s=getSliders();
+  document.getElementById('out-kmart').textContent=fmtD(s.kmart);
+  document.getElementById('out-rent').textContent=fmtD(s.rent);
+  document.getElementById('out-spend').textContent=fmtD(s.spend);
+  document.getElementById('out-goals').textContent=fmtD(s.goals);
+  document.getElementById('out-invest').textContent=fmtD(s.invest);
+  upBudget(s);
+  upOverviewMetrics(s);
+  if(growthChart) updateGrowthChart(s);
+  saveData();
+}
+
+function upOverviewMetrics(s){
+  const income=Math.round(4069+(s.kmart*4.33));
+  document.getElementById('ov-income').textContent=fmtD(income);
+  document.getElementById('ov-invest').textContent=fmtD(s.invest);
+  document.getElementById('ov-est').textContent=fmtD(estJan2028(s.invest));
+  document.getElementById('ov-div').textContent=fmtD(annualDiv());
+  document.getElementById('ov-portfolio').textContent=fmtD(portfolioTotal());
+  buildGoalsSummary();
+}
+
+function upBudget(s){
+  const income=4069+(s.kmart*4.33);
+  const spendMo=s.spend*4.33;
+  const totalOut=spendMo+s.rent+s.goals+s.invest;
+  const leftover=income-totalOut;
+  document.getElementById('bud-income').textContent=fmtD(income);
+  document.getElementById('bud-committed').textContent=fmtD(totalOut);
+  document.getElementById('bud-investing').textContent=fmtD(s.invest);
+  const surEl=document.getElementById('bud-surplus');
+  surEl.textContent=fmtD(leftover);
+  surEl.className='metric-value '+(leftover>=0?'accent':'coral-text');
+  surEl.style.color=leftover>=0?'var(--accent)':'var(--coral)';
+
+  document.getElementById('alloc-table').innerHTML=`
+    <tr><td>Rent</td><td></td><td>${fmtD(s.rent)}</td></tr>
+    <tr><td>Personal spend</td><td style="font-size:11px;color:var(--text3);font-family:var(--font-mono)">${fmtD(s.spend)}/wk</td><td>${fmtD(Math.round(spendMo))}</td></tr>
+    <tr><td>Goal savings</td><td></td><td>${fmtD(s.goals)}</td></tr>
+    <tr><td style="color:var(--accent)">Investments</td><td></td><td style="color:var(--accent)">${fmtD(s.invest)}</td></tr>
+    <tr class="total-row"><td>Total out</td><td></td><td>${fmtD(Math.round(totalOut))}</td></tr>
+    <tr class="total-row"><td>Unallocated</td><td></td><td style="color:${leftover>=0?'var(--accent)':'var(--coral)'}">${fmtD(leftover)}</td></tr>`;
+
+  const alertEl=document.getElementById('bud-alert');
+  if(leftover<0){
+    alertEl.innerHTML=`<div class="alert alert-warn">Outgoings exceed income by ${fmtD(Math.abs(leftover))}. Reduce spending or investment/goal allocations to balance.</div>`;
+  } else if(leftover>500){
+    alertEl.innerHTML=`<div class="alert alert-good">${fmtD(leftover)} unallocated — consider adding this to your investment slider.</div>`;
+  } else if(leftover>=0){
+    alertEl.innerHTML=`<div class="alert alert-info">Budget balanced with ${fmtD(leftover)} unallocated.</div>`;
+  }
+}
+
+// ─── OVERVIEW ────────────────────────────────────────────────────────────────
+function buildOverview(){
+  const s=getSliders();
+  upOverviewMetrics(s);
+}
+function buildGoalsSummary(){
+  const keys=Object.keys(GOALS_CFG);
+  let html='';
+  for(const k of keys){
+    const g=GOALS_CFG[k],st=goalState[k];
+    const p=pctN(st.saved,g.target);
+    html+=`<div class="goals-summary-row">
+      <span class="name">${g.label}</span>
+      <span class="vals">${fmtD(st.saved)} / ${fmtD(g.target)} <span class="tag ${p>=100?'tag-accent':'tag-blue'}">${p}%</span></span>
+    </div>`;
+  }
+  const totalSaved=Object.values(goalState).reduce((a,g)=>a+g.saved,0);
+  const totalTarget=Object.values(GOALS_CFG).reduce((a,g)=>a+g.target,0);
+  const op=pctN(totalSaved,totalTarget);
+  html+=`<div class="goals-summary-row">
+    <span style="color:var(--text);font-weight:700">All goals</span>
+    <span class="vals">${fmtD(totalSaved)} / ${fmtD(totalTarget)} <span class="tag ${op>=100?'tag-accent':'tag-blue'}">${op}%</span></span>
+  </div>`;
+  document.getElementById('ov-goals-summary').innerHTML=html;
+}
+
+// ─── GOALS ───────────────────────────────────────────────────────────────────
+function buildGoalsPage(){
+  const wrap=document.getElementById('goal-items');
+  let html='';
+  const keys=Object.keys(GOALS_CFG);
+  keys.forEach((k,i)=>{
+    const g=GOALS_CFG[k],st=goalState[k];
+    const p=pctN(st.saved,g.target);
+    if(i>0)html+='<hr class="divider">';
+    html+=`<div class="goal-item">
+      <div class="goal-header">
+        <span class="goal-name">${g.label}</span>
+        <span class="goal-meta">${g.due||'priority'}</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="gb-${k}" style="width:${p}%;background:${g.color}"></div></div>
+      <div class="goal-sub" id="gp-${k}">${fmtD(st.saved)} / ${fmtD(g.target)} · ${p}% ${st.saved>=g.target?'· COMPLETE':'· '+g.tip}</div>
+      <div class="goal-input-row">
+        <input type="number" id="gi-${k}" placeholder="Add amount $" min="0" step="10">
+        <button class="btn btn-accent btn-sm" onclick="addToGoal('${k}')">Add</button>
+        <button class="btn btn-ghost btn-sm" onclick="resetGoal('${k}')">Reset</button>
+      </div>
+      <div class="log-list" id="glog-${k}">${renderGoalLog(k)}</div>
+    </div>`;
+  });
+  wrap.innerHTML=html;
+  buildGoalsTotals();
+}
+
+function renderGoalLog(key){
+  return goalState[key].log.slice(-5).reverse().map(e=>
+    `<div class="log-item"><span class="log-item-date">${e.date}</span><span class="log-item-amt">+${fmtD(e.amount)}</span></div>`
+  ).join('');
+}
+
+function addToGoal(key){
+  const input=document.getElementById('gi-'+key);
+  const val=parseFloat(input.value);
+  if(!val||val<=0)return;
+  goalState[key].saved+=val;
+  goalState[key].log.push({amount:val,date:new Date().toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'2-digit'})});
+  input.value='';
+  const g=GOALS_CFG[key],st=goalState[key];
+  const p=pctN(st.saved,g.target);
+  const barEl=document.getElementById('gb-'+key);
+  if(barEl)barEl.style.width=p+'%';
+  const subEl=document.getElementById('gp-'+key);
+  if(subEl)subEl.textContent=`${fmtD(st.saved)} / ${fmtD(g.target)} · ${p}% ${st.saved>=g.target?'· COMPLETE':'· '+g.tip}`;
+  const logEl=document.getElementById('glog-'+key);
+  if(logEl)logEl.innerHTML=renderGoalLog(key);
+  buildGoalsTotals();
+  buildGoalsSummary();
+  saveData();
+}
+
+function resetGoal(key){
+  goalState[key].saved=GOALS_CFG[key].start;
+  goalState[key].log=[];
+  buildGoalsPage();
+  buildGoalsSummary();
+  saveData();
+}
+
+function buildGoalsTotals(){
+  const keys=Object.keys(GOALS_CFG);
+  const totalSaved=Object.values(goalState).reduce((a,g)=>a+g.saved,0);
+  const totalTarget=Object.values(GOALS_CFG).reduce((a,g)=>a+g.target,0);
+  const op=pctN(totalSaved,totalTarget);
+  let html='';
+  for(const k of keys){
+    const g=GOALS_CFG[k],st=goalState[k];
+    const p=pctN(st.saved,g.target);
+    html+=`<div class="goals-summary-row"><span class="name">${g.label}</span><span class="vals">${fmtD(st.saved)} / ${fmtD(g.target)} <span class="tag ${p>=100?'tag-accent':'tag-blue'}">${p}%</span></span></div>`;
+  }
+  html+=`<div class="goals-summary-row"><span style="color:var(--text);font-weight:700">Total</span><span class="vals">${fmtD(totalSaved)} / ${fmtD(totalTarget)} <span class="tag ${op>=100?'tag-accent':'tag-blue'}">${op}%</span></span></div>`;
+  document.getElementById('goals-total').innerHTML=html;
+}
+
+// ─── INVESTMENTS ─────────────────────────────────────────────────────────────
+function buildInvestPage(){
+  const s=getSliders();
+  buildInvMetrics(s);
+  buildDonuts();
+  buildGapTable();
+  buildTickerBtns();
+  buildInvLog();
+  buildSuggestedComp();
+  updateGrowthChart(s);
+}
+
+function buildInvMetrics(s){
+  const total=portfolioTotal();
+  const div=annualDiv();
+  const est=estJan2028(s.invest);
+  document.getElementById('inv-metrics').innerHTML=`
+    <div class="metric"><div class="metric-label">Portfolio value</div><div class="metric-value accent">${fmtD(total)}</div><div class="metric-sub">+$533 base profit</div></div>
+    <div class="metric"><div class="metric-label">Monthly investing</div><div class="metric-value blue">${fmtD(s.invest)}</div><div class="metric-sub">From budget tab</div></div>
+    <div class="metric"><div class="metric-label">Est. Jan 2028</div><div class="metric-value">${fmtD(est)}</div><div class="metric-sub">7% p.a. + contribs</div></div>
+    <div class="metric"><div class="metric-label">Annual dividends</div><div class="metric-value amber">${fmtD(div)}</div><div class="metric-sub">Yield ~${total>0?((div/total)*100).toFixed(1):0}%</div></div>`;
+}
+
+function buildTickerBtns(){
+  const wrap=document.getElementById('ticker-btns');
+  wrap.innerHTML=TICKERS.map(t=>`<button class="ticker-btn${t===selectedTicker?' selected':''}" onclick="selectTicker('${t}')">${TICKER_LABELS[t]}</button>`).join('');
+}
+
+function selectTicker(t){
+  selectedTicker=t;
+  buildTickerBtns();
+}
+
+function addInvestment(){
+  const amt=parseFloat(document.getElementById('inv-amount').value);
+  if(!amt||amt<=0)return;
+  portfolio[selectedTicker]=(portfolio[selectedTicker]||0)+amt;
+  invLog.push({ticker:selectedTicker,amt,date:new Date().toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'2-digit'})});
+  document.getElementById('inv-amount').value='';
+  const s=getSliders();
+  buildInvMetrics(s);
+  buildDonuts();
+  buildGapTable();
+  buildInvLog();
+  updateGrowthChart(s);
+  upOverviewMetrics(s);
+  saveData();
+}
+
+function buildInvLog(){
+  const el=document.getElementById('inv-log');
+  if(!el)return;
+  el.innerHTML=invLog.slice(-8).reverse().map(e=>
+    `<div class="log-item"><span class="log-item-date">${e.date} — ${TICKER_LABELS[e.ticker]}</span><span class="log-item-amt">+${fmtD(e.amt)}</span></div>`
+  ).join('');
+}
+
+function buildDonuts(){
+  const total=portfolioTotal();
+  const curVals=TICKERS.map(t=>parseFloat((portfolio[t]||0)/total*100).toFixed(1));
+  const tgtVals=TICKERS.map(t=>TARGET_PCT[t]);
+  const colors=TICKERS.map(t=>TICKER_COLORS[t]);
+
+  if(currentDonutChart){currentDonutChart.destroy();}
+  currentDonutChart=new Chart(document.getElementById('currentDonut'),{
+    type:'doughnut',
+    data:{labels:TICKERS,datasets:[{data:curVals,backgroundColor:colors,borderWidth:2,borderColor:'#161b22'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.label+': '+c.parsed+'%'}}},cutout:'62%'}
+  });
+
+  if(!targetDonutChart){
+    targetDonutChart=new Chart(document.getElementById('targetDonut'),{
+      type:'doughnut',
+      data:{labels:TICKERS.map(t=>TICKER_LABELS[t]),datasets:[{data:tgtVals,backgroundColor:colors,borderWidth:2,borderColor:'#161b22'}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.label+': '+c.parsed+'%'}}},cutout:'62%'}
+    });
+  }
+
+  const curLeg=document.getElementById('current-legend');
+  curLeg.innerHTML=TICKERS.map((t,i)=>`<span class="donut-legend-item"><span style="width:8px;height:8px;border-radius:2px;background:${colors[i]}"></span>${t} ${curVals[i]}%</span>`).join('');
+  const tgtLeg=document.getElementById('target-legend');
+  if(!tgtLeg.innerHTML){
+    tgtLeg.innerHTML=TICKERS.map((t,i)=>`<span class="donut-legend-item"><span style="width:8px;height:8px;border-radius:2px;background:${colors[i]}"></span>${TICKER_LABELS[t]} ${tgtVals[i]}%</span>`).join('');
+  }
+}
+
+function buildGapTable(){
+  const total=portfolioTotal();
+  let html=`<table class="gap-table">
+    <thead><tr><th>Ticker</th><th>Value</th><th>Cur%</th><th>Tgt%</th><th>Gap</th></tr></thead><tbody>`;
+  for(const t of TICKERS){
+    const val=portfolio[t]||0;
+    const cur=total>0?Math.round(val/total*100):0;
+    const tgt=TARGET_PCT[t];
+    const diff=cur-tgt;
+    const badge=diff>2?`<span class="badge badge-over">+${diff}%</span>`:diff<-2?`<span class="badge badge-under">${diff}%</span>`:`<span class="badge badge-ok">ok</span>`;
+    html+=`<tr><td><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:7px;height:7px;border-radius:2px;background:${TICKER_COLORS[t]}"></span>${TICKER_LABELS[t]}</span></td><td>${fmtD(val)}</td><td>${cur}%</td><td>${tgt}%</td><td>${badge}</td></tr>`;
+  }
+  html+=`<tr><td style="padding-top:10px"><strong>Total</strong></td><td style="padding-top:10px"><strong>${fmtD(total)}</strong></td><td colspan="3"></td></tr>`;
+  html+='</tbody></table>';
+  document.getElementById('gap-table-wrap').innerHTML=html;
+}
+
+function buildSuggestedComp(){
+  const el=document.getElementById('suggested-comp');
+  if(!el)return;
+  const data=[
+    {t:'VOO',pct:55,note:'S&P 500 core — keep as largest holding'},
+    {t:'VYM',pct:12,note:'US dividend income'},
+    {t:'VYMI',pct:10,note:'International dividend'},
+    {t:'VGB',pct:8,note:'Aus gov bonds — stability'},
+    {t:'VAF',pct:8,note:'Aus fixed income'},
+    {t:'VGS',pct:7,note:'Add VGS/NDQ for broader growth'},
+  ];
+  el.innerHTML=data.map(d=>`
+    <div class="comp-row">
+      <div class="comp-dot" style="background:${TICKER_COLORS[d.t]}"></div>
+      <div>
+        <div class="comp-name">${TICKER_LABELS[d.t]}</div>
+        <div style="font-size:11px;color:var(--text3)">${d.note}</div>
+      </div>
+      <div class="comp-bar-wrap"><div class="comp-bar" style="background:${TICKER_COLORS[d.t]};width:${d.pct}%"></div></div>
+      <div class="comp-pct">${d.pct}%</div>
+    </div>`).join('');
+}
+
+function updateGrowthChart(s){
+  const labels=[],withC=[],noC=[];
+  let v=portfolioTotal(),vb=portfolioTotal();
+  const r=Math.pow(1.07,1/12)-1;
+  const today=new Date(2026,5);
+  for(let i=0;i<=19;i++){
+    const d=new Date(today.getFullYear(),today.getMonth()+i);
+    labels.push(d.toLocaleDateString('en-AU',{month:'short',year:'2-digit'}));
+    withC.push(Math.round(v));
+    noC.push(Math.round(vb));
+    v=v*(1+r)+s.invest;
+    vb=vb*(1+r);
+  }
+  if(growthChart){
+    growthChart.data.labels=labels;
+    growthChart.data.datasets[0].data=withC;
+    growthChart.data.datasets[1].data=noC;
+    growthChart.update('none');
+  } else {
+    const canvas=document.getElementById('growthChart');
+    if(!canvas)return;
+    growthChart=new Chart(canvas,{
+      type:'line',
+      data:{labels,datasets:[
+        {label:'With contributions',data:withC,borderColor:'#00c896',backgroundColor:'rgba(0,200,150,0.06)',fill:true,tension:0.3,pointRadius:0,borderWidth:2},
+        {label:'No contributions',data:noC,borderColor:'#ff6b6b',backgroundColor:'transparent',borderDash:[4,3],tension:0.3,pointRadius:0,borderWidth:2}
+      ]},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{
+          x:{ticks:{color:'#484f58',font:{size:10,family:"'DM Mono',monospace"},autoSkip:true,maxRotation:45},grid:{color:'rgba(255,255,255,0.04)'}},
+          y:{ticks:{color:'#484f58',font:{size:10,family:"'DM Mono',monospace"},callback:v=>'$'+(v/1000).toFixed(1)+'k'},grid:{color:'rgba(255,255,255,0.04)'}}
+        }
+      }
+    });
+  }
+}
+
+// ─── INSTALL PROMPT ──────────────────────────────────────────────────────────
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();
+  deferredPrompt=e;
+  document.getElementById('install-banner-wrap').innerHTML=`
+    <div class="install-banner">
+      <span>Install as app on your phone</span>
+      <button class="btn btn-accent btn-sm" onclick="installApp()">Install</button>
+    </div>`;
+});
+function installApp(){
+  if(!deferredPrompt)return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(()=>{
+    deferredPrompt=null;
+    document.getElementById('install-banner-wrap').innerHTML='';
+  });
+}
+
+// ─── HEADER DATE ─────────────────────────────────────────────────────────────
+function setHeaderDate(){
+  const d=new Date();
+  document.getElementById('header-date').textContent=d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
+}
+
+// ─── SERVICE WORKER ──────────────────────────────────────────────────────────
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+loadData();
+setHeaderDate();
+upAll();
+buildOverview();
+</script>
+</body>
+</html>
