@@ -633,6 +633,11 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
         <div id="analytics-insights"></div>
       </div>
       <div class="card">
+        <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg>Savings rate history</div></div>
+        <div id="savings-rate-summary" style="font-size:12px;color:var(--t2);margin-bottom:10px"></div>
+        <div class="chart-wrap" style="height:150px"><canvas id="savings-rate-chart" role="img" aria-label="Savings rate over time">Savings rate history</canvas></div>
+      </div>
+      <div class="card">
         <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Weekly share card</div><button class="btn btn-acc btn-sm" onclick="buildShareCard()">Generate</button></div>
         <div id="share-card-wrap"></div>
       </div>
@@ -733,6 +738,46 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
       </div>
     </div>
 
+    <!-- PAY DAY PLANNER -->
+    <div class="pg" id="pg-payday">
+      <div id="payday-alert"></div>
+      <div class="card acc-b">
+        <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Next pay day</div></div>
+        <div id="payday-next"></div>
+      </div>
+      <div class="card">
+        <div class="ctitle"><div class="ctitle-l">Distribution plan</div><button class="btn btn-ghost btn-sm" onclick="openPaydaySettings()">Edit</button></div>
+        <div id="payday-plan"></div>
+      </div>
+      <div class="card">
+        <div class="ctitle"><div class="ctitle-l">Pay day history</div></div>
+        <div id="payday-history"></div>
+      </div>
+    </div>
+
+    <!-- WHAT-IF SCENARIO -->
+    <div class="pg" id="pg-scenario">
+      <div class="alert alert-b" style="font-size:12px;line-height:1.55">Model decisions before you make them. Adjust the sliders and see the impact on your Jan 2028 position. Nothing here changes your real data.</div>
+      <div class="card">
+        <div class="ctitle"><div class="ctitle-l">Assumptions</div><button class="btn btn-ghost btn-sm" onclick="resetScenario()">Reset</button></div>
+        <div id="scenario-controls"></div>
+      </div>
+      <div class="card acc-b">
+        <div class="ctitle"><div class="ctitle-l">Projected outcome — Jan 2028</div></div>
+        <div id="scenario-output"></div>
+      </div>
+      <div class="card">
+        <div class="ctitle"><div class="ctitle-l">Projection chart</div></div>
+        <div style="display:flex;gap:12px;margin-bottom:7px;font-size:9px;color:var(--t3)"><span style="display:flex;align-items:center;gap:3px"><span style="width:10px;height:2px;background:var(--acc);border-radius:1px"></span>This scenario</span><span style="display:flex;align-items:center;gap:3px"><span style="width:10px;height:2px;background:var(--t3);border-radius:1px"></span>Current plan</span></div>
+        <div class="chart-wrap"><canvas id="scenario-chart" role="img" aria-label="Scenario projection">Scenario projection</canvas></div>
+      </div>
+    </div>
+
+    <!-- GLANCE VIEW -->
+    <div class="pg" id="pg-glance">
+      <div id="glance-content"></div>
+    </div>
+
     <!-- BUDGET -->
     <div class="pg" id="pg-budget">
       <div class="card"><div class="ctitle"><div class="ctitle-l">Income</div></div><div class="sl-grp"><div class="sl-lr"><span class="sl-l">Kmart weekly earnings</span><span class="sl-v" id="out-kmart">$110</span></div><input type="range" min="0" max="400" step="5" value="110" id="sl-kmart" oninput="upAll()"></div></div>
@@ -782,6 +827,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
         <div class="streak-days" id="streak-days"></div>
       </div>
       <div class="card"><div class="ctitle"><div class="ctitle-l">Active challenges</div></div><div id="chal-list"></div></div>
+      <div class="card"><div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Category streaks</div><button class="btn btn-ghost btn-sm" onclick="openCatStreakSettings()">Set limits</button></div><div id="cat-streak-list"></div></div>
       <div class="card"><div class="ctitle"><div class="ctitle-l">Badges</div></div><div class="badge-grid" id="badge-grid"></div></div>
     </div>
 
@@ -798,6 +844,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
     <!-- DEBTS & TRUE NET WORTH -->
     <div class="pg" id="pg-debts">
       <div class="card"><div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>True net worth</div></div><div id="nw-full"></div></div>
+      <div class="card"><div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6m12 5h1.5a2.5 2.5 0 0 0 0-5H18M6 4h12v5a6 6 0 0 1-12 0z"/><path d="M8 21h8M12 15v6"/></svg>Net worth milestones</div></div><div id="nw-milestones"></div></div>
       <div class="card"><div class="ctitle"><div class="ctitle-l">Liabilities</div><button class="btn btn-acc btn-sm" onclick="openDebtModal()">+ Add debt</button></div><div id="debt-list"></div></div>
     </div>
 
@@ -928,6 +975,9 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
     <button class="more-tile" id="more-budget" onclick="showPgFromMore('budget')"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Budget</button>
     <button class="more-tile" id="more-analytics" onclick="showPgFromMore('analytics')"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics</button>
     <button class="more-tile" id="more-kmart" onclick="showPgFromMore('kmart')"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Shifts</button>
+    <button class="more-tile" id="more-payday" onclick="showPgFromMore('payday')"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="12" cy="14.5" r="1.5"/></svg>Pay day</button>
+    <button class="more-tile" id="more-scenario" onclick="showPgFromMore('scenario')"><svg viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0H5a2 2 0 0 1-2-2v-4m6 6h10a2 2 0 0 0 2-2v-4"/></svg>What-if</button>
+    <button class="more-tile" id="more-glance" onclick="showPgFromMore('glance')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Glance</button>
     <button class="more-tile" id="more-invest" onclick="showPgFromMore('invest')"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Invest</button>
     <button class="more-tile" id="more-health" onclick="showPgFromMore('health')"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Health</button>
     <button class="more-tile" id="more-streaks" onclick="showPgFromMore('streaks')"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Streaks</button>
@@ -1104,7 +1154,7 @@ const STORAGE_KEY='finplan-data';      // primary state
 const BACKUP_KEY='finplan-backup';     // pre-migration safety copy
 const META_KEY='finplan-meta';         // last-good timestamp/version
 const LEGACY_KEYS=['fpv4','fpv3'];      // older version keys to migrate from
-const SCHEMA_VERSION=3;                 // bump when the shape of S changes
+const SCHEMA_VERSION=4;                 // bump when the shape of S changes
 
 let S={
   schemaVersion:SCHEMA_VERSION,
@@ -1143,6 +1193,13 @@ let S={
   invDividendsReceived:{VOO:0,VYM:0,VYMI:0,VAF:0,VGB:0,VGS:0},
   benchmarks:{sp500:'',asx200:''},
   analyticsPeriod:'month',
+  // v9 features
+  paydayConfig:{monthlyDay:15,monthlyAmt:4069,weeklyDay:4,weeklyAmt:110,plan:{emergency:20,holiday:10,uni:25,pc:10,invest:20,buffer:15}},
+  paydayLog:[],          // [{id,date,type,amount,distributed:{...}}]
+  savingsRateHistory:[], // [{ym,rate,income,saved}]
+  catStreaks:{},         // {catId:{limit,weeks:[{wkStart,spent,met}],current,best}}
+  nwMilestones:[],       // hit milestone values e.g. [10000,25000]
+  scenarioState:null,    // last what-if inputs
   editingBalAcct:null
 };
 
@@ -1238,6 +1295,16 @@ const MIGRATIONS={
     if(!d.benchmarkReturns)d.benchmarkReturns={sp500:d.benchmarks?.sp500||'',asx200:d.benchmarks?.asx200||'',ndx:'',msci:''};
     if(!Array.isArray(d.assistantHistory))d.assistantHistory=[];
     d.schemaVersion=3;
+    return d;
+  },
+  // v3 → v4: payday planner, savings-rate history, category streaks, milestones
+  3:(d)=>{
+    if(!d.paydayConfig)d.paydayConfig={monthlyDay:15,monthlyAmt:4069,weeklyDay:4,weeklyAmt:110,plan:{emergency:20,holiday:10,uni:25,pc:10,invest:20,buffer:15}};
+    if(!Array.isArray(d.paydayLog))d.paydayLog=[];
+    if(!Array.isArray(d.savingsRateHistory))d.savingsRateHistory=[];
+    if(!d.catStreaks)d.catStreaks={};
+    if(!Array.isArray(d.nwMilestones))d.nwMilestones=[];
+    d.schemaVersion=4;
     return d;
   }
 };
@@ -1405,6 +1472,18 @@ function snapshotNW(){
   if(!last||last.date!==today2)S.nwHistory.push({date:today2,nw:Math.round(nw)});
   else last.nw=Math.round(nw);
   if(S.nwHistory.length>365)S.nwHistory=S.nwHistory.slice(-365);
+  checkMilestones(nw);
+}
+const NW_MILESTONES=[1000,2500,5000,10000,15000,20000,25000,35000,50000,75000,100000];
+function checkMilestones(nw){
+  if(!S.nwMilestones)S.nwMilestones=[];
+  NW_MILESTONES.forEach(m=>{
+    if(nw>=m&&!S.nwMilestones.includes(m)){
+      S.nwMilestones.push(m);
+      // Defer celebration so it doesn't fire mid-calculation
+      setTimeout(()=>{try{fireConfetti();showToast('🎉 Milestone: '+fmtDI(m)+' net worth!');}catch(e){}},300);
+    }
+  });
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1461,7 +1540,7 @@ function launchApp(){
 // NAV
 // ═══════════════════════════════════════════════════════════
 let currentPg='dash';
-const MORE_PAGES=['budget','analytics','kmart','invest','timeline','settings','health','streaks','sinking','debts','subscriptions','dividends','tax','assistant'];
+const MORE_PAGES=['budget','analytics','kmart','invest','timeline','settings','health','streaks','sinking','debts','subscriptions','dividends','tax','assistant','payday','scenario','glance'];
 function showPg(id,btn){
   document.querySelectorAll('.pg').forEach(p=>{p.classList.remove('on');p.style.display='';});
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
@@ -1489,6 +1568,9 @@ function showPg(id,btn){
   if(id==='dividends')buildDividendCalendar();
   if(id==='tax')buildTaxSummary();
   if(id==='assistant'){buildAssistantWelcome();scrollAssistantBottom();}
+  if(id==='payday')buildPaydayPage();
+  if(id==='scenario')buildScenarioPage();
+  if(id==='glance')buildGlancePage();
 }
 function toggleMore(){
   const sheet=document.getElementById('more-sheet'),ov=document.getElementById('more-overlay');
@@ -1527,6 +1609,9 @@ function showPgFromMore(id){
   if(id==='dividends')buildDividendCalendar();
   if(id==='tax')buildTaxSummary();
   if(id==='assistant'){buildAssistantWelcome();scrollAssistantBottom();}
+  if(id==='payday')buildPaydayPage();
+  if(id==='scenario')buildScenarioPage();
+  if(id==='glance')buildGlancePage();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2000,6 +2085,7 @@ function buildAnalytics(){
   buildCatBreakdown();
   buildBudgetPerformance();
   buildAnalyticsInsights();
+  buildSavingsRateChart();
 }
 function buildAnalyticsSummary(){
   const p=S.analyticsPeriod||'month';
@@ -2911,6 +2997,357 @@ CRITICAL RULES:
   document.getElementById('assistant-send-btn').disabled=false;
 }
 
+
+// ═══════════════════════════════════════════════════════════
+// PAY DAY DISTRIBUTION PLANNER
+// ═══════════════════════════════════════════════════════════
+function nextPaydayDates(){
+  const cfg=S.paydayConfig;const now=new Date();
+  // Next monthly payday
+  let md=new Date(now.getFullYear(),now.getMonth(),cfg.monthlyDay);
+  if(md<now.setHours(0,0,0,0))md=new Date(now.getFullYear(),now.getMonth()+1,cfg.monthlyDay);
+  // Next weekly payday (weeklyDay: 0=Sun..6=Sat)
+  const today0=new Date();today0.setHours(0,0,0,0);
+  let wd=new Date(today0);const diff=(cfg.weeklyDay-today0.getDay()+7)%7;wd.setDate(today0.getDate()+(diff===0?0:diff));
+  return{monthly:md,weekly:wd};
+}
+function daysUntil(d){const now=new Date();now.setHours(0,0,0,0);return Math.round((d-now)/(1000*60*60*24));}
+function buildPaydayPage(){
+  const cfg=S.paydayConfig;
+  const {monthly,weekly}=nextPaydayDates();
+  const mDays=daysUntil(monthly),wDays=daysUntil(weekly);
+  const soonest=mDays<=wDays?{d:monthly,type:'monthly',amt:cfg.monthlyAmt,days:mDays}:{d:weekly,type:'weekly',amt:cfg.weeklyAmt,days:wDays};
+  // Next payday card
+  document.getElementById('payday-next').innerHTML=`
+    <div style="text-align:center;padding:6px 0">
+      <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em">${soonest.type==='monthly'?'Full-time pay':'Kmart pay'}</div>
+      <div style="font-size:30px;font-weight:800;font-family:var(--mono);color:var(--acc);margin:4px 0">${fmtD(soonest.amt)}</div>
+      <div style="font-size:12px;color:var(--t2)">${soonest.days===0?'Today!':soonest.days===1?'Tomorrow':'in '+soonest.days+' days'} · ${soonest.d.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'short'})}</div>
+      <button class="btn btn-acc btn-full" style="margin-top:12px" onclick="runPaydayPlan('${soonest.type}',${soonest.amt})">Distribute this pay</button>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:12px;font-size:11px;color:var(--t3);justify-content:center">
+      <span>Monthly: ${monthly.toLocaleDateString('en-AU',{day:'numeric',month:'short'})} (${mDays}d)</span>·<span>Weekly: ${weekly.toLocaleDateString('en-AU',{day:'numeric',month:'short'})} (${wDays}d)</span>
+    </div>`;
+  buildPaydayPlanPreview();
+  buildPaydayHistory();
+  // Alert if a payday is today/overdue and not yet logged
+  const el=document.getElementById('payday-alert');
+  const todayStr=today();
+  const loggedToday=(S.paydayLog||[]).some(l=>l.date===todayStr);
+  if((mDays===0||wDays===0)&&!loggedToday){
+    el.innerHTML=`<div class="alert alert-acc" style="margin-bottom:12px">💰 Pay day is today! Distribute it before you spend.</div>`;
+  }else el.innerHTML='';
+}
+function buildPaydayPlanPreview(){
+  const plan=S.paydayConfig.plan;
+  const labels={emergency:'Emergency buffer',holiday:'Holiday fund',uni:'University fund',pc:'PC & laptop fund',invest:'Investments',buffer:'Leave in account'};
+  const cols={emergency:'#ff5c5c',holiday:'#f0a030',uni:'#4da6ff',pc:'#00d4a0',invest:'#00d4a0',buffer:'#7d8fa3'};
+  const total=Object.values(plan).reduce((a,v)=>a+v,0);
+  document.getElementById('payday-plan').innerHTML=`
+    <div style="font-size:11px;color:var(--t3);margin-bottom:10px">How each pay is split (${total}% allocated${total!==100?' — should total 100%':''})</div>
+    ${Object.entries(plan).map(([k,v])=>`<div class="bench-row"><div class="bench-label"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${cols[k]};margin-right:6px"></span>${labels[k]}</div><div class="bench-val">${v}%</div></div>`).join('')}`;
+}
+function runPaydayPlan(type,amt){
+  const plan=S.paydayConfig.plan;
+  const labels={emergency:'Emergency buffer',holiday:'Holiday fund',uni:'University fund',pc:'PC & laptop fund',invest:'Investments',buffer:'Leave in account'};
+  const dist={};
+  Object.entries(plan).forEach(([k,pctv])=>{dist[k]=Math.round(amt*pctv/100*100)/100;});
+  const rows=Object.entries(dist).filter(([,v])=>v>0).map(([k,v])=>`<div class="bench-row"><div class="bench-label">${labels[k]}</div><div class="bench-val col-acc">${fmtD(v)}</div></div>`).join('');
+  showSheet('Distribute '+fmtD(amt),`
+    <div style="font-size:12px;color:var(--t2);line-height:1.55;margin-bottom:12px">Here's your plan for this ${type==='monthly'?'monthly':'weekly'} pay. Confirm to apply it — goal funds and investments update automatically, and the income is logged.</div>
+    ${rows}
+    <button class="btn btn-acc btn-full" style="margin-top:12px" onclick="confirmPaydayPlan('${type}',${amt})">Confirm & apply</button>`);
+}
+function confirmPaydayPlan(type,amt){
+  const plan=S.paydayConfig.plan;
+  const dist={};
+  Object.entries(plan).forEach(([k,pctv])=>{dist[k]=Math.round(amt*pctv/100*100)/100;});
+  // Apply to goals
+  ['emergency','holiday','uni','pc'].forEach(g=>{
+    if(dist[g]>0&&S.goalState[g]){
+      S.goalState[g].saved+=dist[g];
+      if(!S.goalState[g].log)S.goalState[g].log=[];
+      S.goalState[g].log.push({amt:dist[g],date:today(),note:'Pay day'});
+    }
+  });
+  // Investments → contribution (completed) to default ticker
+  if(dist.invest>0){
+    if(!S.contributions)S.contributions=[];
+    S.contributions.unshift({id:uid(),ticker:S.selectedTicker||'VOO',amount:dist.invest,units:null,price:null,date:today(),status:'pending',note:'Pay day allocation'});
+  }
+  // Log the payday
+  if(!S.paydayLog)S.paydayLog=[];
+  S.paydayLog.unshift({id:uid(),date:today(),type,amount:amt,distributed:dist});
+  // Income transaction so analytics/savings rate sees it
+  S.transactions.unshift({id:uid(),amt,dir:'in',date:today(),payee:type==='monthly'?'Full-time pay':'Kmart pay',cat:'income',acct:'westpac',note:'Pay day'});
+  closeSheet();snapshotNW();save();
+  buildPaydayPage();if(currentPg==='dash')buildDash();
+  fireConfetti();showToast('Pay day distributed ✓');
+}
+function buildPaydayHistory(){
+  const el=document.getElementById('payday-history');
+  const log=S.paydayLog||[];
+  if(!log.length){el.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-txt">No pay days logged yet. Distribute your next pay to start tracking.</div></div>';return;}
+  el.innerHTML=log.slice(0,12).map(l=>`<div class="bench-row"><div class="bench-label">${fmtDate(l.date)} · ${l.type==='monthly'?'Full-time':'Kmart'}</div><div class="bench-val col-acc">${fmtD(l.amount)}</div></div>`).join('');
+}
+function openPaydaySettings(){
+  const c=S.paydayConfig;const p=c.plan;
+  showSheet('Pay day settings',`
+    <label class="lbl">Full-time pay day (day of month)</label>
+    <input type="number" class="inp" id="pd-mday" min="1" max="31" value="${c.monthlyDay}">
+    <label class="lbl">Full-time amount (after tax) $</label>
+    <input type="number" class="inp" id="pd-mamt" value="${c.monthlyAmt}">
+    <label class="lbl">Kmart pay day (weekday)</label>
+    <select class="inp" id="pd-wday">${['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].map((d,i)=>`<option value="${i}" ${c.weeklyDay===i?'selected':''}>${d}</option>`).join('')}</select>
+    <label class="lbl">Typical Kmart pay $</label>
+    <input type="number" class="inp" id="pd-wamt" value="${c.weeklyAmt}">
+    <hr style="border:none;border-top:1px solid var(--bdr);margin:12px 0">
+    <div class="lbl" style="margin-bottom:8px">Distribution plan (%)</div>
+    ${[['emergency','Emergency'],['holiday','Holiday'],['uni','University'],['pc','PC/laptop'],['invest','Investments'],['buffer','Leave in account']].map(([k,lbl])=>`<div class="inp-row" style="align-items:center;margin-bottom:6px"><label class="lbl" style="margin:0">${lbl}</label><input type="number" class="inp" id="pd-${k}" min="0" max="100" value="${p[k]}" style="margin:0"></div>`).join('')}
+    <button class="btn btn-acc btn-full" style="margin-top:10px" onclick="savePaydaySettings()">Save settings</button>`);
+}
+function savePaydaySettings(){
+  const c=S.paydayConfig;
+  c.monthlyDay=Math.min(31,Math.max(1,parseInt(document.getElementById('pd-mday').value)||15));
+  c.monthlyAmt=parseFloat(document.getElementById('pd-mamt').value)||0;
+  c.weeklyDay=parseInt(document.getElementById('pd-wday').value)||4;
+  c.weeklyAmt=parseFloat(document.getElementById('pd-wamt').value)||0;
+  ['emergency','holiday','uni','pc','invest','buffer'].forEach(k=>{c.plan[k]=Math.max(0,parseInt(document.getElementById('pd-'+k).value)||0);});
+  save();closeSheet();buildPaydayPage();showToast('Settings saved');
+}
+
+// ═══════════════════════════════════════════════════════════
+// WHAT-IF SCENARIO CALCULATOR
+// ═══════════════════════════════════════════════════════════
+function defaultScenario(){
+  return{rent:S.sliders.rent,invest:S.sliders.invest,returnRate:7,income:Math.round(monthIncome()),goalsSave:S.sliders.goals};
+}
+function buildScenarioPage(){
+  if(!S.scenarioState)S.scenarioState=defaultScenario();
+  const sc=S.scenarioState;
+  document.getElementById('scenario-controls').innerHTML=`
+    ${scSlider('rent','Rent / month',0,800,50,sc.rent,'$')}
+    ${scSlider('invest','Monthly investment',0,4000,50,sc.invest,'$')}
+    ${scSlider('returnRate','Assumed return % p.a.',0,15,0.5,sc.returnRate,'%')}
+    ${scSlider('income','Monthly income',0,8000,50,sc.income,'$')}
+    ${scSlider('goalsSave','Monthly goal savings',0,4000,50,sc.goalsSave,'$')}`;
+  computeScenario();
+}
+function scSlider(key,label,min,max,step,val,unit){
+  const disp=unit==='%'?val+'%':'$'+Math.round(val).toLocaleString();
+  return`<div class="sl-grp"><div class="sl-lr"><span class="sl-l">${label}</span><span class="sl-v" id="sc-out-${key}">${disp}</span></div><input type="range" min="${min}" max="${max}" step="${step}" value="${val}" id="sc-${key}" oninput="onScenarioInput()"></div>`;
+}
+function onScenarioInput(){
+  const sc=S.scenarioState;
+  sc.rent=+document.getElementById('sc-rent').value;
+  sc.invest=+document.getElementById('sc-invest').value;
+  sc.returnRate=+document.getElementById('sc-returnRate').value;
+  sc.income=+document.getElementById('sc-income').value;
+  sc.goalsSave=+document.getElementById('sc-goalsSave').value;
+  document.getElementById('sc-out-rent').textContent='$'+sc.rent.toLocaleString();
+  document.getElementById('sc-out-invest').textContent='$'+sc.invest.toLocaleString();
+  document.getElementById('sc-out-returnRate').textContent=sc.returnRate+'%';
+  document.getElementById('sc-out-income').textContent='$'+sc.income.toLocaleString();
+  document.getElementById('sc-out-goalsSave').textContent='$'+sc.goalsSave.toLocaleString();
+  computeScenario();save();
+}
+function resetScenario(){S.scenarioState=defaultScenario();save();buildScenarioPage();}
+function monthsUntilUni(){return Math.max(1,Math.round((new Date(2028,0,1)-new Date())/(1000*60*60*24*30.44)));}
+function projectPortfolio(start,monthly,annualRate,months){
+  const r=Math.pow(1+annualRate/100,1/12)-1;let v=start;const series=[v];
+  for(let i=0;i<months;i++){v=v*(1+r)+monthly;series.push(v);}
+  return series;
+}
+function computeScenario(){
+  const sc=S.scenarioState;const months=monthsUntilUni();
+  const startPort=portTotal();
+  // Scenario projection
+  const scSeries=projectPortfolio(startPort,sc.invest,sc.returnRate,months);
+  const scEnd=scSeries[scSeries.length-1];
+  // Current-plan baseline
+  const baseSeries=projectPortfolio(startPort,S.sliders.invest,7,months);
+  const baseEnd=baseSeries[baseSeries.length-1];
+  // Goals: how much saved by uni at scenario goal rate
+  const goalsTotalNeeded=Object.values(GCFG).reduce((a,g)=>a+g.target,0);
+  const goalsSavedNow=Object.values(S.goalState).reduce((a,g)=>a+g.saved,0);
+  const goalsProjected=goalsSavedNow+sc.goalsSave*months;
+  // Monthly surplus check: income - rent - goals - invest - estimated living
+  const estLiving=S.sliders.spend*4.33;
+  const surplus=sc.income-sc.rent-sc.goalsSave-sc.invest-estLiving;
+  const diff=scEnd-baseEnd;
+  document.getElementById('scenario-output').innerHTML=`
+    <div class="mg" style="margin-bottom:10px">
+      <div class="met"><div class="ml">Portfolio Jan 2028</div><div class="mv col-acc">${fmtDI(scEnd)}</div><div class="ms">${diff>=0?'+':''}${fmtDI(diff)} vs current plan</div></div>
+      <div class="met"><div class="ml">Goals funded</div><div class="mv ${goalsProjected>=goalsTotalNeeded?'col-acc':'col-y'}">${Math.min(100,Math.round(goalsProjected/goalsTotalNeeded*100))}%</div><div class="ms">${fmtDI(goalsProjected)} of ${fmtDI(goalsTotalNeeded)}</div></div>
+      <div class="met"><div class="ml">Monthly surplus</div><div class="mv ${surplus>=0?'col-acc':'col-r'}">${surplus>=0?'+':''}${fmtDI(surplus)}</div><div class="ms">after rent, goals, invest, spend</div></div>
+      <div class="met"><div class="ml">Total invested</div><div class="mv col-b">${fmtDI(sc.invest*months)}</div><div class="ms">over ${months} months</div></div>
+    </div>
+    ${surplus<0?'<div class="alert alert-r" style="margin-bottom:0">⚠️ This scenario spends more than it earns by '+fmtDI(Math.abs(surplus))+'/month. Not sustainable without cutting somewhere.</div>':'<div class="alert alert-acc" style="margin-bottom:0">✓ This plan leaves '+fmtDI(surplus)+'/month spare after all allocations.</div>'}`;
+  renderScenarioChart(scSeries,baseSeries,months);
+}
+let scenarioChart=null;
+function renderScenarioChart(scSeries,baseSeries,months){
+  const canvas=document.getElementById('scenario-chart');if(!canvas)return;
+  const labels=[];const now=new Date();
+  for(let i=0;i<=months;i++){const d=new Date(now.getFullYear(),now.getMonth()+i,1);labels.push(d.toLocaleDateString('en-AU',{month:'short',year:'2-digit'}));}
+  const acc=getComputedStyle(document.documentElement).getPropertyValue('--acc').trim()||'#00d4a0';
+  const t3=getComputedStyle(document.documentElement).getPropertyValue('--t3').trim()||'#4a5d72';
+  if(scenarioChart){scenarioChart.destroy();scenarioChart=null;}
+  const ctx=canvas.getContext('2d');const grad=ctx.createLinearGradient(0,0,0,200);grad.addColorStop(0,acc+'33');grad.addColorStop(1,acc+'00');
+  scenarioChart=new Chart(canvas,{type:'line',data:{labels,datasets:[
+    {data:scSeries.map(Math.round),borderColor:acc,backgroundColor:grad,fill:true,tension:.3,pointRadius:0,borderWidth:2.5},
+    {data:baseSeries.map(Math.round),borderColor:t3,backgroundColor:'transparent',borderDash:[4,3],tension:.3,pointRadius:0,borderWidth:2}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'$'+c.parsed.y.toLocaleString()}}},scales:{x:{ticks:{color:'#4a5d72',font:{size:9},autoSkip:true,maxTicksLimit:6,maxRotation:0},grid:{display:false}},y:{ticks:{color:'#4a5d72',font:{size:9},callback:v=>'$'+(v/1000).toFixed(0)+'k'},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+  registerChart('scenario-chart',scenarioChart);fitChart(scenarioChart);
+}
+
+// ═══════════════════════════════════════════════════════════
+// SAVINGS RATE HISTORY
+// ═══════════════════════════════════════════════════════════
+function recordSavingsRate(){
+  const ym=nowYM();const inc=monthIncome();const spent=monthSpend();
+  const rate=inc>0?Math.round((inc-spent)/inc*100):0;
+  if(!S.savingsRateHistory)S.savingsRateHistory=[];
+  const existing=S.savingsRateHistory.find(h=>h.ym===ym);
+  if(existing){existing.rate=rate;existing.income=Math.round(inc);existing.saved=Math.round(inc-spent);}
+  else S.savingsRateHistory.push({ym,rate,income:Math.round(inc),saved:Math.round(inc-spent)});
+  if(S.savingsRateHistory.length>36)S.savingsRateHistory=S.savingsRateHistory.slice(-36);
+}
+let savingsRateChart=null;
+function buildSavingsRateChart(){
+  recordSavingsRate();
+  const hist=S.savingsRateHistory||[];
+  const sumEl=document.getElementById('savings-rate-summary');
+  if(hist.length<1){if(sumEl)sumEl.textContent='Your savings rate will chart here as months pass.';return;}
+  const latest=hist[hist.length-1];
+  const avg=Math.round(hist.reduce((a,h)=>a+h.rate,0)/hist.length);
+  const trend=hist.length>=2?latest.rate-hist[hist.length-2].rate:0;
+  if(sumEl)sumEl.innerHTML=`Current: <strong style="color:${latest.rate>=30?'var(--acc)':latest.rate>=20?'var(--y)':'var(--r)'}">${latest.rate}%</strong> · Average: <strong>${avg}%</strong>${trend!==0?` · <span style="color:${trend>0?'var(--acc)':'var(--r)'}">${trend>0?'▲':'▼'} ${Math.abs(trend)}pts</span>`:''}`;
+  const canvas=document.getElementById('savings-rate-chart');if(!canvas)return;
+  const labels=hist.map(h=>ymLabel(h.ym));const data=hist.map(h=>h.rate);
+  const acc=getComputedStyle(document.documentElement).getPropertyValue('--acc').trim()||'#00d4a0';
+  if(savingsRateChart){savingsRateChart.destroy();savingsRateChart=null;}
+  const ctx=canvas.getContext('2d');const grad=ctx.createLinearGradient(0,0,0,150);grad.addColorStop(0,acc+'44');grad.addColorStop(1,acc+'00');
+  savingsRateChart=new Chart(canvas,{type:'line',data:{labels,datasets:[{data,borderColor:acc,backgroundColor:grad,fill:true,tension:.3,pointRadius:3,pointBackgroundColor:acc,borderWidth:2.5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y+'% saved'}}},scales:{x:{ticks:{color:'#4a5d72',font:{size:9},autoSkip:true,maxTicksLimit:8},grid:{display:false}},y:{min:0,max:100,ticks:{color:'#4a5d72',font:{size:9},callback:v=>v+'%',stepSize:25},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+  registerChart('savings-rate-chart',savingsRateChart);fitChart(savingsRateChart);
+}
+
+// ═══════════════════════════════════════════════════════════
+// PER-CATEGORY SPENDING STREAKS
+// ═══════════════════════════════════════════════════════════
+function weekStartStr(d){const x=new Date(d);x.setDate(x.getDate()-x.getDay());x.setHours(0,0,0,0);return x.toISOString().slice(0,10);}
+function computeCatStreak(catId){
+  const cs=S.catStreaks[catId];if(!cs)return{current:0,best:0,thisWeek:0,met:false};
+  const limit=cs.limit;
+  // group spending by week for this category
+  const byWeek={};
+  S.transactions.filter(t=>t.dir==='out'&&t.cat===catId&&t.date).forEach(t=>{
+    const wk=weekStartStr(new Date(t.date+'T12:00:00'));byWeek[wk]=(byWeek[wk]||0)+t.amt;
+  });
+  const thisWk=weekStartStr(new Date());
+  const thisWeekSpent=byWeek[thisWk]||0;
+  // build list of past completed weeks (excluding current), most recent first
+  const weeks=[];const now=new Date();
+  for(let i=1;i<=26;i++){const d=new Date(now);d.setDate(d.getDate()-i*7);weeks.push(weekStartStr(d));}
+  const uniqueWeeks=[...new Set(weeks)];
+  let current=0;
+  for(const wk of uniqueWeeks){const spent=byWeek[wk]||0;if(spent<=limit)current++;else break;}
+  // best streak across all known weeks
+  const allWeeks=Object.keys(byWeek).sort();let best=0,run=0;
+  // include zero-spend weeks implicitly by iterating known weeks only
+  uniqueWeeks.slice().reverse().forEach(wk=>{const spent=byWeek[wk]||0;if(spent<=limit){run++;best=Math.max(best,run);}else run=0;});
+  if(thisWeekSpent<=limit)best=Math.max(best,current+1);
+  return{current,best,thisWeek:thisWeekSpent,met:thisWeekSpent<=limit,limit};
+}
+function buildCatStreaks(){
+  const el=document.getElementById('cat-streak-list');if(!el)return;
+  const streaks=S.catStreaks||{};
+  const keys=Object.keys(streaks);
+  if(!keys.length){el.innerHTML='<div class="empty"><div class="empty-ico">🎯</div><div class="empty-txt">Set weekly spending limits per category to start streaks. Tap "Set limits" above.</div></div>';return;}
+  const cm=cmap();
+  el.innerHTML=keys.map(catId=>{
+    const c=cm[catId]||{icon:'📌',label:catId,col:'#7d8fa3'};
+    const st=computeCatStreak(catId);
+    const pct2=st.limit>0?Math.min(100,Math.round(st.thisWeek/st.limit*100)):0;
+    const col=st.met?(pct2>85?'var(--y)':'var(--acc)'):'var(--r)';
+    return`<div style="padding:10px 0;border-bottom:1px solid var(--bdr)">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:6px">
+        <div class="cat-ico-sm" style="background:${c.col}22">${c.icon}</div>
+        <div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--t)">${c.label}</div><div style="font-size:10px;color:var(--t3)">${fmtD(st.thisWeek)} of ${fmtD(st.limit)} this week</div></div>
+        <div style="text-align:right"><div style="font-size:16px;font-weight:800;font-family:var(--mono);color:${st.current>0?'var(--acc)':'var(--t3)'}">${st.current}🔥</div><div style="font-size:9px;color:var(--t3)">best ${st.best}</div></div>
+      </div>
+      <div class="p-track" style="height:5px"><div class="p-fill" style="width:${pct2}%;background:${col}"></div></div>
+    </div>`;
+  }).join('');
+}
+function openCatStreakSettings(){
+  const cm=cmap();
+  const variableCats=allCats().filter(c=>c.type==='variable');
+  showSheet('Category limits',`
+    <div style="font-size:12px;color:var(--t2);line-height:1.55;margin-bottom:12px">Set a weekly spending limit for any category. Each week you stay under it extends your streak.</div>
+    ${variableCats.map(c=>{const cur=S.catStreaks[c.id]?.limit||'';return`<div class="inp-row" style="align-items:center;margin-bottom:7px"><label class="lbl" style="margin:0">${c.icon} ${c.label}</label><input type="number" class="inp" id="cstr-${c.id}" placeholder="no limit" value="${cur}" min="0" step="5" style="margin:0"></div>`;}).join('')}
+    <button class="btn btn-acc btn-full" style="margin-top:10px" onclick="saveCatStreakLimits()">Save limits</button>`);
+}
+function saveCatStreakLimits(){
+  const variableCats=allCats().filter(c=>c.type==='variable');
+  if(!S.catStreaks)S.catStreaks={};
+  variableCats.forEach(c=>{
+    const v=parseFloat(document.getElementById('cstr-'+c.id)?.value);
+    if(!isNaN(v)&&v>0){if(!S.catStreaks[c.id])S.catStreaks[c.id]={};S.catStreaks[c.id].limit=v;}
+    else delete S.catStreaks[c.id];
+  });
+  save();closeSheet();buildCatStreaks();showToast('Limits saved');
+}
+
+// ═══════════════════════════════════════════════════════════
+// NET WORTH MILESTONES
+// ═══════════════════════════════════════════════════════════
+function buildMilestones(){
+  const el=document.getElementById('nw-milestones');if(!el)return;
+  const nw=portTotal()+calcBal('westpac')+calcBal('macquarie');
+  const hit=S.nwMilestones||[];
+  const next=NW_MILESTONES.find(m=>nw<m);
+  el.innerHTML=`
+    ${next?`<div style="text-align:center;padding:6px 0 12px"><div style="font-size:11px;color:var(--t3)">Next milestone</div><div style="font-size:22px;font-weight:800;font-family:var(--mono);color:var(--acc)">${fmtDI(next)}</div><div style="font-size:11px;color:var(--t2)">${fmtDI(next-nw)} to go · ${Math.round(nw/next*100)}% there</div><div class="p-track" style="margin-top:8px"><div class="p-fill" style="width:${Math.round(nw/next*100)}%;background:var(--acc)"></div></div></div>`:'<div style="text-align:center;color:var(--acc);padding:10px">🏆 All milestones smashed!</div>'}
+    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:10px">
+      ${NW_MILESTONES.map(m=>{const done=hit.includes(m)||nw>=m;return`<div style="flex:1;min-width:62px;text-align:center;padding:8px 4px;border-radius:10px;background:${done?'var(--accd2)':'var(--bg4)'};border:1px solid ${done?'var(--acc)':'var(--bdr)'};opacity:${done?1:.5}"><div style="font-size:13px">${done?'✓':'🔒'}</div><div style="font-size:10px;font-weight:700;font-family:var(--mono);color:${done?'var(--acc)':'var(--t3)'};margin-top:2px">${m>=1000?(m/1000)+'k':m}</div></div>`;}).join('')}
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// GLANCE VIEW
+// ═══════════════════════════════════════════════════════════
+function buildGlancePage(){
+  const el=document.getElementById('glance-content');if(!el)return;
+  const wp=calcBal('westpac'),mq=calcBal('macquarie'),pt=portTotal();
+  const nw=wp+mq+pt;
+  const ws=weekSpend(),wb=S.sliders.spend;
+  // days to next goal milestone
+  const goalsLeft=Object.entries(GCFG).map(([k,g])=>({k,g,st:S.goalState[k],rem:g.target-S.goalState[k].saved})).filter(x=>x.rem>0).sort((a,b)=>a.rem-b.rem)[0];
+  const {monthly,weekly}=nextPaydayDates();
+  const nextPd=daysUntil(monthly)<=daysUntil(weekly)?{d:monthly,days:daysUntil(monthly),lbl:'Full-time pay'}:{d:weekly,days:daysUntil(weekly),lbl:'Kmart pay'};
+  const nextMs=NW_MILESTONES.find(m=>nw<m);
+  el.innerHTML=`
+    <div class="hero" style="text-align:center;padding:28px 18px">
+      <div class="hero-l">Total net worth</div>
+      <div class="hero-v" style="font-size:42px">${fmtD(nw)}</div>
+      <div class="hero-s">${nextMs?fmtDI(nextMs-nw)+' to '+fmtDI(nextMs)+' milestone':'All milestones hit 🏆'}</div>
+    </div>
+    <div class="mg">
+      <div class="met"><div class="ml">Westpac</div><div class="mv col-b">${fmtDI(wp)}</div></div>
+      <div class="met"><div class="ml">Macquarie</div><div class="mv col-acc">${fmtDI(mq)}</div></div>
+      <div class="met"><div class="ml">Portfolio</div><div class="mv">${fmtDI(pt)}</div></div>
+      <div class="met"><div class="ml">Week spend</div><div class="mv ${ws>wb?'col-r':'col-acc'}">${fmtDI(ws)}</div><div class="ms">of ${fmtDI(wb)}</div></div>
+    </div>
+    <div class="card">
+      <div class="bench-row"><div class="bench-label">⏳ Days to university</div><div class="bench-val">${Math.max(0,Math.round((new Date(2028,0,1)-new Date())/(1000*60*60*24)))}</div></div>
+      <div class="bench-row"><div class="bench-label">💰 Next pay (${nextPd.lbl})</div><div class="bench-val col-acc">${nextPd.days===0?'today':nextPd.days+'d'}</div></div>
+      ${goalsLeft?`<div class="bench-row"><div class="bench-label">🎯 Closest goal (${goalsLeft.g.label})</div><div class="bench-val">${pct(goalsLeft.st.saved,goalsLeft.g.target)}%</div></div>`:''}
+      <div class="bench-row" style="border:none"><div class="bench-label">📈 Savings rate</div><div class="bench-val ${monthIncome()>0&&((monthIncome()-monthSpend())/monthIncome()*100)>=30?'col-acc':'col-y'}">${monthIncome()>0?Math.round((monthIncome()-monthSpend())/monthIncome()*100):0}%</div></div>
+    </div>
+    <button class="btn btn-ghost btn-full" onclick="showPg('dash',document.querySelector('.nb'))">Open full dashboard</button>`;
+}
+
 // ═══════════════════════════════════════════════════════════
 // TIMELINE
 // ═══════════════════════════════════════════════════════════
@@ -3194,9 +3631,10 @@ function buildDebtsPage(){
     <div class="nw-sec">Liabilities</div>
     ${S.debts.length?S.debts.map(d=>`<div class="nw-line"><span class="nw-line-l">${d.name}</span><span class="nw-line-v col-r">-${fmtD(d.bal)}</span></div>`).join(''):'<div class="nw-line"><span class="nw-line-l" style="color:var(--acc)">No liabilities — debt free!</span><span class="nw-line-v col-acc">$0</span></div>'}
     <div class="nw-total"><span>True net worth</span><span style="color:${trueNW>=0?'var(--acc)':'var(--r)'}">${fmtD(trueNW)}</span></div>`;
-  const dlEl=document.getElementById('debt-list');if(!dlEl)return;
-  if(!S.debts.length){dlEl.innerHTML='<div class="empty"><div class="empty-ico">✅</div><div class="empty-txt">Debt-free! No liabilities recorded.</div></div>';return;}
+  const dlEl=document.getElementById('debt-list');if(!dlEl){buildMilestones();return;}
+  if(!S.debts.length){dlEl.innerHTML='<div class="empty"><div class="empty-ico">✅</div><div class="empty-txt">Debt-free! No liabilities recorded.</div></div>';buildMilestones();return;}
   dlEl.innerHTML=S.debts.map(d=>`<div class="debt-item"><div class="debt-ico">${DEBT_ICONS[d.type]||'📋'}</div><div style="flex:1"><div class="debt-name">${d.name}</div><div class="debt-meta">${d.type.toUpperCase()}${d.rate?' · '+d.rate+'% p.a.':''}</div></div><div style="display:flex;align-items:center;gap:8px"><div class="debt-bal">-${fmtD(d.bal)}</div><button class="txn-act" onclick="deleteDebt('${d.id}')">×</button></div></div>`).join('');
+  buildMilestones();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -3306,6 +3744,7 @@ function buildStreaksPage(){
   if(clEl)clEl.innerHTML=challenges.map(c=>`<div class="chal-item"><div class="chal-ico">${c.ico}</div><div class="chal-info"><div class="chal-title">${c.t}</div><div class="chal-sub">${c.s}</div><div class="chal-prog"><div class="chal-fill" style="width:${c.p}%;background:${c.c}"></div></div></div><div style="font-size:11px;font-family:var(--mono);color:var(--t3);min-width:30px;text-align:right">${c.p}%</div></div>`).join('');
   const bgEl=document.getElementById('badge-grid');
   if(bgEl)bgEl.innerHTML=BADGES.map(b=>{const e=(S.streakData.badges||[]).includes(b.id);return`<div class="badge-item"><div class="badge-circle ${e?'earned':'locked'}">${b.icon}</div><div class="badge-name">${b.name}</div></div>`;}).join('');
+  buildCatStreaks();
 }
 
 // ═══════════════════════════════════════════════════════════
