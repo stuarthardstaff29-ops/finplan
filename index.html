@@ -391,6 +391,26 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .ret-met-v{font-size:15px;font-weight:700;font-family:var(--mono);line-height:1;margin-bottom:3px}.ret-met-l{font-size:9px;color:var(--t3)}
 .bench-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bdr);font-size:12px}.bench-row:last-child{border:none}
 .bench-label{color:var(--t2)}.bench-val{font-family:var(--mono);font-weight:700}
+/* ── RETURN ANALYSIS (v8) ── */
+.ret-hero{background:linear-gradient(135deg,var(--bg3),var(--bg2));border:1px solid var(--bdr);border-radius:var(--rad);padding:16px;margin-bottom:12px;text-align:center}
+.ret-hero-lbl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.ret-hero-v{font-size:30px;font-weight:800;font-family:var(--mono);line-height:1;letter-spacing:-1px}
+.ret-hero-sub{font-size:11px;color:var(--t2);margin-top:6px}
+.ret-rows{display:flex;flex-direction:column;gap:2px}
+.ret-detail{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--bdr)}
+.ret-detail:last-child{border:none}
+.ret-detail-lbl{font-size:12px;font-weight:600;color:var(--t)}
+.ret-detail-note{font-size:10px;color:var(--t3);margin-top:2px;line-height:1.4;max-width:210px}
+.ret-detail-v{font-size:14px;font-weight:700;font-family:var(--mono);white-space:nowrap;flex-shrink:0}
+/* ── HOLDINGS (v8) ── */
+.hld-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid var(--bdr);cursor:pointer;transition:background .12s}
+.hld-row:last-child{border:none}
+.hld-row:active{background:var(--bg3)}
+.hld-tk{font-size:14px;font-weight:700;color:var(--t);display:flex;align-items:center;gap:6px}
+.hld-sub{font-size:10px;color:var(--t3);margin-top:3px}
+.hld-right{text-align:right;flex-shrink:0}
+.hld-val{font-size:14px;font-weight:700;font-family:var(--mono)}
+.hld-gain{font-size:11px;font-family:var(--mono);margin-top:2px}
 /* ── ATO TAX ── */
 .tax-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--bdr);font-size:12px}.tax-row:last-child{border:none}
 .tax-label{color:var(--t2);flex:1}.tax-val{font-family:var(--mono);font-weight:700;color:var(--t);text-align:right}
@@ -641,37 +661,75 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 
     <!-- INVEST -->
     <div class="pg" id="pg-invest">
-      <div class="mg" id="inv-metrics"></div>
+      <!-- Portfolio value hero -->
+      <div class="hero" id="inv-hero"></div>
+
+      <!-- Sync / import bar -->
       <div class="card">
-        <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>True return calculator</div></div>
+        <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><path d="M21 2v6h-6M3 22v-6h6M21 8a9 9 0 0 0-15-3M3 16a9 9 0 0 0 15 3"/></svg>Sync portfolio</div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button class="btn btn-acc btn-sm" onclick="openImportModal('csv')"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;vertical-align:-2px;margin-right:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Import CSV</button>
+          <button class="btn btn-acc btn-sm" onclick="openImportModal('screenshot')"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;vertical-align:-2px;margin-right:4px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Scan screenshot</button>
+          <button class="btn btn-ghost btn-sm" onclick="openHoldingModal()">+ Add holding</button>
+          <button class="btn btn-ghost btn-sm" onclick="refreshPrices()" id="refresh-prices-btn">↻ Refresh prices</button>
+        </div>
+        <div id="sync-status" style="font-size:10px;color:var(--t3);margin-top:8px;text-align:center"></div>
+      </div>
+
+      <!-- Holdings table -->
+      <div class="card">
+        <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Your holdings</div></div>
+        <div id="holdings-list"></div>
+      </div>
+
+      <!-- True return calculator (redesigned) -->
+      <div class="card">
+        <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Return analysis</div></div>
         <div id="inv-return"></div>
       </div>
+
+      <!-- Growth vs contributions -->
+      <div class="card">
+        <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>Growth vs contributions</div></div>
+        <div style="display:flex;gap:12px;margin-bottom:7px;font-size:9px;color:var(--t3)"><span style="display:flex;align-items:center;gap:3px"><span style="width:10px;height:2px;background:var(--acc);border-radius:1px"></span>Portfolio value</span><span style="display:flex;align-items:center;gap:3px"><span style="width:10px;height:2px;background:var(--t3);border-radius:1px"></span>Money in</span></div>
+        <div class="chart-wrap"><canvas id="growth-chart" role="img" aria-label="Portfolio growth versus contributions">Growth vs contributions</canvas></div>
+      </div>
+
+      <!-- Benchmark comparison (redesigned) -->
       <div class="card">
         <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Benchmark comparison</div></div>
-        <div id="inv-benchmark"></div>
+        <div id="benchmark-selector" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px"></div>
+        <div class="chart-wrap" style="height:180px"><canvas id="benchmark-chart" role="img" aria-label="Portfolio vs benchmarks">Benchmark comparison</canvas></div>
+        <div id="benchmark-table" style="margin-top:12px"></div>
       </div>
+
+      <!-- Composition -->
       <div class="card">
-        <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Portfolio composition</div></div>
+        <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Composition & allocation</div></div>
         <div class="donut-grid">
-          <div><div class="donut-lbl">Current</div><div class="donut-cw"><canvas id="donut-cur" role="img" aria-label="Current portfolio donut chart"></canvas></div><div class="dleg" id="dleg-cur"></div></div>
-          <div><div class="donut-lbl">Target</div><div class="donut-cw"><canvas id="donut-tgt" role="img" aria-label="Target portfolio donut chart"></canvas></div><div class="dleg" id="dleg-tgt"></div></div>
+          <div><div class="donut-lbl">Current</div><div class="donut-cw"><canvas id="donut-cur" role="img" aria-label="Current allocation"></canvas></div><div class="dleg" id="dleg-cur"></div></div>
+          <div><div class="donut-lbl">Target</div><div class="donut-cw"><canvas id="donut-tgt" role="img" aria-label="Target allocation"></canvas></div><div class="dleg" id="dleg-tgt"></div></div>
         </div>
+        <div id="inv-gap" style="margin-top:12px"></div>
       </div>
-      <div class="card">
-        <div class="ctitle"><div class="ctitle-l">Allocation gap</div></div>
-        <div id="inv-gap"></div>
+
+      <!-- Investment Assistant entry -->
+      <div class="card acc-b">
+        <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 2.4 1.2 4.5 3 5.7V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.3c1.8-1.2 3-3.3 3-5.7a7 7 0 0 0-7-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg>Investment Assistant</div></div>
+        <div style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:10px">Portfolio-aware analysis, market context, and plain-English investment education. Knows your real holdings.</div>
+        <button class="btn btn-acc btn-full" onclick="showPgFromMore('assistant')">Open Investment Assistant</button>
       </div>
-      <div class="card">
-        <div class="ctitle"><div class="ctitle-l">Record contribution</div></div>
-        <div class="ticker-pills" id="ticker-pills"></div>
-        <div class="inp-row"><div><label class="lbl">Amount $</label><input type="number" class="inp" id="inv-amt" placeholder="0.00" min="0" step="10"></div><div><label class="lbl">Date</label><input type="date" class="inp" id="inv-date"></div></div>
-        <button class="btn btn-acc btn-full" onclick="addInvestment()">Add contribution</button>
-        <div id="inv-log" style="margin-top:9px;max-height:80px;overflow-y:auto"></div>
-      </div>
-      <div class="card">
-        <div class="ctitle"><div class="ctitle-l">Growth projection</div></div>
-        <div style="display:flex;gap:10px;margin-bottom:7px;font-size:9px;color:var(--t3)"><span style="display:flex;align-items:center;gap:3px"><span style="width:10px;height:2px;background:var(--acc);border-radius:1px"></span>With contribs</span><span style="display:flex;align-items:center;gap:3px"><span style="width:10px;height:2px;background:var(--r);border-radius:1px;opacity:.6"></span>No contribs</span></div>
-        <div class="chart-wrap"><canvas id="growth-chart" role="img" aria-label="Portfolio growth projection">Growth projection</canvas></div>
+    </div>
+
+    <!-- INVESTMENT ASSISTANT PAGE -->
+    <div class="pg ai-pg" id="pg-assistant" style="flex-direction:column;height:calc(100vh - var(--hdr-h) - var(--nav-h) - var(--st) - var(--sb))">
+      <div id="assistant-msgs" style="flex:1;overflow-y:auto;padding:14px;scrollbar-width:none"></div>
+      <div style="padding:10px 14px;border-top:1px solid var(--bdr);background:var(--bg2)">
+        <div class="ai-qchips" id="assistant-chips"></div>
+        <div style="display:flex;gap:8px;align-items:flex-end">
+          <textarea class="ai-ta" id="assistant-inp" rows="1" placeholder="Ask about your portfolio, markets, or investing…" onkeydown="assistantKey(event)"></textarea>
+          <button class="ai-send" id="assistant-send-btn" onclick="sendAssistantMsg()"><svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#001a13;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+        </div>
       </div>
     </div>
 
@@ -818,6 +876,18 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
       </div>
 
       <div class="card">
+        <div class="ctitle"><div class="ctitle-l">Live prices — FMP API key (optional)</div></div>
+        <div style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:10px">Optional. For live portfolio prices, get a free key at <strong style="color:var(--acc)">financialmodelingprep.com</strong> (~250 requests/day). Without it, your imported/manual values are used.</div>
+        <label class="lbl">FMP API key</label>
+        <input type="password" class="inp" id="fmp-key-inp" placeholder="your FMP key" autocomplete="off" spellcheck="false">
+        <div style="display:flex;gap:7px">
+          <button class="btn btn-acc" style="flex:1" onclick="saveFmpKey()">Save key</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleFmpVis()">Show</button>
+        </div>
+        <div id="fmp-key-status" style="font-size:11px;margin-top:8px;color:var(--t3)"></div>
+      </div>
+
+      <div class="card">
         <div class="ctitle"><div class="ctitle-l">Account balances</div></div>
         <div class="setting-row">
           <div><div class="setting-label">Westpac starting balance</div><div class="setting-sub" id="wp-bal-sub">—</div></div>
@@ -934,6 +1004,49 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
   <div style="display:flex;gap:7px"><button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeModal('bal-modal')">Cancel</button><button class="btn btn-acc" style="flex:2" onclick="saveBalance()">Save</button></div>
 </div></div>
 
+<!-- HOLDING MODAL -->
+<div class="overlay" id="holding-modal"><div class="modal"><div class="modal-handle"></div><div class="modal-title" id="holding-modal-title">Add holding</div>
+  <div class="inp-row"><div><label class="lbl">Ticker</label><input type="text" class="inp" id="hld-ticker" placeholder="e.g. VOO" style="text-transform:uppercase"></div><div><label class="lbl">Market</label><select class="inp" id="hld-market"><option value="US">US</option><option value="ASX">ASX</option><option value="Other">Other</option></select></div></div>
+  <label class="lbl">Name (optional)</label><input type="text" class="inp" id="hld-name" placeholder="e.g. Vanguard S&P 500 ETF">
+  <div class="inp-row"><div><label class="lbl">Units / shares</label><input type="number" class="inp" id="hld-units" placeholder="0" min="0" step="0.0001"></div><div><label class="lbl">Avg cost / unit $</label><input type="number" class="inp" id="hld-avgcost" placeholder="0.00" min="0" step="0.01"></div></div>
+  <label class="lbl">Current price / unit $ (optional)</label><input type="number" class="inp" id="hld-price" placeholder="leave blank to use avg cost" min="0" step="0.01">
+  <label class="lbl">Sector / category (optional)</label><input type="text" class="inp" id="hld-sector" placeholder="e.g. US Large Cap">
+  <div style="display:flex;gap:7px;margin-top:4px"><button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeModal('holding-modal')">Cancel</button><button class="btn btn-r btn-sm" id="hld-delete-btn" style="display:none" onclick="deleteHoldingFromModal()">Delete</button><button class="btn btn-acc" style="flex:2" onclick="saveHolding()">Save</button></div>
+</div></div>
+
+<!-- CONTRIBUTION MODAL -->
+<div class="overlay" id="contrib-modal"><div class="modal"><div class="modal-handle"></div><div class="modal-title" id="contrib-modal-title">Add contribution</div>
+  <div class="inp-row"><div><label class="lbl">Ticker</label><input type="text" class="inp" id="ctr-ticker" placeholder="e.g. VOO" style="text-transform:uppercase"></div><div><label class="lbl">Amount $</label><input type="number" class="inp" id="ctr-amount" placeholder="0.00" min="0" step="0.01"></div></div>
+  <div class="inp-row"><div><label class="lbl">Date</label><input type="date" class="inp" id="ctr-date"></div><div><label class="lbl">Status</label><select class="inp" id="ctr-status"><option value="completed">Completed</option><option value="pending">Pending</option><option value="cancelled">Cancelled</option></select></div></div>
+  <label class="lbl">Note (optional)</label><input type="text" class="inp" id="ctr-note" placeholder="e.g. monthly DCA">
+  <div class="alert alert-b" style="font-size:11px;margin-top:2px">Pending and cancelled contributions are tracked but excluded from invested totals until completed.</div>
+  <div style="display:flex;gap:7px;margin-top:4px"><button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeModal('contrib-modal')">Cancel</button><button class="btn btn-r btn-sm" id="ctr-delete-btn" style="display:none" onclick="deleteContribFromModal()">Delete</button><button class="btn btn-acc" style="flex:2" onclick="saveContribution()">Save</button></div>
+</div></div>
+
+<!-- IMPORT MODAL -->
+<div class="overlay" id="import-modal"><div class="modal"><div class="modal-handle"></div><div class="modal-title" id="import-modal-title">Import portfolio</div>
+  <!-- CSV mode -->
+  <div id="import-csv-body">
+    <div class="alert alert-b" style="font-size:11px;line-height:1.55">In CMC Invest: <strong>Account → Confirmations → advanced search → download CSV</strong>. Then upload or paste it below. We parse it entirely on your device — nothing is uploaded anywhere.</div>
+    <label class="lbl">Upload CSV file</label>
+    <input type="file" accept=".csv,text/csv" id="csv-file" class="inp" onchange="handleCsvFile(event)">
+    <label class="lbl">…or paste CSV contents</label>
+    <textarea class="inp" id="csv-paste" rows="5" placeholder="Paste CSV rows here" style="font-family:var(--mono);font-size:11px"></textarea>
+    <button class="btn btn-acc btn-full" onclick="parseCsvImport()">Parse & preview</button>
+  </div>
+  <!-- Screenshot mode -->
+  <div id="import-shot-body" style="display:none">
+    <div class="alert alert-b" style="font-size:11px;line-height:1.55">Upload a screenshot of your CMC portfolio holdings. The AI reads the image on Groq and returns structured data for you to confirm before saving. Requires your Groq key (Settings).</div>
+    <label class="lbl">Portfolio screenshot</label>
+    <input type="file" accept="image/*" id="shot-file" class="inp" onchange="handleShotFile(event)">
+    <div id="shot-preview" style="margin:8px 0;text-align:center"></div>
+    <button class="btn btn-acc btn-full" id="shot-scan-btn" onclick="scanScreenshot()" disabled>Scan with AI</button>
+  </div>
+  <!-- Preview / confirm -->
+  <div id="import-preview" style="display:none;margin-top:12px"></div>
+  <div style="display:flex;gap:7px;margin-top:10px"><button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeModal('import-modal')">Close</button></div>
+</div></div>
+
 <!-- CONFETTI CONTAINER -->
 <div class="confetti-wrap" id="confetti-wrap" style="pointer-events:none"></div>
 
@@ -991,7 +1104,7 @@ const STORAGE_KEY='finplan-data';      // primary state
 const BACKUP_KEY='finplan-backup';     // pre-migration safety copy
 const META_KEY='finplan-meta';         // last-good timestamp/version
 const LEGACY_KEYS=['fpv4','fpv3'];      // older version keys to migrate from
-const SCHEMA_VERSION=2;                 // bump when the shape of S changes
+const SCHEMA_VERSION=3;                 // bump when the shape of S changes
 
 let S={
   schemaVersion:SCHEMA_VERSION,
@@ -1000,6 +1113,15 @@ let S={
   goalState:{emergency:{saved:600,log:[],milestones:[]},holiday:{saved:0,log:[],milestones:[]},uni:{saved:0,log:[],milestones:[]},pc:{saved:0,log:[],milestones:[]}},
   portfolio:{VOO:7732.93,VYM:1118.04,VYMI:1108.72,VAF:1275.40,VGB:600.08,VGS:0},
   invLog:[],
+  // v3 investment model
+  holdings:[],          // [{id,ticker,name,units,avgCost,lastPrice,market,sector}]
+  contributions:[],     // [{id,ticker,amount,units,price,date,status,note}] status: pending|completed|cancelled
+  priceCache:{},        // {ticker:{price,ts}}
+  fmpApiKey:'',         // optional live-price key (Financial Modeling Prep)
+  benchmarkSel:['sp500'], // selected benchmarks for comparison
+  benchmarkReturns:{sp500:'',asx200:'',ndx:'',msci:''}, // manual % entry fallback
+  assistantHistory:[],  // investment assistant chat
+  portfolioStartValue:null, // for TWR baseline if no full history
   acctBalances:{westpac:600,macquarie:0},
   sliders:{kmart:110,rent:400,spend:600,goals:1674,invest:400},
   selectedAcct:'westpac',
@@ -1072,6 +1194,50 @@ const MIGRATIONS={
       d.transfers=(d.transfers||[]).concat(transfers);
     }
     d.schemaVersion=2;
+    return d;
+  },
+  // v2 → v3: convert legacy portfolio{} + investCostBasis{} into holdings[]
+  // and invLog[] into contributions[] with status. Preserves originals.
+  2:(d)=>{
+    const TMETA={
+      VOO:{name:'Vanguard S&P 500 ETF',market:'US',sector:'US Large Cap'},
+      VYM:{name:'Vanguard High Dividend Yield ETF',market:'US',sector:'US Dividend'},
+      VYMI:{name:'Vanguard Intl High Dividend ETF',market:'US',sector:'Intl Dividend'},
+      VAF:{name:'Vanguard Australian Fixed Interest',market:'ASX',sector:'AU Bonds'},
+      VGB:{name:'Vanguard Australian Govt Bond',market:'ASX',sector:'AU Bonds'},
+      VGS:{name:'Vanguard Intl Shares ETF',market:'ASX',sector:'Global Shares'}
+    };
+    if(!Array.isArray(d.holdings)||d.holdings.length===0){
+      d.holdings=[];
+      const pf=d.portfolio||{};const cb=d.investCostBasis||{};
+      Object.keys(pf).forEach(tk=>{
+        const val=pf[tk]||0;if(val<=0)return;
+        const cost=cb[tk]||val;
+        const meta=TMETA[tk]||{name:tk,market:'US',sector:'Other'};
+        // We only know dollar value historically, not units. Treat avgCost basis
+        // as cost, and synthesise units at a nominal price so value reconciles.
+        // lastPrice*units = current value; use units=value (price=1) as a neutral base
+        // the user can correct via import. This keeps current value accurate.
+        d.holdings.push({
+          id:(Date.now().toString(36)+Math.random().toString(36).slice(2,6)),
+          ticker:tk,name:meta.name,market:meta.market,sector:meta.sector,
+          units:1,avgCost:cost,lastPrice:val,costBasis:cost,currentValue:val
+        });
+      });
+    }
+    if(!Array.isArray(d.contributions))d.contributions=[];
+    if(Array.isArray(d.invLog)&&d.contributions.length===0){
+      d.contributions=d.invLog.map(e=>({
+        id:(Date.now().toString(36)+Math.random().toString(36).slice(2,6)),
+        ticker:e.ticker,amount:e.amt,units:null,price:null,
+        date:e.date,status:'completed',note:''
+      }));
+    }
+    if(!d.priceCache)d.priceCache={};
+    if(!d.benchmarkSel)d.benchmarkSel=['sp500'];
+    if(!d.benchmarkReturns)d.benchmarkReturns={sp500:d.benchmarks?.sp500||'',asx200:d.benchmarks?.asx200||'',ndx:'',msci:''};
+    if(!Array.isArray(d.assistantHistory))d.assistantHistory=[];
+    d.schemaVersion=3;
     return d;
   }
 };
@@ -1173,8 +1339,38 @@ function pct(s,t){return t===0?0:Math.min(100,Math.round(s/t*100));}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function today(){return new Date().toISOString().slice(0,10);}
 function fmtDate(ds){if(!ds)return'';return new Date(ds+'T12:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short'});}
-function portTotal(){return Object.values(S.portfolio).reduce((a,v)=>a+v,0);}
-function annDiv(){let d=0;for(const k in S.portfolio)d+=S.portfolio[k]*(TYLD[k]||0);return d;}
+// ── Holdings model helpers (v3) ──────────────────────────────
+// A holding's current value = units * lastPrice (falls back to stored currentValue).
+function holdingValue(h){
+  if(h.units!=null&&h.lastPrice!=null)return h.units*h.lastPrice;
+  return h.currentValue||0;
+}
+function holdingCost(h){
+  if(h.units!=null&&h.avgCost!=null&&h.lastPrice!=null)return h.units*h.avgCost;
+  return h.costBasis||h.avgCost||0;
+}
+function activeHoldings(){return (S.holdings||[]).filter(h=>holdingValue(h)>0||h.units>0);}
+function portTotal(){
+  const hs=S.holdings||[];
+  if(hs.length)return hs.reduce((a,h)=>a+holdingValue(h),0);
+  // legacy fallback
+  return Object.values(S.portfolio||{}).reduce((a,v)=>a+v,0);
+}
+function portCostBasis(){
+  const hs=S.holdings||[];
+  if(hs.length)return hs.reduce((a,h)=>a+holdingCost(h),0);
+  return Object.values(S.investCostBasis||{}).reduce((a,v)=>a+v,0);
+}
+function tickerYield(tk){return TYLD[tk]!=null?TYLD[tk]:0.02;}
+function annDiv(){
+  const hs=S.holdings||[];
+  if(hs.length)return hs.reduce((a,h)=>a+holdingValue(h)*tickerYield(h.ticker),0);
+  let d=0;for(const k in (S.portfolio||{}))d+=S.portfolio[k]*(TYLD[k]||0);return d;
+}
+// Completed contributions only (pending/cancelled excluded from invested totals)
+function totalContributed(){
+  return (S.contributions||[]).filter(c=>c.status==='completed').reduce((a,c)=>a+(c.amount||0),0);
+}
 function monthIncome(){return 4069+(S.sliders.kmart*4.33);}
 function nowYM(){const n=new Date();return`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;}
 function ymLabel(ym){const[y,m]=ym.split('-');return new Date(+y,+m-1,1).toLocaleDateString('en-AU',{month:'short',year:'2-digit'});}
@@ -1265,7 +1461,7 @@ function launchApp(){
 // NAV
 // ═══════════════════════════════════════════════════════════
 let currentPg='dash';
-const MORE_PAGES=['budget','analytics','kmart','invest','timeline','settings','health','streaks','sinking','debts','subscriptions','dividends','tax'];
+const MORE_PAGES=['budget','analytics','kmart','invest','timeline','settings','health','streaks','sinking','debts','subscriptions','dividends','tax','assistant'];
 function showPg(id,btn){
   document.querySelectorAll('.pg').forEach(p=>{p.classList.remove('on');p.style.display='';});
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
@@ -1292,6 +1488,7 @@ function showPg(id,btn){
   if(id==='subscriptions')buildSubScan();
   if(id==='dividends')buildDividendCalendar();
   if(id==='tax')buildTaxSummary();
+  if(id==='assistant'){buildAssistantWelcome();scrollAssistantBottom();}
 }
 function toggleMore(){
   const sheet=document.getElementById('more-sheet'),ov=document.getElementById('more-overlay');
@@ -1329,6 +1526,7 @@ function showPgFromMore(id){
   if(id==='subscriptions')buildSubScan();
   if(id==='dividends')buildDividendCalendar();
   if(id==='tax')buildTaxSummary();
+  if(id==='assistant'){buildAssistantWelcome();scrollAssistantBottom();}
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1981,39 +2179,736 @@ function deleteShift(id){S.kmartShifts=S.kmartShifts.filter(s=>s.id!==id);save()
 // ═══════════════════════════════════════════════════════════
 // INVESTMENTS
 // ═══════════════════════════════════════════════════════════
-let growthChart=null,donutCur=null,donutTgt=null;
-function buildInvestPage(){buildInvMetrics();buildReturnSection();buildBenchmark();buildDonuts();buildGapTable();buildTickerPills();buildInvLog();renderGrowthChart();}
-function buildInvMetrics(){
-  const pt=portTotal(),div=annDiv();const r=Math.pow(1.07,1/12)-1;let v=pt;for(let i=0;i<19;i++)v=v*(1+r)+S.sliders.invest;
-  document.getElementById('inv-metrics').innerHTML=`<div class="met"><div class="ml">Portfolio</div><div class="mv col-acc">${fmtDI(pt)}</div><div class="ms">+$533 profit</div></div><div class="met"><div class="ml">Monthly invest</div><div class="mv col-b">${fmtDI(S.sliders.invest)}</div></div><div class="met"><div class="ml">Est. Jan 2028</div><div class="mv">${fmtDI(v)}</div><div class="ms">@ 7% p.a.</div></div><div class="met"><div class="ml">Annual divs</div><div class="mv col-y">${fmtDI(div)}</div><div class="ms">yield ${pt>0?((div/pt)*100).toFixed(1):0}%</div></div>`;
+let growthChart=null,donutCur=null,donutTgt=null,benchmarkChart=null;
+
+// ═══════════════════════════════════════════════════════════
+// INVEST PAGE (v3 — holdings model)
+// ═══════════════════════════════════════════════════════════
+function buildInvestPage(){
+  buildInvHero();
+  buildHoldingsList();
+  buildReturnSection();
+  renderGrowthChart();
+  buildBenchmarkSelector();
+  buildBenchmarkChart();
+  buildBenchmarkTable();
+  buildDonuts();
+  buildGapTable();
+  updateSyncStatus();
 }
+
+function buildInvHero(){
+  const el=document.getElementById('inv-hero');if(!el)return;
+  const val=portTotal(),cost=portCostBasis();
+  const divs=Object.values(S.invDividendsReceived||{}).reduce((a,v)=>a+v,0);
+  const gain=val-cost+divs;
+  const gainPct=cost>0?(gain/cost*100):0;
+  const up=gain>=0;
+  el.innerHTML=`
+    <div class="hero-l">Portfolio value</div>
+    <div class="hero-v">${fmtD(val)}</div>
+    <div class="hero-s">${up?'▲':'▼'} ${fmtD(Math.abs(gain))} (${up?'+':''}${gainPct.toFixed(1)}%) all time${divs>0?' · incl '+fmtD(divs)+' dividends':''}</div>
+    <div class="tag-row">
+      <span class="tag tg">${activeHoldings().length} holdings</span>
+      <span class="tag tb">Cost ${fmtDI(cost)}</span>
+      <span class="tag ty">+${fmtDI(annDiv())}/yr income</span>
+    </div>`;
+}
+
+function updateSyncStatus(){
+  const el=document.getElementById('sync-status');if(!el)return;
+  const hasKey=S.fmpApiKey&&S.fmpApiKey.length>5;
+  const cached=Object.keys(S.priceCache||{}).length;
+  let msg=[];
+  if(cached){
+    const newest=Math.max(...Object.values(S.priceCache).map(p=>p.ts||0));
+    if(newest)msg.push('Prices updated '+timeAgo(newest));
+  }
+  msg.push(hasKey?'Live pricing on':'Live pricing off (add FMP key in Settings)');
+  el.textContent=msg.join(' · ');
+}
+function timeAgo(ts){const s=Math.floor((Date.now()-ts)/1000);if(s<60)return'just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';}
+
+// ── Holdings list with inline edit/delete ────────────────────
+function buildHoldingsList(){
+  const el=document.getElementById('holdings-list');if(!el)return;
+  const hs=S.holdings||[];
+  if(!hs.length){el.innerHTML=`<div class="empty"><div class="empty-ico">📈</div><div class="empty-txt">No holdings yet. Import a CSV, scan a screenshot, or add one manually.</div></div>`;return;}
+  const total=portTotal();
+  el.innerHTML=hs.map(h=>{
+    const val=holdingValue(h),cost=holdingCost(h),gain=val-cost;
+    const gainPct=cost>0?(gain/cost*100):0;const up=gain>=0;
+    const weight=total>0?Math.round(val/total*100):0;
+    const mkTag=h.market==='ASX'?'<span class="tag ty" style="font-size:8px">ASX</span>':h.market==='US'?'<span class="tag tb" style="font-size:8px">US</span>':'';
+    return`<div class="hld-row" onclick="openHoldingModal('${h.id}')">
+      <div class="hld-main">
+        <div class="hld-tk">${h.ticker} ${mkTag}</div>
+        <div class="hld-sub">${h.units!=null?(+h.units).toLocaleString(undefined,{maximumFractionDigits:4})+' units · ':''}${weight}% of portfolio</div>
+      </div>
+      <div class="hld-right">
+        <div class="hld-val">${fmtD(val)}</div>
+        <div class="hld-gain ${up?'col-acc':'col-r'}">${up?'+':''}${gainPct.toFixed(1)}%</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Return analysis (redesigned: TWR vs money-weighted) ──────
+function calcReturn(){
+  const tv=portTotal();
+  const cost=portCostBasis();
+  const td=Object.values(S.invDividendsReceived||{}).reduce((a,v)=>a+v,0);
+  // Money invested = completed contributions if present, else cost basis
+  const contributed=totalContributed()||cost;
+  const netGain=tv-cost+td;
+  const simplePct=cost>0?(netGain/cost*100):0;
+  // Money-weighted (IRR approximation via dated cashflows)
+  const irr=calcIRR();
+  // Time-weighted: approximate from holdings' price change vs avg cost (excludes contribution timing)
+  let twrNum=0,twrDen=0;
+  (S.holdings||[]).forEach(h=>{
+    const c=holdingCost(h),v=holdingValue(h);
+    if(c>0){twrNum+=v;twrDen+=c;}
+  });
+  const twr=twrDen>0?((twrNum/twrDen)-1)*100:0;
+  // Annualised (CAGR) from earliest completed contribution
+  const comps=(S.contributions||[]).filter(c=>c.status==='completed'&&c.date);
+  const earliest=comps.length?new Date(comps.map(c=>c.date).sort()[0]):new Date(Date.now()-365*24*60*60*1000);
+  const yrs=Math.max(0.08,(Date.now()-earliest.getTime())/(365.25*24*60*60*1000));
+  const ann=cost>0?(Math.pow(Math.max(0.0001,(tv+td)/cost),1/yrs)-1)*100:0;
+  return{tv,cost,td,contributed,netGain,simplePct,twr,irr,ann,yrs};
+}
+
+// Money-weighted IRR via bisection over dated cashflows.
+// We compound every past contribution FORWARD to today at rate r; the portfolio's
+// current value must equal that future value. Solve for r where they balance.
+function calcIRR(){
+  const comps=(S.contributions||[]).filter(c=>c.status==='completed'&&c.date&&c.amount>0);
+  if(!comps.length)return null;
+  const now=Date.now();
+  const flows=comps.map(c=>({yrs:Math.max(0,(now-new Date(c.date+'T12:00:00').getTime())/(365.25*24*60*60*1000)),amt:c.amount}));
+  const tv=portTotal()+Object.values(S.invDividendsReceived||{}).reduce((a,v)=>a+v,0);
+  // f(r) = future value of all contributions at r  −  current portfolio value
+  // each contribution grows for `yrs` years: amt*(1+r)^yrs
+  function fv(r){return flows.reduce((a,f)=>a+f.amt*Math.pow(1+r,f.yrs),0)-tv;}
+  // If gain, the contributions must grow → r>0 makes fv increase; root is where fv=0.
+  let lo=-0.95,hi=3.0,mid;
+  const flo=fv(lo),fhi=fv(hi);
+  if(flo*fhi>0)return null; // no sign change in range
+  for(let i=0;i<100;i++){mid=(lo+hi)/2;const v=fv(mid);if(Math.abs(v)<0.01)break;if(fv(lo)*v<0)hi=mid;else lo=mid;}
+  return mid*100;
+}
+
+function buildReturnSection(){
+  const el=document.getElementById('inv-return');if(!el)return;
+  const r=calcReturn();
+  const up=r.netGain>=0;
+  el.innerHTML=`
+    <div class="ret-hero">
+      <div class="ret-hero-main">
+        <div class="ret-hero-lbl">Net gain / loss</div>
+        <div class="ret-hero-v ${up?'col-acc':'col-r'}">${up?'+':''}${fmtD(r.netGain)}</div>
+        <div class="ret-hero-sub">${up?'+':''}${r.simplePct.toFixed(1)}% on ${fmtDI(r.cost)} invested</div>
+      </div>
+    </div>
+    <div class="ret-rows">
+      <div class="ret-detail"><div><div class="ret-detail-lbl">Money invested</div><div class="ret-detail-note">Total you've put in (completed)</div></div><div class="ret-detail-v">${fmtD(r.contributed)}</div></div>
+      <div class="ret-detail"><div><div class="ret-detail-lbl">Current value</div><div class="ret-detail-note">Holdings at latest prices</div></div><div class="ret-detail-v">${fmtD(r.tv)}</div></div>
+      <div class="ret-detail"><div><div class="ret-detail-lbl">Dividends received</div><div class="ret-detail-note">Income paid to you</div></div><div class="ret-detail-v col-acc">${fmtD(r.td)}</div></div>
+      <div class="ret-detail"><div><div class="ret-detail-lbl">Time-weighted return</div><div class="ret-detail-note">How your investments performed, ignoring deposit timing</div></div><div class="ret-detail-v ${r.twr>=0?'col-acc':'col-r'}">${r.twr>=0?'+':''}${r.twr.toFixed(1)}%</div></div>
+      <div class="ret-detail"><div><div class="ret-detail-lbl">Money-weighted return</div><div class="ret-detail-note">Your actual return including when you invested${r.irr==null?' (needs dated contributions)':''}</div></div><div class="ret-detail-v ${r.irr==null?'':(r.irr>=0?'col-acc':'col-r')}">${r.irr==null?'—':(r.irr>=0?'+':'')+r.irr.toFixed(1)+'% p.a.'}</div></div>
+      <div class="ret-detail"><div><div class="ret-detail-lbl">Annualised (CAGR)</div><div class="ret-detail-note">Average yearly growth over ${r.yrs.toFixed(1)} years</div></div><div class="ret-detail-v ${r.ann>=0?'col-b':'col-r'}">${r.ann>=0?'+':''}${r.ann.toFixed(1)}%</div></div>
+    </div>
+    <div style="display:flex;gap:7px;margin-top:12px">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openContribList()">Manage contributions</button>
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openDivModal()">Record dividend</button>
+    </div>`;
+}
+
+// ── Growth vs contributions chart (real, from contribution history) ──
+function renderGrowthChart(){
+  const canvas=document.getElementById('growth-chart');if(!canvas)return;
+  const comps=(S.contributions||[]).filter(c=>c.status==='completed'&&c.date).sort((a,b)=>a.date.localeCompare(b.date));
+  const labels=[],valueLine=[],contribLine=[];
+  if(comps.length){
+    // Build cumulative contributions over time; value line ends at current portfolio value
+    let cum=0;
+    const tv=portTotal();
+    const firstD=new Date(comps[0].date+'T12:00:00');
+    const months=Math.max(1,Math.ceil((Date.now()-firstD.getTime())/(1000*60*60*24*30)));
+    // monthly buckets
+    for(let i=0;i<=months;i++){
+      const d=new Date(firstD.getFullYear(),firstD.getMonth()+i,1);
+      const cutoff=d.getTime();
+      cum=comps.filter(c=>new Date(c.date+'T12:00:00')<=d).reduce((a,c)=>a+c.amount,0);
+      labels.push(d.toLocaleDateString('en-AU',{month:'short',year:'2-digit'}));
+      contribLine.push(Math.round(cum));
+      // value line: interpolate cost→current proportionally to time (simple, honest about being an estimate)
+      const frac=months>0?i/months:1;
+      const totalCost=comps.reduce((a,c)=>a+c.amount,0);
+      valueLine.push(Math.round(cum + (tv-totalCost)*frac*(cum/Math.max(1,totalCost))));
+    }
+  }else{
+    // No contribution history — show current snapshot only
+    labels.push('Now');valueLine.push(Math.round(portTotal()));contribLine.push(Math.round(portCostBasis()));
+  }
+  const acc=getComputedStyle(document.documentElement).getPropertyValue('--acc').trim()||'#00d4a0';
+  const t3=getComputedStyle(document.documentElement).getPropertyValue('--t3').trim()||'#4a5d72';
+  if(growthChart){growthChart.destroy();growthChart=null;}
+  const ctx=canvas.getContext('2d');const grad=ctx.createLinearGradient(0,0,0,170);grad.addColorStop(0,acc+'33');grad.addColorStop(1,acc+'00');
+  growthChart=new Chart(canvas,{type:'line',data:{labels,datasets:[
+    {label:'Value',data:valueLine,borderColor:acc,backgroundColor:grad,fill:true,tension:.3,pointRadius:0,borderWidth:2.5},
+    {label:'Contributions',data:contribLine,borderColor:t3,backgroundColor:'transparent',borderDash:[4,3],tension:.3,pointRadius:0,borderWidth:2}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': $'+c.parsed.y.toLocaleString()}}},scales:{x:{ticks:{color:'#4a5d72',font:{size:9},autoSkip:true,maxTicksLimit:6,maxRotation:0},grid:{display:false}},y:{ticks:{color:'#4a5d72',font:{size:9},callback:v=>'$'+(v/1000).toFixed(1)+'k'},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+  registerChart('growth-chart',growthChart);fitChart(growthChart);
+}
+
+// ── Benchmark comparison (redesigned, multi-select) ──────────
+const BENCHMARKS={
+  sp500:{label:'S&P 500',col:'#5cb1ff'},
+  asx200:{label:'ASX 200',col:'#f5b13c'},
+  ndx:{label:'Nasdaq 100',col:'#b58aff'},
+  msci:{label:'MSCI World',col:'#ff8c5c'}
+};
+function buildBenchmarkSelector(){
+  const el=document.getElementById('benchmark-selector');if(!el)return;
+  if(!S.benchmarkSel)S.benchmarkSel=['sp500'];
+  el.innerHTML=Object.entries(BENCHMARKS).map(([k,b])=>{
+    const on=S.benchmarkSel.includes(k);
+    return`<button class="chip${on?' on':''}" onclick="toggleBenchmark('${k}')" style="border-color:${on?b.col:'var(--bdr2)'};color:${on?b.col:'var(--t3)'}">${b.label}</button>`;
+  }).join('');
+}
+function toggleBenchmark(k){
+  if(!S.benchmarkSel)S.benchmarkSel=[];
+  const i=S.benchmarkSel.indexOf(k);
+  if(i>=0)S.benchmarkSel.splice(i,1);else S.benchmarkSel.push(k);
+  save();buildBenchmarkSelector();buildBenchmarkChart();buildBenchmarkTable();
+}
+function buildBenchmarkChart(){
+  const canvas=document.getElementById('benchmark-chart');if(!canvas)return;
+  const r=calcReturn();
+  const myReturn=r.simplePct;
+  // Build a simple normalised growth-of-$100 line over the holding period for portfolio + each selected benchmark
+  const months=Math.max(2,Math.round(r.yrs*12));
+  const labels=[];for(let i=0;i<=months;i++){const d=new Date();d.setMonth(d.getMonth()-(months-i));labels.push(d.toLocaleDateString('en-AU',{month:'short',year:'2-digit'}));}
+  function growthLine(totalPct){const end=100*(1+totalPct/100);const out=[];for(let i=0;i<=months;i++){out.push(+(100+(end-100)*(i/months)).toFixed(1));}return out;}
+  const acc=getComputedStyle(document.documentElement).getPropertyValue('--acc').trim()||'#00d4a0';
+  const datasets=[{label:'Your portfolio',data:growthLine(myReturn),borderColor:acc,backgroundColor:'transparent',tension:.3,pointRadius:0,borderWidth:2.5}];
+  (S.benchmarkSel||[]).forEach(k=>{
+    const b=BENCHMARKS[k];const pctv=parseFloat(S.benchmarkReturns?.[k]);
+    if(!isNaN(pctv))datasets.push({label:b.label,data:growthLine(pctv),borderColor:b.col,backgroundColor:'transparent',borderDash:[4,3],tension:.3,pointRadius:0,borderWidth:2});
+  });
+  if(benchmarkChart){benchmarkChart.destroy();benchmarkChart=null;}
+  benchmarkChart=new Chart(canvas,{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#8a9bb0',font:{size:9},boxWidth:8,boxHeight:8,usePointStyle:true}}},scales:{x:{ticks:{color:'#4a5d72',font:{size:8},autoSkip:true,maxTicksLimit:5,maxRotation:0},grid:{display:false}},y:{ticks:{color:'#4a5d72',font:{size:9},callback:v=>'$'+v},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+  registerChart('benchmark-chart',benchmarkChart);fitChart(benchmarkChart);
+}
+function buildBenchmarkTable(){
+  const el=document.getElementById('benchmark-table');if(!el)return;
+  if(!S.benchmarkReturns)S.benchmarkReturns={};
+  const r=calcReturn();const myPct=r.simplePct;const invested=r.contributed||r.cost;
+  let rows=`<div class="bench-row" style="border-bottom:1px solid var(--bdr2)"><div class="bench-label" style="font-weight:700;color:var(--t)">Your portfolio</div><div class="bench-val ${myPct>=0?'col-acc':'col-r'}">${myPct>=0?'+':''}${myPct.toFixed(1)}%</div></div>`;
+  (S.benchmarkSel||[]).forEach(k=>{
+    const b=BENCHMARKS[k];const val=S.benchmarkReturns[k]||'';const pctv=parseFloat(val);
+    const diff=isNaN(pctv)?null:myPct-pctv;
+    const dollarDiff=isNaN(pctv)?null:invested*(myPct-pctv)/100;
+    rows+=`<div class="bench-row" style="align-items:center">
+      <div class="bench-label"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${b.col};margin-right:6px"></span>${b.label}</div>
+      <div style="display:flex;align-items:center;gap:7px">
+        <input type="number" class="inp" style="margin:0;width:70px;font-size:12px;padding:5px 7px" placeholder="%" value="${val}" oninput="setBenchReturn('${k}',this.value)" step="0.1">
+        ${diff==null?'':`<span class="bench-val ${diff>=0?'col-acc':'col-r'}" style="min-width:54px;text-align:right">${diff>=0?'+':''}${diff.toFixed(1)}%</span>`}
+      </div>
+    </div>${dollarDiff==null?'':`<div style="font-size:10px;color:${dollarDiff>=0?'var(--acc)':'var(--r)'};text-align:right;padding:2px 0 6px">${dollarDiff>=0?'You\'re ahead by ':'Behind by '}${fmtD(Math.abs(dollarDiff))} vs ${b.label}</div>`}`;
+  });
+  if(!(S.benchmarkSel||[]).length)rows+=`<div style="font-size:11px;color:var(--t3);padding:8px 0">Select benchmarks above to compare. Enter each index's % return for your holding period (from Google Finance or your broker).</div>`;
+  el.innerHTML=rows;
+}
+function setBenchReturn(k,v){if(!S.benchmarkReturns)S.benchmarkReturns={};S.benchmarkReturns[k]=v;save();buildBenchmarkChart();buildBenchmarkTable();}
+
+// ── Composition donuts + allocation gap (from holdings) ──────
 function buildDonuts(){
-  const pt=portTotal();const cv=TICKERS.map(t=>parseFloat(((S.portfolio[t]||0)/pt*100).toFixed(1)));const tv=TICKERS.map(t=>TPCT[t]);const cols=TICKERS.map(t=>TC[t]);
-  if(donutCur){donutCur.destroy();donutCur=null;}
+  const hs=activeHoldings();
+  const total=portTotal();
   const cc=document.getElementById('donut-cur');if(!cc)return;
-  donutCur=new Chart(cc,{type:'doughnut',data:{labels:TICKERS,datasets:[{data:cv,backgroundColor:cols,borderWidth:2,borderColor:'#0c1118'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.label+': '+c.parsed+'%'}}},cutout:'62%'}});
+  const labels=hs.map(h=>h.ticker);
+  const cv=hs.map(h=>total>0?+(holdingValue(h)/total*100).toFixed(1):0);
+  const palette=['#5cb1ff','#00d4a0','#b58aff','#f5b13c','#ff6b6b','#ff8c5c','#64748b','#5cb1ff'];
+  const cols=hs.map((h,i)=>TC[h.ticker]||palette[i%palette.length]);
+  if(donutCur){donutCur.destroy();donutCur=null;}
+  donutCur=new Chart(cc,{type:'doughnut',data:{labels,datasets:[{data:cv,backgroundColor:cols,borderWidth:2,borderColor:'#0d1219'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.label+': '+c.parsed+'%'}}},cutout:'62%'}});
   registerChart('donut-cur',donutCur);fitChart(donutCur);
-  if(!donutTgt){const ct=document.getElementById('donut-tgt');if(!ct)return;donutTgt=new Chart(ct,{type:'doughnut',data:{labels:TICKERS.map(t=>TL[t]),datasets:[{data:tv,backgroundColor:cols,borderWidth:2,borderColor:'#0c1118'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.label+': '+c.parsed+'%'}}},cutout:'62%'}});registerChart('donut-tgt',donutTgt);fitChart(donutTgt);}
-  const mkLeg=vals=>TICKERS.map((t,i)=>`<div class="dleg-i"><div class="dleg-d" style="background:${cols[i]}"></div>${t} ${vals[i]}%</div>`).join('');
-  document.getElementById('dleg-cur').innerHTML=mkLeg(cv);
-  if(!document.getElementById('dleg-tgt').innerHTML)document.getElementById('dleg-tgt').innerHTML=mkLeg(tv);
+  // Target donut from TPCT where tickers match, else even split
+  const tgtTickers=Object.keys(TPCT);
+  const ct=document.getElementById('donut-tgt');
+  if(ct){
+    const tv=tgtTickers.map(t=>TPCT[t]);const tcols=tgtTickers.map((t,i)=>TC[t]||palette[i%palette.length]);
+    if(donutTgt){donutTgt.destroy();donutTgt=null;}
+    donutTgt=new Chart(ct,{type:'doughnut',data:{labels:tgtTickers,datasets:[{data:tv,backgroundColor:tcols,borderWidth:2,borderColor:'#0d1219'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.label+': '+c.parsed+'%'}}},cutout:'62%'}});
+    registerChart('donut-tgt',donutTgt);fitChart(donutTgt);
+    document.getElementById('dleg-tgt').innerHTML=tgtTickers.map((t,i)=>`<div class="dleg-i"><div class="dleg-d" style="background:${tcols[i]}"></div>${t} ${tv[i]}%</div>`).join('');
+  }
+  document.getElementById('dleg-cur').innerHTML=hs.length?hs.map((h,i)=>`<div class="dleg-i"><div class="dleg-d" style="background:${cols[i]}"></div>${h.ticker} ${cv[i]}%</div>`).join(''):'<div style="font-size:10px;color:var(--t3)">No holdings</div>';
 }
 function buildGapTable(){
-  const pt=portTotal();
-  document.getElementById('inv-gap').innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr>${['Ticker','Value','Cur%','Tgt%','Status'].map(h=>`<th style="text-align:left;padding:5px 0;border-bottom:1px solid var(--bdr);color:var(--t3);font-size:10px">${h}</th>`).join('')}</tr></thead><tbody>${TICKERS.map(t=>{const v=S.portfolio[t]||0;const cur=pt>0?Math.round(v/pt*100):0;const tgt=TPCT[t];const diff=cur-tgt;const badge=diff>2?`<span class="tag tr">+${diff}%</span>`:diff<-2?`<span class="tag tg">${diff}%</span>`:`<span class="tag tb">ok</span>`;return`<tr><td style="padding:6px 0;border-bottom:1px solid var(--bdr);color:var(--t);font-weight:700">${TL[t]}</td><td style="padding:6px 0;border-bottom:1px solid var(--bdr)">${fmtDI(v)}</td><td style="padding:6px 0;border-bottom:1px solid var(--bdr)">${cur}%</td><td style="padding:6px 0;border-bottom:1px solid var(--bdr)">${tgt}%</td><td style="padding:6px 0;border-bottom:1px solid var(--bdr)">${badge}</td></tr>`;}).join('')}<tr><td style="padding-top:8px;font-weight:700;color:var(--t)" colspan="2">Total ${fmtDI(pt)}</td><td colspan="3"></td></tr></tbody></table>`;
+  const el=document.getElementById('inv-gap');if(!el)return;
+  const total=portTotal();const hs=activeHoldings();
+  if(!hs.length){el.innerHTML='<div style="font-size:11px;color:var(--t3)">Add holdings to see allocation vs target.</div>';return;}
+  el.innerHTML=`<div class="lbl" style="margin-bottom:8px">Allocation vs target</div>`+hs.map(h=>{
+    const cur=total>0?Math.round(holdingValue(h)/total*100):0;const tgt=TPCT[h.ticker];
+    if(tgt==null)return`<div class="bench-row"><div class="bench-label">${h.ticker}</div><div class="bench-val">${cur}% <span style="color:var(--t3);font-size:10px">no target</span></div></div>`;
+    const diff=cur-tgt;const badge=diff>2?`<span class="tag tr">+${diff}% over</span>`:diff<-2?`<span class="tag tg">${diff}% under</span>`:`<span class="tag tb">on target</span>`;
+    return`<div class="bench-row"><div class="bench-label">${h.ticker} — ${cur}% / ${tgt}%</div><div>${badge}</div></div>`;
+  }).join('');
 }
-function buildTickerPills(){document.getElementById('ticker-pills').innerHTML=TICKERS.map(t=>`<div class="ticker-pill${t===S.selectedTicker?' on':''}" onclick="selTick('${t}')">${TL[t]}</div>`).join('');}
-function selTick(t){S.selectedTicker=t;buildTickerPills();}
-function addInvestment(){const amt=parseFloat(document.getElementById('inv-amt').value);if(!amt||amt<=0)return;S.portfolio[S.selectedTicker]=(S.portfolio[S.selectedTicker]||0)+amt;S.invLog.push({ticker:S.selectedTicker,amt,date:document.getElementById('inv-date').value||today()});document.getElementById('inv-amt').value='';snapshotNW();save();buildInvestPage();if(currentPg==='dash')buildDash();}
-function buildInvLog(){const el=document.getElementById('inv-log');if(!el)return;el.innerHTML=(S.invLog||[]).slice(-6).reverse().map(e=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--bdr);font-size:10px"><span style="color:var(--t3)">${fmtDate(e.date)} — ${TL[e.ticker]||e.ticker}</span><span style="color:var(--acc)">+${fmtD(e.amt)}</span></div>`).join('');}
-function renderGrowthChart(){
-  const labels=[],wC=[],nC=[];let v=portTotal(),vb=portTotal();const r=Math.pow(1.07,1/12)-1;const base=new Date(2026,5);
-  for(let i=0;i<=19;i++){const d=new Date(base.getFullYear(),base.getMonth()+i);labels.push(d.toLocaleDateString('en-AU',{month:'short',year:'2-digit'}));wC.push(Math.round(v));nC.push(Math.round(vb));v=v*(1+r)+S.sliders.invest;vb=vb*(1+r);}
-  const acc=getComputedStyle(document.documentElement).getPropertyValue('--acc').trim()||'#00d4a0';
-  const canvas=document.getElementById('growth-chart');if(!canvas)return;
-  if(growthChart){growthChart.data.labels=labels;growthChart.data.datasets[0].data=wC;growthChart.data.datasets[1].data=nC;growthChart.data.datasets[0].borderColor=acc;growthChart.data.datasets[0].backgroundColor=acc.replace(')',', .06)').replace('rgb','rgba');growthChart.update('none');}
-  else growthChart=new Chart(canvas,{type:'line',data:{labels,datasets:[{data:wC,borderColor:acc,backgroundColor:acc+'11',fill:true,tension:.3,pointRadius:0,borderWidth:2},{data:nC,borderColor:'#ff5c5c',backgroundColor:'transparent',borderDash:[4,3],tension:.3,pointRadius:0,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#3d4f63',font:{size:9},autoSkip:true,maxRotation:45},grid:{color:'rgba(255,255,255,0.03)'}},y:{ticks:{color:'#3d4f63',font:{size:9},callback:v=>'$'+(v/1000).toFixed(1)+'k'},grid:{color:'rgba(255,255,255,0.03)'}}}}});
-  registerChart('growth-chart',growthChart);fitChart(growthChart);
+
+
+// ═══════════════════════════════════════════════════════════
+// HOLDINGS CRUD
+// ═══════════════════════════════════════════════════════════
+let editingHoldingId=null;
+function openHoldingModal(id){
+  editingHoldingId=id||null;
+  const del=document.getElementById('hld-delete-btn');
+  document.getElementById('holding-modal-title').textContent=id?'Edit holding':'Add holding';
+  if(id){
+    const h=(S.holdings||[]).find(x=>x.id===id);
+    if(h){
+      document.getElementById('hld-ticker').value=h.ticker||'';
+      document.getElementById('hld-market').value=h.market||'US';
+      document.getElementById('hld-name').value=h.name||'';
+      document.getElementById('hld-units').value=h.units!=null?h.units:'';
+      document.getElementById('hld-avgcost').value=h.avgCost!=null?h.avgCost:'';
+      document.getElementById('hld-price').value=h.lastPrice!=null?h.lastPrice:'';
+      document.getElementById('hld-sector').value=h.sector||'';
+    }
+    del.style.display='';
+  }else{
+    ['hld-ticker','hld-name','hld-units','hld-avgcost','hld-price','hld-sector'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('hld-market').value='US';
+    del.style.display='none';
+  }
+  openModal('holding-modal');
+}
+function saveHolding(){
+  const ticker=document.getElementById('hld-ticker').value.trim().toUpperCase();
+  if(!ticker){alert('Enter a ticker.');return;}
+  const units=parseFloat(document.getElementById('hld-units').value);
+  const avgCost=parseFloat(document.getElementById('hld-avgcost').value);
+  const price=parseFloat(document.getElementById('hld-price').value);
+  const market=document.getElementById('hld-market').value;
+  const name=document.getElementById('hld-name').value.trim();
+  const sector=document.getElementById('hld-sector').value.trim();
+  if(isNaN(units)||isNaN(avgCost)){alert('Enter units and average cost.');return;}
+  const lastPrice=isNaN(price)?avgCost:price;
+  if(!S.holdings)S.holdings=[];
+  if(editingHoldingId){
+    const h=S.holdings.find(x=>x.id===editingHoldingId);
+    if(h)Object.assign(h,{ticker,market,name:name||h.name,units,avgCost,lastPrice,sector:sector||h.sector,costBasis:units*avgCost,currentValue:units*lastPrice});
+  }else{
+    S.holdings.push({id:uid(),ticker,market,name:name||ticker,units,avgCost,lastPrice,sector:sector||'',costBasis:units*avgCost,currentValue:units*lastPrice});
+  }
+  closeModal('holding-modal');snapshotNW();save();buildInvestPage();if(currentPg==='dash')buildDash();showToast('Holding saved');
+}
+function deleteHoldingFromModal(){
+  if(!editingHoldingId)return;
+  if(!confirm('Delete this holding?'))return;
+  S.holdings=(S.holdings||[]).filter(h=>h.id!==editingHoldingId);
+  closeModal('holding-modal');snapshotNW();save();buildInvestPage();if(currentPg==='dash')buildDash();
+}
+
+// ═══════════════════════════════════════════════════════════
+// CONTRIBUTIONS CRUD
+// ═══════════════════════════════════════════════════════════
+let editingContribId=null;
+function openContribModal(id){
+  editingContribId=id||null;
+  document.getElementById('contrib-modal-title').textContent=id?'Edit contribution':'Add contribution';
+  document.getElementById('ctr-date').value=today();
+  const del=document.getElementById('ctr-delete-btn');
+  if(id){
+    const c=(S.contributions||[]).find(x=>x.id===id);
+    if(c){
+      document.getElementById('ctr-ticker').value=c.ticker||'';
+      document.getElementById('ctr-amount').value=c.amount||'';
+      document.getElementById('ctr-date').value=c.date||today();
+      document.getElementById('ctr-status').value=c.status||'completed';
+      document.getElementById('ctr-note').value=c.note||'';
+    }
+    del.style.display='';
+  }else{
+    ['ctr-ticker','ctr-amount','ctr-note'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('ctr-status').value='completed';
+    del.style.display='none';
+  }
+  openModal('contrib-modal');
+}
+function saveContribution(){
+  const ticker=document.getElementById('ctr-ticker').value.trim().toUpperCase();
+  const amount=parseFloat(document.getElementById('ctr-amount').value);
+  const date=document.getElementById('ctr-date').value||today();
+  const status=document.getElementById('ctr-status').value;
+  const note=document.getElementById('ctr-note').value.trim();
+  if(!ticker||isNaN(amount)||amount<=0){alert('Enter ticker and amount.');return;}
+  if(!S.contributions)S.contributions=[];
+  if(editingContribId){
+    const c=S.contributions.find(x=>x.id===editingContribId);
+    if(c)Object.assign(c,{ticker,amount,date,status,note});
+  }else{
+    S.contributions.unshift({id:uid(),ticker,amount,units:null,price:null,date,status,note});
+  }
+  closeModal('contrib-modal');save();
+  if(document.getElementById('contrib-list-modal'))openContribList();
+  buildInvestPage();showToast('Contribution saved');
+}
+function deleteContribFromModal(){
+  if(!editingContribId)return;
+  if(!confirm('Delete this contribution?'))return;
+  S.contributions=(S.contributions||[]).filter(c=>c.id!==editingContribId);
+  closeModal('contrib-modal');save();buildInvestPage();
+}
+// Contribution list shown in import modal reused as a simple list overlay
+function openContribList(){
+  const items=(S.contributions||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const body=items.length?items.map(c=>{
+    const stCol=c.status==='completed'?'tg':c.status==='pending'?'ty':'tr';
+    return`<div class="hld-row" onclick="openContribModal('${c.id}')">
+      <div class="hld-main"><div class="hld-tk">${c.ticker} <span class="tag ${stCol}" style="font-size:8px">${c.status}</span></div><div class="hld-sub">${fmtDate(c.date)}${c.note?' · '+c.note:''}</div></div>
+      <div class="hld-right"><div class="hld-val">${fmtD(c.amount)}</div></div>
+    </div>`;
+  }).join(''):'<div class="empty"><div class="empty-ico">💸</div><div class="empty-txt">No contributions yet.</div></div>';
+  showSheet('Contributions',`<div id="contrib-list-modal">${body}</div><button class="btn btn-acc btn-full" style="margin-top:10px" onclick="openContribModal()">+ Add contribution</button>`);
+}
+function openDivModal(){
+  const tickers=(S.holdings||[]).map(h=>h.ticker);
+  const opts=tickers.length?tickers:TICKERS;
+  showSheet('Record dividend',`
+    <label class="lbl">Ticker</label>
+    <select class="inp" id="dv-ticker">${opts.map(t=>`<option value="${t}">${t}</option>`).join('')}</select>
+    <label class="lbl">Dividend amount received $</label>
+    <input type="number" class="inp" id="dv-amt" placeholder="0.00" min="0" step="0.01">
+    <button class="btn btn-acc btn-full" onclick="recordDividend()">Save dividend</button>`);
+}
+function recordDividend(){
+  const tk=document.getElementById('dv-ticker').value;
+  const amt=parseFloat(document.getElementById('dv-amt').value);
+  if(isNaN(amt)||amt<=0){alert('Enter an amount.');return;}
+  if(!S.invDividendsReceived)S.invDividendsReceived={};
+  S.invDividendsReceived[tk]=(S.invDividendsReceived[tk]||0)+amt;
+  save();closeSheet();buildInvestPage();showToast('Dividend recorded');
+}
+
+// Generic bottom-sheet helper (reuses overlay/modal styles)
+function showSheet(title,bodyHtml){
+  let el=document.getElementById('generic-sheet');
+  if(!el){
+    el=document.createElement('div');el.className='overlay';el.id='generic-sheet';
+    el.innerHTML=`<div class="modal"><div class="modal-handle"></div><div class="modal-title" id="generic-sheet-title"></div><div id="generic-sheet-body"></div><button class="btn btn-ghost btn-sm btn-full" style="margin-top:10px" onclick="closeSheet()">Close</button></div>`;
+    document.body.appendChild(el);
+  }
+  document.getElementById('generic-sheet-title').textContent=title;
+  document.getElementById('generic-sheet-body').innerHTML=bodyHtml;
+  requestAnimationFrame(()=>el.classList.add('open'));
+}
+function closeSheet(){const el=document.getElementById('generic-sheet');if(el)el.classList.remove('open');}
+
+// ═══════════════════════════════════════════════════════════
+// IMPORT — CSV + Screenshot
+// ═══════════════════════════════════════════════════════════
+let importMode='csv',shotBase64=null;
+function openImportModal(mode){
+  importMode=mode;
+  document.getElementById('import-modal-title').textContent=mode==='csv'?'Import CSV':'Scan screenshot';
+  document.getElementById('import-csv-body').style.display=mode==='csv'?'block':'none';
+  document.getElementById('import-shot-body').style.display=mode==='screenshot'?'block':'none';
+  document.getElementById('import-preview').style.display='none';
+  document.getElementById('import-preview').innerHTML='';
+  openModal('import-modal');
+}
+function handleCsvFile(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();r.onload=()=>{document.getElementById('csv-paste').value=r.result;};r.readAsText(f);
+}
+// Robust-ish CSV parser for CMC trade confirmations.
+// Strategy: detect columns by header keywords; reconstruct net units & cost per ticker.
+function parseCsvImport(){
+  const raw=document.getElementById('csv-paste').value.trim();
+  if(!raw){alert('Upload or paste CSV first.');return;}
+  const lines=raw.split(/\r?\n/).filter(l=>l.trim());
+  if(lines.length<2){alert('CSV has no data rows.');return;}
+  // Parse header
+  const split=l=>{const out=[];let cur='',q=false;for(const ch of l){if(ch==='"')q=!q;else if(ch===','&&!q){out.push(cur);cur='';}else cur+=ch;}out.push(cur);return out.map(s=>s.trim().replace(/^"|"$/g,''));};
+  const header=split(lines[0]).map(h=>h.toLowerCase());
+  const findCol=(...keys)=>header.findIndex(h=>keys.some(k=>h.includes(k)));
+  const cCode=findCol('code','symbol','ticker','instrument');
+  const cQty=findCol('quantity','units','volume','shares');
+  const cPrice=findCol('price','avg price','unit price');
+  const cValue=findCol('value','consideration','amount','net');
+  const cSide=findCol('direction','side','type','b/s','buy/sell');
+  const cDate=findCol('date','trade date','transaction date');
+  if(cCode<0){alert('Could not find a ticker/code column in this CSV. Check it is a CMC trade confirmation export.');return;}
+  const agg={};const contribs=[];
+  for(let i=1;i<lines.length;i++){
+    const r=split(lines[i]);if(r.length<=cCode)continue;
+    const code=(r[cCode]||'').toUpperCase().replace(/\s+/g,'');if(!code)continue;
+    let qty=cQty>=0?parseFloat((r[cQty]||'').replace(/[^0-9.\-]/g,'')):NaN;
+    let price=cPrice>=0?parseFloat((r[cPrice]||'').replace(/[^0-9.\-]/g,'')):NaN;
+    let value=cValue>=0?parseFloat((r[cValue]||'').replace(/[^0-9.\-]/g,'')):NaN;
+    const side=cSide>=0?(r[cSide]||'').toLowerCase():'buy';
+    const date=cDate>=0?normaliseDate(r[cDate]):today();
+    const isSell=side.includes('s')||side.includes('sell');
+    if(isNaN(value)&&!isNaN(qty)&&!isNaN(price))value=qty*price;
+    if(isNaN(qty)&&!isNaN(value)&&!isNaN(price)&&price>0)qty=value/price;
+    if(!agg[code])agg[code]={units:0,cost:0};
+    if(isSell){agg[code].units-=(qty||0);agg[code].cost-=(value||0);}
+    else{
+      agg[code].units+=(qty||0);agg[code].cost+=(value||0);
+      if(!isNaN(value)&&value>0)contribs.push({id:uid(),ticker:code,amount:Math.round(value*100)/100,units:qty||null,price:price||null,date,status:'completed',note:'CSV import'});
+    }
+  }
+  const holdings=Object.entries(agg).filter(([,v])=>v.units>0.0001).map(([code,v])=>({
+    code,units:Math.round(v.units*10000)/10000,avgCost:v.units>0?Math.round(v.cost/v.units*100)/100:0,cost:Math.round(v.cost*100)/100
+  }));
+  if(!holdings.length){alert('No buy positions detected. The CSV format may differ — try the screenshot method instead.');return;}
+  renderImportPreview(holdings,contribs,'csv');
+}
+function normaliseDate(s){
+  if(!s)return today();
+  s=s.trim();
+  // dd/mm/yyyy
+  let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if(m){let y=m[3];if(y.length===2)y='20'+y;return `${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;}
+  m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return m[0];
+  const d=new Date(s);if(!isNaN(d))return d.toISOString().slice(0,10);
+  return today();
+}
+function handleShotFile(e){
+  const f=e.target.files[0];if(!f)return;
+  if(f.size>4*1024*1024){alert('Image must be under 4MB.');return;}
+  const r=new FileReader();
+  r.onload=()=>{
+    shotBase64=r.result;
+    document.getElementById('shot-preview').innerHTML=`<img src="${r.result}" style="max-width:100%;max-height:160px;border-radius:8px;border:1px solid var(--bdr)">`;
+    document.getElementById('shot-scan-btn').disabled=false;
+  };
+  r.readAsDataURL(f);
+}
+async function scanScreenshot(){
+  if(!shotBase64){alert('Upload a screenshot first.');return;}
+  const apiKey=S.groqApiKey||'';
+  if(!apiKey||!apiKey.startsWith('gsk_')){alert('Add your Groq API key in Settings first.');return;}
+  const btn=document.getElementById('shot-scan-btn');btn.disabled=true;btn.textContent='Scanning…';
+  try{
+    const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+      body:JSON.stringify({
+        model:'meta-llama/llama-4-scout-17b-16e-instruct',
+        temperature:0,
+        max_tokens:1024,
+        messages:[{role:'user',content:[
+          {type:'text',text:'You are reading a stock/ETF brokerage portfolio screenshot. Extract every holding. Respond ONLY with a JSON object, no markdown, no prose, in this exact shape: {"holdings":[{"ticker":"VOO","units":12.5,"avgCost":400.10,"lastPrice":420.00,"value":5250.00}]}. If a field is not visible, use null. units=number of shares, avgCost=average buy price per share, lastPrice=current price per share, value=current market value of that holding. Numbers only, no currency symbols.'},
+          {type:'image_url',image_url:{url:shotBase64}}
+        ]}]
+      })
+    });
+    if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e?.error?.message||'API error '+res.status);}
+    const data=await res.json();
+    let txt=data.choices?.[0]?.message?.content||'';
+    txt=txt.replace(/```json|```/g,'').trim();
+    const m=txt.match(/\{[\s\S]*\}/);if(m)txt=m[0];
+    const parsed=JSON.parse(txt);
+    const holdings=(parsed.holdings||[]).filter(h=>h.ticker).map(h=>({
+      code:(h.ticker||'').toUpperCase(),
+      units:h.units!=null?h.units:(h.value&&h.lastPrice?h.value/h.lastPrice:1),
+      avgCost:h.avgCost!=null?h.avgCost:(h.lastPrice||0),
+      lastPrice:h.lastPrice!=null?h.lastPrice:(h.avgCost||0),
+      cost:(h.units!=null&&h.avgCost!=null)?h.units*h.avgCost:(h.value||0)
+    }));
+    if(!holdings.length){alert('No holdings detected in the image. Try a clearer screenshot.');return;}
+    renderImportPreview(holdings,[],'screenshot');
+  }catch(e){
+    alert('Scan failed: '+e.message);
+  }finally{btn.disabled=false;btn.textContent='Scan with AI';}
+}
+function renderImportPreview(holdings,contribs,source){
+  const el=document.getElementById('import-preview');el.style.display='block';
+  window._pendingImport={holdings,contribs,source};
+  el.innerHTML=`<hr style="border:none;border-top:1px solid var(--bdr);margin:10px 0">
+    <div class="lbl" style="margin-bottom:8px">Preview — confirm before saving</div>
+    ${holdings.map(h=>`<div class="bench-row"><div class="bench-label">${h.code}</div><div class="bench-val">${h.units?(+h.units).toLocaleString(undefined,{maximumFractionDigits:4})+' units · ':''}avg ${fmtD(h.avgCost||0)}${h.lastPrice?' · now '+fmtD(h.lastPrice):''}</div></div>`).join('')}
+    <div class="alert alert-y" style="margin-top:10px;font-size:11px">Review carefully${source==='screenshot'?' — AI extraction can misread numbers':''}. Saving replaces your current holdings.</div>
+    <button class="btn btn-acc btn-full" onclick="confirmImport()">Replace holdings with this data</button>
+    <button class="btn btn-ghost btn-sm btn-full" style="margin-top:6px" onclick="confirmImport(true)">Merge / add to existing instead</button>`;
+}
+function confirmImport(merge){
+  const imp=window._pendingImport;if(!imp)return;
+  const TMETA={VOO:'US',VYM:'US',VYMI:'US',VAF:'ASX',VGB:'ASX',VGS:'ASX',VAS:'ASX',NDQ:'ASX'};
+  const newHoldings=imp.holdings.map(h=>({
+    id:uid(),ticker:h.code,name:h.code,market:TMETA[h.code]||(h.code.length<=4?'US':'ASX'),
+    units:h.units!=null?h.units:1,avgCost:h.avgCost||0,
+    lastPrice:h.lastPrice!=null?h.lastPrice:(h.avgCost||0),
+    sector:'',costBasis:h.cost||((h.units||1)*(h.avgCost||0)),
+    currentValue:(h.units!=null&&h.lastPrice!=null)?h.units*h.lastPrice:(h.cost||0)
+  }));
+  if(!S.holdings)S.holdings=[];
+  if(merge){
+    newHoldings.forEach(nh=>{
+      const ex=S.holdings.find(x=>x.ticker===nh.ticker);
+      if(ex)Object.assign(ex,nh,{id:ex.id});else S.holdings.push(nh);
+    });
+  }else{
+    S.holdings=newHoldings;
+  }
+  if(imp.contribs&&imp.contribs.length){
+    if(!S.contributions)S.contributions=[];
+    // avoid duplicating: only add if none with same ticker+date+amount exists
+    imp.contribs.forEach(c=>{
+      if(!S.contributions.some(x=>x.ticker===c.ticker&&x.date===c.date&&Math.abs(x.amount-c.amount)<0.01))S.contributions.push(c);
+    });
+  }
+  window._pendingImport=null;
+  closeModal('import-modal');snapshotNW();save();buildInvestPage();if(currentPg==='dash')buildDash();
+  showToast('Portfolio imported ✓');
+}
+
+// ═══════════════════════════════════════════════════════════
+// LIVE PRICES (optional, Financial Modeling Prep)
+// ═══════════════════════════════════════════════════════════
+async function refreshPrices(){
+  const key=S.fmpApiKey||'';
+  if(!key){
+    if(confirm('Live pricing needs a free Financial Modeling Prep API key. Open Settings to add one?'))showPgFromMore('settings');
+    return;
+  }
+  const hs=S.holdings||[];if(!hs.length){showToast('No holdings to price');return;}
+  const btn=document.getElementById('refresh-prices-btn');if(btn){btn.disabled=true;btn.textContent='↻ …';}
+  let updated=0;
+  try{
+    for(const h of hs){
+      // ASX tickers need .AX suffix on FMP
+      const sym=h.market==='ASX'?h.ticker+'.AX':h.ticker;
+      try{
+        const res=await fetch(`https://financialmodelingprep.com/api/v3/quote-short/${encodeURIComponent(sym)}?apikey=${encodeURIComponent(key)}`);
+        if(!res.ok)continue;
+        const data=await res.json();
+        const price=Array.isArray(data)&&data[0]&&data[0].price;
+        if(price&&!isNaN(price)){h.lastPrice=price;h.currentValue=(h.units||0)*price;S.priceCache[h.ticker]={price,ts:Date.now()};updated++;}
+      }catch(_){}
+    }
+    save();buildInvestPage();if(currentPg==='dash')buildDash();
+    showToast(updated?`Updated ${updated} price${updated>1?'s':''}`:'No prices updated (check ticker symbols)');
+  }finally{if(btn){btn.disabled=false;btn.textContent='↻ Refresh prices';}}
+}
+
+// ═══════════════════════════════════════════════════════════
+// INVESTMENT ASSISTANT
+// ═══════════════════════════════════════════════════════════
+const ASSISTANT_QUICK=[
+  'Analyse my portfolio',
+  'What are my concentration risks?',
+  'Am I diversified enough?',
+  'Explain my sector exposure',
+  'What is dollar-cost averaging?',
+  'Bull vs bear case for my holdings',
+  'How do dividends get taxed in Australia?'
+];
+function buildAssistantWelcome(){
+  const msgs=document.getElementById('assistant-msgs');if(!msgs)return;
+  const chips=document.getElementById('assistant-chips');
+  const hasKey=S.groqApiKey&&S.groqApiKey.startsWith('gsk_');
+  msgs.innerHTML=`<div class="ai-welcome">
+    <div class="ai-welcome-ico">${hasKey?'📊':'⚙️'}</div>
+    <div class="ai-welcome-title">${hasKey?'Investment Assistant':'Setup required'}</div>
+    <div class="ai-welcome-sub">${hasKey
+      ?'I can see your real holdings and analyse concentration, sector exposure, and diversification. I explain concepts in plain English and separate <strong>facts</strong> from <strong>opinion</strong>. I won\'t invent prices or give personal advice — for that, see a licensed adviser.'
+      :'The assistant needs your free Groq API key. Go to <strong>More → Settings → AI Advisor</strong> and paste it, then come back.'}</div>
+    ${!hasKey?'<div style="margin-top:14px"><button class="btn btn-acc btn-full" onclick="showPgFromMore(\'settings\')">Go to Settings</button></div>':''}
+  </div>`;
+  if(chips)chips.innerHTML=hasKey?ASSISTANT_QUICK.map(q=>`<button class="ai-qchip" onclick="askAssistant('${q.replace(/'/g,"\\'")}')">${q}</button>`).join(''):'';
+  if(hasKey&&S.assistantHistory?.length)rebuildAssistantHistory();
+}
+function rebuildAssistantHistory(){
+  const msgs=document.getElementById('assistant-msgs');if(!msgs)return;msgs.innerHTML='';
+  S.assistantHistory.forEach(m=>appendAssistantMsg(m.role,m.content,false));
+  scrollAssistantBottom();
+}
+function appendAssistantMsg(role,content,scroll=true){
+  const msgs=document.getElementById('assistant-msgs');if(!msgs)return;
+  const time=new Date().toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'});
+  const div=document.createElement('div');div.className=`msg ${role}`;
+  div.innerHTML=`<div class="msg-bubble">${content.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>')}</div><div class="msg-time">${time}</div>`;
+  msgs.appendChild(div);if(scroll)scrollAssistantBottom();
+}
+function scrollAssistantBottom(){const el=document.getElementById('assistant-msgs');if(el)el.scrollTop=el.scrollHeight;}
+function askAssistant(q){document.getElementById('assistant-inp').value=q;sendAssistantMsg();}
+function assistantKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendAssistantMsg();}else{const el=e.target;el.style.height='auto';el.style.height=Math.min(el.scrollHeight,96)+'px';}}
+
+function portfolioContextForAI(){
+  const hs=activeHoldings();const total=portTotal();
+  if(!hs.length)return 'The user has no holdings recorded yet.';
+  const lines=hs.map(h=>{
+    const v=holdingValue(h);const w=total>0?Math.round(v/total*100):0;
+    return `${h.ticker} (${h.market||'?'}, ${h.sector||'sector n/a'}): ${fmtD(v)} = ${w}% of portfolio`;
+  }).join('; ');
+  // Concentration + market split
+  const byMarket={};const bySector={};
+  hs.forEach(h=>{const v=holdingValue(h);byMarket[h.market||'?']=(byMarket[h.market||'?']||0)+v;const s=h.sector||'Uncategorised';bySector[s]=(bySector[s]||0)+v;});
+  const mkt=Object.entries(byMarket).map(([k,v])=>`${k} ${Math.round(v/total*100)}%`).join(', ');
+  const sec=Object.entries(bySector).map(([k,v])=>`${k} ${Math.round(v/total*100)}%`).join(', ');
+  const top=hs.slice().sort((a,b)=>holdingValue(b)-holdingValue(a))[0];
+  const topW=total>0?Math.round(holdingValue(top)/total*100):0;
+  const r=calcReturn();
+  return `Total portfolio value: ${fmtD(total)} across ${hs.length} holdings. Holdings: ${lines}. By market: ${mkt}. By sector: ${sec}. Largest position: ${top.ticker} at ${topW}%. Cost basis: ${fmtD(r.cost)}. Net gain/loss: ${fmtD(r.netGain)} (${r.simplePct.toFixed(1)}%). Dividends received: ${fmtD(r.td)}. Annual dividend income estimate: ${fmtD(annDiv())}.`;
+}
+
+async function sendAssistantMsg(){
+  const inp=document.getElementById('assistant-inp');
+  const txt=inp.value.trim();if(!txt)return;
+  const apiKey=S.groqApiKey||'';
+  if(!apiKey||!apiKey.startsWith('gsk_')){appendAssistantMsg('ai','⚙️ Add your Groq API key in **More → Settings** to use the assistant.');return;}
+  inp.value='';inp.style.height='auto';
+  document.getElementById('assistant-send-btn').disabled=true;
+  if(!S.assistantHistory)S.assistantHistory=[];
+  S.assistantHistory.push({role:'user',content:txt});
+  appendAssistantMsg('user',txt);
+  const msgs=document.getElementById('assistant-msgs');
+  const typing=document.createElement('div');typing.className='msg ai';typing.id='asst-typing';
+  typing.innerHTML='<div class="ai-typing"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div>';
+  msgs.appendChild(typing);scrollAssistantBottom();
+
+  const sys=`You are FinPlan's Investment Assistant for a ~20-year-old Australian investor building wealth before university (Jan 2028). You have access to their REAL portfolio data below.
+
+${portfolioContextForAI()}
+
+YOUR ROLE:
+- Analyse their actual portfolio: concentration risk, sector/geographic exposure, diversification gaps, strengths and weaknesses.
+- Explain investing concepts in plain English. Avoid jargon; when you must use a term, define it briefly.
+- When discussing opportunities or risks, present both bullish and bearish viewpoints.
+- Teach good portfolio-management principles (diversification, costs, time in market, DCA, rebalancing).
+
+CRITICAL RULES:
+- You do NOT have live market prices or today's news. Do NOT state current prices, today's market moves, or invent specific figures you weren't given. If asked for live data, say you don't have real-time feeds and suggest where to check.
+- Clearly distinguish FACT (general, well-established) from OPINION/FRAMING. Label opinion as opinion.
+- NEVER fabricate data, returns, or statistics. If you don't know, say so.
+- You are not a licensed financial adviser. For personal advice, recommend they consult one. You provide education and analysis, not directives to buy/sell specific securities.
+- Be concise, warm, and practical. Use **bold** for key points. Under ~300 words unless asked for depth.`;
+
+  const history=S.assistantHistory.slice(-10).map(m=>({role:m.role==='ai'?'assistant':m.role,content:m.content}));
+  try{
+    const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+      body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:1024,temperature:0.6,messages:[{role:'system',content:sys},...history]})
+    });
+    if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e?.error?.message||'API error '+res.status);}
+    const data=await res.json();
+    const reply=data.choices?.[0]?.message?.content||'No response. Try again.';
+    document.getElementById('asst-typing')?.remove();
+    S.assistantHistory.push({role:'assistant',content:reply});
+    appendAssistantMsg('ai',reply);save();
+  }catch(e){
+    document.getElementById('asst-typing')?.remove();
+    const auth=e.message?.includes('401')||e.message?.includes('invalid_api_key');
+    appendAssistantMsg('ai',auth?'🔑 **Invalid API key.** Check it in Settings.':'⚠️ '+e.message);
+  }
+  document.getElementById('assistant-send-btn').disabled=false;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2052,7 +2947,20 @@ function buildSettingsPage(){
   const keyInp=document.getElementById('groq-key-inp');
   if(keyInp)keyInp.value=S.groqApiKey||'';
   updateGroqKeyStatus();
+  const fmpInp=document.getElementById('fmp-key-inp');
+  if(fmpInp)fmpInp.value=S.fmpApiKey||'';
+  updateFmpKeyStatus();
 }
+function updateFmpKeyStatus(){
+  const el=document.getElementById('fmp-key-status');if(!el)return;
+  if(S.fmpApiKey&&S.fmpApiKey.length>5)el.innerHTML='<span style="color:var(--acc)">✅ Key saved — live prices enabled</span>';
+  else el.innerHTML='<span style="color:var(--t3)">No key — using imported/manual values</span>';
+}
+function saveFmpKey(){
+  const val=document.getElementById('fmp-key-inp')?.value.trim()||'';
+  S.fmpApiKey=val;save();updateFmpKeyStatus();showToast(val?'FMP key saved ✓':'FMP key cleared');
+}
+function toggleFmpVis(){const inp=document.getElementById('fmp-key-inp');if(!inp)return;inp.type=inp.type==='password'?'text':'password';}
 function updateGroqKeyStatus(){
   const el=document.getElementById('groq-key-status');if(!el)return;
   if(S.groqApiKey&&S.groqApiKey.startsWith('gsk_')){
@@ -2150,66 +3058,6 @@ function buildCashFlowForecast(){
   }
   const mx=Math.max(...rows.map(r=>Math.abs(r.b)),1);
   el.innerHTML=rows.map(r=>`<div class="cf-row"><div class="cf-lbl">${r.l}</div><div class="cf-bar"><div class="cf-fill" style="width:${Math.min(100,Math.round(Math.abs(r.b)/mx*100))}%;background:${r.p?'var(--acc)':'var(--r)'}"></div></div><div class="cf-val" style="color:${r.p?'var(--acc)':'var(--r)'}">${fmtD(r.b)}</div></div>`).join('');
-}
-
-// ═══════════════════════════════════════════════════════════
-// FEATURE 2: TRUE INVESTMENT RETURN CALCULATOR
-// ═══════════════════════════════════════════════════════════
-function calcReturn(){
-  if(!S.investCostBasis)S.investCostBasis={};
-  if(!S.invDividendsReceived)S.invDividendsReceived={};
-  const tc=Object.values(S.investCostBasis).reduce((a,v)=>a+v,0);
-  const tv=portTotal();
-  const td=Object.values(S.invDividendsReceived).reduce((a,v)=>a+v,0);
-  const tr=tv-tc+td;
-  const pctR=tc>0?(tr/tc*100):0;
-  const earliest=(S.invLog||[]).length?new Date(S.invLog[0].date):new Date(Date.now()-365*24*60*60*1000);
-  const yrs=Math.max(0.08,(Date.now()-earliest.getTime())/(365.25*24*60*60*1000));
-  const ann=tc>0?(Math.pow(1+tr/tc,1/yrs)-1)*100:0;
-  return{tc,tv,td,tr,pctR,ann};
-}
-function buildReturnSection(){
-  const el=document.getElementById('inv-return');if(!el)return;
-  const r=calcReturn();
-  const tickers=TICKERS.map(t=>`<div class="ticker-pill${t===S.selectedTicker?' on':''}" onclick="selTick('${t}');buildReturnSection()" style="font-size:10px;padding:4px 9px">${TL[t]}</div>`).join('');
-  el.innerHTML=`<div class="ret-grid">
-    <div class="ret-met"><div class="ret-met-v ${r.tr>=0?'col-acc':'col-r'}">${r.tr>=0?'+':''}${fmtDI(r.tr)}</div><div class="ret-met-l">Total return</div></div>
-    <div class="ret-met"><div class="ret-met-v ${r.pctR>=0?'col-acc':'col-r'}">${r.pctR>=0?'+':''}${r.pctR.toFixed(1)}%</div><div class="ret-met-l">Total %</div></div>
-    <div class="ret-met"><div class="ret-met-v ${r.ann>=0?'col-b':'col-r'}">${r.ann>=0?'+':''}${r.ann.toFixed(1)}%</div><div class="ret-met-l">Annualised</div></div>
-  </div>
-  <div style="font-size:10px;color:var(--t3);margin-bottom:10px">Cost basis: ${fmtDI(r.tc)} · Current: ${fmtDI(r.tv)} · Dividends received: ${fmtDI(r.td)}</div>
-  <hr style="border:none;border-top:1px solid var(--bdr);margin:10px 0">
-  <div class="lbl" style="margin-bottom:7px">Update cost basis & record dividends</div>
-  <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px">${tickers}</div>
-  <div class="inp-row">
-    <div><label class="lbl">Cost basis ${S.selectedTicker} $</label><input type="number" class="inp" id="cost-basis-inp" value="${S.investCostBasis?.[S.selectedTicker]||0}" min="0" step="10"></div>
-    <div><label class="lbl">Dividend received $</label><input type="number" class="inp" id="div-recv-amt" placeholder="0.00" min="0" step="0.01"></div>
-  </div>
-  <button class="btn btn-acc btn-full" onclick="saveDivAndBasis()">Save</button>`;
-}
-function saveDivAndBasis(){
-  if(!S.invDividendsReceived)S.invDividendsReceived={};
-  if(!S.investCostBasis)S.investCostBasis={};
-  const da=parseFloat(document.getElementById('div-recv-amt')?.value)||0;
-  const bs=parseFloat(document.getElementById('cost-basis-inp')?.value)||0;
-  if(da>0)S.invDividendsReceived[S.selectedTicker]=(S.invDividendsReceived[S.selectedTicker]||0)+da;
-  S.investCostBasis[S.selectedTicker]=bs;
-  save();buildReturnSection();showToast('Saved!');
-}
-
-// ═══════════════════════════════════════════════════════════
-// FEATURE 3: BENCHMARK COMPARISON
-// ═══════════════════════════════════════════════════════════
-function buildBenchmark(){
-  const el=document.getElementById('inv-benchmark');if(!el)return;
-  if(!S.benchmarks)S.benchmarks={sp500:'',asx200:''};
-  const r=calcReturn();
-  const sp=parseFloat(S.benchmarks.sp500)||0;
-  const asx=parseFloat(S.benchmarks.asx200)||0;
-  el.innerHTML=`<div class="bench-row"><div class="bench-label">Your portfolio</div><div class="bench-val ${r.pctR>=0?'col-acc':'col-r'}">${r.pctR>=0?'+':''}${r.pctR.toFixed(1)}%</div></div>
-  <div class="bench-row" style="align-items:center"><div class="bench-label">S&amp;P 500 (enter %)</div><div style="display:flex;align-items:center;gap:7px"><input type="number" class="inp" style="margin:0;width:76px;font-size:12px;padding:5px 8px" placeholder="18.5" value="${S.benchmarks.sp500}" oninput="S.benchmarks.sp500=this.value;save();buildBenchmark()" step="0.1"><span class="bench-val col-b" style="min-width:36px">${sp?'+'+sp.toFixed(1)+'%':'—'}</span></div></div>
-  <div class="bench-row" style="align-items:center"><div class="bench-label">ASX 200 (enter %)</div><div style="display:flex;align-items:center;gap:7px"><input type="number" class="inp" style="margin:0;width:76px;font-size:12px;padding:5px 8px" placeholder="12.1" value="${S.benchmarks.asx200}" oninput="S.benchmarks.asx200=this.value;save();buildBenchmark()" step="0.1"><span class="bench-val col-y" style="min-width:36px">${asx?'+'+asx.toFixed(1)+'%':'—'}</span></div></div>
-  ${sp?`<div class="alert ${r.pctR>=sp?'alert-acc':'alert-r'}" style="margin-top:10px;margin-bottom:0">You ${r.pctR>=sp?'beat':'trailed'} the S&P 500 by ${Math.abs(r.pctR-sp).toFixed(1)}%${asx?' · '+(r.pctR>=asx?'Beat':'Trailed')+' ASX 200 by '+Math.abs(r.pctR-asx).toFixed(1)+'%':''}.</div>`:'<div style="font-size:10px;color:var(--t3);margin-top:8px">Enter index % returns from Google Finance or your broker for the same holding period.</div>'}`;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2544,7 +3392,6 @@ function doInstall(){if(!deferredPrompt)return;deferredPrompt.prompt();deferredP
 // ═══════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════
-document.getElementById('inv-date').value=today();
 load();
 applyTheme(S.themeIdx||0);applyMode(S.mode||'dark');
 setTimeout(()=>{
