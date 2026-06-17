@@ -299,11 +299,12 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 
 /* DONUTS */
 .donut-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:4px}
-.donut-cw{position:relative;height:120px}
+.donut-grid>div{min-width:0;overflow:hidden}
+.donut-cw{position:relative;height:140px}
 .donut-lbl{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;text-align:center}
-.dleg{display:flex;flex-wrap:wrap;gap:3px 6px;justify-content:center;margin-top:5px}
-.dleg-i{font-size:9px;color:var(--t3);display:flex;align-items:center;gap:2px}
-.dleg-d{width:6px;height:6px;border-radius:1px}
+.dleg{display:flex;flex-wrap:wrap;gap:3px 6px;justify-content:center;margin-top:5px;overflow:hidden;max-height:42px}
+.dleg-i{font-size:9px;color:var(--t3);display:flex;align-items:center;gap:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.dleg-d{width:6px;height:6px;border-radius:1px;flex-shrink:0}
 
 /* CHART */
 .chart-wrap{position:relative;width:100%;height:170px}
@@ -867,6 +868,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
       <div class="alert alert-b" style="margin-bottom:10px;font-size:12px;line-height:1.55">Estimates only — verify with your accountant. Based on your investment data for the current Australian financial year (1 Jul – 30 Jun).</div>
       <div class="card"><div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>ATO tax estimate</div></div><div id="tax-summary"></div></div>
       <div class="card"><div class="ctitle"><div class="ctitle-l">Contributions this FY</div></div><div id="tax-contribs" style="font-size:12px;color:var(--t2);line-height:1.8"></div></div>
+      <div class="card"><div class="ctitle"><div class="ctitle-l">Holdings cost base (CGT reference)</div></div><div id="tax-costbase" style="font-size:12px;color:var(--t2);line-height:1.8"></div></div>
     </div>
 
     <!-- SETTINGS -->
@@ -1278,7 +1280,8 @@ const MIGRATIONS={
         d.holdings.push({
           id:(Date.now().toString(36)+Math.random().toString(36).slice(2,6)),
           ticker:tk,name:meta.name,market:meta.market,sector:meta.sector,
-          units:1,avgCost:cost,lastPrice:val,costBasis:cost,currentValue:val
+          units:1,avgCost:cost,lastPrice:val,costBasis:cost,currentValue:val,
+          dataSource:'migration'
         });
       });
     }
@@ -2290,28 +2293,45 @@ function buildInvHero(){
   const gain=val-cost+divs;
   const gainPct=cost>0?(gain/cost*100):0;
   const up=gain>=0;
+  const r=calcReturn();
+  // Data quality check
+  const hs=S.holdings||[];
+  const hasMigrated=hs.some(h=>h.dataSource==='migration');
+  const hasRealPrices=hs.some(h=>h.dataSource==='screenshot'||(h.priceDate&&h.priceDate===today()));
+  const pricesStale=hs.length>0&&!hasRealPrices&&!S.fmpApiKey;
+  const csvOnly=hs.every(h=>h.dataSource==='csv')&&hs.length>0;
   el.innerHTML=`
     <div class="hero-l">Portfolio value</div>
     <div class="hero-v">${fmtD(val)}</div>
-    <div class="hero-s">${up?'▲':'▼'} ${fmtD(Math.abs(gain))} (${up?'+':''}${gainPct.toFixed(1)}%) all time${divs>0?' · incl '+fmtD(divs)+' dividends':''}</div>
+    <div style="display:flex;align-items:baseline;gap:12px;margin-top:8px;position:relative;z-index:1">
+      <div style="font-size:20px;font-weight:800;font-family:var(--mono);color:${up?'var(--acc)':'var(--r)'}">${up?'+':''}${fmtD(gain)}</div>
+      <div style="font-size:14px;font-weight:700;font-family:var(--mono);color:${up?'var(--acc)':'var(--r)'}">${up?'+':''}${gainPct.toFixed(1)}%</div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px;font-size:11px;color:var(--t2);position:relative;z-index:1">
+      <span>Cost ${fmtDI(cost)}</span>
+      ${divs>0?'<span>· Divs +'+fmtDI(divs)+'</span>':''}
+      ${r.ann!==0?'<span>· '+r.ann.toFixed(1)+'% p.a.</span>':''}
+    </div>
     <div class="tag-row">
       <span class="tag tg">${activeHoldings().length} holdings</span>
-      <span class="tag tb">Cost ${fmtDI(cost)}</span>
       <span class="tag ty">+${fmtDI(annDiv())}/yr income</span>
+      ${hasMigrated?'<span class="tag tr" style="font-size:8px">estimated data — import CSV for accuracy</span>':''}
+      ${csvOnly&&!hasRealPrices?'<span class="tag ty" style="font-size:8px">prices stale — refresh or scan</span>':''}
     </div>`;
 }
 
 function updateSyncStatus(){
   const el=document.getElementById('sync-status');if(!el)return;
+  const hs=S.holdings||[];if(!hs.length){el.textContent='No holdings — import or add manually';return;}
+  const hasMigrated=hs.some(h=>h.dataSource==='migration');
+  const hasRealUnits=hs.some(h=>h.dataSource!=='migration'&&h.units!==1);
+  const hasCurrentPrices=hs.some(h=>h.priceDate);
   const hasKey=S.fmpApiKey&&S.fmpApiKey.length>5;
-  const cached=Object.keys(S.priceCache||{}).length;
-  let msg=[];
-  if(cached){
-    const newest=Math.max(...Object.values(S.priceCache).map(p=>p.ts||0));
-    if(newest)msg.push('Prices updated '+timeAgo(newest));
-  }
-  msg.push(hasKey?'Live pricing on':'Live pricing off (add FMP key in Settings)');
-  el.textContent=msg.join(' · ');
+  const parts=[];
+  parts.push(hasRealUnits?'✅ Units':'⚠️ Units (import CSV)');
+  parts.push(!hasMigrated?'✅ Cost basis':'⚠️ Cost (estimated)');
+  parts.push(hasCurrentPrices?'✅ Prices':'⚠️ Prices (refresh)');
+  el.innerHTML=parts.map(p=>`<span style="margin-right:8px;font-size:9px">${p}</span>`).join('');
 }
 function timeAgo(ts){const s=Math.floor((Date.now()-ts)/1000);if(s<60)return'just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';}
 
@@ -2326,14 +2346,36 @@ function buildHoldingsList(){
     const gainPct=cost>0?(gain/cost*100):0;const up=gain>=0;
     const weight=total>0?Math.round(val/total*100):0;
     const mkTag=h.market==='ASX'?'<span class="tag ty" style="font-size:8px">ASX</span>':h.market==='US'?'<span class="tag tb" style="font-size:8px">US</span>':'';
+    const isMigrated=h.dataSource==='migration';
+    const isCsvNoPrice=h.dataSource==='csv'&&(!h.priceDate)&&Math.abs(h.lastPrice-h.avgCost)<0.01;
+    // Show real units for imported/manual data, or "$ value only" for migrated
+    let unitsLabel='';
+    if(isMigrated){
+      unitsLabel='$ value only';
+    }else if(h.units!=null&&h.units!==1){
+      unitsLabel=(+h.units).toLocaleString(undefined,{maximumFractionDigits:4})+' units';
+    }else if(h.units===1&&h.dataSource!=='manual'){
+      unitsLabel='';
+    }else{
+      unitsLabel=(+h.units).toLocaleString(undefined,{maximumFractionDigits:4})+' units';
+    }
+    // Gain display: suppress if data makes it meaningless (migrated default cost or csv-no-price)
+    let gainDisplay;
+    if(isMigrated){
+      gainDisplay='<span style="font-size:10px;color:var(--t3)">import for P/L</span>';
+    }else if(isCsvNoPrice){
+      gainDisplay='<span style="font-size:10px;color:var(--y)">needs current price</span>';
+    }else{
+      gainDisplay=`<span class="${up?'col-acc':'col-r'}">${up?'+':''}${gainPct.toFixed(1)}%</span>`;
+    }
     return`<div class="hld-row" onclick="openHoldingModal('${h.id}')">
       <div class="hld-main">
         <div class="hld-tk">${h.ticker} ${mkTag}</div>
-        <div class="hld-sub">${h.units!=null?(+h.units).toLocaleString(undefined,{maximumFractionDigits:4})+' units · ':''}${weight}% of portfolio</div>
+        <div class="hld-sub">${unitsLabel?unitsLabel+' · ':''}${weight}% of portfolio</div>
       </div>
       <div class="hld-right">
         <div class="hld-val">${fmtD(val)}</div>
-        <div class="hld-gain ${up?'col-acc':'col-r'}">${up?'+':''}${gainPct.toFixed(1)}%</div>
+        <div class="hld-gain">${gainDisplay}</div>
       </div>
     </div>`;
   }).join('');
@@ -2590,7 +2632,7 @@ function saveHolding(){
     const h=S.holdings.find(x=>x.id===editingHoldingId);
     if(h)Object.assign(h,{ticker,market,name:name||h.name,units,avgCost,lastPrice,sector:sector||h.sector,costBasis:units*avgCost,currentValue:units*lastPrice});
   }else{
-    S.holdings.push({id:uid(),ticker,market,name:name||ticker,units,avgCost,lastPrice,sector:sector||'',costBasis:units*avgCost,currentValue:units*lastPrice});
+    S.holdings.push({id:uid(),ticker,market,name:name||ticker,units,avgCost,lastPrice,sector:sector||'',costBasis:units*avgCost,currentValue:units*lastPrice,dataSource:'manual'});
   }
   closeModal('holding-modal');snapshotNW();save();buildInvestPage();if(currentPg==='dash')buildDash();showToast('Holding saved');
 }
@@ -2832,7 +2874,9 @@ function confirmImport(merge){
     units:h.units!=null?h.units:1,avgCost:h.avgCost||0,
     lastPrice:h.lastPrice!=null?h.lastPrice:(h.avgCost||0),
     sector:'',costBasis:h.cost||((h.units||1)*(h.avgCost||0)),
-    currentValue:(h.units!=null&&h.lastPrice!=null)?h.units*h.lastPrice:(h.cost||0)
+    currentValue:(h.units!=null&&h.lastPrice!=null)?h.units*h.lastPrice:(h.cost||0),
+    dataSource:imp.source==='csv'?'csv':'screenshot',
+    priceDate:imp.source==='screenshot'?today():null
   }));
   if(!S.holdings)S.holdings=[];
   if(merge){
@@ -2853,6 +2897,47 @@ function confirmImport(merge){
   window._pendingImport=null;
   closeModal('import-modal');snapshotNW();save();buildInvestPage();if(currentPg==='dash')buildDash();
   showToast('Portfolio imported ✓');
+  // Post-import: get current prices
+  if(imp.source==='csv'){
+    setTimeout(()=>{
+      if(S.fmpApiKey&&S.fmpApiKey.length>5){
+        showToast('Refreshing prices…');
+        refreshPrices();
+      }else{
+        promptManualPrices();
+      }
+    },600);
+  }
+}
+// Manual price entry for when no API key exists
+function promptManualPrices(){
+  const hs=S.holdings||[];
+  if(!hs.length)return;
+  const needsPrice=hs.filter(h=>!h.priceDate||h.dataSource==='csv');
+  if(!needsPrice.length)return;
+  const rows=needsPrice.map(h=>`<div class="inp-row" style="align-items:center;margin-bottom:7px">
+    <label class="lbl" style="margin:0;min-width:50px">${h.ticker}</label>
+    <input type="number" class="inp" id="mp-${h.id}" value="${h.lastPrice||''}" placeholder="current price" min="0" step="0.01" style="margin:0">
+  </div>`).join('');
+  showSheet('Enter current prices',`
+    <div style="font-size:12px;color:var(--t2);line-height:1.55;margin-bottom:12px">Your trade history is imported. To see real profit/loss, enter today's price per unit for each holding. Check your CMC app or Google Finance.</div>
+    ${rows}
+    <div style="font-size:11px;color:var(--t3);margin-bottom:10px">Or add a free <strong>FMP API key</strong> in Settings to auto-refresh prices anytime.</div>
+    <button class="btn btn-acc btn-full" onclick="saveManualPrices()">Save prices</button>`);
+}
+function saveManualPrices(){
+  const hs=S.holdings||[];let updated=0;
+  hs.forEach(h=>{
+    const inp=document.getElementById('mp-'+h.id);
+    if(inp){
+      const v=parseFloat(inp.value);
+      if(!isNaN(v)&&v>0&&Math.abs(v-h.avgCost)>0.001){
+        h.lastPrice=v;h.currentValue=(h.units||0)*v;h.priceDate=today();updated++;
+      }
+    }
+  });
+  save();closeSheet();buildInvestPage();if(currentPg==='dash')buildDash();
+  showToast(updated?updated+' price'+(updated>1?'s':'')+' updated':'No changes');
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2876,7 +2961,7 @@ async function refreshPrices(){
         if(!res.ok)continue;
         const data=await res.json();
         const price=Array.isArray(data)&&data[0]&&data[0].price;
-        if(price&&!isNaN(price)){h.lastPrice=price;h.currentValue=(h.units||0)*price;S.priceCache[h.ticker]={price,ts:Date.now()};updated++;}
+        if(price&&!isNaN(price)){h.lastPrice=price;h.currentValue=(h.units||0)*price;h.priceDate=today();S.priceCache[h.ticker]={price,ts:Date.now()};updated++;}
       }catch(_){}
     }
     save();buildInvestPage();if(currentPg==='dash')buildDash();
@@ -3800,11 +3885,15 @@ function buildTaxSummary(){
   const fyStr='FY'+fyStart.getFullYear()+'–'+String(fyEnd.getFullYear()).slice(2);
   const prop=Math.min(1,(now-fyStart)/(fyEnd-fyStart));
   const estDiv=annDiv()*prop;
-  const usDivs=['VOO','VYM','VYMI'].reduce((a,t)=>a+(S.portfolio[t]||0)*(TYLD[t]||0),0)*prop;
+  // US dividend estimate from holdings model
+  const usETFs=['VOO','VYM','VYMI'];
+  const hs=S.holdings||[];
+  const usDivs=hs.filter(h=>usETFs.includes(h.ticker)).reduce((a,h)=>a+holdingValue(h)*tickerYield(h.ticker),0)*prop;
   const wht=usDivs*0.15;
   const r=calcReturn();
-  const fyLog=(S.invLog||[]).filter(e=>{try{const d=new Date(e.date+'T12:00:00');return d>=fyStart&&d<=fyEnd;}catch{return false;}});
-  const tc2=fyLog.reduce((a,e)=>a+e.amt,0);
+  // FY contributions from the contributions model
+  const fyContribs=(S.contributions||[]).filter(c=>{if(!c.date||c.status!=='completed')return false;try{const d=new Date(c.date+'T12:00:00');return d>=fyStart&&d<=fyEnd;}catch{return false;}});
+  const tc2=fyContribs.reduce((a,c)=>a+c.amount,0);
   const manDiv=Object.values(S.invDividendsReceived||{}).reduce((a,v)=>a+v,0);
   const el=document.getElementById('tax-summary');
   if(el)el.innerHTML=`
@@ -3813,12 +3902,23 @@ function buildTaxSummary(){
     <div class="tax-row"><div class="tax-label">US ETF dividends (est.)</div><div class="tax-val">${fmtD(usDivs)}</div></div>
     <div class="tax-row"><div class="tax-label">US withholding tax (15%)</div><div class="tax-val col-r">-${fmtD(wht)}</div></div>
     <div class="tax-row"><div class="tax-label">Manually recorded dividends</div><div class="tax-val col-acc">${fmtD(manDiv)}</div></div>
-    <div class="tax-row"><div class="tax-label">Total investment contributions</div><div class="tax-val">${fmtD(tc2)}</div></div>
-    <div class="tax-row"><div class="tax-label">Unrealised gain / loss</div><div class="tax-val ${r.tr>=0?'col-acc':'col-r'}">${r.tr>=0?'+':''}${fmtD(r.tr)} (unrealised)</div></div>
+    <div class="tax-row"><div class="tax-label">Total contributions this FY</div><div class="tax-val">${fmtD(tc2)}</div></div>
+    <div class="tax-row"><div class="tax-label">Unrealised gain / loss</div><div class="tax-val ${r.netGain>=0?'col-acc':'col-r'}">${r.netGain>=0?'+':''}${fmtD(r.netGain)} (unrealised)</div></div>
     <div class="tax-row"><div class="tax-label">Realised CGT</div><div class="tax-val">$0 — no sells recorded</div></div>
     <div class="tax-note">⚠️ Estimates only — always verify with your accountant. US ETFs attract 15% US withholding tax on dividends, claimable as a foreign tax offset under the AU–US treaty. HECS repayments trigger above ~$54,435 gross income. CGT discount of 50% applies when held over 12 months.</div>`;
   const cEl=document.getElementById('tax-contribs');
-  if(cEl)cEl.innerHTML=fyLog.length?fyLog.map(e=>`<strong style="color:var(--t)">${fmtDate(e.date)}</strong> — ${TL[e.ticker]||e.ticker}: ${fmtD(e.amt)}`).join('<br>'):'No investment contributions logged for '+fyStr+' yet.';
+  if(cEl)cEl.innerHTML=fyContribs.length?fyContribs.map(c=>`<strong style="color:var(--t)">${fmtDate(c.date)}</strong> — ${c.ticker}: ${fmtD(c.amount)}`).join('<br>'):'No contributions logged for '+fyStr+' yet.';
+  // Holdings cost base for CGT reference
+  const cbEl=document.getElementById('tax-costbase');
+  if(cbEl){
+    if(!hs.length){cbEl.innerHTML='No holdings recorded.';return;}
+    const totalCost=portCostBasis();
+    cbEl.innerHTML=hs.map(h=>{
+      const cost=holdingCost(h);const src=h.dataSource==='csv'?'from trades':'estimated';
+      return`<div class="tax-row"><div class="tax-label">${h.ticker} · ${h.units!=null&&h.units!==1?(+h.units).toLocaleString(undefined,{maximumFractionDigits:4})+' units':'$ basis'}</div><div class="tax-val">${fmtD(cost)} <span style="font-size:9px;color:var(--t3)">(${src})</span></div></div>`;
+    }).join('')+`<div class="tax-row" style="border-top:1px solid var(--bdr2);font-weight:700"><div class="tax-label">Total cost base</div><div class="tax-val">${fmtD(totalCost)}</div></div>
+    <div class="tax-note">Keep this for your CGT records. When you sell, capital gain = sale price − cost base. 50% CGT discount applies if held >12 months.</div>`;
+  }
 }
 
 
