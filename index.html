@@ -926,7 +926,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 
       <div class="card">
         <div class="ctitle"><div class="ctitle-l">Live prices — FMP API key (optional)</div></div>
-        <div style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:10px">Optional. For live portfolio prices, get a free key at <strong style="color:var(--acc)">financialmodelingprep.com</strong> (~250 requests/day). Without it, your imported/manual values are used.</div>
+        <div style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:10px">Optional. For live portfolio prices, get a free key at <strong style="color:var(--acc)">financialmodelingprep.com</strong> (250 requests/day).<br><br><strong style="color:var(--y)">Important:</strong> The FMP free tier covers <strong>US-listed stocks only</strong> (VOO, VYM, VYMI). ASX-listed ETFs (VAF, VGB, VGS, VAS, NDQ) are not available on the free plan — for those, use screenshot scan or enter prices manually.</div>
         <label class="lbl">FMP API key</label>
         <input type="password" class="inp" id="fmp-key-inp" placeholder="your FMP key" autocomplete="off" spellcheck="false">
         <div style="display:flex;gap:7px">
@@ -2944,28 +2944,72 @@ function saveManualPrices(){
 // LIVE PRICES (optional, Financial Modeling Prep)
 // ═══════════════════════════════════════════════════════════
 async function refreshPrices(){
-  const key=S.fmpApiKey||'';
+  const key=(S.fmpApiKey||'').trim();
   if(!key){
     if(confirm('Live pricing needs a free Financial Modeling Prep API key. Open Settings to add one?'))showPgFromMore('settings');
     return;
   }
   const hs=S.holdings||[];if(!hs.length){showToast('No holdings to price');return;}
   const btn=document.getElementById('refresh-prices-btn');if(btn){btn.disabled=true;btn.textContent='↻ …';}
-  let updated=0;
+  // Build symbol list. FMP free tier is US-only; ASX needs paid plan.
+  // We try ALL holdings in one batch and report per-symbol success.
+  const symbols=hs.map(h=>h.market==='ASX'?h.ticker+'.AX':h.ticker);
+  const symList=symbols.join(',');
+  const url=`https://financialmodelingprep.com/api/v3/quote/${encodeURIComponent(symList)}?apikey=${encodeURIComponent(key)}`;
+  let updated=0;const failed=[];const skipped=[];
   try{
-    for(const h of hs){
-      // ASX tickers need .AX suffix on FMP
-      const sym=h.market==='ASX'?h.ticker+'.AX':h.ticker;
-      try{
-        const res=await fetch(`https://financialmodelingprep.com/api/v3/quote-short/${encodeURIComponent(sym)}?apikey=${encodeURIComponent(key)}`);
-        if(!res.ok)continue;
-        const data=await res.json();
-        const price=Array.isArray(data)&&data[0]&&data[0].price;
-        if(price&&!isNaN(price)){h.lastPrice=price;h.currentValue=(h.units||0)*price;h.priceDate=today();S.priceCache[h.ticker]={price,ts:Date.now()};updated++;}
-      }catch(_){}
+    let res;
+    try{res=await fetch(url);}
+    catch(networkErr){
+      alert('Network error reaching FMP. Check your internet connection.\n\nDetails: '+networkErr.message);
+      return;
     }
+    // Diagnose by HTTP status
+    if(res.status===401){alert('FMP says your API key is invalid (401).\n\nGo to Settings → FMP API key and paste a fresh key from financialmodelingprep.com/dashboard.');return;}
+    if(res.status===403){alert('FMP says access is forbidden (403). Your key may have expired or this endpoint requires a paid plan.');return;}
+    if(res.status===429){alert('FMP rate limit hit (429). The free tier allows 250 calls per day — try again later.');return;}
+    if(res.status===402){alert('This endpoint requires a paid FMP plan (402).');return;}
+    if(!res.ok){
+      const txt=await res.text().catch(()=>'');
+      alert('FMP returned an error (HTTP '+res.status+').\n\n'+(txt.slice(0,200)||'No details from server.'));
+      return;
+    }
+    let data;
+    try{data=await res.json();}
+    catch(e){alert('FMP returned a non-JSON response. The endpoint or key may be wrong.');return;}
+    // Free-tier limit messages come back as 200 OK with an "Error Message" field
+    if(data&&data['Error Message']){alert('FMP error: '+data['Error Message']);return;}
+    if(!Array.isArray(data)){alert('FMP returned an unexpected response shape. Raw response:\n\n'+JSON.stringify(data).slice(0,300));return;}
+    if(data.length===0){alert('FMP returned no data for any of your symbols. Most likely cause: ASX symbols (VAF, VGB, VAS, VGS, NDQ) are not included on the free FMP plan — only US stocks (VOO, VYM, VYMI) are.\n\nFor ASX prices, use "Scan screenshot" or enter prices manually.');return;}
+    // Map returned data back to holdings
+    const bySymbol={};data.forEach(q=>{if(q&&q.symbol)bySymbol[q.symbol.toUpperCase()]=q;});
+    hs.forEach((h,i)=>{
+      const sym=symbols[i].toUpperCase();
+      const q=bySymbol[sym];
+      if(q&&typeof q.price==='number'&&!isNaN(q.price)&&q.price>0){
+        h.lastPrice=q.price;
+        h.currentValue=(h.units||0)*q.price;
+        h.priceDate=today();
+        S.priceCache[h.ticker]={price:q.price,ts:Date.now()};
+        updated++;
+      }else if(h.market==='ASX'){
+        skipped.push(h.ticker+' (ASX — needs paid plan)');
+      }else{
+        failed.push(h.ticker+' (no data returned)');
+      }
+    });
     save();buildInvestPage();if(currentPg==='dash')buildDash();
-    showToast(updated?`Updated ${updated} price${updated>1?'s':''}`:'No prices updated (check ticker symbols)');
+    // Clear, honest result message
+    let msg=`Updated ${updated} of ${hs.length} prices`;
+    if(skipped.length||failed.length){
+      const details=[...skipped,...failed].slice(0,5).join('\n• ');
+      if(updated>0)showToast('Updated '+updated+' price'+(updated>1?'s':''));
+      alert(`Refreshed ${updated} of ${hs.length} holdings.\n\nNot updated:\n• ${details}\n\nFor the rest, scan a screenshot or enter prices manually.`);
+    }else{
+      showToast(msg+' ✓');
+    }
+  }catch(err){
+    alert('Unexpected error during price refresh:\n\n'+(err.message||err));
   }finally{if(btn){btn.disabled=false;btn.textContent='↻ Refresh prices';}}
 }
 
