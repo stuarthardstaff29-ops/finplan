@@ -741,17 +741,11 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 
     <!-- PAY DAY PLANNER -->
     <div class="pg" id="pg-payday">
-      <div id="payday-alert"></div>
-      <div class="card acc-b">
-        <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Next pay day</div></div>
-        <div id="payday-next"></div>
-      </div>
+      <div class="alert alert-b" style="font-size:12px;line-height:1.55;margin-bottom:12px">Income you record automatically appears here, ready to distribute. The app never moves your real money — it tells you exactly how much to transfer between accounts. Confirm only after you've moved it.</div>
+      <div id="payday-fulltime-card"></div>
+      <div id="payday-kmart-card"></div>
       <div class="card">
-        <div class="ctitle"><div class="ctitle-l">Distribution plan</div><button class="btn btn-ghost btn-sm" onclick="openPaydaySettings()">Edit</button></div>
-        <div id="payday-plan"></div>
-      </div>
-      <div class="card">
-        <div class="ctitle"><div class="ctitle-l">Pay day history</div></div>
+        <div class="ctitle"><div class="ctitle-l">Distribution history</div></div>
         <div id="payday-history"></div>
       </div>
     </div>
@@ -1156,7 +1150,7 @@ const STORAGE_KEY='finplan-data';      // primary state
 const BACKUP_KEY='finplan-backup';     // pre-migration safety copy
 const META_KEY='finplan-meta';         // last-good timestamp/version
 const LEGACY_KEYS=['fpv4','fpv3'];      // older version keys to migrate from
-const SCHEMA_VERSION=4;                 // bump when the shape of S changes
+const SCHEMA_VERSION=5;                 // bump when the shape of S changes
 
 let S={
   schemaVersion:SCHEMA_VERSION,
@@ -1196,12 +1190,30 @@ let S={
   benchmarks:{sp500:'',asx200:''},
   analyticsPeriod:'month',
   // v9 features
-  paydayConfig:{monthlyDay:15,monthlyAmt:4069,weeklyDay:4,weeklyAmt:110,plan:{emergency:20,holiday:10,uni:25,pc:10,invest:20,buffer:15}},
-  paydayLog:[],          // [{id,date,type,amount,distributed:{...}}]
-  savingsRateHistory:[], // [{ym,rate,income,saved}]
-  catStreaks:{},         // {catId:{limit,weeks:[{wkStart,spent,met}],current,best}}
-  nwMilestones:[],       // hit milestone values e.g. [10000,25000]
-  scenarioState:null,    // last what-if inputs
+  paydaySources:{
+    fulltime:{label:'Full-Time Job',keywords:['full-time','fulltime','salary','wage'],plan:[
+      {key:'emergency',type:'goal',ref:'emergency',label:'Emergency fund',pct:15},
+      {key:'uni',type:'goal',ref:'uni',label:'University fund',pct:30},
+      {key:'pc',type:'goal',ref:'pc',label:'PC & laptop fund',pct:10},
+      {key:'holiday',type:'goal',ref:'holiday',label:'Holiday fund',pct:10},
+      {key:'invest',type:'invest',label:'Investments',pct:15},
+      {key:'spend',type:'spending',label:'Spending money',pct:15},
+      {key:'buffer',type:'buffer',label:'Leave in account',pct:5}
+    ]},
+    kmart:{label:'Kmart',keywords:['kmart'],plan:[
+      {key:'emergency',type:'goal',ref:'emergency',label:'Emergency fund',pct:30},
+      {key:'holiday',type:'goal',ref:'holiday',label:'Holiday fund',pct:20},
+      {key:'pc',type:'goal',ref:'pc',label:'PC & laptop fund',pct:15},
+      {key:'invest',type:'invest',label:'Investments',pct:10},
+      {key:'spend',type:'spending',label:'Spending money',pct:25}
+    ]}
+  },
+  paydayDistributed:{},  // {transactionId: {source,date,allocations:[{key,label,amount,type,ref}]}}
+  paydayLog:[],          // legacy — kept for back-compat, no longer written to
+  savingsRateHistory:[],
+  catStreaks:{},
+  nwMilestones:[],
+  scenarioState:null,
   editingBalAcct:null
 };
 
@@ -1308,6 +1320,43 @@ const MIGRATIONS={
     if(!d.catStreaks)d.catStreaks={};
     if(!Array.isArray(d.nwMilestones))d.nwMilestones=[];
     d.schemaVersion=4;
+    return d;
+  },
+  // v4 → v5: redesigned payday — income-driven, per-source plans, sinking funds included
+  4:(d)=>{
+    if(!d.paydaySources){
+      d.paydaySources={
+        fulltime:{label:'Full-Time Job',keywords:['full-time','fulltime','salary','wage'],plan:[
+          {key:'emergency',type:'goal',ref:'emergency',label:'Emergency fund',pct:15},
+          {key:'uni',type:'goal',ref:'uni',label:'University fund',pct:30},
+          {key:'pc',type:'goal',ref:'pc',label:'PC & laptop fund',pct:10},
+          {key:'holiday',type:'goal',ref:'holiday',label:'Holiday fund',pct:10},
+          {key:'invest',type:'invest',label:'Investments',pct:15},
+          {key:'spend',type:'spending',label:'Spending money',pct:15},
+          {key:'buffer',type:'buffer',label:'Leave in account',pct:5}
+        ]},
+        kmart:{label:'Kmart',keywords:['kmart'],plan:[
+          {key:'emergency',type:'goal',ref:'emergency',label:'Emergency fund',pct:30},
+          {key:'holiday',type:'goal',ref:'holiday',label:'Holiday fund',pct:20},
+          {key:'pc',type:'goal',ref:'pc',label:'PC & laptop fund',pct:15},
+          {key:'invest',type:'invest',label:'Investments',pct:10},
+          {key:'spend',type:'spending',label:'Spending money',pct:25}
+        ]}
+      };
+    }
+    if(!d.paydayDistributed)d.paydayDistributed={};
+    // Mark any income transactions that were created by the old payday logic as already distributed,
+    // so they don't re-appear as "pending" in the new queue.
+    if(Array.isArray(d.paydayLog)&&Array.isArray(d.transactions)){
+      d.paydayLog.forEach(l=>{
+        const txn=d.transactions.find(t=>t.cat==='income'&&t.date===l.date&&Math.abs(t.amt-l.amount)<0.01);
+        if(txn&&!d.paydayDistributed[txn.id]){
+          d.paydayDistributed[txn.id]={source:l.type==='monthly'?'fulltime':'kmart',date:l.date,allocations:[],legacy:true};
+        }
+      });
+    }
+    delete d.paydayConfig; // remove legacy calendar config
+    d.schemaVersion=5;
     return d;
   }
 };
@@ -3130,119 +3179,307 @@ CRITICAL RULES:
 // ═══════════════════════════════════════════════════════════
 // PAY DAY DISTRIBUTION PLANNER
 // ═══════════════════════════════════════════════════════════
-function nextPaydayDates(){
-  const cfg=S.paydayConfig;const now=new Date();
-  // Next monthly payday
-  let md=new Date(now.getFullYear(),now.getMonth(),cfg.monthlyDay);
-  if(md<now.setHours(0,0,0,0))md=new Date(now.getFullYear(),now.getMonth()+1,cfg.monthlyDay);
-  // Next weekly payday (weeklyDay: 0=Sun..6=Sat)
-  const today0=new Date();today0.setHours(0,0,0,0);
-  let wd=new Date(today0);const diff=(cfg.weeklyDay-today0.getDay()+7)%7;wd.setDate(today0.getDate()+(diff===0?0:diff));
-  return{monthly:md,weekly:wd};
-}
-function daysUntil(d){const now=new Date();now.setHours(0,0,0,0);return Math.round((d-now)/(1000*60*60*24));}
-function buildPaydayPage(){
-  const cfg=S.paydayConfig;
-  const {monthly,weekly}=nextPaydayDates();
-  const mDays=daysUntil(monthly),wDays=daysUntil(weekly);
-  const soonest=mDays<=wDays?{d:monthly,type:'monthly',amt:cfg.monthlyAmt,days:mDays}:{d:weekly,type:'weekly',amt:cfg.weeklyAmt,days:wDays};
-  // Next payday card
-  document.getElementById('payday-next').innerHTML=`
-    <div style="text-align:center;padding:6px 0">
-      <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em">${soonest.type==='monthly'?'Full-time pay':'Kmart pay'}</div>
-      <div style="font-size:30px;font-weight:800;font-family:var(--mono);color:var(--acc);margin:4px 0">${fmtD(soonest.amt)}</div>
-      <div style="font-size:12px;color:var(--t2)">${soonest.days===0?'Today!':soonest.days===1?'Tomorrow':'in '+soonest.days+' days'} · ${soonest.d.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'short'})}</div>
-      <button class="btn btn-acc btn-full" style="margin-top:12px" onclick="runPaydayPlan('${soonest.type}',${soonest.amt})">Distribute this pay</button>
-    </div>
-    <div style="display:flex;gap:10px;margin-top:12px;font-size:11px;color:var(--t3);justify-content:center">
-      <span>Monthly: ${monthly.toLocaleDateString('en-AU',{day:'numeric',month:'short'})} (${mDays}d)</span>·<span>Weekly: ${weekly.toLocaleDateString('en-AU',{day:'numeric',month:'short'})} (${wDays}d)</span>
-    </div>`;
-  buildPaydayPlanPreview();
-  buildPaydayHistory();
-  // Alert if a payday is today/overdue and not yet logged
-  const el=document.getElementById('payday-alert');
-  const todayStr=today();
-  const loggedToday=(S.paydayLog||[]).some(l=>l.date===todayStr);
-  if((mDays===0||wDays===0)&&!loggedToday){
-    el.innerHTML=`<div class="alert alert-acc" style="margin-bottom:12px">💰 Pay day is today! Distribute it before you spend.</div>`;
-  }else el.innerHTML='';
-}
-function buildPaydayPlanPreview(){
-  const plan=S.paydayConfig.plan;
-  const labels={emergency:'Emergency buffer',holiday:'Holiday fund',uni:'University fund',pc:'PC & laptop fund',invest:'Investments',buffer:'Leave in account'};
-  const cols={emergency:'#ff5c5c',holiday:'#f0a030',uni:'#4da6ff',pc:'#00d4a0',invest:'#00d4a0',buffer:'#7d8fa3'};
-  const total=Object.values(plan).reduce((a,v)=>a+v,0);
-  document.getElementById('payday-plan').innerHTML=`
-    <div style="font-size:11px;color:var(--t3);margin-bottom:10px">How each pay is split (${total}% allocated${total!==100?' — should total 100%':''})</div>
-    ${Object.entries(plan).map(([k,v])=>`<div class="bench-row"><div class="bench-label"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${cols[k]};margin-right:6px"></span>${labels[k]}</div><div class="bench-val">${v}%</div></div>`).join('')}`;
-}
-function runPaydayPlan(type,amt){
-  const plan=S.paydayConfig.plan;
-  const labels={emergency:'Emergency buffer',holiday:'Holiday fund',uni:'University fund',pc:'PC & laptop fund',invest:'Investments',buffer:'Leave in account'};
-  const dist={};
-  Object.entries(plan).forEach(([k,pctv])=>{dist[k]=Math.round(amt*pctv/100*100)/100;});
-  const rows=Object.entries(dist).filter(([,v])=>v>0).map(([k,v])=>`<div class="bench-row"><div class="bench-label">${labels[k]}</div><div class="bench-val col-acc">${fmtD(v)}</div></div>`).join('');
-  showSheet('Distribute '+fmtD(amt),`
-    <div style="font-size:12px;color:var(--t2);line-height:1.55;margin-bottom:12px">Here's your plan for this ${type==='monthly'?'monthly':'weekly'} pay. Confirm to apply it — goal funds and investments update automatically, and the income is logged.</div>
-    ${rows}
-    <button class="btn btn-acc btn-full" style="margin-top:12px" onclick="confirmPaydayPlan('${type}',${amt})">Confirm & apply</button>`);
-}
-function confirmPaydayPlan(type,amt){
-  const plan=S.paydayConfig.plan;
-  const dist={};
-  Object.entries(plan).forEach(([k,pctv])=>{dist[k]=Math.round(amt*pctv/100*100)/100;});
-  // Apply to goals
-  ['emergency','holiday','uni','pc'].forEach(g=>{
-    if(dist[g]>0&&S.goalState[g]){
-      S.goalState[g].saved+=dist[g];
-      if(!S.goalState[g].log)S.goalState[g].log=[];
-      S.goalState[g].log.push({amt:dist[g],date:today(),note:'Pay day'});
-    }
-  });
-  // Investments → contribution (completed) to default ticker
-  if(dist.invest>0){
-    if(!S.contributions)S.contributions=[];
-    S.contributions.unshift({id:uid(),ticker:S.selectedTicker||'VOO',amount:dist.invest,units:null,price:null,date:today(),status:'pending',note:'Pay day allocation'});
+// ═══════════════════════════════════════════════════════════
+// PAY DAY DISTRIBUTION — income-driven queue
+// ═══════════════════════════════════════════════════════════
+// Match an income transaction to a payday source via keywords.
+// Returns the source key ('fulltime' / 'kmart' / etc.) or null if no match.
+function classifyIncome(txn){
+  if(txn.dir!=='in'||txn.cat!=='income')return null;
+  const hay=((txn.payee||'')+' '+(txn.note||'')).toLowerCase();
+  const sources=S.paydaySources||{};
+  // First try a precise keyword match
+  for(const [key,src] of Object.entries(sources)){
+    if((src.keywords||[]).some(kw=>kw&&hay.includes(kw.toLowerCase())))return key;
   }
-  // Log the payday
-  if(!S.paydayLog)S.paydayLog=[];
-  S.paydayLog.unshift({id:uid(),date:today(),type,amount:amt,distributed:dist});
-  // Income transaction so analytics/savings rate sees it
-  S.transactions.unshift({id:uid(),amt,dir:'in',date:today(),payee:type==='monthly'?'Full-time pay':'Kmart pay',cat:'income',acct:'westpac',note:'Pay day'});
+  // Fallback: anything else income → fulltime (treat unknown salary as full-time)
+  if(sources.fulltime)return 'fulltime';
+  return null;
+}
+// Income transactions for a source that haven't been distributed yet
+function pendingIncome(sourceKey){
+  const dist=S.paydayDistributed||{};
+  return S.transactions.filter(t=>{
+    if(classifyIncome(t)!==sourceKey)return false;
+    if(dist[t.id])return false;
+    return true;
+  }).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+}
+function distributedIncome(){
+  const dist=S.paydayDistributed||{};
+  const out=[];
+  Object.entries(dist).forEach(([txnId,d])=>{
+    const txn=S.transactions.find(t=>t.id===txnId);
+    if(txn||d.legacy)out.push({txnId,txn,...d});
+  });
+  return out.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+}
+
+function buildPaydayPage(){
+  buildSourceCard('fulltime');
+  buildSourceCard('kmart');
+  buildPaydayHistory();
+}
+
+function buildSourceCard(sourceKey){
+  const el=document.getElementById('payday-'+sourceKey+'-card');if(!el)return;
+  const src=S.paydaySources?.[sourceKey];if(!src){el.innerHTML='';return;}
+  const pending=pendingIncome(sourceKey);
+  const totalPending=pending.reduce((a,t)=>a+t.amt,0);
+  const accent=sourceKey==='fulltime'?'var(--b)':'var(--y)';
+  const accentBg=sourceKey==='fulltime'?'var(--bd)':'var(--yd)';
+  el.innerHTML=`
+    <div class="card" style="border-color:${accentBg};margin-bottom:12px">
+      <div class="ctitle"><div class="ctitle-l" style="color:${accent}">
+        <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        ${src.label}
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="openSourceSettings('${sourceKey}')">Plan</button>
+      </div>
+      ${pending.length?`
+        <div style="font-size:11px;color:var(--t3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em">Awaiting distribution</div>
+        <div style="font-size:26px;font-weight:800;font-family:var(--mono);color:${accent};line-height:1">${fmtD(totalPending)}</div>
+        <div style="font-size:11px;color:var(--t2);margin:4px 0 12px">${pending.length} entr${pending.length===1?'y':'ies'}</div>
+        <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px">
+        ${pending.map(t=>`
+          <div class="bench-row" style="padding:8px 10px;background:var(--bg3);border-radius:8px;border:none">
+            <div class="bench-label">
+              <div style="font-size:12px;color:var(--t)">${t.payee}</div>
+              <div style="font-size:10px;color:var(--t3);margin-top:2px">${fmtDate(t.date)}${t.note?' · '+t.note:''}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="font-size:14px;font-weight:700;font-family:var(--mono);color:${accent}">${fmtD(t.amt)}</div>
+              <button class="btn btn-acc btn-sm" onclick="openDistributeFlow('${t.id}')">Distribute</button>
+            </div>
+          </div>
+        `).join('')}
+        </div>
+      `:`
+        <div style="text-align:center;padding:16px 8px;color:var(--t3);font-size:12px">
+          No undistributed ${src.label.toLowerCase()} income.<br>
+          <span style="font-size:11px">Record an income transaction tagged ${src.keywords?.[0]?'"'+src.keywords[0]+'"':sourceKey} and it'll appear here.</span>
+        </div>
+      `}
+      <div style="font-size:10px;color:var(--t3);border-top:1px solid var(--bdr);padding-top:8px;line-height:1.5">
+        Plan: ${src.plan.map(p=>p.label+' '+p.pct+'%').join(' · ')}
+      </div>
+    </div>`;
+}
+
+// Compute allocations for a given amount using a source's plan + active sinking funds.
+// Sinking funds are merged in dynamically so the plan auto-reflects the user's full budget.
+function computeAllocations(sourceKey,amount){
+  const src=S.paydaySources?.[sourceKey];if(!src)return[];
+  const planItems=src.plan.map(p=>({...p,amount:Math.round(amount*p.pct/100*100)/100}));
+  // Active sinking funds: if a sourcePlanItem has type 'sinking' it stays; otherwise we render them as a separate cluster
+  // For simplicity, sinking funds are shown alongside the plan items with their own row, but allocations come from the plan only
+  // To include them in the % plan, add them via openSourceSettings.
+  return planItems;
+}
+
+function openDistributeFlow(txnId){
+  const txn=S.transactions.find(t=>t.id===txnId);if(!txn){showToast('Transaction not found');return;}
+  const sourceKey=classifyIncome(txn);
+  const src=S.paydaySources?.[sourceKey];if(!src){showToast('No matching income source');return;}
+  const allocs=computeAllocations(sourceKey,txn.amt);
+  const totalPct=src.plan.reduce((a,p)=>a+p.pct,0);
+  const totalAlloc=allocs.reduce((a,p)=>a+p.amount,0);
+  const remaining=txn.amt-totalAlloc;
+  const accent=sourceKey==='fulltime'?'var(--b)':'var(--y)';
+  // Active sinking funds — shown as informational (not auto-allocated unless added to plan)
+  const sinking=(S.sinkingFunds||[]).filter(s=>s.target>s.saved);
+  const sinkingBlock=sinking.length?`
+    <div style="margin:14px 0 10px;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em">Active sinking funds (not in plan — add via Plan ▸ Edit)</div>
+    ${sinking.map(s=>{
+      const remM=Math.max(0,s.target-s.saved);
+      const monthly=s.month?(()=>{const now=new Date();const tgt=new Date(s.month+'-01T00:00:00');const ml=Math.max(1,Math.round((tgt-now)/(1000*60*60*24*30)));return Math.ceil(remM/ml);})():0;
+      return`<div class="bench-row" style="padding:6px 0;font-size:11px"><div class="bench-label">${s.icon||'💰'} ${s.name}</div><div class="bench-val" style="color:var(--t3)">${monthly?fmtD(monthly)+'/mo needed':fmtD(remM)+' to go'}</div></div>`;
+    }).join('')}
+  `:'';
+  showSheet(`Distribute ${fmtD(txn.amt)}`,`
+    <div style="margin-bottom:14px;padding:12px;background:var(--bg3);border-radius:10px">
+      <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em">Income source</div>
+      <div style="font-size:14px;font-weight:700;color:${accent};margin-top:3px">${src.label}</div>
+      <div style="font-size:10px;color:var(--t3);margin-top:6px">${txn.payee} · ${fmtDate(txn.date)}</div>
+      <div style="display:flex;align-items:baseline;gap:8px;margin-top:8px">
+        <div style="font-size:11px;color:var(--t3)">Amount received</div>
+        <div style="font-size:22px;font-weight:800;font-family:var(--mono);color:${accent}">${fmtD(txn.amt)}</div>
+      </div>
+    </div>
+    <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Allocation breakdown</div>
+    ${allocs.map(a=>`
+      <div class="bench-row" style="padding:9px 0">
+        <div class="bench-label"><div style="font-size:12px;color:var(--t)">${a.label}</div><div style="font-size:10px;color:var(--t3);margin-top:1px">${a.pct}%</div></div>
+        <div class="bench-val" style="color:var(--acc);font-size:14px">${fmtD(a.amount)}</div>
+      </div>
+    `).join('')}
+    <div style="display:flex;justify-content:space-between;padding:11px 0;border-top:1px solid var(--bdr2);margin-top:6px">
+      <div style="font-size:12px;font-weight:700;color:var(--t)">Total allocated</div>
+      <div style="font-size:14px;font-weight:700;font-family:var(--mono);color:var(--t)">${fmtD(totalAlloc)} <span style="font-size:10px;color:var(--t3)">of ${fmtD(txn.amt)}</span></div>
+    </div>
+    ${Math.abs(remaining)>0.01?`<div class="alert ${remaining>0?'alert-y':'alert-r'}" style="margin:4px 0 12px;font-size:11px">${remaining>0?'Unallocated: '+fmtD(remaining)+' ('+(100-totalPct)+'% of plan). Adjust plan to total 100% if you want every dollar assigned.':'Over-allocated by '+fmtD(Math.abs(remaining))}</div>`:''}
+    ${sinkingBlock}
+    <div class="alert alert-b" style="font-size:11px;line-height:1.55;margin:14px 0 10px">
+      <strong>Now move the money in your bank app</strong>, then come back and tap below. The app will then update goal/investment balances to match.
+    </div>
+    <div style="display:flex;gap:7px">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeSheet()">Not yet</button>
+      <button class="btn btn-acc" style="flex:2" onclick="confirmDistribution('${txn.id}')">Mark as distributed</button>
+    </div>
+  `);
+}
+
+function confirmDistribution(txnId){
+  const txn=S.transactions.find(t=>t.id===txnId);if(!txn)return;
+  const sourceKey=classifyIncome(txn);
+  const src=S.paydaySources?.[sourceKey];if(!src)return;
+  const allocs=computeAllocations(sourceKey,txn.amt);
+  // Apply each allocation
+  allocs.forEach(a=>{
+    if(a.amount<=0)return;
+    if(a.type==='goal'&&S.goalState?.[a.ref]){
+      S.goalState[a.ref].saved=(S.goalState[a.ref].saved||0)+a.amount;
+      if(!S.goalState[a.ref].log)S.goalState[a.ref].log=[];
+      S.goalState[a.ref].log.push({amt:a.amount,date:today(),note:src.label+' payday'});
+    }else if(a.type==='invest'){
+      if(!S.contributions)S.contributions=[];
+      S.contributions.unshift({id:uid(),ticker:S.selectedTicker||'VOO',amount:a.amount,units:null,price:null,date:today(),status:'pending',note:src.label+' payday allocation'});
+    }else if(a.type==='sinking'&&a.ref){
+      const sf=(S.sinkingFunds||[]).find(s=>s.id===a.ref);
+      if(sf)sf.saved=(sf.saved||0)+a.amount;
+    }
+    // 'spending' and 'buffer' = stays in account, no balance change needed
+  });
+  // Record the distribution
+  if(!S.paydayDistributed)S.paydayDistributed={};
+  S.paydayDistributed[txnId]={
+    source:sourceKey,
+    date:today(),
+    txnDate:txn.date,
+    amount:txn.amt,
+    allocations:allocs.map(a=>({key:a.key,label:a.label,pct:a.pct,amount:a.amount,type:a.type,ref:a.ref}))
+  };
   closeSheet();snapshotNW();save();
   buildPaydayPage();if(currentPg==='dash')buildDash();
-  fireConfetti();showToast('Pay day distributed ✓');
+  fireConfetti();showToast(fmtD(txn.amt)+' distributed ✓');
 }
+
 function buildPaydayHistory(){
-  const el=document.getElementById('payday-history');
-  const log=S.paydayLog||[];
-  if(!log.length){el.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-txt">No pay days logged yet. Distribute your next pay to start tracking.</div></div>';return;}
-  el.innerHTML=log.slice(0,12).map(l=>`<div class="bench-row"><div class="bench-label">${fmtDate(l.date)} · ${l.type==='monthly'?'Full-time':'Kmart'}</div><div class="bench-val col-acc">${fmtD(l.amount)}</div></div>`).join('');
+  const el=document.getElementById('payday-history');if(!el)return;
+  const hist=distributedIncome();
+  if(!hist.length){el.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-txt">No distributions yet. Record an income transaction (from + button) and it\'ll appear in the queue above.</div></div>';return;}
+  el.innerHTML=hist.slice(0,20).map(h=>{
+    const src=S.paydaySources?.[h.source];
+    const accent=h.source==='fulltime'?'var(--b)':'var(--y)';
+    const total=h.amount||h.txn?.amt||0;
+    return`<div class="bench-row" style="align-items:center" onclick="showDistributionDetail('${h.txnId}')">
+      <div class="bench-label">
+        <div style="font-size:12px;color:var(--t)">${src?.label||h.source}</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:2px">${fmtDate(h.txnDate||h.date)} · ${h.legacy?'legacy':(h.allocations?.length||0)+' allocations'}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:7px">
+        <div style="font-size:13px;font-weight:700;font-family:var(--mono);color:${accent}">${fmtD(total)}</div>
+        <button class="txn-act" onclick="event.stopPropagation();undoDistribution('${h.txnId}')">Undo</button>
+      </div>
+    </div>`;
+  }).join('');
 }
-function openPaydaySettings(){
-  const c=S.paydayConfig;const p=c.plan;
-  showSheet('Pay day settings',`
-    <label class="lbl">Full-time pay day (day of month)</label>
-    <input type="number" class="inp" id="pd-mday" min="1" max="31" value="${c.monthlyDay}">
-    <label class="lbl">Full-time amount (after tax) $</label>
-    <input type="number" class="inp" id="pd-mamt" value="${c.monthlyAmt}">
-    <label class="lbl">Kmart pay day (weekday)</label>
-    <select class="inp" id="pd-wday">${['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].map((d,i)=>`<option value="${i}" ${c.weeklyDay===i?'selected':''}>${d}</option>`).join('')}</select>
-    <label class="lbl">Typical Kmart pay $</label>
-    <input type="number" class="inp" id="pd-wamt" value="${c.weeklyAmt}">
-    <hr style="border:none;border-top:1px solid var(--bdr);margin:12px 0">
-    <div class="lbl" style="margin-bottom:8px">Distribution plan (%)</div>
-    ${[['emergency','Emergency'],['holiday','Holiday'],['uni','University'],['pc','PC/laptop'],['invest','Investments'],['buffer','Leave in account']].map(([k,lbl])=>`<div class="inp-row" style="align-items:center;margin-bottom:6px"><label class="lbl" style="margin:0">${lbl}</label><input type="number" class="inp" id="pd-${k}" min="0" max="100" value="${p[k]}" style="margin:0"></div>`).join('')}
-    <button class="btn btn-acc btn-full" style="margin-top:10px" onclick="savePaydaySettings()">Save settings</button>`);
+function showDistributionDetail(txnId){
+  const d=(S.paydayDistributed||{})[txnId];if(!d)return;
+  if(d.legacy){showSheet('Distribution detail','<div style="font-size:12px;color:var(--t2);line-height:1.55">This distribution was created by the old payday system before the redesign. Allocation breakdown is not available — only the total amount and date.</div>');return;}
+  const src=S.paydaySources?.[d.source];
+  showSheet('Distribution detail',`
+    <div style="font-size:12px;color:var(--t2);margin-bottom:10px">${src?.label||d.source} · ${fmtDate(d.txnDate||d.date)} · Total <strong>${fmtD(d.amount||0)}</strong></div>
+    ${(d.allocations||[]).map(a=>`<div class="bench-row"><div class="bench-label">${a.label} (${a.pct}%)</div><div class="bench-val col-acc">${fmtD(a.amount)}</div></div>`).join('')}
+  `);
 }
-function savePaydaySettings(){
-  const c=S.paydayConfig;
-  c.monthlyDay=Math.min(31,Math.max(1,parseInt(document.getElementById('pd-mday').value)||15));
-  c.monthlyAmt=parseFloat(document.getElementById('pd-mamt').value)||0;
-  c.weeklyDay=parseInt(document.getElementById('pd-wday').value)||4;
-  c.weeklyAmt=parseFloat(document.getElementById('pd-wamt').value)||0;
-  ['emergency','holiday','uni','pc','invest','buffer'].forEach(k=>{c.plan[k]=Math.max(0,parseInt(document.getElementById('pd-'+k).value)||0);});
-  save();closeSheet();buildPaydayPage();showToast('Settings saved');
+function undoDistribution(txnId){
+  if(!confirm('Undo this distribution? Goal/investment balances will be reversed and the income returns to the pending queue.'))return;
+  const d=(S.paydayDistributed||{})[txnId];if(!d){closeSheet();return;}
+  // Reverse allocations
+  (d.allocations||[]).forEach(a=>{
+    if(a.type==='goal'&&S.goalState?.[a.ref]){
+      S.goalState[a.ref].saved=Math.max(0,(S.goalState[a.ref].saved||0)-a.amount);
+      // Remove the most recent matching log entry
+      const log=S.goalState[a.ref].log||[];
+      for(let i=log.length-1;i>=0;i--){if(Math.abs(log[i].amt-a.amount)<0.01){log.splice(i,1);break;}}
+    }else if(a.type==='invest'){
+      // Remove the most recent matching pending contribution
+      for(let i=0;i<(S.contributions||[]).length;i++){
+        const c=S.contributions[i];
+        if(c.status==='pending'&&Math.abs(c.amount-a.amount)<0.01&&(c.note||'').includes('payday')){
+          S.contributions.splice(i,1);break;
+        }
+      }
+    }else if(a.type==='sinking'&&a.ref){
+      const sf=(S.sinkingFunds||[]).find(s=>s.id===a.ref);
+      if(sf)sf.saved=Math.max(0,(sf.saved||0)-a.amount);
+    }
+  });
+  delete S.paydayDistributed[txnId];
+  save();buildPaydayPage();if(currentPg==='dash')buildDash();
+  showToast('Distribution undone');
+}
+
+// ── Source plan editor ──────────────────────────────────────
+function openSourceSettings(sourceKey){
+  const src=S.paydaySources?.[sourceKey];if(!src)return;
+  const goalKeys=Object.keys(S.goalState||{});
+  const sinkingList=(S.sinkingFunds||[]).filter(s=>s.target>s.saved);
+  const totalPct=src.plan.reduce((a,p)=>a+p.pct,0);
+  showSheet(`${src.label} — distribution plan`,`
+    <div style="font-size:12px;color:var(--t2);line-height:1.55;margin-bottom:12px">
+      Edit how each ${src.label} pay should be split. Percentages should total 100%. Add or remove categories as your budget changes.
+    </div>
+    <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Keywords (match income to this source)</div>
+    <input type="text" class="inp" id="src-keywords" value="${(src.keywords||[]).join(', ')}" placeholder="e.g. ${sourceKey}">
+    <div style="font-size:10px;color:var(--t3);margin-bottom:10px">Income transactions with these words in the payee or note are routed to this source.</div>
+    <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Current plan (${totalPct}%)</div>
+    <div id="plan-rows">
+      ${src.plan.map((p,i)=>renderPlanRow(p,i)).join('')}
+    </div>
+    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" onclick="addPlanRow('${sourceKey}','spending','Spending money')">+ Spending</button>
+      <button class="btn btn-ghost btn-sm" onclick="addPlanRow('${sourceKey}','buffer','Leave in account')">+ Buffer</button>
+      <button class="btn btn-ghost btn-sm" onclick="addPlanRow('${sourceKey}','invest','Investments')">+ Invest</button>
+    </div>
+    ${goalKeys.length?`<div style="margin-top:10px"><div style="font-size:10px;color:var(--t3);margin-bottom:6px">Add goal allocations:</div><div style="display:flex;gap:6px;flex-wrap:wrap">${goalKeys.map(g=>`<button class="btn btn-ghost btn-sm" onclick="addPlanRow('${sourceKey}','goal','${(GCFG?.[g]?.label||g).replace(/'/g,'')}','${g}')">+ ${GCFG?.[g]?.label||g}</button>`).join('')}</div></div>`:''}
+    ${sinkingList.length?`<div style="margin-top:10px"><div style="font-size:10px;color:var(--t3);margin-bottom:6px">Add sinking funds:</div><div style="display:flex;gap:6px;flex-wrap:wrap">${sinkingList.map(s=>`<button class="btn btn-ghost btn-sm" onclick="addPlanRow('${sourceKey}','sinking','${(s.name||'').replace(/'/g,'')}','${s.id}')">+ ${s.icon||'💰'} ${s.name}</button>`).join('')}</div></div>`:''}
+    <button class="btn btn-acc btn-full" style="margin-top:14px" onclick="saveSourcePlan('${sourceKey}')">Save plan</button>
+  `);
+}
+function renderPlanRow(p,i){
+  return`<div class="inp-row" style="align-items:center;margin-bottom:6px;gap:6px" data-plan-i="${i}">
+    <div style="flex:1;font-size:12px;color:var(--t);padding:7px 0">
+      <div>${p.label}</div>
+      <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">${p.type}${p.ref?' · '+p.ref:''}</div>
+    </div>
+    <input type="number" class="inp plan-pct" min="0" max="100" value="${p.pct}" style="margin:0;width:64px;text-align:center" data-key="${p.key}" data-type="${p.type}" data-ref="${p.ref||''}" data-label="${p.label.replace(/"/g,'&quot;')}">
+    <span style="font-size:11px;color:var(--t3)">%</span>
+    <button class="txn-act" onclick="this.parentElement.remove()">×</button>
+  </div>`;
+}
+let planCounter=0;
+function addPlanRow(sourceKey,type,label,ref){
+  const rows=document.getElementById('plan-rows');if(!rows)return;
+  const key=type+'_'+(++planCounter);
+  const div=document.createElement('div');
+  div.innerHTML=renderPlanRow({key,type,ref:ref||'',label,pct:5},rows.children.length);
+  rows.appendChild(div.firstChild);
+}
+function saveSourcePlan(sourceKey){
+  const src=S.paydaySources?.[sourceKey];if(!src)return;
+  const kwRaw=document.getElementById('src-keywords').value;
+  src.keywords=kwRaw.split(',').map(s=>s.trim()).filter(Boolean);
+  const rows=document.querySelectorAll('#plan-rows .plan-pct');
+  const newPlan=[];
+  rows.forEach(r=>{
+    const pct=Math.max(0,parseFloat(r.value)||0);
+    if(pct<=0)return;
+    newPlan.push({key:r.dataset.key,type:r.dataset.type,ref:r.dataset.ref||undefined,label:r.dataset.label,pct});
+  });
+  src.plan=newPlan;
+  save();closeSheet();buildPaydayPage();showToast('Plan saved');
 }
 
 // ═══════════════════════════════════════════════════════════
