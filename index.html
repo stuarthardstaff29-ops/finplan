@@ -60,6 +60,36 @@ body{display:flex;flex-direction:column;position:fixed;width:100%;height:100%;ba
 @keyframes sIn{to{opacity:1;transform:translateY(0) scale(1)}}
 @keyframes sLoad{to{width:100%}}
 
+/* WHAT'S NEW MODAL */
+.whatsnew-modal{text-align:left}
+.wn-badge{display:inline-block;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#001a13;font-family:var(--mono);font-weight:700;font-size:12px;padding:4px 12px;border-radius:20px;margin-bottom:12px;box-shadow:0 2px 12px var(--accd2)}
+.wn-title{font-family:var(--display);font-size:24px;font-weight:800;color:var(--t);letter-spacing:-.5px;margin-bottom:18px;line-height:1.1}
+.wn-vhead{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--bdr)}
+.wn-section{margin-bottom:16px}
+.wn-section-h{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:9px;display:flex;align-items:center;gap:6px}
+.wn-item{display:flex;gap:9px;align-items:flex-start;font-size:13px;color:var(--t2);line-height:1.5;margin-bottom:8px;animation:wnItemIn .4s ease backwards}
+.wn-section:nth-child(1) .wn-item:nth-child(2){animation-delay:.05s}
+.wn-section:nth-child(1) .wn-item:nth-child(3){animation-delay:.1s}
+.wn-section:nth-child(1) .wn-item:nth-child(4){animation-delay:.15s}
+@keyframes wnItemIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+.wn-check{flex-shrink:0;font-weight:800;font-size:13px;margin-top:1px}
+
+/* UPDATE HISTORY (settings) */
+.cl-entry{padding:14px 0;border-bottom:1px solid var(--bdr)}
+.cl-entry:last-child{border:none}
+.cl-vrow{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.cl-v{font-family:var(--mono);font-weight:700;font-size:13px;color:var(--acc)}
+.cl-date{font-size:10px;color:var(--t3)}
+.cl-title{font-size:13px;font-weight:700;color:var(--t);margin-bottom:8px}
+.cl-line{font-size:12px;color:var(--t2);line-height:1.5;padding:3px 0 3px 16px;position:relative}
+.cl-line::before{content:'';position:absolute;left:4px;top:9px;width:4px;height:4px;border-radius:50%;background:var(--t3)}
+
+/* MOTION & DENSITY PREFERENCES (Priority 5) */
+body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{animation-duration:.001s!important;animation-iteration-count:1!important;transition-duration:.001s!important}
+body.compact .card{padding:11px;margin-bottom:8px}
+body.compact .pg{padding:10px}
+body.compact .mg{gap:7px}
+
 /* SETUP */
 #setup{position:fixed;inset:0;background:var(--bg);z-index:900;display:none;flex-direction:column;overflow:hidden}
 .sw-hdr{padding:calc(16px + var(--st)) 20px 14px;background:var(--bg2);border-bottom:1px solid var(--bdr);flex-shrink:0}
@@ -124,13 +154,21 @@ body.light .bnav{background:rgba(255,255,255,.85)}
 .more-tile svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;margin-bottom:7px}
 
 /* PAGES */
-.pg{display:none;padding:14px}.pg.on{display:block;animation:pgFade .25s cubic-bezier(.2,0,.2,1)}
-@keyframes pgFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.pg{display:none;padding:14px}.pg.on{display:block;animation:pgFade .32s cubic-bezier(.16,1,.3,1)}
+@keyframes pgFade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.pg.on>.card,.pg.on>.hero,.pg.on>.mg,.pg.on>.tog,.pg.on>.alert{animation:cardIn .4s cubic-bezier(.16,1,.3,1) backwards}
+.pg.on>*:nth-child(1){animation-delay:.02s}
+.pg.on>*:nth-child(2){animation-delay:.06s}
+.pg.on>*:nth-child(3){animation-delay:.10s}
+.pg.on>*:nth-child(4){animation-delay:.14s}
+.pg.on>*:nth-child(5){animation-delay:.18s}
+.pg.on>*:nth-child(6){animation-delay:.22s}
+@keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .ai-pg{padding:0}
 
 /* CARDS */
-.card{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--rad);padding:15px;margin-bottom:12px;transition:border-color .2s;box-shadow:var(--sh-sm)}
-.card:hover{border-color:var(--bdr2)}
+.card{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--rad);padding:15px;margin-bottom:12px;transition:border-color .2s,transform .2s,box-shadow .2s;box-shadow:var(--sh-sm)}
+.card:hover{border-color:var(--bdr2);box-shadow:var(--sh-md)}
 .card.acc-b{border-color:var(--accd2);background:linear-gradient(180deg,var(--bg2) 0%,rgba(0,212,160,.02) 100%)}
 .ctitle{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.11em;margin-bottom:13px;display:flex;align-items:center;justify-content:space-between}
 .ctitle-l{display:flex;align-items:center;gap:7px}
@@ -878,6 +916,11 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
         <div class="theme-grid" id="theme-grid"></div>
       </div>
       <div class="card">
+        <div class="ctitle"><div class="ctitle-l">Display &amp; motion</div></div>
+        <div class="setting-row"><div><div class="setting-label">Reduce motion</div><div class="setting-sub">Minimise animations and transitions</div></div><button class="toggle-switch" id="tg-reduce-motion" onclick="toggleUiPref('reduceMotion')"></button></div>
+        <div class="setting-row"><div><div class="setting-label">Compact spacing</div><div class="setting-sub">Tighter layout, more on screen</div></div><button class="toggle-switch" id="tg-compact" onclick="toggleUiPref('compact')"></button></div>
+      </div>
+      <div class="card">
         <div class="ctitle"><div class="ctitle-l">Custom categories</div></div>
         <div id="custom-cats-list"></div>
         <hr class="dvdr">
@@ -947,6 +990,11 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
         <div class="setting-row"><div><div class="setting-label">Re-run setup wizard</div><div class="setting-sub">Update your starting figures</div></div><button class="btn btn-ghost btn-sm" onclick="rerunSetup()">Open</button></div>
         <div class="setting-row"><div><div class="setting-label">Restore previous backup</div><div class="setting-sub">Recover data from the last automatic backup</div></div><button class="btn btn-ghost btn-sm" onclick="restoreBackup()">Restore</button></div>
         <div class="setting-row"><div><div class="setting-label">Clear all data</div><div class="setting-sub">Wipes everything and restarts</div></div><button class="btn btn-r btn-sm" onclick="clearAll()">Clear</button></div>
+      </div>
+      <div class="card">
+        <div class="ctitle"><div class="ctitle-l">Update history</div><button class="btn btn-ghost btn-sm" onclick="showWhatsNewManual()">What's new</button></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span class="wn-badge" id="settings-version" style="margin:0">v1.0.0</span><span style="font-size:11px;color:var(--t3)">Current version</span></div>
+        <div id="changelog-list"></div>
       </div>
     </div>
 
@@ -1093,6 +1141,14 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
   <div style="display:flex;gap:7px;margin-top:10px"><button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeModal('import-modal')">Close</button></div>
 </div></div>
 
+<!-- WHAT'S NEW MODAL -->
+<div class="overlay" id="whatsnew-modal"><div class="modal whatsnew-modal"><div class="modal-handle"></div>
+  <div class="wn-badge" id="wn-version">v1.0.0</div>
+  <div class="wn-title" id="wn-title">What's New</div>
+  <div id="wn-body"></div>
+  <button class="btn btn-acc btn-full" style="margin-top:16px" onclick="dismissWhatsNew()">Got it</button>
+</div></div>
+
 <!-- CONFETTI CONTAINER -->
 <div class="confetti-wrap" id="confetti-wrap" style="pointer-events:none"></div>
 
@@ -1214,8 +1270,45 @@ let S={
   catStreaks:{},
   nwMilestones:[],
   scenarioState:null,
+  lastSeenVersion:null,   // for the What's New popup
+  uiPrefs:{reduceMotion:false,compact:false},
   editingBalAcct:null
 };
+
+// ═══════════════════════════════════════════════════════════
+// APP VERSION & CHANGELOG  (Priority 1)
+// ═══════════════════════════════════════════════════════════
+const APP_VERSION='1.0.0';
+// Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
+const CHANGELOG=[
+  {
+    v:'1.0.0',
+    date:'2026-06-18',
+    title:'A More Polished FinPlan',
+    sections:{
+      features:[
+        'Version tracking — every update is now logged in Settings ▸ Update history',
+        'This "What\'s New" popup, shown once after each update',
+        'New customization: reduce-motion and compact-spacing toggles in Settings'
+      ],
+      improvements:[
+        'Refreshed visual design — consistent cards, spacing, shadows and depth',
+        'Smooth page transitions and subtle card entrance animations',
+        'Polished buttons, modals and empty states throughout',
+        'Clearer Settings layout grouped into sections'
+      ],
+      fixes:[
+        'Hardened chart sizing and pie-chart layout across screen sizes'
+      ]
+    }
+  }
+];
+function changelogSince(version){
+  if(!version)return CHANGELOG.slice(0,1); // first ever launch → show latest only
+  const idx=CHANGELOG.findIndex(c=>c.v===version);
+  if(idx===-1)return [CHANGELOG[0]]; // unknown → show latest
+  return CHANGELOG.slice(0,idx); // everything newer than last seen
+}
 
 // ═══════════════════════════════════════════════════════════
 // PERSISTENCE LAYER (production-grade, versioned, self-migrating)
@@ -1581,11 +1674,54 @@ function rerunSetup(){closeMore();swStep=0;renderSW();document.getElementById('s
 function launchApp(){
   document.getElementById('setup').style.display='none';
   const app=document.getElementById('app');app.style.display='flex';
-  applyTheme(S.themeIdx||0);applyMode(S.mode||'dark');
+  applyTheme(S.themeIdx||0);applyMode(S.mode||'dark');applyUiPrefs();
   syncSliderUI();snapshotNW();
   buildDash();buildStaticTimeline();buildAiWelcome();buildThemeGrid();buildSettingsPage();
   if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
   scheduleLocalNotifs();
+  // What's New popup — once per version (Priority 2 & 3)
+  maybeShowWhatsNew();
+}
+// ── What's New popup ─────────────────────────────────────────
+function maybeShowWhatsNew(){
+  if(S.lastSeenVersion===APP_VERSION)return; // already acknowledged this version
+  const entries=changelogSince(S.lastSeenVersion);
+  if(!entries.length){S.lastSeenVersion=APP_VERSION;save();return;}
+  renderWhatsNew(entries);
+  setTimeout(()=>{const m=document.getElementById('whatsnew-modal');if(m)m.classList.add('open');},700);
+}
+function renderWhatsNew(entries){
+  const latest=entries[0];
+  document.getElementById('wn-version').textContent='v'+latest.v;
+  document.getElementById('wn-title').textContent=entries.length>1?`What's New (${entries.length} updates)`:('What\'s New in v'+latest.v);
+  const iconMap={features:{ico:'✨',label:'New features',col:'var(--acc)'},improvements:{ico:'⬆',label:'Improvements',col:'var(--b)'},fixes:{ico:'🔧',label:'Fixes',col:'var(--y)'}};
+  let html='';
+  entries.forEach(e=>{
+    if(entries.length>1)html+=`<div class="wn-vhead">v${e.v} · ${e.title}</div>`;
+    ['features','improvements','fixes'].forEach(sec=>{
+      const items=e.sections[sec]||[];if(!items.length)return;
+      const m=iconMap[sec];
+      html+=`<div class="wn-section"><div class="wn-section-h" style="color:${m.col}">${m.ico} ${m.label}</div>`;
+      items.forEach(it=>{html+=`<div class="wn-item"><span class="wn-check" style="color:${m.col}">✓</span><span>${it}</span></div>`;});
+      html+='</div>';
+    });
+  });
+  document.getElementById('wn-body').innerHTML=html;
+}
+function dismissWhatsNew(){
+  S.lastSeenVersion=APP_VERSION;save();
+  const m=document.getElementById('whatsnew-modal');if(m)m.classList.remove('open');
+}
+// Manually re-openable from Settings
+function showWhatsNewManual(){
+  renderWhatsNew([CHANGELOG[0]]);
+  const m=document.getElementById('whatsnew-modal');if(m)m.classList.add('open');
+}
+function applyUiPrefs(){
+  if(!S.uiPrefs)S.uiPrefs={reduceMotion:false,compact:false};
+  const osReduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.body.classList.toggle('reduce-motion',!!S.uiPrefs.reduceMotion||osReduce);
+  document.body.classList.toggle('compact',!!S.uiPrefs.compact);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -3753,6 +3889,23 @@ function buildSettingsPage(){
   const fmpInp=document.getElementById('fmp-key-inp');
   if(fmpInp)fmpInp.value=S.fmpApiKey||'';
   updateFmpKeyStatus();
+  // UI preference toggles
+  if(!S.uiPrefs)S.uiPrefs={reduceMotion:false,compact:false};
+  const tgRm=document.getElementById('tg-reduce-motion');if(tgRm)tgRm.classList.toggle('on',!!S.uiPrefs.reduceMotion);
+  const tgC=document.getElementById('tg-compact');if(tgC)tgC.classList.toggle('on',!!S.uiPrefs.compact);
+  // Version + changelog
+  const sv=document.getElementById('settings-version');if(sv)sv.textContent='v'+APP_VERSION;
+  const cl=document.getElementById('changelog-list');
+  if(cl)cl.innerHTML=CHANGELOG.map(e=>{
+    const lines=[];
+    ['features','improvements','fixes'].forEach(sec=>{(e.sections[sec]||[]).forEach(it=>lines.push(it));});
+    return`<div class="cl-entry"><div class="cl-vrow"><span class="cl-v">v${e.v}</span><span class="cl-date">${e.date}</span></div><div class="cl-title">${e.title}</div>${lines.map(l=>`<div class="cl-line">${l}</div>`).join('')}</div>`;
+  }).join('');
+}
+function toggleUiPref(key){
+  if(!S.uiPrefs)S.uiPrefs={reduceMotion:false,compact:false};
+  S.uiPrefs[key]=!S.uiPrefs[key];
+  save();applyUiPrefs();buildSettingsPage();
 }
 function updateFmpKeyStatus(){
   const el=document.getElementById('fmp-key-status');if(!el)return;
