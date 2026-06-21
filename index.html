@@ -584,6 +584,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
         <div class="tag-row" id="d-tags"></div>
       </div>
       <div class="mg" id="d-metrics"></div>
+      <div id="dash-pending"></div>
       <div class="card">
         <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Net worth over time</div></div>
         <div class="nw-chart-wrap"><canvas id="nw-chart" role="img" aria-label="Net worth over time chart">Net worth history</canvas></div>
@@ -811,6 +812,29 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
       <div id="glance-content"></div>
     </div>
 
+    <!-- RECURRING & QUICK ADD -->
+    <div class="pg" id="pg-recurring">
+      <div class="alert alert-b" style="font-size:12px;line-height:1.55;margin-bottom:12px">Set up regular bills once. They appear as <strong>pending</strong> on their due date — your balance shows current and "after confirmed", and only updates fully when you confirm you've paid.</div>
+      <div id="recurring-pending"></div>
+      <div class="card">
+        <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Recurring transactions</div><button class="btn btn-acc btn-sm" onclick="openRuleModal()">+ Add</button></div>
+        <div id="recurring-rules"></div>
+      </div>
+      <div class="card acc-b">
+        <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><path d="M3 3h18v18H3zM12 8v8M8 12h8"/></svg>Quick add</div></div>
+        <div style="font-size:12px;color:var(--t2);line-height:1.55;margin-bottom:10px">For variable expenses you pay on the spot, like fuel. Logs immediately — no pending step.</div>
+        <div class="inp-row" style="margin-bottom:8px">
+          <div><label class="lbl">Amount $</label><input type="number" class="inp" id="quick-amount" placeholder="0.00" min="0" step="0.01"></div>
+          <div><label class="lbl">Account</label><select class="inp" id="quick-acct"><option value="westpac">Westpac</option><option value="macquarie">Macquarie</option></select></div>
+        </div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap">
+          <button class="btn btn-acc btn-sm" style="flex:1" onclick="quickAdd('fuel','Fuel')">⛽ Fuel</button>
+          <button class="btn btn-ghost btn-sm" style="flex:1" onclick="quickAdd('food','Groceries')">🛒 Groceries</button>
+          <button class="btn btn-ghost btn-sm" style="flex:1" onclick="quickAdd('transport','Transport')">🚌 Transport</button>
+        </div>
+      </div>
+    </div>
+
     <!-- BUDGET -->
     <div class="pg" id="pg-budget">
       <div class="card"><div class="ctitle"><div class="ctitle-l">Income</div></div><div class="sl-grp"><div class="sl-lr"><span class="sl-l">Kmart weekly earnings</span><span class="sl-v" id="out-kmart">$110</span></div><input type="range" min="0" max="400" step="5" value="110" id="sl-kmart" oninput="upAll()"></div></div>
@@ -988,8 +1012,17 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
         <div class="ctitle"><div class="ctitle-l">Data</div></div>
         <div class="setting-row"><div><div class="setting-label">Export transactions</div><div class="setting-sub">Download as CSV</div></div><button class="btn btn-ghost btn-sm" onclick="exportCSV()">Export</button></div>
         <div class="setting-row"><div><div class="setting-label">Re-run setup wizard</div><div class="setting-sub">Update your starting figures</div></div><button class="btn btn-ghost btn-sm" onclick="rerunSetup()">Open</button></div>
-        <div class="setting-row"><div><div class="setting-label">Restore previous backup</div><div class="setting-sub">Recover data from the last automatic backup</div></div><button class="btn btn-ghost btn-sm" onclick="restoreBackup()">Restore</button></div>
         <div class="setting-row"><div><div class="setting-label">Clear all data</div><div class="setting-sub">Wipes everything and restarts</div></div><button class="btn btn-r btn-sm" onclick="clearAll()">Clear</button></div>
+      </div>
+      <div class="card">
+        <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Backup &amp; restore</div></div>
+        <div style="font-size:12px;color:var(--t2);line-height:1.55;margin-bottom:12px">Your data lives only on this device. Download a backup regularly, or to move to another device. Restoring replaces everything.</div>
+        <button class="btn btn-acc btn-full" onclick="downloadBackup()" style="margin-bottom:10px">↓ Download backup file</button>
+        <label class="lbl">Restore from file</label>
+        <input type="file" accept="application/json,.json" id="restore-file" class="inp" onchange="handleBackupFile(event)">
+        <label class="lbl">…or paste backup contents</label>
+        <textarea class="inp" id="restore-paste" rows="3" placeholder="Paste backup JSON here" style="font-family:var(--mono);font-size:11px"></textarea>
+        <button class="btn btn-ghost btn-sm btn-full" onclick="restoreFromPaste()">Restore from paste</button>
       </div>
       <div class="card">
         <div class="ctitle"><div class="ctitle-l">Update history</div><button class="btn btn-ghost btn-sm" onclick="showWhatsNewManual()">What's new</button></div>
@@ -1020,6 +1053,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
     <button class="more-tile" id="more-analytics" onclick="showPgFromMore('analytics')"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics</button>
     <button class="more-tile" id="more-kmart" onclick="showPgFromMore('kmart')"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Shifts</button>
     <button class="more-tile" id="more-payday" onclick="showPgFromMore('payday')"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="12" cy="14.5" r="1.5"/></svg>Pay day</button>
+    <button class="more-tile" id="more-recurring" onclick="showPgFromMore('recurring')"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Recurring</button>
     <button class="more-tile" id="more-scenario" onclick="showPgFromMore('scenario')"><svg viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0H5a2 2 0 0 1-2-2v-4m6 6h10a2 2 0 0 0 2-2v-4"/></svg>What-if</button>
     <button class="more-tile" id="more-glance" onclick="showPgFromMore('glance')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Glance</button>
     <button class="more-tile" id="more-invest" onclick="showPgFromMore('invest')"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Invest</button>
@@ -1141,6 +1175,24 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
   <div style="display:flex;gap:7px;margin-top:10px"><button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeModal('import-modal')">Close</button></div>
 </div></div>
 
+<!-- RECURRING RULE MODAL -->
+<div class="overlay" id="rule-modal"><div class="modal"><div class="modal-handle"></div><div class="modal-title" id="rule-modal-title">Add recurring</div>
+  <div class="tog"><button class="tog-b r on" id="rule-dir-out-btn" onclick="document.getElementById('rule-dir').value='out';this.classList.add('on');document.getElementById('rule-dir-in-btn').classList.remove('on')">Expense</button><button class="tog-b g" id="rule-dir-in-btn" onclick="document.getElementById('rule-dir').value='in';this.classList.add('on');document.getElementById('rule-dir-out-btn').classList.remove('on')">Income</button></div>
+  <input type="hidden" id="rule-dir" value="out">
+  <label class="lbl">Name</label><input type="text" class="inp" id="rule-name" placeholder="e.g. Rent, Netflix">
+  <div class="inp-row"><div><label class="lbl">Amount $</label><input type="number" class="inp" id="rule-amount" placeholder="0.00" min="0" step="0.01"></div><div><label class="lbl">Frequency</label><select class="inp" id="rule-freq" onchange="updateRuleFreqFields()"><option value="monthly">Monthly</option><option value="fortnightly">Fortnightly</option><option value="weekly">Weekly</option></select></div></div>
+  <div id="rule-day-wrap"><label class="lbl">Day of month</label><input type="number" class="inp" id="rule-day" min="1" max="28" value="1" placeholder="1-28"></div>
+  <div id="rule-weekday-wrap" style="display:none"><label class="lbl">Day of week</label><select class="inp" id="rule-weekday"><option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4" selected>Thursday</option><option value="5">Friday</option><option value="6">Saturday</option></select></div>
+  <label class="lbl">Category</label><select class="inp" id="rule-cat"></select>
+  <label class="lbl">Account</label><select class="inp" id="rule-acct"><option value="westpac">Westpac</option><option value="macquarie">Macquarie</option></select>
+  <div style="display:flex;gap:7px;margin-top:4px;flex-wrap:wrap">
+    <button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeModal('rule-modal')">Cancel</button>
+    <button class="btn btn-ghost btn-sm" id="rule-pause-btn" style="display:none" onclick="toggleRulePause()">Pause</button>
+    <button class="btn btn-r btn-sm" id="rule-delete-btn" style="display:none" onclick="deleteRule()">Delete</button>
+    <button class="btn btn-acc" style="flex:2" onclick="saveRule()">Save</button>
+  </div>
+</div></div>
+
 <!-- WHAT'S NEW MODAL -->
 <div class="overlay" id="whatsnew-modal"><div class="modal whatsnew-modal"><div class="modal-handle"></div>
   <div class="wn-badge" id="wn-version">v1.0.0</div>
@@ -1206,12 +1258,14 @@ const STORAGE_KEY='finplan-data';      // primary state
 const BACKUP_KEY='finplan-backup';     // pre-migration safety copy
 const META_KEY='finplan-meta';         // last-good timestamp/version
 const LEGACY_KEYS=['fpv4','fpv3'];      // older version keys to migrate from
-const SCHEMA_VERSION=5;                 // bump when the shape of S changes
+const SCHEMA_VERSION=6;                 // bump when the shape of S changes
 
 let S={
   schemaVersion:SCHEMA_VERSION,
   setupDone:false,
   transactions:[],recurring:[],kmartShifts:[],transfers:[],
+  recurringRules:[],   // [{id,name,amount,freq,dayOfMonth,weekday,cat,acct,dir,active,lastGenerated,nextDue}]
+  pendingTxns:[],      // [{id,ruleId,name,amount,cat,acct,dir,dueDate,createdAt}]
   goalState:{emergency:{saved:600,log:[],milestones:[]},holiday:{saved:0,log:[],milestones:[]},uni:{saved:0,log:[],milestones:[]},pc:{saved:0,log:[],milestones:[]}},
   portfolio:{VOO:7732.93,VYM:1118.04,VYMI:1108.72,VAF:1275.40,VGB:600.08,VGS:0},
   invLog:[],
@@ -1278,9 +1332,29 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='1.0.0';
+const APP_VERSION='1.1.0';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'1.1.0',
+    date:'2026-06-19',
+    title:'Recurring Transactions & Backup',
+    sections:{
+      features:[
+        'Recurring transactions — set up rent, subscriptions and other regular bills once; they auto-generate as pending items',
+        'Pending confirmation flow — see your current balance and "after" balance before confirming a payment',
+        'Quick Add — fast one-tap logging for variable expenses like fuel',
+        'Full backup & restore — download your entire app data as a file, or restore by file or paste'
+      ],
+      improvements:[
+        'Budget fixed-cost calculations now read live from your recurring rules, so editing or removing a bill updates everything instantly',
+        'New Recurring & Quick Add page in the More menu'
+      ],
+      fixes:[
+        'Recurring bills from the old system are migrated automatically to keep budget figures accurate'
+      ]
+    }
+  },
   {
     v:'1.0.0',
     date:'2026-06-18',
@@ -1450,6 +1524,33 @@ const MIGRATIONS={
     }
     delete d.paydayConfig; // remove legacy calendar config
     d.schemaVersion=5;
+    return d;
+  },
+  // v5 → v6: recurring transactions (rules + pending queue) and backup model
+  5:(d)=>{
+    if(!Array.isArray(d.recurringRules))d.recurringRules=[];
+    if(!Array.isArray(d.pendingTxns))d.pendingTxns=[];
+    // Migrate the old recurring[] entries so budget fixed-cost calcs stay accurate.
+    // Old shape: {id,name,amt,day,cat,acct}
+    if(Array.isArray(d.recurring)&&d.recurring.length&&d.recurringRules.length===0){
+      d.recurring.forEach(r=>{
+        d.recurringRules.push({
+          id:r.id||(Date.now().toString(36)+Math.random().toString(36).slice(2,6)),
+          name:r.name||'Recurring',
+          amount:r.amt||0,
+          freq:'monthly',
+          dayOfMonth:r.day||1,
+          weekday:null,
+          cat:r.cat||'other',
+          acct:r.acct||'westpac',
+          dir:'out',
+          active:true,
+          lastGenerated:null,
+          nextDue:null
+        });
+      });
+    }
+    d.schemaVersion=6;
     return d;
   }
 };
@@ -1676,6 +1777,7 @@ function launchApp(){
   const app=document.getElementById('app');app.style.display='flex';
   applyTheme(S.themeIdx||0);applyMode(S.mode||'dark');applyUiPrefs();
   syncSliderUI();snapshotNW();
+  generatePendingFromRules();
   buildDash();buildStaticTimeline();buildAiWelcome();buildThemeGrid();buildSettingsPage();
   if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
   scheduleLocalNotifs();
@@ -1728,7 +1830,7 @@ function applyUiPrefs(){
 // NAV
 // ═══════════════════════════════════════════════════════════
 let currentPg='dash';
-const MORE_PAGES=['budget','analytics','kmart','invest','timeline','settings','health','streaks','sinking','debts','subscriptions','dividends','tax','assistant','payday','scenario','glance'];
+const MORE_PAGES=['budget','analytics','kmart','invest','timeline','settings','health','streaks','sinking','debts','subscriptions','dividends','tax','assistant','payday','scenario','glance','recurring'];
 function showPg(id,btn){
   document.querySelectorAll('.pg').forEach(p=>{p.classList.remove('on');p.style.display='';});
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
@@ -1759,6 +1861,7 @@ function showPg(id,btn){
   if(id==='payday')buildPaydayPage();
   if(id==='scenario')buildScenarioPage();
   if(id==='glance')buildGlancePage();
+  if(id==='recurring')buildRecurringPage();
 }
 function toggleMore(){
   const sheet=document.getElementById('more-sheet'),ov=document.getElementById('more-overlay');
@@ -1800,6 +1903,7 @@ function showPgFromMore(id){
   if(id==='payday')buildPaydayPage();
   if(id==='scenario')buildScenarioPage();
   if(id==='glance')buildGlancePage();
+  if(id==='recurring')buildRecurringPage();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1819,7 +1923,7 @@ function upAll(){
 }
 function buildBudgetActual(){
   const el=document.getElementById('bud-actual');if(!el)return;
-  const monthlyFixed=(S.sliders.rent||0)+(S.recurring||[]).filter(r=>catType(r.cat)==='fixed').reduce((a,r)=>a+r.amt,0);
+  const monthlyFixed=(S.sliders.rent||0)+recurringFixedMonthly();
   const rows=[
     {l:'Variable spend',a:monthVariableSpend(),b:S.sliders.spend*4.33,kind:'var'},
     {l:'Fixed commitments',a:monthFixedSpend(),b:monthlyFixed,kind:'fix'},
@@ -1991,6 +2095,348 @@ if(window.ResizeObserver){
 }
 window.addEventListener('resize',fitAllCharts);
 
+
+// ═══════════════════════════════════════════════════════════
+// RECURRING TRANSACTIONS  (v1.1.0)
+// ═══════════════════════════════════════════════════════════
+// Live fixed-cost total — always reads from active recurring rules so that
+// editing/removing a rule (e.g. rent → 0) updates budgets instantly.
+function recurringFixedMonthly(){
+  return (S.recurringRules||[])
+    .filter(r=>r.active&&r.dir==='out'&&catType(r.cat)==='fixed')
+    .reduce((a,r)=>a+monthlyEquivalent(r),0);
+}
+function monthlyEquivalent(rule){
+  const amt=rule.amount||0;
+  if(rule.freq==='weekly')return amt*52/12;
+  if(rule.freq==='fortnightly')return amt*26/12;
+  return amt; // monthly
+}
+// Compute the next due date for a rule given a "from" date (Date object)
+function computeNextDue(rule,fromDate){
+  const d=new Date(fromDate);d.setHours(12,0,0,0);
+  if(rule.freq==='monthly'){
+    const day=Math.min(rule.dayOfMonth||1,28);
+    let next=new Date(d.getFullYear(),d.getMonth(),day,12);
+    if(next<=d)next=new Date(d.getFullYear(),d.getMonth()+1,day,12);
+    return next;
+  }
+  if(rule.freq==='weekly'||rule.freq==='fortnightly'){
+    const step=rule.freq==='weekly'?7:14;
+    const wd=rule.weekday!=null?rule.weekday:d.getDay();
+    let next=new Date(d);const diff=(wd-d.getDay()+7)%7;
+    next.setDate(d.getDate()+(diff===0?step:diff));
+    return next;
+  }
+  return new Date(d.getFullYear(),d.getMonth()+1,1,12);
+}
+// Generate pending transactions for any rule whose due date has passed.
+// Called on launch and when viewing relevant pages. Idempotent per due date.
+function generatePendingFromRules(){
+  if(!S.recurringRules)S.recurringRules=[];
+  if(!S.pendingTxns)S.pendingTxns=[];
+  const now=new Date();now.setHours(23,59,59,999);
+  let generated=0;
+  S.recurringRules.forEach(rule=>{
+    if(!rule.active)return;
+    // Initialise nextDue if missing
+    if(!rule.nextDue){
+      rule.nextDue=computeNextDue(rule,new Date(Date.now()-24*60*60*1000)).toISOString().slice(0,10);
+    }
+    // Generate for each elapsed due date, capped to avoid runaway loops
+    let guard=0;
+    while(guard<60){
+      guard++;
+      const due=new Date(rule.nextDue+'T12:00:00');
+      if(due>now)break;
+      // Don't double-generate: check no pending or confirmed txn already exists for this rule+date
+      const dueStr=rule.nextDue;
+      const exists=(S.pendingTxns||[]).some(p=>p.ruleId===rule.id&&p.dueDate===dueStr)
+        || (S.transactions||[]).some(t=>t.ruleId===rule.id&&t.date===dueStr);
+      if(!exists){
+        S.pendingTxns.push({
+          id:uid(),ruleId:rule.id,name:rule.name,amount:rule.amount,
+          cat:rule.cat,acct:rule.acct,dir:rule.dir||'out',dueDate:dueStr,createdAt:today()
+        });
+        generated++;
+      }
+      rule.lastGenerated=dueStr;
+      rule.nextDue=computeNextDue(rule,due).toISOString().slice(0,10);
+    }
+  });
+  if(generated>0)save();
+  return generated;
+}
+// Pending totals per account (for current-vs-after balance display)
+function pendingForAccount(acct){
+  return (S.pendingTxns||[]).filter(p=>p.acct===acct).reduce((a,p)=>a+(p.dir==='in'?p.amount:-p.amount),0);
+}
+function pendingCount(acct){
+  return (S.pendingTxns||[]).filter(p=>!acct||p.acct===acct).length;
+}
+
+// Confirm a pending txn → becomes a real transaction, balance updates
+function confirmPending(id){
+  const p=(S.pendingTxns||[]).find(x=>x.id===id);if(!p)return;
+  S.transactions.unshift({
+    id:uid(),ruleId:p.ruleId,amt:p.amount,dir:p.dir,date:p.dueDate||today(),
+    payee:p.name,cat:p.cat,acct:p.acct,note:'Recurring'
+  });
+  S.pendingTxns=S.pendingTxns.filter(x=>x.id!==id);
+  snapshotNW();save();
+  refreshAfterChange();
+  showToast(p.name+' confirmed');
+}
+function skipPending(id){
+  const p=(S.pendingTxns||[]).find(x=>x.id===id);if(!p)return;
+  S.pendingTxns=S.pendingTxns.filter(x=>x.id!==id);
+  save();refreshAfterChange();
+  showToast(p.name+' skipped');
+}
+function confirmAllPending(acct){
+  const items=(S.pendingTxns||[]).filter(p=>!acct||p.acct===acct);
+  if(!items.length)return;
+  if(!confirm('Confirm all '+items.length+' pending transactions? This will update your balances.'))return;
+  items.forEach(p=>{
+    S.transactions.unshift({id:uid(),ruleId:p.ruleId,amt:p.amount,dir:p.dir,date:p.dueDate||today(),payee:p.name,cat:p.cat,acct:p.acct,note:'Recurring'});
+  });
+  const ids=new Set(items.map(i=>i.id));
+  S.pendingTxns=S.pendingTxns.filter(p=>!ids.has(p.id));
+  snapshotNW();save();refreshAfterChange();
+  showToast(items.length+' transactions confirmed');
+}
+function refreshAfterChange(){
+  if(currentPg==='dash')buildDash();
+  if(currentPg==='txns')buildTxnsPage();
+  if(currentPg==='recurring')buildRecurringPage();
+  if(currentPg==='budget')buildBudgetActual();
+}
+
+// ── Pending balance widget (current vs after) ────────────────
+function buildPendingWidget(containerId,acct){
+  const el=document.getElementById(containerId);if(!el)return;
+  const pending=(S.pendingTxns||[]).filter(p=>!acct||p.acct===acct);
+  if(!pending.length){el.innerHTML='';return;}
+  const accts=acct?[acct]:['westpac','macquarie'];
+  let body='';
+  accts.forEach(a=>{
+    const ap=pending.filter(p=>p.acct===a);
+    if(!ap.length)return;
+    const cur=calcBal(a);
+    const change=ap.reduce((s,p)=>s+(p.dir==='in'?p.amount:-p.amount),0);
+    const after=cur+change;
+    const aLabel=a==='westpac'?'Westpac':'Macquarie';
+    body+=`<div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-bottom:4px">
+        <span>${aLabel}</span><span>${ap.length} pending</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t2);padding:2px 0">
+        <span>Current balance</span><span class="mono">${fmtD(cur)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:${change<0?'var(--r)':'var(--acc)'};padding:2px 0">
+        <span>Pending ${change<0?'out':'in'}</span><span class="mono">${change<0?'-':'+'}${fmtD(Math.abs(change))}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:var(--t);padding:6px 0 0;border-top:1px solid var(--bdr);margin-top:4px">
+        <span>After confirmed</span><span class="mono">${fmtD(after)}</span>
+      </div>
+    </div>`;
+  });
+  el.innerHTML=`<div class="card" style="border-color:var(--yd2);background:linear-gradient(180deg,var(--bg2),rgba(245,177,60,.03))">
+    <div class="ctitle"><div class="ctitle-l" style="color:var(--y)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Pending transactions</div>
+    <button class="btn btn-acc btn-sm" onclick="confirmAllPending(${acct?`'${acct}'`:'null'})">Confirm all</button></div>
+    ${body}
+    <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px">
+    ${pending.map(p=>{
+      const c=cmap()[p.cat]||{icon:'📌',label:'Other'};
+      return`<div class="bench-row" style="padding:8px 10px;background:var(--bg3);border-radius:8px;border:none">
+        <div class="bench-label"><div style="font-size:12px;color:var(--t)">${c.icon} ${p.name}</div><div style="font-size:10px;color:var(--t3);margin-top:1px">Due ${fmtDate(p.dueDate)} · ${acct?'':(p.acct==='westpac'?'Westpac':'Macquarie')}</div></div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="font-size:13px;font-weight:700;font-family:var(--mono);color:${p.dir==='in'?'var(--acc)':'var(--r)'}">${p.dir==='in'?'+':'-'}${fmtD(p.amount)}</div>
+          <button class="txn-act" style="color:var(--acc)" onclick="confirmPending('${p.id}')">✓</button>
+          <button class="txn-act" style="color:var(--t3)" onclick="skipPending('${p.id}')">skip</button>
+        </div>
+      </div>`;
+    }).join('')}
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// RECURRING & QUICK ADD PAGE
+// ═══════════════════════════════════════════════════════════
+function buildRecurringPage(){
+  generatePendingFromRules();
+  buildPendingWidget('recurring-pending',null);
+  buildRecurringRulesList();
+}
+function buildRecurringRulesList(){
+  const el=document.getElementById('recurring-rules');if(!el)return;
+  const rules=S.recurringRules||[];
+  if(!rules.length){el.innerHTML='<div class="empty"><div class="empty-ico">🔁</div><div class="empty-txt">No recurring transactions yet. Add rent, subscriptions or other regular bills below.</div></div>';return;}
+  const cm=cmap();
+  el.innerHTML=rules.map(r=>{
+    const c=cm[r.cat]||{icon:'📌',col:'#7d8fa3',label:'Other'};
+    const freqLabel=r.freq==='weekly'?'Weekly':r.freq==='fortnightly'?'Fortnightly':'Monthly · day '+r.dayOfMonth;
+    return`<div class="hld-row" style="opacity:${r.active?1:0.5}" onclick="openRuleModal('${r.id}')">
+      <div class="hld-main">
+        <div class="hld-tk" style="font-size:13px">${c.icon} ${r.name}${!r.active?' <span class="tag tr" style="font-size:8px">paused</span>':''}</div>
+        <div class="hld-sub">${freqLabel} · ${c.label} · ${r.acct==='westpac'?'Westpac':'Macquarie'}</div>
+      </div>
+      <div class="hld-right">
+        <div class="hld-val" style="color:${r.dir==='in'?'var(--acc)':'var(--r)'}">${r.dir==='in'?'+':'-'}${fmtD(r.amount)}</div>
+        <div class="hld-gain" style="color:var(--t3)">${r.freq==='monthly'?'/mo':r.freq==='weekly'?'/wk':'/fn'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+let editingRuleId=null;
+function openRuleModal(id){
+  editingRuleId=id||null;
+  const cats=allCats().filter(c=>c.type!=='transfer');
+  document.getElementById('rule-cat').innerHTML=cats.map(c=>`<option value="${c.id}">${c.icon} ${c.label}</option>`).join('');
+  document.getElementById('rule-modal-title').textContent=id?'Edit recurring':'Add recurring';
+  const del=document.getElementById('rule-delete-btn');
+  const pauseBtn=document.getElementById('rule-pause-btn');
+  if(id){
+    const r=(S.recurringRules||[]).find(x=>x.id===id);
+    if(r){
+      document.getElementById('rule-name').value=r.name||'';
+      document.getElementById('rule-amount').value=r.amount||'';
+      document.getElementById('rule-freq').value=r.freq||'monthly';
+      document.getElementById('rule-day').value=r.dayOfMonth||1;
+      document.getElementById('rule-weekday').value=r.weekday!=null?r.weekday:4;
+      document.getElementById('rule-cat').value=r.cat||'other';
+      document.getElementById('rule-acct').value=r.acct||'westpac';
+      document.getElementById('rule-dir').value=r.dir||'out';
+    }
+    del.style.display='';pauseBtn.style.display='';
+    pauseBtn.textContent=(S.recurringRules.find(x=>x.id===id)||{}).active===false?'Resume':'Pause';
+  }else{
+    ['rule-name','rule-amount'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('rule-freq').value='monthly';
+    document.getElementById('rule-day').value=1;
+    document.getElementById('rule-weekday').value=4;
+    document.getElementById('rule-cat').value='subscriptions';
+    document.getElementById('rule-acct').value='westpac';
+    document.getElementById('rule-dir').value='out';
+    del.style.display='none';pauseBtn.style.display='none';
+  }
+  updateRuleFreqFields();
+  openModal('rule-modal');
+}
+function updateRuleFreqFields(){
+  const freq=document.getElementById('rule-freq').value;
+  document.getElementById('rule-day-wrap').style.display=freq==='monthly'?'block':'none';
+  document.getElementById('rule-weekday-wrap').style.display=(freq==='weekly'||freq==='fortnightly')?'block':'none';
+}
+function saveRule(){
+  const name=document.getElementById('rule-name').value.trim();
+  const amount=parseFloat(document.getElementById('rule-amount').value);
+  if(!name||isNaN(amount)||amount<0){alert('Enter a name and amount.');return;}
+  const freq=document.getElementById('rule-freq').value;
+  const rule={
+    name,amount,freq,
+    dayOfMonth:parseInt(document.getElementById('rule-day').value)||1,
+    weekday:parseInt(document.getElementById('rule-weekday').value),
+    cat:document.getElementById('rule-cat').value,
+    acct:document.getElementById('rule-acct').value,
+    dir:document.getElementById('rule-dir').value,
+    active:true
+  };
+  if(!S.recurringRules)S.recurringRules=[];
+  if(editingRuleId){
+    const existing=S.recurringRules.find(x=>x.id===editingRuleId);
+    if(existing){
+      // Preserve active state and regenerate nextDue from new settings
+      Object.assign(existing,rule,{active:existing.active,nextDue:null,lastGenerated:existing.lastGenerated});
+    }
+  }else{
+    S.recurringRules.push({id:uid(),...rule,lastGenerated:null,nextDue:null});
+  }
+  closeModal('rule-modal');save();
+  generatePendingFromRules();
+  refreshAfterChange();
+  if(currentPg==='dash')buildDash();
+  showToast('Recurring saved');
+}
+function deleteRule(){
+  if(!editingRuleId)return;
+  if(!confirm('Delete this recurring transaction? Pending items already generated from it will remain until you confirm or skip them.'))return;
+  S.recurringRules=(S.recurringRules||[]).filter(r=>r.id!==editingRuleId);
+  closeModal('rule-modal');save();refreshAfterChange();if(currentPg==='dash')buildDash();
+  showToast('Recurring deleted');
+}
+function toggleRulePause(){
+  if(!editingRuleId)return;
+  const r=(S.recurringRules||[]).find(x=>x.id===editingRuleId);if(!r)return;
+  r.active=!r.active;
+  closeModal('rule-modal');save();refreshAfterChange();if(currentPg==='dash')buildDash();
+  showToast(r.active?'Resumed':'Paused');
+}
+
+// ── Quick Add (fuel etc.) ────────────────────────────────────
+function quickAdd(cat,label){
+  const amt=parseFloat(document.getElementById('quick-amount').value);
+  if(isNaN(amt)||amt<=0){alert('Enter an amount.');return;}
+  const acct=document.getElementById('quick-acct').value;
+  S.transactions.unshift({id:uid(),amt,dir:'out',date:today(),payee:label,cat,acct,note:'Quick add'});
+  document.getElementById('quick-amount').value='';
+  snapshotNW();save();refreshAfterChange();if(currentPg==='dash')buildDash();
+  fireConfetti();showToast(label+' '+fmtD(amt)+' logged');
+}
+
+// ═══════════════════════════════════════════════════════════
+// BACKUP & RESTORE  (v1.1.0)
+// ═══════════════════════════════════════════════════════════
+function downloadBackup(){
+  try{
+    const payload={_finplan:true,_version:APP_VERSION,_schema:SCHEMA_VERSION,_exported:new Date().toISOString(),data:S};
+    const json=JSON.stringify(payload,null,2);
+    const blob=new Blob([json],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download='finplan-backup-'+today()+'.json';
+    document.body.appendChild(a);a.click();
+    setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},100);
+    showToast('Backup downloaded');
+  }catch(e){alert('Backup failed: '+e.message);}
+}
+function handleBackupFile(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{validateAndRestore(r.result);};
+  r.onerror=()=>alert('Could not read that file.');
+  r.readAsText(f);
+}
+function restoreFromPaste(){
+  const txt=document.getElementById('restore-paste').value.trim();
+  if(!txt){alert('Paste a backup first.');return;}
+  validateAndRestore(txt);
+}
+function validateAndRestore(jsonStr){
+  let parsed;
+  try{parsed=JSON.parse(jsonStr);}
+  catch(e){alert('That doesn\'t look like valid backup data (could not parse JSON).');return;}
+  // Accept either our wrapped format or a raw state object
+  let data=null,meta='';
+  if(parsed&&parsed._finplan&&parsed.data){data=parsed.data;meta=' (exported '+(parsed._exported||'?').slice(0,10)+', v'+(parsed._version||'?')+')';}
+  else if(parsed&&parsed.transactions&&parsed.goalState){data=parsed;}
+  if(!data){alert('This file is not a FinPlan backup. It\'s missing the expected data structure.');return;}
+  const txnCount=(data.transactions||[]).length;
+  const goalCount=Object.keys(data.goalState||{}).length;
+  const holdCount=(data.holdings||[]).length;
+  if(!confirm(`Restore this backup${meta}?\n\n• ${txnCount} transactions\n• ${goalCount} goals\n• ${holdCount} holdings\n\nThis will REPLACE all current data and reload the app. Your current data will be backed up first.`))return;
+  try{
+    // Safety: back up current data before overwriting
+    try{localStorage.setItem(BACKUP_KEY,JSON.stringify(S));}catch(_){}
+    // Run migrations on the restored data so older backups are upgraded
+    let restored=runMigrations(data);
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(restored));
+    showToast('Restored — reloading…');
+    setTimeout(()=>location.reload(),600);
+  }catch(e){alert('Restore failed: '+e.message);}
+}
+
 function buildDash(){
   const pt=portTotal(),wp=calcBal('westpac'),mq=calcBal('macquarie'),nw=pt+wp+mq;
   document.getElementById('d-nw').textContent=fmtD(nw);
@@ -2003,6 +2449,7 @@ function buildDash(){
   document.getElementById('d-goals').innerHTML=Object.entries(GCFG).map(([k,g])=>{const st=S.goalState[k],p=pct(st.saved,g.target);return`<div class="prog"><div class="p-lr"><span class="p-n">${g.label}</span><span class="p-v">${fmtDI(st.saved)} / ${fmtDI(g.target)}</span></div><div class="p-track"><div class="p-fill" style="width:${p}%;background:${g.col}"></div></div><div class="p-sub">${p}%${g.due?' · due '+g.due:''}</div></div>`;}).join('');
   const recent=S.transactions.slice(0,5);const cm=cmap();
   buildCashFlowForecast();
+  buildPendingWidget('dash-pending',null);
   document.getElementById('d-recent').innerHTML=recent.length?recent.map(t=>{const c=cm[t.cat]||{icon:'📌',col:'#7d8fa3',label:'Other'};return`<div class="txn"><div class="txn-ico" style="background:${c.col}22;width:28px;height:28px;font-size:12px;border-radius:7px">${c.icon}</div><div class="txn-mid"><div class="txn-p" style="font-size:12px">${t.payee}</div><div class="txn-m">${c.label}</div></div><div class="txn-r"><div class="txn-a ${t.dir}" style="font-size:11px">${t.dir==='out'?'-':'+'}${fmtD(t.amt)}</div><div class="txn-d">${fmtDate(t.date)}</div></div></div>`;}).join(''):`<div class="empty"><div class="empty-ico">📭</div><div class="empty-txt">No transactions yet.</div></div>`;
   // NW chart — resize-safe: build/refresh then force a resize on next frame
   const nwH=S.nwHistory||[];
@@ -2362,7 +2809,7 @@ function buildBudgetPerformance(){
   const variable=txns.filter(isVariableSpend).reduce((a,t)=>a+t.amt,0);
   const fixed=txns.filter(isFixedSpend).reduce((a,t)=>a+t.amt,0);
   const varBudget=periodVariableBudget(p);
-  const monthlyFixedBudget=(S.sliders.rent||0)+(S.recurring||[]).filter(r=>catType(r.cat)==='fixed').reduce((a,r)=>a+r.amt,0);
+  const monthlyFixedBudget=(S.sliders.rent||0)+recurringFixedMonthly();
   const fixedBudget=p==='week'?monthlyFixedBudget/4.33:p==='month'?monthlyFixedBudget:p==='quarter'?monthlyFixedBudget*3:monthlyFixedBudget*12;
   const varPct=varBudget>0?Math.round(variable/varBudget*100):0;
   const fixPct=fixedBudget>0?Math.round(fixed/fixedBudget*100):0;
@@ -4002,7 +4449,7 @@ function clearAll(){
 function buildCashFlowForecast(){
   const el=document.getElementById('dash-cf');if(!el)return;
   const inc=monthIncome();
-  const recurOut=(S.recurring||[]).reduce((a,r)=>a+r.amt,0);
+  const recurOut=recurringFixedMonthly()+(S.recurringRules||[]).filter(r=>r.active&&r.dir==='out'&&catType(r.cat)!=='fixed').reduce((a,r)=>a+monthlyEquivalent(r),0);
   const net=inc-recurOut-S.sliders.rent;
   const now=new Date();
   let bal=calcBal('westpac')+calcBal('macquarie');
