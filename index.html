@@ -577,6 +577,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
     <!-- DASHBOARD -->
     <div class="pg on" id="pg-dash">
       <div id="dash-install"></div>
+      <div id="dash-briefing"></div>
       <div class="hero">
         <div class="hero-l">Total net worth</div>
         <div class="hero-v" id="d-nw">—</div>
@@ -676,6 +677,10 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
         <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg>Savings rate history</div></div>
         <div id="savings-rate-summary" style="font-size:12px;color:var(--t2);margin-bottom:10px"></div>
         <div class="chart-wrap" style="height:150px"><canvas id="savings-rate-chart" role="img" aria-label="Savings rate over time">Savings rate history</canvas></div>
+      </div>
+      <div class="card">
+        <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>Spending trends</div></div>
+        <div id="spending-trends"></div>
       </div>
       <div class="card">
         <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Weekly share card</div><button class="btn btn-acc btn-sm" onclick="buildShareCard()">Generate</button></div>
@@ -998,6 +1003,15 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
       </div>
 
       <div class="card">
+        <div class="ctitle"><div class="ctitle-l">Exchange rate (USD → AUD)</div></div>
+        <div style="font-size:12px;color:var(--t2);line-height:1.55;margin-bottom:10px">Your US holdings (VOO, VYM, VYMI) are priced in USD and converted to AUD using this rate. It updates automatically when you refresh prices with an FMP key, or set it manually here (check Google for "USD to AUD").</div>
+        <label class="lbl">1 USD = ? AUD</label>
+        <input type="number" class="inp" id="fx-manual-inp" placeholder="e.g. 1.54" min="0" step="0.001">
+        <button class="btn btn-acc btn-full" onclick="saveManualFx()">Set rate manually</button>
+        <div id="fx-status" style="font-size:11px;margin-top:8px;color:var(--t3)"></div>
+      </div>
+
+      <div class="card">
         <div class="ctitle"><div class="ctitle-l">Account balances</div></div>
         <div class="setting-row">
           <div><div class="setting-label">Westpac starting balance</div><div class="setting-sub" id="wp-bal-sub">—</div></div>
@@ -1274,6 +1288,9 @@ let S={
   contributions:[],     // [{id,ticker,amount,units,price,date,status,note}] status: pending|completed|cancelled
   priceCache:{},        // {ticker:{price,ts}}
   fmpApiKey:'',         // optional live-price key (Financial Modeling Prep)
+  audUsdRate:0.65,      // 1 AUD = X USD (so USD→AUD = value / rate). Default ~0.65
+  fxUpdated:null,       // timestamp of last FX fetch
+  fxManual:false,       // true if user set the rate manually
   benchmarkSel:['sp500'], // selected benchmarks for comparison
   benchmarkReturns:{sp500:'',asx200:'',ndx:'',msci:''}, // manual % entry fallback
   assistantHistory:[],  // investment assistant chat
@@ -1332,9 +1349,28 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='1.1.0';
+const APP_VERSION='1.2.0';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'1.2.0',
+    date:'2026-06-20',
+    title:'Currency, Smarter Dashboard & Trends',
+    sections:{
+      features:[
+        'Automatic USD→AUD conversion — US holdings (VOO, VYM, VYMI) now show in Australian dollars, no manual maths',
+        'Today briefing on the dashboard — surfaces what needs attention, prioritised by urgency',
+        'Spending trends — month-over-month comparison per category with biggest movers'
+      ],
+      improvements:[
+        'Live FX rate fetched automatically, with a manual override in Settings',
+        'Currency indicator shows the exchange rate being applied'
+      ],
+      fixes:[
+        'Fixed live price refresh — migrated to FMP\u2019s current API endpoints (the old ones were discontinued for free plans, causing the upgrade error)'
+      ]
+    }
+  },
   {
     v:'1.1.0',
     date:'2026-06-19',
@@ -1654,13 +1690,28 @@ function today(){return new Date().toISOString().slice(0,10);}
 function fmtDate(ds){if(!ds)return'';return new Date(ds+'T12:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short'});}
 // ── Holdings model helpers (v3) ──────────────────────────────
 // A holding's current value = units * lastPrice (falls back to stored currentValue).
-function holdingValue(h){
+// ── Currency: US holdings priced in USD, convert to AUD. ASX already AUD. ──
+// audUsdRate = 1 AUD in USD (e.g. 0.65). To convert USD→AUD: usd / rate.
+function usdToAud(usd){const r=S.audUsdRate||0.65;return r>0?usd/r:usd;}
+function fxRate(){return S.audUsdRate||0.65;}
+function fxUsdAud(){const r=S.audUsdRate||0.65;return r>0?1/r:1.54;} // 1 USD = X AUD
+// Native (un-converted) value of a holding
+function holdingValueNative(h){
   if(h.units!=null&&h.lastPrice!=null)return h.units*h.lastPrice;
   return h.currentValue||0;
 }
-function holdingCost(h){
+function holdingCostNative(h){
   if(h.units!=null&&h.avgCost!=null&&h.lastPrice!=null)return h.units*h.avgCost;
   return h.costBasis||h.avgCost||0;
+}
+// AUD-converted value (US holdings converted; ASX/other left as-is)
+function holdingValue(h){
+  const v=holdingValueNative(h);
+  return h.market==='US'?usdToAud(v):v;
+}
+function holdingCost(h){
+  const c=holdingCostNative(h);
+  return h.market==='US'?usdToAud(c):c;
 }
 function activeHoldings(){return (S.holdings||[]).filter(h=>holdingValue(h)>0||h.units>0);}
 function portTotal(){
@@ -2437,7 +2488,191 @@ function validateAndRestore(jsonStr){
   }catch(e){alert('Restore failed: '+e.message);}
 }
 
+
+// ═══════════════════════════════════════════════════════════
+// SMART DASHBOARD — "Today" briefing (v1.2.0)
+// Scores items by urgency and surfaces the top few.
+// ═══════════════════════════════════════════════════════════
+function buildDashBriefing(){
+  const el=document.getElementById('dash-briefing');if(!el)return;
+  const items=[];
+  // ── URGENT (red) ──
+  // Pending bills due today or overdue
+  const pend=S.pendingTxns||[];
+  const todayStr=today();
+  const duePend=pend.filter(p=>p.dueDate&&p.dueDate<=todayStr);
+  if(duePend.length){
+    const tot=duePend.reduce((a,p)=>a+(p.dir==='in'?0:p.amount),0);
+    items.push({pri:0,icon:'📌',text:`${duePend.length} pending bill${duePend.length>1?'s':''} due (${fmtD(tot)}) — confirm once paid`,action:"showPgFromMore('recurring')"});
+  }
+  // Account can't cover its pending debits
+  ['westpac','macquarie'].forEach(a=>{
+    const bal=calcBal(a);const pendOut=pend.filter(p=>p.acct===a).reduce((s,p)=>s+(p.dir==='in'?-p.amount:p.amount),0);
+    if(pendOut>0&&bal<pendOut){
+      items.push({pri:0,icon:'⚠️',text:`${a==='westpac'?'Westpac':'Macquarie'} may not cover pending debits (${fmtD(bal)} vs ${fmtD(pendOut)})`,action:"showPg('txns',document.querySelectorAll('.nb')[1])"});
+    }
+  });
+  // Over variable budget this week
+  const ws=weekSpend(),wb=S.sliders.spend;
+  if(ws>wb){
+    items.push({pri:1,icon:'🔴',text:`Over weekly spending budget by ${fmtD(ws-wb)} (${fmtD(ws)} of ${fmtD(wb)})`,action:"showPgFromMore('analytics')"});
+  }else if(ws>wb*0.85){
+    items.push({pri:2,icon:'🟡',text:`Close to weekly budget — ${fmtD(wb-ws)} left of ${fmtD(wb)}`,action:"showPgFromMore('analytics')"});
+  }
+  // ── ATTENTION (amber) ──
+  // Undistributed pay sitting in the queue
+  ['fulltime','kmart'].forEach(src=>{
+    if(typeof pendingIncome!=='function')return;
+    const inc=pendingIncome(src);
+    if(inc.length){
+      const tot=inc.reduce((a,t)=>a+t.amt,0);
+      const label=S.paydaySources?.[src]?.label||src;
+      items.push({pri:2,icon:'💰',text:`${fmtD(tot)} from ${label} awaiting distribution`,action:"showPgFromMore('payday')"});
+    }
+  });
+  // Goal pace — behind schedule
+  Object.entries(GCFG).forEach(([k,g])=>{
+    const st=S.goalState[k];if(!st)return;
+    const pace=goalPace(k,g,st);
+    if(pace&&pace.status==='behind'){
+      items.push({pri:2,icon:'🎯',text:`${g.label} is behind pace — needs ${fmtD(pace.neededPerMonth)}/mo to hit ${g.due||'target'}`,action:null});
+    }
+  });
+  // ── POSITIVE (green) ──
+  const inc=monthIncome(),spent=monthSpend(),sr=inc>0?Math.round((inc-spent)/inc*100):0;
+  if(sr>=40){items.push({pri:5,icon:'🟢',text:`Strong savings rate this month: ${sr}%`,action:null});}
+  // Near a net worth milestone
+  const nw=portTotal()+calcBal('westpac')+calcBal('macquarie');
+  const nextMs=(typeof NW_MILESTONES!=='undefined'?NW_MILESTONES:[]).find(m=>nw<m);
+  if(nextMs&&(nextMs-nw)<nextMs*0.05){
+    items.push({pri:4,icon:'🏆',text:`Almost at ${fmtDI(nextMs)} net worth — only ${fmtD(nextMs-nw)} to go!`,action:"showPgFromMore('debts')"});
+  }
+  // On-track goal (show one positive if room)
+  Object.entries(GCFG).forEach(([k,g])=>{
+    const st=S.goalState[k];if(!st)return;
+    const pace=goalPace(k,g,st);
+    if(pace&&pace.status==='ahead'){
+      items.push({pri:5,icon:'✅',text:`${g.label} is ahead of schedule`,action:null});
+    }
+  });
+
+  // Sort by priority, take top 4
+  items.sort((a,b)=>a.pri-b.pri);
+  const top=items.slice(0,4);
+  if(!top.length){
+    el.innerHTML=`<div class="card" style="border-color:var(--accd2);background:linear-gradient(180deg,var(--bg2),rgba(0,212,160,.03))">
+      <div style="display:flex;align-items:center;gap:10px"><div style="font-size:22px">✨</div><div><div style="font-size:13px;font-weight:700;color:var(--t)">All on track</div><div style="font-size:11px;color:var(--t3)">Nothing needs your attention right now.</div></div></div>
+    </div>`;
+    return;
+  }
+  const priColor=p=>p<=1?'var(--r)':p<=3?'var(--y)':'var(--acc)';
+  el.innerHTML=`<div class="card" style="border-color:var(--bdr2)">
+    <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 2"/></svg>Today</div><span style="font-size:10px;color:var(--t3)">${new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'short'})}</span></div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+    ${top.map(it=>`<div onclick="${it.action||''}" style="display:flex;align-items:flex-start;gap:10px;padding:9px 11px;background:var(--bg3);border-radius:9px;border-left:3px solid ${priColor(it.pri)};${it.action?'cursor:pointer':''}">
+      <div style="font-size:15px;line-height:1.2">${it.icon}</div>
+      <div style="font-size:12px;color:var(--t);line-height:1.45;flex:1">${it.text}</div>
+      ${it.action?'<div style="color:var(--t3);font-size:14px">›</div>':''}
+    </div>`).join('')}
+    </div>
+  </div>`;
+}
+// Goal pace calculator — is this goal on track for its deadline?
+function goalPace(key,g,st){
+  const due=GOAL_DEADLINES[key];
+  if(!due)return null;
+  const now=new Date();
+  const monthsLeft=Math.max(0,(due-now)/(1000*60*60*24*30.44));
+  const remaining=g.target-st.saved;
+  if(remaining<=0)return{status:'ahead',neededPerMonth:0};
+  if(monthsLeft<0.5)return{status:'behind',neededPerMonth:remaining};
+  const neededPerMonth=remaining/monthsLeft;
+  // Estimate current monthly contribution rate from goal log (last 90 days)
+  const log=st.log||[];
+  const cutoff=new Date(now.getTime()-90*24*60*60*1000);
+  const recent=log.filter(l=>{try{return new Date(l.date+'T12:00:00')>=cutoff;}catch{return false;}});
+  const recentTotal=recent.reduce((a,l)=>a+(l.amt||0),0);
+  const monthlyRate=recent.length?recentTotal/3:0; // ~3 months
+  if(monthlyRate>=neededPerMonth*0.95)return{status:'ahead',neededPerMonth};
+  if(monthlyRate>=neededPerMonth*0.6)return{status:'ontrack',neededPerMonth};
+  return{status:'behind',neededPerMonth};
+}
+const GOAL_DEADLINES={
+  emergency:null,
+  holiday:new Date(2026,10,1),
+  uni:new Date(2028,0,1),
+  pc:new Date(2028,0,1)
+};
+
+// ═══════════════════════════════════════════════════════════
+// SPENDING TRENDS — month-over-month (v1.2.0)
+// ═══════════════════════════════════════════════════════════
+function buildSpendingTrends(){
+  const el=document.getElementById('spending-trends');if(!el)return;
+  const now=new Date();
+  const thisYM=nowYM();
+  const lastM=new Date(now.getFullYear(),now.getMonth()-1,1);
+  const lastYM=`${lastM.getFullYear()}-${String(lastM.getMonth()+1).padStart(2,'0')}`;
+  const cm=cmap();
+  // Sum spending per category for a given YYYY-MM
+  function spendByCat(ym){
+    const out={};
+    S.transactions.filter(t=>t.dir==='out'&&t.date&&t.date.startsWith(ym)).forEach(t=>{
+      out[t.cat]=(out[t.cat]||0)+t.amt;
+    });
+    return out;
+  }
+  const thisM=spendByCat(thisYM),prevM=spendByCat(lastYM);
+  const allCatIds=[...new Set([...Object.keys(thisM),...Object.keys(prevM)])];
+  if(!allCatIds.length){el.innerHTML='<div style="font-size:11px;color:var(--t3)">Not enough spending data yet. Trends appear once you have transactions across two months.</div>';return;}
+  // Build comparison rows
+  const rows=allCatIds.map(cat=>{
+    const cur=thisM[cat]||0,prev=prevM[cat]||0;
+    const diff=cur-prev;const pctChange=prev>0?Math.round(diff/prev*100):(cur>0?100:0);
+    return{cat,cur,prev,diff,pctChange};
+  }).filter(r=>r.cur>0||r.prev>0).sort((a,b)=>b.cur-a.cur);
+  // Biggest movers (by absolute % change, where there's meaningful spend)
+  const movers=rows.filter(r=>r.prev>=20||r.cur>=20).slice().sort((a,b)=>Math.abs(b.diff)-Math.abs(a.diff)).slice(0,3);
+  let moversHtml='';
+  if(movers.length){
+    moversHtml=`<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin:4px 0 8px">Biggest movers vs last month</div>`+
+    movers.map(m=>{
+      const c=cm[m.cat]||{icon:'📌',label:m.cat,col:'#7d8fa3'};
+      const worse=m.diff>0;
+      return `<div style="display:flex;align-items:center;gap:9px;padding:7px 0">
+        <div class="cat-ico-sm" style="background:${c.col}22">${c.icon}</div>
+        <div style="flex:1"><div style="font-size:12px;color:var(--t)">${c.label}</div><div style="font-size:10px;color:var(--t3)">${fmtD(m.prev)} → ${fmtD(m.cur)}</div></div>
+        <div style="text-align:right;font-family:var(--mono);font-weight:700;font-size:13px;color:${worse?'var(--r)':'var(--acc)'}">${worse?'▲':'▼'} ${Math.abs(m.pctChange)}%</div>
+      </div>`;
+    }).join('');
+  }
+  // Full comparison list
+  const listHtml=rows.map(r=>{
+    const c=cm[r.cat]||{icon:'📌',label:r.cat,col:'#7d8fa3'};
+    const worse=r.diff>0;const flat=Math.abs(r.diff)<1;
+    return `<div class="bench-row">
+      <div class="bench-label">${c.icon} ${c.label}</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-family:var(--mono);font-size:12px;color:var(--t)">${fmtD(r.cur)}</span>
+        ${flat?'<span style="font-size:10px;color:var(--t3);min-width:46px;text-align:right">—</span>':`<span style="font-size:11px;font-family:var(--mono);color:${worse?'var(--r)':'var(--acc)'};min-width:46px;text-align:right">${worse?'+':''}${fmtD(r.diff)}</span>`}
+      </div>
+    </div>`;
+  }).join('');
+  const totalThis=Object.values(thisM).reduce((a,v)=>a+v,0);
+  const totalPrev=Object.values(prevM).reduce((a,v)=>a+v,0);
+  const totalDiff=totalThis-totalPrev;
+  el.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:baseline;padding:8px 0 12px;border-bottom:1px solid var(--bdr);margin-bottom:10px">
+      <div><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">This month</div><div style="font-size:20px;font-weight:800;font-family:var(--mono);color:var(--t)">${fmtD(totalThis)}</div></div>
+      <div style="text-align:right"><div style="font-size:10px;color:var(--t3)">vs ${fmtD(totalPrev)} last month</div><div style="font-size:13px;font-weight:700;font-family:var(--mono);color:${totalDiff>0?'var(--r)':'var(--acc)'}">${totalDiff>0?'▲ +':'▼ '}${fmtD(Math.abs(totalDiff))}</div></div>
+    </div>
+    ${moversHtml}
+    <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 6px">All categories</div>
+    ${listHtml}`;
+}
+
 function buildDash(){
+  buildDashBriefing();
   const pt=portTotal(),wp=calcBal('westpac'),mq=calcBal('macquarie'),nw=pt+wp+mq;
   document.getElementById('d-nw').textContent=fmtD(nw);
   document.getElementById('d-nw-sub').textContent=`Portfolio ${fmtDI(pt)} · Westpac ${fmtD(wp)} · Macquarie ${fmtD(mq)}`;
@@ -2721,6 +2956,7 @@ function buildAnalytics(){
   buildBudgetPerformance();
   buildAnalyticsInsights();
   buildSavingsRateChart();
+  buildSpendingTrends();
 }
 function buildAnalyticsSummary(){
   const p=S.analyticsPeriod||'month';
@@ -2932,17 +3168,19 @@ function buildInvHero(){
   const hasRealPrices=hs.some(h=>h.dataSource==='screenshot'||(h.priceDate&&h.priceDate===today()));
   const pricesStale=hs.length>0&&!hasRealPrices&&!S.fmpApiKey;
   const csvOnly=hs.every(h=>h.dataSource==='csv')&&hs.length>0;
+  const hasUS=hs.some(h=>h.market==='US');
   el.innerHTML=`
-    <div class="hero-l">Portfolio value</div>
+    <div class="hero-l">Portfolio value <span style="font-size:9px;opacity:.7">AUD</span></div>
     <div class="hero-v">${fmtD(val)}</div>
     <div style="display:flex;align-items:baseline;gap:12px;margin-top:8px;position:relative;z-index:1">
       <div style="font-size:20px;font-weight:800;font-family:var(--mono);color:${up?'var(--acc)':'var(--r)'}">${up?'+':''}${fmtD(gain)}</div>
       <div style="font-size:14px;font-weight:700;font-family:var(--mono);color:${up?'var(--acc)':'var(--r)'}">${up?'+':''}${gainPct.toFixed(1)}%</div>
     </div>
-    <div style="display:flex;gap:8px;margin-top:4px;font-size:11px;color:var(--t2);position:relative;z-index:1">
+    <div style="display:flex;gap:8px;margin-top:4px;font-size:11px;color:var(--t2);position:relative;z-index:1;flex-wrap:wrap">
       <span>Cost ${fmtDI(cost)}</span>
       ${divs>0?'<span>· Divs +'+fmtDI(divs)+'</span>':''}
       ${r.ann!==0?'<span>· '+r.ann.toFixed(1)+'% p.a.</span>':''}
+      ${hasUS?'<span>· FX 1 USD = '+fxUsdAud().toFixed(3)+' AUD</span>':''}
     </div>
     <div class="tag-row">
       <span class="tag tg">${activeHoldings().length} holdings</span>
@@ -3583,66 +3821,82 @@ async function refreshPrices(){
   }
   const hs=S.holdings||[];if(!hs.length){showToast('No holdings to price');return;}
   const btn=document.getElementById('refresh-prices-btn');if(btn){btn.disabled=true;btn.textContent='↻ …';}
-  // Build symbol list. FMP free tier is US-only; ASX needs paid plan.
-  // We try ALL holdings in one batch and report per-symbol success.
-  const symbols=hs.map(h=>h.market==='ASX'?h.ticker+'.AX':h.ticker);
-  const symList=symbols.join(',');
-  const url=`https://financialmodelingprep.com/api/v3/quote/${encodeURIComponent(symList)}?apikey=${encodeURIComponent(key)}`;
+  const BASE='https://financialmodelingprep.com/stable';
   let updated=0;const failed=[];const skipped=[];
   try{
-    let res;
-    try{res=await fetch(url);}
-    catch(networkErr){
-      alert('Network error reaching FMP. Check your internet connection.\n\nDetails: '+networkErr.message);
-      return;
+    // 1. Refresh the AUD/USD FX rate first (one call) so conversions are current.
+    if(!S.fxManual){await refreshFxRate(key);}
+    // 2. Fetch quotes. The stable quote endpoint takes ONE symbol per call:
+    //    /stable/quote?symbol=VOO&apikey=KEY  → returns an array with one object.
+    //    We call per-symbol (free tier = 250/day, plenty for a handful of holdings).
+    for(const h of hs){
+      const sym=h.market==='ASX'?h.ticker+'.AX':h.ticker;
+      try{
+        const res=await fetch(`${BASE}/quote?symbol=${encodeURIComponent(sym)}&apikey=${encodeURIComponent(key)}`);
+        if(res.status===401){alert('FMP says your API key is invalid (401).\n\nGo to Settings → FMP API key and paste a fresh key from the FMP dashboard.');return;}
+        if(res.status===402){alert('FMP says this needs a paid plan (402). Your key may be on a tier that doesn\'t cover this endpoint.');return;}
+        if(res.status===429){alert('FMP rate limit hit (429). The free tier allows 250 calls/day — try again later.');return;}
+        if(!res.ok){failed.push(h.ticker+' (HTTP '+res.status+')');continue;}
+        const data=await res.json();
+        if(data&&data['Error Message']){alert('FMP error: '+data['Error Message']);return;}
+        const q=Array.isArray(data)?data[0]:data;
+        const price=q&&(q.price!=null?q.price:q.previousClose);
+        if(price&&!isNaN(price)&&price>0){
+          h.lastPrice=price;                       // stored in native currency (USD for US)
+          h.currentValue=(h.units||0)*price;
+          h.priceDate=today();
+          S.priceCache[h.ticker]={price,ts:Date.now()};
+          updated++;
+        }else if(h.market==='ASX'){
+          skipped.push(h.ticker+' (ASX — needs paid plan)');
+        }else{
+          failed.push(h.ticker+' (no price returned)');
+        }
+      }catch(e){failed.push(h.ticker+' ('+(e.message||'error')+')');}
     }
-    // Diagnose by HTTP status
-    if(res.status===401){alert('FMP says your API key is invalid (401).\n\nGo to Settings → FMP API key and paste a fresh key from financialmodelingprep.com/dashboard.');return;}
-    if(res.status===403){alert('FMP says access is forbidden (403). Your key may have expired or this endpoint requires a paid plan.');return;}
-    if(res.status===429){alert('FMP rate limit hit (429). The free tier allows 250 calls per day — try again later.');return;}
-    if(res.status===402){alert('This endpoint requires a paid FMP plan (402).');return;}
-    if(!res.ok){
-      const txt=await res.text().catch(()=>'');
-      alert('FMP returned an error (HTTP '+res.status+').\n\n'+(txt.slice(0,200)||'No details from server.'));
-      return;
-    }
-    let data;
-    try{data=await res.json();}
-    catch(e){alert('FMP returned a non-JSON response. The endpoint or key may be wrong.');return;}
-    // Free-tier limit messages come back as 200 OK with an "Error Message" field
-    if(data&&data['Error Message']){alert('FMP error: '+data['Error Message']);return;}
-    if(!Array.isArray(data)){alert('FMP returned an unexpected response shape. Raw response:\n\n'+JSON.stringify(data).slice(0,300));return;}
-    if(data.length===0){alert('FMP returned no data for any of your symbols. Most likely cause: ASX symbols (VAF, VGB, VAS, VGS, NDQ) are not included on the free FMP plan — only US stocks (VOO, VYM, VYMI) are.\n\nFor ASX prices, use "Scan screenshot" or enter prices manually.');return;}
-    // Map returned data back to holdings
-    const bySymbol={};data.forEach(q=>{if(q&&q.symbol)bySymbol[q.symbol.toUpperCase()]=q;});
-    hs.forEach((h,i)=>{
-      const sym=symbols[i].toUpperCase();
-      const q=bySymbol[sym];
-      if(q&&typeof q.price==='number'&&!isNaN(q.price)&&q.price>0){
-        h.lastPrice=q.price;
-        h.currentValue=(h.units||0)*q.price;
-        h.priceDate=today();
-        S.priceCache[h.ticker]={price:q.price,ts:Date.now()};
-        updated++;
-      }else if(h.market==='ASX'){
-        skipped.push(h.ticker+' (ASX — needs paid plan)');
-      }else{
-        failed.push(h.ticker+' (no data returned)');
-      }
-    });
     save();buildInvestPage();if(currentPg==='dash')buildDash();
-    // Clear, honest result message
-    let msg=`Updated ${updated} of ${hs.length} prices`;
-    if(skipped.length||failed.length){
-      const details=[...skipped,...failed].slice(0,5).join('\n• ');
+    if(updated===0&&skipped.length&&!failed.length){
+      alert('No prices updated. Your holdings are ASX-listed ('+skipped.map(s=>s.split(' ')[0]).join(', ')+'), which aren\'t covered by the free FMP plan — only US stocks (VOO, VYM, VYMI) are.\n\nFor ASX prices, use "Scan screenshot" or enter prices manually.');
+    }else if(skipped.length||failed.length){
       if(updated>0)showToast('Updated '+updated+' price'+(updated>1?'s':''));
-      alert(`Refreshed ${updated} of ${hs.length} holdings.\n\nNot updated:\n• ${details}\n\nFor the rest, scan a screenshot or enter prices manually.`);
+      const details=[...skipped,...failed].slice(0,6).join('\n• ');
+      alert(`Refreshed ${updated} of ${hs.length} holdings (FX 1 USD = ${fxUsdAud().toFixed(3)} AUD).\n\nNot updated:\n• ${details}\n\nFor the rest, scan a screenshot or enter prices manually.`);
     }else{
-      showToast(msg+' ✓');
+      showToast('Updated '+updated+' price'+(updated>1?'s':'')+' ✓');
     }
   }catch(err){
     alert('Unexpected error during price refresh:\n\n'+(err.message||err));
   }finally{if(btn){btn.disabled=false;btn.textContent='↻ Refresh prices';}}
+}
+// Fetch AUD/USD from FMP stable forex endpoint. Stores audUsdRate = 1 AUD in USD.
+async function refreshFxRate(key){
+  try{
+    const res=await fetch(`https://financialmodelingprep.com/stable/quote?symbol=AUDUSD&apikey=${encodeURIComponent(key)}`);
+    if(!res.ok)return false;
+    const data=await res.json();
+    const q=Array.isArray(data)?data[0]:data;
+    const rate=q&&(q.price!=null?q.price:q.previousClose);
+    if(rate&&!isNaN(rate)&&rate>0.3&&rate<1.2){ // sanity bound for AUDUSD
+      S.audUsdRate=rate;S.fxUpdated=Date.now();S.fxManual=false;
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+function saveManualFx(){
+  const v=parseFloat(document.getElementById('fx-manual-inp').value);
+  if(isNaN(v)||v<=0){alert('Enter a valid rate (1 USD in AUD), e.g. 1.54');return;}
+  // User enters 1 USD = X AUD; store as audUsdRate = 1/X
+  S.audUsdRate=1/v;S.fxManual=true;S.fxUpdated=Date.now();
+  save();updateFxStatus();buildInvestPage();if(currentPg==='dash')buildDash();
+  showToast('Exchange rate saved');
+}
+function updateFxStatus(){
+  const el=document.getElementById('fx-status');if(!el)return;
+  const usdAud=fxUsdAud();
+  const when=S.fxUpdated?timeAgo(S.fxUpdated):'never';
+  el.innerHTML=`1 USD = <strong>${usdAud.toFixed(3)} AUD</strong> · ${S.fxManual?'manual':'auto'} · updated ${when}`;
+  const inp=document.getElementById('fx-manual-inp');if(inp&&!inp.value)inp.value=usdAud.toFixed(3);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -4336,6 +4590,7 @@ function buildSettingsPage(){
   const fmpInp=document.getElementById('fmp-key-inp');
   if(fmpInp)fmpInp.value=S.fmpApiKey||'';
   updateFmpKeyStatus();
+  updateFxStatus();
   // UI preference toggles
   if(!S.uiPrefs)S.uiPrefs={reduceMotion:false,compact:false};
   const tgRm=document.getElementById('tg-reduce-motion');if(tgRm)tgRm.classList.toggle('on',!!S.uiPrefs.reduceMotion);
