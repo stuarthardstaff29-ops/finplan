@@ -1148,11 +1148,11 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 
 <!-- HOLDING MODAL -->
 <div class="overlay" id="holding-modal"><div class="modal"><div class="modal-handle"></div><div class="modal-title" id="holding-modal-title">Add holding</div>
-  <div class="inp-row"><div><label class="lbl">Ticker</label><input type="text" class="inp" id="hld-ticker" placeholder="e.g. VOO" style="text-transform:uppercase"></div><div><label class="lbl">Market</label><select class="inp" id="hld-market"><option value="US">US</option><option value="ASX">ASX</option><option value="Other">Other</option></select></div></div>
-  <label class="lbl">Name (optional)</label><input type="text" class="inp" id="hld-name" placeholder="e.g. Vanguard S&P 500 ETF">
-  <div class="inp-row"><div><label class="lbl">Units / shares</label><input type="number" class="inp" id="hld-units" placeholder="0" min="0" step="0.0001"></div><div><label class="lbl">Avg cost / unit $</label><input type="number" class="inp" id="hld-avgcost" placeholder="0.00" min="0" step="0.01"></div></div>
-  <label class="lbl">Current price / unit $ (optional)</label><input type="number" class="inp" id="hld-price" placeholder="leave blank to use avg cost" min="0" step="0.01">
-  <label class="lbl">Sector / category (optional)</label><input type="text" class="inp" id="hld-sector" placeholder="e.g. US Large Cap">
+  <div class="inp-row"><div><label class="lbl">Ticker</label><input type="text" class="inp" id="hld-ticker" placeholder="e.g. VOO" style="text-transform:uppercase"></div><div><label class="lbl">Market</label><select class="inp" id="hld-market" onchange="updateHldCcy()"><option value="ASX">ASX</option><option value="US">US</option><option value="Other">Other</option></select></div></div>
+  <div class="inp-row"><div><label class="lbl">Units held</label><input type="number" class="inp" id="hld-units" placeholder="0" min="0" step="0.0001"></div><div><label class="lbl">Last price (<span id="hld-ccy-label">AUD</span>)</label><input type="number" class="inp" id="hld-price" placeholder="0.000" min="0" step="0.001"></div></div>
+  <label class="lbl">Net avg price (optional)</label><input type="number" class="inp" id="hld-avgcost" placeholder="0.000" min="0" step="0.001">
+  <div class="inp-row"><div><label class="lbl">Cost (AUD) — invested</label><input type="number" class="inp" id="hld-cost" placeholder="0.00" min="0" step="0.01"></div><div><label class="lbl">Market value (AUD)</label><input type="number" class="inp" id="hld-mv" placeholder="0.00" min="0" step="0.01"></div></div>
+  <div class="alert alert-b" style="font-size:11px;margin:2px 0">Enter Cost and Market Value exactly as CMC shows them (in AUD). P&L is calculated automatically. Leave them blank to derive from units × price.</div>
   <div style="display:flex;gap:7px;margin-top:4px"><button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeModal('holding-modal')">Cancel</button><button class="btn btn-r btn-sm" id="hld-delete-btn" style="display:none" onclick="deleteHoldingFromModal()">Delete</button><button class="btn btn-acc" style="flex:2" onclick="saveHolding()">Save</button></div>
 </div></div>
 
@@ -1169,7 +1169,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 <div class="overlay" id="import-modal"><div class="modal"><div class="modal-handle"></div><div class="modal-title" id="import-modal-title">Import portfolio</div>
   <!-- CSV mode -->
   <div id="import-csv-body">
-    <div class="alert alert-b" style="font-size:11px;line-height:1.55">In CMC Invest: <strong>Account → Confirmations → advanced search → download CSV</strong>. Then upload or paste it below. We parse it entirely on your device — nothing is uploaded anywhere.</div>
+    <div class="alert alert-b" style="font-size:11px;line-height:1.55">Export your <strong>portfolio / Profit &amp; Loss</strong> view from CMC (the screen showing Code, Units, Cost, Market Value and P&amp;L per holding). Upload or paste it below — parsed entirely on your device. Expected columns: Code, Last Price, Units, Net Avg Price, Cost (AUD), Market Value (AUD), P&amp;L (AUD), P&amp;L %.</div>
     <label class="lbl">Upload CSV file</label>
     <input type="file" accept=".csv,text/csv" id="csv-file" class="inp" onchange="handleCsvFile(event)">
     <label class="lbl">…or paste CSV contents</label>
@@ -1272,7 +1272,7 @@ const STORAGE_KEY='finplan-data';      // primary state
 const BACKUP_KEY='finplan-backup';     // pre-migration safety copy
 const META_KEY='finplan-meta';         // last-good timestamp/version
 const LEGACY_KEYS=['fpv4','fpv3'];      // older version keys to migrate from
-const SCHEMA_VERSION=6;                 // bump when the shape of S changes
+const SCHEMA_VERSION=7;                 // bump when the shape of S changes
 
 let S={
   schemaVersion:SCHEMA_VERSION,
@@ -1283,8 +1283,17 @@ let S={
   goalState:{emergency:{saved:600,log:[],milestones:[]},holiday:{saved:0,log:[],milestones:[]},uni:{saved:0,log:[],milestones:[]},pc:{saved:0,log:[],milestones:[]}},
   portfolio:{VOO:7732.93,VYM:1118.04,VYMI:1108.72,VAF:1275.40,VGB:600.08,VGS:0},
   invLog:[],
-  // v3 investment model
-  holdings:[],          // [{id,ticker,name,units,avgCost,lastPrice,market,sector}]
+  // v7 investment model — mirrors CMC Markets portfolio structure.
+  // Each holding stores CMC's reported figures as the source of truth:
+  //  ticker, market ('ASX'/'US'), assetType, units,
+  //  lastPrice + priceCcy (native currency price, e.g. 686.16 USD),
+  //  netAvgPrice (avg buy price, native ccy, optional),
+  //  cost (AUD — money invested, from CMC),
+  //  marketValue (AUD — current worth, from CMC AUD figure),
+  //  pnl (AUD), pnlPct (%),  — imported directly, CMC is source of truth
+  //  livePrice + liveUpdated (from FMP, kept separate so it never overwrites CMC),
+  //  dataSource ('csv'/'screenshot'/'pdf'/'manual'/'migration'), importedAt
+  holdings:[],
   contributions:[],     // [{id,ticker,amount,units,price,date,status,note}] status: pending|completed|cancelled
   priceCache:{},        // {ticker:{price,ts}}
   fmpApiKey:'',         // optional live-price key (Financial Modeling Prep)
@@ -1349,9 +1358,26 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='1.2.0';
+const APP_VERSION='1.3.1';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'1.3.1',
+    date:'2026-06-23',
+    title:'CSV Import Tuned to Your CMC Export',
+    sections:{
+      features:[
+        'CSV import now matches your exact CMC Profit & Loss export format'
+      ],
+      improvements:[
+        'Detects US vs ASX from the :US code suffix, reads the FX rate column, and skips the TOTALS row',
+        'Portfolio totals reconcile exactly to CMC\u2019s reported figures'
+      ],
+      fixes:[
+        'Handles the byte-order mark and AUD-denominated columns in CMC exports correctly'
+      ]
+    }
+  },
   {
     v:'1.2.0',
     date:'2026-06-20',
@@ -1588,6 +1614,41 @@ const MIGRATIONS={
     }
     d.schemaVersion=6;
     return d;
+  },
+  // v6 → v7: rebuild holdings model to mirror CMC. Convert old holdings into the
+  // new shape. Old holdings used units/avgCost/lastPrice (US prices in USD, ASX in AUD)
+  // and stored currentValue/costBasis. We derive CMC-style AUD cost & marketValue.
+  6:(d)=>{
+    const rate=d.audUsdRate||0.65; // 1 AUD in USD
+    const toAud=(v,mkt)=>mkt==='US'?(rate>0?v/rate:v):v;
+    if(Array.isArray(d.holdings)){
+      d.holdings=d.holdings.map(h=>{
+        const mkt=h.market||'US';
+        const units=h.units!=null?h.units:null;
+        const lastPrice=h.lastPrice!=null?h.lastPrice:(h.avgCost!=null?h.avgCost:null); // native ccy
+        const priceCcy=mkt==='US'?'USD':'AUD';
+        // Native value/cost then convert to AUD for the CMC-style fields
+        const nativeValue=(units!=null&&lastPrice!=null)?units*lastPrice:(h.currentValue||0);
+        const nativeCost=(units!=null&&h.avgCost!=null)?units*h.avgCost:(h.costBasis||h.avgCost||0);
+        const marketValue=Math.round(toAud(nativeValue,mkt)*100)/100;
+        const cost=Math.round(toAud(nativeCost,mkt)*100)/100;
+        const pnl=Math.round((marketValue-cost)*100)/100;
+        const pnlPct=cost>0?Math.round(pnl/cost*10000)/100:0;
+        return {
+          id:h.id||(Date.now().toString(36)+Math.random().toString(36).slice(2,6)),
+          ticker:h.ticker,market:mkt,assetType:h.assetType||'ETF',
+          units,lastPrice,priceCcy,
+          netAvgPrice:h.avgCost!=null?h.avgCost:null,
+          cost,marketValue,pnl,pnlPct,
+          livePrice:null,liveUpdated:null,
+          dataSource:h.dataSource||'migration',
+          importedAt:h.priceDate||null,
+          name:h.name||h.ticker,sector:h.sector||''
+        };
+      });
+    }
+    d.schemaVersion=7;
+    return d;
   }
 };
 
@@ -1695,29 +1756,39 @@ function fmtDate(ds){if(!ds)return'';return new Date(ds+'T12:00:00').toLocaleDat
 function usdToAud(usd){const r=S.audUsdRate||0.65;return r>0?usd/r:usd;}
 function fxRate(){return S.audUsdRate||0.65;}
 function fxUsdAud(){const r=S.audUsdRate||0.65;return r>0?1/r:1.54;} // 1 USD = X AUD
-// Native (un-converted) value of a holding
-function holdingValueNative(h){
-  if(h.units!=null&&h.lastPrice!=null)return h.units*h.lastPrice;
-  return h.currentValue||0;
-}
-function holdingCostNative(h){
-  if(h.units!=null&&h.avgCost!=null&&h.lastPrice!=null)return h.units*h.avgCost;
-  return h.costBasis||h.avgCost||0;
-}
-// AUD-converted value (US holdings converted; ASX/other left as-is)
+// ── v7 CMC-mirroring model ───────────────────────────────────
+// holding.cost, .marketValue, .pnl, .pnlPct are stored in AUD as CMC reports them.
+// These are the source of truth. Live prices are kept in .livePrice separately.
 function holdingValue(h){
-  const v=holdingValueNative(h);
-  return h.market==='US'?usdToAud(v):v;
+  // CMC-reported AUD market value is authoritative
+  if(h.marketValue!=null)return h.marketValue;
+  // Fallback: derive from units × native price, converted to AUD
+  if(h.units!=null&&h.lastPrice!=null){
+    const native=h.units*h.lastPrice;
+    return h.market==='US'?usdToAud(native):native;
+  }
+  return 0;
 }
 function holdingCost(h){
-  const c=holdingCostNative(h);
-  return h.market==='US'?usdToAud(c):c;
+  if(h.cost!=null)return h.cost; // CMC AUD cost is authoritative
+  if(h.units!=null&&h.netAvgPrice!=null){
+    const native=h.units*h.netAvgPrice;
+    return h.market==='US'?usdToAud(native):native;
+  }
+  return 0;
 }
-function activeHoldings(){return (S.holdings||[]).filter(h=>holdingValue(h)>0||h.units>0);}
+function holdingPnl(h){
+  if(h.pnl!=null)return h.pnl;            // CMC P&L authoritative
+  return holdingValue(h)-holdingCost(h);  // else derive
+}
+function holdingPnlPct(h){
+  if(h.pnlPct!=null)return h.pnlPct;
+  const c=holdingCost(h);return c>0?(holdingPnl(h)/c*100):0;
+}
+function activeHoldings(){return (S.holdings||[]).filter(h=>holdingValue(h)>0||(h.units||0)>0);}
 function portTotal(){
   const hs=S.holdings||[];
   if(hs.length)return hs.reduce((a,h)=>a+holdingValue(h),0);
-  // legacy fallback
   return Object.values(S.portfolio||{}).reduce((a,v)=>a+v,0);
 }
 function portCostBasis(){
@@ -1725,6 +1796,8 @@ function portCostBasis(){
   if(hs.length)return hs.reduce((a,h)=>a+holdingCost(h),0);
   return Object.values(S.investCostBasis||{}).reduce((a,v)=>a+v,0);
 }
+function portPnl(){return (S.holdings||[]).reduce((a,h)=>a+holdingPnl(h),0);}
+function portPnlPct(){const c=portCostBasis();return c>0?(portPnl()/c*100):0;}
 function tickerYield(tk){return TYLD[tk]!=null?TYLD[tk]:0.02;}
 function annDiv(){
   const hs=S.holdings||[];
@@ -3157,95 +3230,71 @@ function buildInvestPage(){
 function buildInvHero(){
   const el=document.getElementById('inv-hero');if(!el)return;
   const val=portTotal(),cost=portCostBasis();
-  const divs=Object.values(S.invDividendsReceived||{}).reduce((a,v)=>a+v,0);
-  const gain=val-cost+divs;
-  const gainPct=cost>0?(gain/cost*100):0;
-  const up=gain>=0;
-  const r=calcReturn();
-  // Data quality check
+  const pnl=portPnl(),pnlPct=portPnlPct();
+  const up=pnl>=0;
   const hs=S.holdings||[];
   const hasMigrated=hs.some(h=>h.dataSource==='migration');
-  const hasRealPrices=hs.some(h=>h.dataSource==='screenshot'||(h.priceDate&&h.priceDate===today()));
-  const pricesStale=hs.length>0&&!hasRealPrices&&!S.fmpApiKey;
-  const csvOnly=hs.every(h=>h.dataSource==='csv')&&hs.length>0;
   const hasUS=hs.some(h=>h.market==='US');
   el.innerHTML=`
     <div class="hero-l">Portfolio value <span style="font-size:9px;opacity:.7">AUD</span></div>
     <div class="hero-v">${fmtD(val)}</div>
     <div style="display:flex;align-items:baseline;gap:12px;margin-top:8px;position:relative;z-index:1">
-      <div style="font-size:20px;font-weight:800;font-family:var(--mono);color:${up?'var(--acc)':'var(--r)'}">${up?'+':''}${fmtD(gain)}</div>
-      <div style="font-size:14px;font-weight:700;font-family:var(--mono);color:${up?'var(--acc)':'var(--r)'}">${up?'+':''}${gainPct.toFixed(1)}%</div>
+      <div style="font-size:20px;font-weight:800;font-family:var(--mono);color:${up?'var(--acc)':'var(--r)'}">${up?'+':''}${fmtD(pnl)}</div>
+      <div style="font-size:14px;font-weight:700;font-family:var(--mono);color:${up?'var(--acc)':'var(--r)'}">${up?'+':''}${pnlPct.toFixed(2)}%</div>
     </div>
     <div style="display:flex;gap:8px;margin-top:4px;font-size:11px;color:var(--t2);position:relative;z-index:1;flex-wrap:wrap">
-      <span>Cost ${fmtDI(cost)}</span>
-      ${divs>0?'<span>· Divs +'+fmtDI(divs)+'</span>':''}
-      ${r.ann!==0?'<span>· '+r.ann.toFixed(1)+'% p.a.</span>':''}
+      <span>Invested ${fmtD(cost)}</span>
       ${hasUS?'<span>· FX 1 USD = '+fxUsdAud().toFixed(3)+' AUD</span>':''}
     </div>
     <div class="tag-row">
       <span class="tag tg">${activeHoldings().length} holdings</span>
-      <span class="tag ty">+${fmtDI(annDiv())}/yr income</span>
-      ${hasMigrated?'<span class="tag tr" style="font-size:8px">estimated data — import CSV for accuracy</span>':''}
-      ${csvOnly&&!hasRealPrices?'<span class="tag ty" style="font-size:8px">prices stale — refresh or scan</span>':''}
+      <span class="tag ty">+${fmtDI(annDiv())}/yr est. income</span>
+      ${hasMigrated?'<span class="tag tr" style="font-size:8px">estimated — re-import CSV for accuracy</span>':''}
     </div>`;
 }
 
 function updateSyncStatus(){
   const el=document.getElementById('sync-status');if(!el)return;
-  const hs=S.holdings||[];if(!hs.length){el.textContent='No holdings — import or add manually';return;}
+  const hs=S.holdings||[];if(!hs.length){el.textContent='No holdings — import CSV or add manually';return;}
+  const cmcSourced=hs.filter(h=>['csv','screenshot','pdf'].includes(h.dataSource)).length;
   const hasMigrated=hs.some(h=>h.dataSource==='migration');
-  const hasRealUnits=hs.some(h=>h.dataSource!=='migration'&&h.units!==1);
-  const hasCurrentPrices=hs.some(h=>h.priceDate);
-  const hasKey=S.fmpApiKey&&S.fmpApiKey.length>5;
+  const hasLive=hs.some(h=>h.liveUpdated);
   const parts=[];
-  parts.push(hasRealUnits?'✅ Units':'⚠️ Units (import CSV)');
-  parts.push(!hasMigrated?'✅ Cost basis':'⚠️ Cost (estimated)');
-  parts.push(hasCurrentPrices?'✅ Prices':'⚠️ Prices (refresh)');
+  parts.push(cmcSourced>0?`✅ ${cmcSourced} from CMC`:'⚠️ No CMC import yet');
+  parts.push(hasMigrated?'⚠️ Some estimated':'✅ Cost & value');
+  parts.push(hasLive?'✅ Live price check':'○ Live prices idle');
   el.innerHTML=parts.map(p=>`<span style="margin-right:8px;font-size:9px">${p}</span>`).join('');
 }
 function timeAgo(ts){const s=Math.floor((Date.now()-ts)/1000);if(s<60)return'just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';}
 
-// ── Holdings list with inline edit/delete ────────────────────
+// ── Holdings list — CMC-style rows ───────────────────────────
 function buildHoldingsList(){
   const el=document.getElementById('holdings-list');if(!el)return;
   const hs=S.holdings||[];
-  if(!hs.length){el.innerHTML=`<div class="empty"><div class="empty-ico">📈</div><div class="empty-txt">No holdings yet. Import a CSV, scan a screenshot, or add one manually.</div></div>`;return;}
+  if(!hs.length){el.innerHTML=`<div class="empty"><div class="empty-ico">📈</div><div class="empty-txt">No holdings yet. Import your CMC CSV, scan a screenshot, or add one manually.</div></div>`;return;}
   const total=portTotal();
   el.innerHTML=hs.map(h=>{
-    const val=holdingValue(h),cost=holdingCost(h),gain=val-cost;
-    const gainPct=cost>0?(gain/cost*100):0;const up=gain>=0;
+    const val=holdingValue(h),cost=holdingCost(h),pnl=holdingPnl(h),pnlPct=holdingPnlPct(h);
+    const up=pnl>=0;
     const weight=total>0?Math.round(val/total*100):0;
     const mkTag=h.market==='ASX'?'<span class="tag ty" style="font-size:8px">ASX</span>':h.market==='US'?'<span class="tag tb" style="font-size:8px">US</span>':'';
     const isMigrated=h.dataSource==='migration';
-    const isCsvNoPrice=h.dataSource==='csv'&&(!h.priceDate)&&Math.abs(h.lastPrice-h.avgCost)<0.01;
-    // Show real units for imported/manual data, or "$ value only" for migrated
-    let unitsLabel='';
-    if(isMigrated){
-      unitsLabel='$ value only';
-    }else if(h.units!=null&&h.units!==1){
-      unitsLabel=(+h.units).toLocaleString(undefined,{maximumFractionDigits:4})+' units';
-    }else if(h.units===1&&h.dataSource!=='manual'){
-      unitsLabel='';
-    }else{
-      unitsLabel=(+h.units).toLocaleString(undefined,{maximumFractionDigits:4})+' units';
-    }
-    // Gain display: suppress if data makes it meaningless (migrated default cost or csv-no-price)
+    const unitsLabel=h.units!=null?(+h.units).toLocaleString(undefined,{maximumFractionDigits:4})+' units':'—';
+    const priceLabel=h.lastPrice!=null?`@ ${(+h.lastPrice).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:3})} ${h.priceCcy||''}`:'';
     let gainDisplay;
     if(isMigrated){
-      gainDisplay='<span style="font-size:10px;color:var(--t3)">import for P/L</span>';
-    }else if(isCsvNoPrice){
-      gainDisplay='<span style="font-size:10px;color:var(--y)">needs current price</span>';
+      gainDisplay='<span style="font-size:10px;color:var(--t3)">re-import for P/L</span>';
     }else{
-      gainDisplay=`<span class="${up?'col-acc':'col-r'}">${up?'+':''}${gainPct.toFixed(1)}%</span>`;
+      gainDisplay=`<span class="${up?'col-acc':'col-r'}">${up?'+':''}${fmtD(pnl)} · ${up?'+':''}${pnlPct.toFixed(2)}%</span>`;
     }
     return`<div class="hld-row" onclick="openHoldingModal('${h.id}')">
       <div class="hld-main">
         <div class="hld-tk">${h.ticker} ${mkTag}</div>
-        <div class="hld-sub">${unitsLabel?unitsLabel+' · ':''}${weight}% of portfolio</div>
+        <div class="hld-sub">${unitsLabel}${priceLabel?' '+priceLabel:''} · ${weight}%</div>
       </div>
       <div class="hld-right">
         <div class="hld-val">${fmtD(val)}</div>
-        <div class="hld-gain">${gainDisplay}</div>
+        <div class="hld-gain" style="font-size:10px">${gainDisplay}</div>
       </div>
     </div>`;
   }).join('');
@@ -3463,6 +3512,10 @@ function buildGapTable(){
 // HOLDINGS CRUD
 // ═══════════════════════════════════════════════════════════
 let editingHoldingId=null;
+function updateHldCcy(){
+  const mkt=document.getElementById('hld-market').value;
+  document.getElementById('hld-ccy-label').textContent=mkt==='US'?'USD':'AUD';
+}
 function openHoldingModal(id){
   editingHoldingId=id||null;
   const del=document.getElementById('hld-delete-btn');
@@ -3471,38 +3524,54 @@ function openHoldingModal(id){
     const h=(S.holdings||[]).find(x=>x.id===id);
     if(h){
       document.getElementById('hld-ticker').value=h.ticker||'';
-      document.getElementById('hld-market').value=h.market||'US';
-      document.getElementById('hld-name').value=h.name||'';
+      document.getElementById('hld-market').value=h.market||'ASX';
       document.getElementById('hld-units').value=h.units!=null?h.units:'';
-      document.getElementById('hld-avgcost').value=h.avgCost!=null?h.avgCost:'';
       document.getElementById('hld-price').value=h.lastPrice!=null?h.lastPrice:'';
-      document.getElementById('hld-sector').value=h.sector||'';
+      document.getElementById('hld-avgcost').value=h.netAvgPrice!=null?h.netAvgPrice:'';
+      document.getElementById('hld-cost').value=h.cost!=null?h.cost:'';
+      document.getElementById('hld-mv').value=h.marketValue!=null?h.marketValue:'';
     }
     del.style.display='';
   }else{
-    ['hld-ticker','hld-name','hld-units','hld-avgcost','hld-price','hld-sector'].forEach(i=>document.getElementById(i).value='');
-    document.getElementById('hld-market').value='US';
+    ['hld-ticker','hld-units','hld-price','hld-avgcost','hld-cost','hld-mv'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('hld-market').value='ASX';
     del.style.display='none';
   }
+  updateHldCcy();
   openModal('holding-modal');
 }
 function saveHolding(){
   const ticker=document.getElementById('hld-ticker').value.trim().toUpperCase();
   if(!ticker){alert('Enter a ticker.');return;}
-  const units=parseFloat(document.getElementById('hld-units').value);
-  const avgCost=parseFloat(document.getElementById('hld-avgcost').value);
-  const price=parseFloat(document.getElementById('hld-price').value);
   const market=document.getElementById('hld-market').value;
-  const name=document.getElementById('hld-name').value.trim();
-  const sector=document.getElementById('hld-sector').value.trim();
-  if(isNaN(units)||isNaN(avgCost)){alert('Enter units and average cost.');return;}
-  const lastPrice=isNaN(price)?avgCost:price;
+  const units=parseFloat(document.getElementById('hld-units').value);
+  const lastPrice=parseFloat(document.getElementById('hld-price').value);
+  const netAvgPrice=parseFloat(document.getElementById('hld-avgcost').value);
+  let cost=parseFloat(document.getElementById('hld-cost').value);
+  let marketValue=parseFloat(document.getElementById('hld-mv').value);
+  const priceCcy=market==='US'?'USD':'AUD';
+  // Derive cost/MV if not given, from units × price (converted to AUD for US)
+  const toAud=(v)=>market==='US'?usdToAud(v):v;
+  if(isNaN(cost)&&!isNaN(units)&&!isNaN(netAvgPrice))cost=Math.round(toAud(units*netAvgPrice)*100)/100;
+  if(isNaN(marketValue)&&!isNaN(units)&&!isNaN(lastPrice))marketValue=Math.round(toAud(units*lastPrice)*100)/100;
+  if(isNaN(cost)&&isNaN(marketValue)){alert('Enter at least Cost and Market Value (AUD), or units + prices to derive them.');return;}
+  if(isNaN(cost))cost=0;if(isNaN(marketValue))marketValue=0;
+  const pnl=Math.round((marketValue-cost)*100)/100;
+  const pnlPct=cost>0?Math.round(pnl/cost*10000)/100:0;
+  const rec={
+    ticker,market,assetType:'ETF',
+    units:isNaN(units)?null:units,
+    lastPrice:isNaN(lastPrice)?null:lastPrice,priceCcy,
+    netAvgPrice:isNaN(netAvgPrice)?null:netAvgPrice,
+    cost,marketValue,pnl,pnlPct,
+    dataSource:'manual',importedAt:today()
+  };
   if(!S.holdings)S.holdings=[];
   if(editingHoldingId){
     const h=S.holdings.find(x=>x.id===editingHoldingId);
-    if(h)Object.assign(h,{ticker,market,name:name||h.name,units,avgCost,lastPrice,sector:sector||h.sector,costBasis:units*avgCost,currentValue:units*lastPrice});
+    if(h)Object.assign(h,rec,{livePrice:h.livePrice,liveUpdated:h.liveUpdated});
   }else{
-    S.holdings.push({id:uid(),ticker,market,name:name||ticker,units,avgCost,lastPrice,sector:sector||'',costBasis:units*avgCost,currentValue:units*lastPrice,dataSource:'manual'});
+    S.holdings.push({id:uid(),...rec,livePrice:null,liveUpdated:null});
   }
   closeModal('holding-modal');snapshotNW();save();buildInvestPage();if(currentPg==='dash')buildDash();showToast('Holding saved');
 }
@@ -3625,48 +3694,191 @@ function handleCsvFile(e){
   const f=e.target.files[0];if(!f)return;
   const r=new FileReader();r.onload=()=>{document.getElementById('csv-paste').value=r.result;};r.readAsText(f);
 }
-// Robust-ish CSV parser for CMC trade confirmations.
-// Strategy: detect columns by header keywords; reconstruct net units & cost per ticker.
+// ── CSV parser for CMC portfolio / P&L export ────────────────
+// CMC's portfolio export has one row per holding with columns like:
+// Code | Last Price | Units | Net Avg Price | Cost (AUD) | Market Value (AUD) | P&L (AUD) | P&L %
+// We detect columns by header keywords, parse currency-tagged numbers,
+// validate, and produce a structured preview before saving.
+const TICKER_MARKET={VOO:'US',VYM:'US',VYMI:'US',VTI:'US',VUG:'US',SCHD:'US',VAF:'ASX',VGB:'ASX',VGS:'ASX',VAS:'ASX',NDQ:'ASX',VHY:'ASX',VGAD:'ASX',IVV:'ASX',A200:'ASX',VDHG:'ASX'};
+function parseCmcNumber(raw){
+  // Extract numeric value and any currency tag from strings like "686.160 USD", "$8,221.33", "-0.11%", "8820.98 AUD"
+  if(raw==null)return{value:NaN,ccy:null};
+  let s=String(raw).trim();
+  let ccy=null;
+  const cm=s.match(/\b(AUD|USD|NZD|GBP|EUR)\b/i);
+  if(cm)ccy=cm[1].toUpperCase();
+  // strip everything except digits, minus, dot
+  const numStr=s.replace(/[^0-9.\-]/g,'');
+  const value=numStr===''||numStr==='-'?NaN:parseFloat(numStr);
+  return{value,ccy};
+}
 function parseCsvImport(){
-  const raw=document.getElementById('csv-paste').value.trim();
-  if(!raw){alert('Upload or paste CSV first.');return;}
+  let raw=document.getElementById('csv-paste').value;
+  if(!raw||!raw.trim()){alert('Upload or paste your CMC portfolio CSV first.');return;}
+  // Strip UTF-8 BOM if present (CMC exports include it)
+  raw=raw.replace(/^\uFEFF/,'').replace(/^\xEF\xBB\xBF/,'').trim();
   const lines=raw.split(/\r?\n/).filter(l=>l.trim());
   if(lines.length<2){alert('CSV has no data rows.');return;}
-  // Parse header
-  const split=l=>{const out=[];let cur='',q=false;for(const ch of l){if(ch==='"')q=!q;else if(ch===','&&!q){out.push(cur);cur='';}else cur+=ch;}out.push(cur);return out.map(s=>s.trim().replace(/^"|"$/g,''));};
-  const header=split(lines[0]).map(h=>h.toLowerCase());
+  const split=l=>{const out=[];let cur='',q=false;for(const ch of l){if(ch==='"')q=!q;else if(ch===','&&!q){out.push(cur);cur='';}else cur+=ch;}out.push(cur);return out.map(s=>s.trim().replace(/^"|"$/g,'').replace(/^\uFEFF/,''));};
+  // Find header row (contains a Code/Symbol column)
+  let headerIdx=0;
+  for(let i=0;i<Math.min(lines.length,6);i++){
+    const cells=split(lines[i]).map(c=>c.toLowerCase());
+    if(cells.some(c=>/\b(code|symbol|ticker|instrument)\b/.test(c))){headerIdx=i;break;}
+  }
+  const header=split(lines[headerIdx]).map(h=>h.toLowerCase());
   const findCol=(...keys)=>header.findIndex(h=>keys.some(k=>h.includes(k)));
   const cCode=findCol('code','symbol','ticker','instrument');
-  const cQty=findCol('quantity','units','volume','shares');
-  const cPrice=findCol('price','avg price','unit price');
-  const cValue=findCol('value','consideration','amount','net');
-  const cSide=findCol('direction','side','type','b/s','buy/sell');
-  const cDate=findCol('date','trade date','transaction date');
-  if(cCode<0){alert('Could not find a ticker/code column in this CSV. Check it is a CMC trade confirmation export.');return;}
-  const agg={};const contribs=[];
-  for(let i=1;i<lines.length;i++){
-    const r=split(lines[i]);if(r.length<=cCode)continue;
-    const code=(r[cCode]||'').toUpperCase().replace(/\s+/g,'');if(!code)continue;
-    let qty=cQty>=0?parseFloat((r[cQty]||'').replace(/[^0-9.\-]/g,'')):NaN;
-    let price=cPrice>=0?parseFloat((r[cPrice]||'').replace(/[^0-9.\-]/g,'')):NaN;
-    let value=cValue>=0?parseFloat((r[cValue]||'').replace(/[^0-9.\-]/g,'')):NaN;
-    const side=cSide>=0?(r[cSide]||'').toLowerCase():'buy';
-    const date=cDate>=0?normaliseDate(r[cDate]):today();
-    const isSell=side.includes('s')||side.includes('sell');
-    if(isNaN(value)&&!isNaN(qty)&&!isNaN(price))value=qty*price;
-    if(isNaN(qty)&&!isNaN(value)&&!isNaN(price)&&price>0)qty=value/price;
-    if(!agg[code])agg[code]={units:0,cost:0};
-    if(isSell){agg[code].units-=(qty||0);agg[code].cost-=(value||0);}
-    else{
-      agg[code].units+=(qty||0);agg[code].cost+=(value||0);
-      if(!isNaN(value)&&value>0)contribs.push({id:uid(),ticker:code,amount:Math.round(value*100)/100,units:qty||null,price:price||null,date,status:'completed',note:'CSV import'});
-    }
+  const cLast=findCol('last price','last','price');
+  const cFx=findCol('fx rate','fx');
+  const cUnits=findCol('units held','units','quantity','shares');
+  const cAvg=findCol('net avg','avg price','average');
+  const cCost=findCol('cost');
+  const cMV=findCol('market value','mkt value','market val');
+  // P&L AUD: match a header containing p&l/p/l/profit AND 'aud' (not the % column)
+  let cPnl=header.findIndex(h=>/(p&l|p\/l|profit)/.test(h)&&/aud/.test(h));
+  if(cPnl<0)cPnl=header.findIndex(h=>/(p&l|p\/l|profit)/.test(h)&&!/%/.test(h));
+  const cPnlPct=header.findIndex(h=>/(p&l|p\/l|profit)/.test(h)&&/%/.test(h));
+  if(cCode<0){alert('Could not find a Code column. Headers found:\n\n'+header.join(', '));return;}
+  if(cCost<0&&cMV<0){alert('Could not find Cost or Market Value columns. Headers found:\n'+header.join(', '));return;}
+
+  const imported=[];const skipped=[];
+  for(let i=headerIdx+1;i<lines.length;i++){
+    const r=split(lines[i]);
+    if(r.length<=cCode){continue;}
+    let rawCode=(r[cCode]||'').toUpperCase().trim();
+    // Skip TOTALS / summary rows
+    if(!rawCode||/^TOTAL/.test(rawCode)){continue;}
+    // Market from ":US" suffix (e.g. VOO:US). No suffix → ASX.
+    let market='ASX';
+    if(/:US$/.test(rawCode))market='US';
+    else if(/:(\w+)$/.test(rawCode)){const ex=rawCode.match(/:(\w+)$/)[1];market=ex==='ASX'?'ASX':'US';}
+    const code=rawCode.replace(/:.*$/,'').replace(/\s+/g,'');
+    if(!code||code.length>6||!/^[A-Z0-9]+$/.test(code)){if(r.join('').trim())skipped.push({row:i,reason:'no valid ticker',raw:rawCode});continue;}
+    const lastPrice=cLast>=0?parseCmcNumber(r[cLast]).value:NaN;
+    const fxRate=cFx>=0?parseCmcNumber(r[cFx]).value:NaN; // populated for US holdings (e.g. 0.7)
+    const units=cUnits>=0?parseCmcNumber(r[cUnits]).value:NaN;
+    const avg=cAvg>=0?parseCmcNumber(r[cAvg]).value:NaN; // AUD avg price
+    const cost=cCost>=0?parseCmcNumber(r[cCost]).value:NaN;       // AUD
+    const mv=cMV>=0?parseCmcNumber(r[cMV]).value:NaN;             // AUD
+    let pnl=cPnl>=0?parseCmcNumber(r[cPnl]).value:NaN;            // AUD
+    let pnlPct=cPnlPct>=0?parseCmcNumber(r[cPnlPct]).value:NaN;
+    // If FX rate present and >0, the last price is in native (US) currency; otherwise AUD
+    const priceCcy=(market==='US')?'USD':'AUD';
+    if(isNaN(cost)&&isNaN(mv)){skipped.push({row:i,reason:'no cost or market value',raw:code});continue;}
+    const costV=isNaN(cost)?0:cost,mvV=isNaN(mv)?0:mv;
+    let warn=null;
+    if(isNaN(pnl))pnl=Math.round((mvV-costV)*100)/100;
+    else{const calc=mvV-costV;if(costV>0&&mvV>0&&Math.abs(calc-pnl)>Math.max(1,costV*0.02))warn=`P&L mismatch: CMC ${fmtD(pnl)} vs calc ${fmtD(calc)}`;}
+    if(isNaN(pnlPct))pnlPct=costV>0?Math.round(pnl/costV*10000)/100:0;
+    imported.push({
+      code,market,priceCcy,
+      units:isNaN(units)?null:units,
+      lastPrice:isNaN(lastPrice)?null:lastPrice,
+      fxRate:isNaN(fxRate)?null:fxRate,
+      netAvgPrice:isNaN(avg)?null:avg,
+      cost:Math.round(costV*100)/100,
+      marketValue:Math.round(mvV*100)/100,
+      pnl:Math.round(pnl*100)/100,
+      pnlPct:Math.round(pnlPct*100)/100,
+      warn
+    });
   }
-  const holdings=Object.entries(agg).filter(([,v])=>v.units>0.0001).map(([code,v])=>({
-    code,units:Math.round(v.units*10000)/10000,avgCost:v.units>0?Math.round(v.cost/v.units*100)/100:0,cost:Math.round(v.cost*100)/100
-  }));
-  if(!holdings.length){alert('No buy positions detected. The CSV format may differ — try the screenshot method instead.');return;}
-  renderImportPreview(holdings,contribs,'csv');
+  if(!imported.length){
+    alert('No valid holdings found.'+(skipped.length?'\n\n'+skipped.length+' row(s) skipped.':''));
+    return;
+  }
+  renderImportPreview(imported,skipped,'csv');
+}
+
+function renderImportPreview(holdings,skipped,source){
+  const el=document.getElementById('import-preview');el.style.display='block';
+  window._pendingImport={holdings,skipped,source};
+  // Determine which are new vs updates
+  const existing=new Set((S.holdings||[]).map(h=>h.ticker));
+  const newOnes=holdings.filter(h=>!existing.has(h.code));
+  const updates=holdings.filter(h=>existing.has(h.code));
+  const totalCost=holdings.reduce((a,h)=>a+h.cost,0);
+  const totalMV=holdings.reduce((a,h)=>a+h.marketValue,0);
+  const totalPnl=totalMV-totalCost;
+  const warns=holdings.filter(h=>h.warn);
+  el.innerHTML=`<hr style="border:none;border-top:1px solid var(--bdr);margin:10px 0">
+    <div class="lbl" style="margin-bottom:8px">Import preview — confirm before saving</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <div style="flex:1;text-align:center;padding:8px;background:var(--bg3);border-radius:8px"><div style="font-size:9px;color:var(--t3)">INVESTED</div><div style="font-size:14px;font-weight:700;font-family:var(--mono)">${fmtD(totalCost)}</div></div>
+      <div style="flex:1;text-align:center;padding:8px;background:var(--bg3);border-radius:8px"><div style="font-size:9px;color:var(--t3)">VALUE</div><div style="font-size:14px;font-weight:700;font-family:var(--mono)">${fmtD(totalMV)}</div></div>
+      <div style="flex:1;text-align:center;padding:8px;background:var(--bg3);border-radius:8px"><div style="font-size:9px;color:var(--t3)">P&L</div><div style="font-size:14px;font-weight:700;font-family:var(--mono);color:${totalPnl>=0?'var(--acc)':'var(--r)'}">${totalPnl>=0?'+':''}${fmtD(totalPnl)}</div></div>
+    </div>
+    ${holdings.map(h=>`<div class="bench-row" style="align-items:flex-start">
+      <div class="bench-label"><div style="font-size:12px;color:var(--t);font-weight:700">${h.code} <span class="tag ${h.market==='US'?'tb':'ty'}" style="font-size:8px">${h.market}</span> ${existing.has(h.code)?'<span class="tag tg" style="font-size:8px">update</span>':'<span class="tag tb" style="font-size:8px">new</span>'}</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:2px">${h.units!=null?h.units+' units':'—'}${h.lastPrice!=null?' @ '+h.lastPrice+' '+h.priceCcy:''}</div>
+        ${h.warn?'<div style="font-size:9px;color:var(--y);margin-top:2px">⚠️ '+h.warn+'</div>':''}</div>
+      <div style="text-align:right"><div style="font-size:12px;font-weight:700;font-family:var(--mono)">${fmtD(h.marketValue)}</div><div style="font-size:10px;font-family:var(--mono);color:${h.pnl>=0?'var(--acc)':'var(--r)'}">${h.pnl>=0?'+':''}${fmtD(h.pnl)} · ${h.pnl>=0?'+':''}${h.pnlPct.toFixed(2)}%</div></div>
+    </div>`).join('')}
+    <div style="font-size:11px;color:var(--t2);margin:10px 0;line-height:1.6">
+      <strong>${newOnes.length}</strong> new · <strong>${updates.length}</strong> to update${skipped.length?' · <strong>'+skipped.length+'</strong> skipped':''}
+      ${warns.length?'<br><span style="color:var(--y)">⚠️ '+warns.length+' holding(s) have P&L that doesn\'t match cost/value — review above</span>':''}
+    </div>
+    ${skipped.length?`<details style="font-size:10px;color:var(--t3);margin-bottom:10px"><summary>Skipped rows (${skipped.length})</summary>${skipped.map(s=>`<div style="padding:2px 0">Row ${s.row}: ${s.reason}</div>`).join('')}</details>`:''}
+    <button class="btn btn-acc btn-full" onclick="confirmImport(true)">Save — update existing &amp; add new</button>
+    <button class="btn btn-ghost btn-sm btn-full" style="margin-top:6px" onclick="confirmImport(false)">Replace ALL holdings with this import</button>`;
+}
+
+function confirmImport(merge){
+  const imp=window._pendingImport;if(!imp)return;
+  const mk=(h)=>({
+    id:uid(),ticker:h.code,market:h.market,assetType:'ETF',
+    units:h.units,lastPrice:h.lastPrice,priceCcy:h.priceCcy,
+    netAvgPrice:h.netAvgPrice,
+    cost:h.cost,marketValue:h.marketValue,pnl:h.pnl,pnlPct:h.pnlPct,
+    livePrice:null,liveUpdated:null,
+    dataSource:imp.source,importedAt:today(),name:h.code,sector:''
+  });
+  if(!S.holdings)S.holdings=[];
+  let added=0,updated=0;
+  if(merge){
+    imp.holdings.forEach(h=>{
+      const ex=S.holdings.find(x=>x.ticker===h.code);
+      if(ex){Object.assign(ex,mk(h),{id:ex.id});updated++;}
+      else{S.holdings.push(mk(h));added++;}
+    });
+  }else{
+    S.holdings=imp.holdings.map(mk);added=S.holdings.length;
+  }
+  window._pendingImport=null;
+  // If the CMC export included an FX rate (US holdings show e.g. 0.7), use it to set
+  // the app's USD→AUD rate so other USD displays stay consistent. audUsdRate = 1 AUD in USD.
+  const fxFromImport=imp.holdings.map(h=>h.fxRate).find(r=>r&&r>0.3&&r<1.2);
+  if(fxFromImport&&!S.fxManual){S.audUsdRate=fxFromImport;S.fxUpdated=Date.now();}
+  closeModal('import-modal');snapshotNW();save();buildInvestPage();if(currentPg==='dash')buildDash();
+  showToast(`Imported ✓ ${added} new, ${updated} updated`);
+}
+// Manual price refresh entry (kept for "needs price" holdings)
+function promptManualPrices(){
+  const hs=S.holdings||[];
+  if(!hs.length)return;
+  const needsPrice=hs.filter(h=>h.lastPrice==null);
+  if(!needsPrice.length){showToast('All holdings have prices');return;}
+  const rows=needsPrice.map(h=>`<div class="inp-row" style="align-items:center;margin-bottom:7px">
+    <label class="lbl" style="margin:0;min-width:50px">${h.ticker}</label>
+    <input type="number" class="inp" id="mp-${h.id}" value="${h.lastPrice||''}" placeholder="last price ${h.priceCcy||''}" min="0" step="0.001" style="margin:0">
+  </div>`).join('');
+  showSheet('Enter last prices',`
+    <div style="font-size:12px;color:var(--t2);line-height:1.55;margin-bottom:12px">Enter the last price per unit for each holding (in its native currency).</div>
+    ${rows}
+    <button class="btn btn-acc btn-full" onclick="saveManualPrices()">Save prices</button>`);
+}
+function saveManualPrices(){
+  const hs=S.holdings||[];let updated=0;
+  hs.forEach(h=>{
+    const inp=document.getElementById('mp-'+h.id);
+    if(inp){
+      const v=parseFloat(inp.value);
+      if(!isNaN(v)&&v>0){h.lastPrice=v;updated++;}
+    }
+  });
+  save();closeSheet();buildInvestPage();if(currentPg==='dash')buildDash();
+  showToast(updated?updated+' price'+(updated>1?'s':'')+' updated':'No changes');
 }
 function normaliseDate(s){
   if(!s)return today();
@@ -3702,7 +3914,7 @@ async function scanScreenshot(){
         temperature:0,
         max_tokens:1024,
         messages:[{role:'user',content:[
-          {type:'text',text:'You are reading a stock/ETF brokerage portfolio screenshot. Extract every holding. Respond ONLY with a JSON object, no markdown, no prose, in this exact shape: {"holdings":[{"ticker":"VOO","units":12.5,"avgCost":400.10,"lastPrice":420.00,"value":5250.00}]}. If a field is not visible, use null. units=number of shares, avgCost=average buy price per share, lastPrice=current price per share, value=current market value of that holding. Numbers only, no currency symbols.'},
+          {type:'text',text:'You are reading a CMC Markets portfolio / Profit & Loss screenshot. Extract every holding row. Respond ONLY with a JSON object, no markdown, no prose, in this exact shape: {"holdings":[{"ticker":"VOO","market":"US","units":9,"lastPrice":686.16,"priceCcy":"USD","netAvgPrice":400.10,"cost":8221.33,"marketValue":8820.98,"pnl":599.65,"pnlPct":7.29}]}. Rules: ticker is the code (e.g. VOO, VAF). market is "US" or "ASX". lastPrice is the per-unit price; priceCcy is "USD" or "AUD" as shown next to it. cost = the AUD Cost column (money invested). marketValue = the AUD Market Value (if both AUD and USD are shown, use the AUD one only). pnl = Profit/Loss in AUD. pnlPct = the P&L percentage as a number (e.g. 7.29 for +7.29%). Use null for any field not visible. Numbers only — strip currency symbols and commas.'},
           {type:'image_url',image_url:{url:shotBase64}}
         ]}]
       })
@@ -3713,103 +3925,27 @@ async function scanScreenshot(){
     txt=txt.replace(/```json|```/g,'').trim();
     const m=txt.match(/\{[\s\S]*\}/);if(m)txt=m[0];
     const parsed=JSON.parse(txt);
-    const holdings=(parsed.holdings||[]).filter(h=>h.ticker).map(h=>({
-      code:(h.ticker||'').toUpperCase(),
-      units:h.units!=null?h.units:(h.value&&h.lastPrice?h.value/h.lastPrice:1),
-      avgCost:h.avgCost!=null?h.avgCost:(h.lastPrice||0),
-      lastPrice:h.lastPrice!=null?h.lastPrice:(h.avgCost||0),
-      cost:(h.units!=null&&h.avgCost!=null)?h.units*h.avgCost:(h.value||0)
-    }));
+    const holdings=(parsed.holdings||[]).filter(h=>h.ticker).map(h=>{
+      const code=(h.ticker||'').toUpperCase().replace(/\..*$/,'');
+      const market=h.market==='US'||h.market==='ASX'?h.market:(TICKER_MARKET[code]||(code.length<=4?'US':'ASX'));
+      const cost=h.cost!=null?h.cost:0;
+      const mv=h.marketValue!=null?h.marketValue:0;
+      let pnl=h.pnl!=null?h.pnl:Math.round((mv-cost)*100)/100;
+      let pnlPct=h.pnlPct!=null?h.pnlPct:(cost>0?Math.round(pnl/cost*10000)/100:0);
+      let warn=null;
+      if(h.pnl!=null&&cost>0&&mv>0&&Math.abs((mv-cost)-pnl)>Math.max(1,cost*0.02))warn='P&L mismatch: shown '+fmtD(pnl)+' vs calc '+fmtD(mv-cost);
+      return{code,market,priceCcy:market==='US'?'USD':'AUD',
+        units:h.units!=null?h.units:null,lastPrice:h.lastPrice!=null?h.lastPrice:null,
+        netAvgPrice:h.netAvgPrice!=null?h.netAvgPrice:null,
+        cost:Math.round(cost*100)/100,marketValue:Math.round(mv*100)/100,
+        pnl:Math.round(pnl*100)/100,pnlPct:Math.round(pnlPct*100)/100,warn};
+    });
     if(!holdings.length){alert('No holdings detected in the image. Try a clearer screenshot.');return;}
     renderImportPreview(holdings,[],'screenshot');
   }catch(e){
     alert('Scan failed: '+e.message);
   }finally{btn.disabled=false;btn.textContent='Scan with AI';}
 }
-function renderImportPreview(holdings,contribs,source){
-  const el=document.getElementById('import-preview');el.style.display='block';
-  window._pendingImport={holdings,contribs,source};
-  el.innerHTML=`<hr style="border:none;border-top:1px solid var(--bdr);margin:10px 0">
-    <div class="lbl" style="margin-bottom:8px">Preview — confirm before saving</div>
-    ${holdings.map(h=>`<div class="bench-row"><div class="bench-label">${h.code}</div><div class="bench-val">${h.units?(+h.units).toLocaleString(undefined,{maximumFractionDigits:4})+' units · ':''}avg ${fmtD(h.avgCost||0)}${h.lastPrice?' · now '+fmtD(h.lastPrice):''}</div></div>`).join('')}
-    <div class="alert alert-y" style="margin-top:10px;font-size:11px">Review carefully${source==='screenshot'?' — AI extraction can misread numbers':''}. Saving replaces your current holdings.</div>
-    <button class="btn btn-acc btn-full" onclick="confirmImport()">Replace holdings with this data</button>
-    <button class="btn btn-ghost btn-sm btn-full" style="margin-top:6px" onclick="confirmImport(true)">Merge / add to existing instead</button>`;
-}
-function confirmImport(merge){
-  const imp=window._pendingImport;if(!imp)return;
-  const TMETA={VOO:'US',VYM:'US',VYMI:'US',VAF:'ASX',VGB:'ASX',VGS:'ASX',VAS:'ASX',NDQ:'ASX'};
-  const newHoldings=imp.holdings.map(h=>({
-    id:uid(),ticker:h.code,name:h.code,market:TMETA[h.code]||(h.code.length<=4?'US':'ASX'),
-    units:h.units!=null?h.units:1,avgCost:h.avgCost||0,
-    lastPrice:h.lastPrice!=null?h.lastPrice:(h.avgCost||0),
-    sector:'',costBasis:h.cost||((h.units||1)*(h.avgCost||0)),
-    currentValue:(h.units!=null&&h.lastPrice!=null)?h.units*h.lastPrice:(h.cost||0),
-    dataSource:imp.source==='csv'?'csv':'screenshot',
-    priceDate:imp.source==='screenshot'?today():null
-  }));
-  if(!S.holdings)S.holdings=[];
-  if(merge){
-    newHoldings.forEach(nh=>{
-      const ex=S.holdings.find(x=>x.ticker===nh.ticker);
-      if(ex)Object.assign(ex,nh,{id:ex.id});else S.holdings.push(nh);
-    });
-  }else{
-    S.holdings=newHoldings;
-  }
-  if(imp.contribs&&imp.contribs.length){
-    if(!S.contributions)S.contributions=[];
-    // avoid duplicating: only add if none with same ticker+date+amount exists
-    imp.contribs.forEach(c=>{
-      if(!S.contributions.some(x=>x.ticker===c.ticker&&x.date===c.date&&Math.abs(x.amount-c.amount)<0.01))S.contributions.push(c);
-    });
-  }
-  window._pendingImport=null;
-  closeModal('import-modal');snapshotNW();save();buildInvestPage();if(currentPg==='dash')buildDash();
-  showToast('Portfolio imported ✓');
-  // Post-import: get current prices
-  if(imp.source==='csv'){
-    setTimeout(()=>{
-      if(S.fmpApiKey&&S.fmpApiKey.length>5){
-        showToast('Refreshing prices…');
-        refreshPrices();
-      }else{
-        promptManualPrices();
-      }
-    },600);
-  }
-}
-// Manual price entry for when no API key exists
-function promptManualPrices(){
-  const hs=S.holdings||[];
-  if(!hs.length)return;
-  const needsPrice=hs.filter(h=>!h.priceDate||h.dataSource==='csv');
-  if(!needsPrice.length)return;
-  const rows=needsPrice.map(h=>`<div class="inp-row" style="align-items:center;margin-bottom:7px">
-    <label class="lbl" style="margin:0;min-width:50px">${h.ticker}</label>
-    <input type="number" class="inp" id="mp-${h.id}" value="${h.lastPrice||''}" placeholder="current price" min="0" step="0.01" style="margin:0">
-  </div>`).join('');
-  showSheet('Enter current prices',`
-    <div style="font-size:12px;color:var(--t2);line-height:1.55;margin-bottom:12px">Your trade history is imported. To see real profit/loss, enter today's price per unit for each holding. Check your CMC app or Google Finance.</div>
-    ${rows}
-    <div style="font-size:11px;color:var(--t3);margin-bottom:10px">Or add a free <strong>FMP API key</strong> in Settings to auto-refresh prices anytime.</div>
-    <button class="btn btn-acc btn-full" onclick="saveManualPrices()">Save prices</button>`);
-}
-function saveManualPrices(){
-  const hs=S.holdings||[];let updated=0;
-  hs.forEach(h=>{
-    const inp=document.getElementById('mp-'+h.id);
-    if(inp){
-      const v=parseFloat(inp.value);
-      if(!isNaN(v)&&v>0&&Math.abs(v-h.avgCost)>0.001){
-        h.lastPrice=v;h.currentValue=(h.units||0)*v;h.priceDate=today();updated++;
-      }
-    }
-  });
-  save();closeSheet();buildInvestPage();if(currentPg==='dash')buildDash();
-  showToast(updated?updated+' price'+(updated>1?'s':'')+' updated':'No changes');
-}
-
 // ═══════════════════════════════════════════════════════════
 // LIVE PRICES (optional, Financial Modeling Prep)
 // ═══════════════════════════════════════════════════════════
@@ -3842,9 +3978,9 @@ async function refreshPrices(){
         const q=Array.isArray(data)?data[0]:data;
         const price=q&&(q.price!=null?q.price:q.previousClose);
         if(price&&!isNaN(price)&&price>0){
-          h.lastPrice=price;                       // stored in native currency (USD for US)
-          h.currentValue=(h.units||0)*price;
-          h.priceDate=today();
+          // Live price is stored SEPARATELY — never overwrites CMC's imported lastPrice/marketValue.
+          h.livePrice=price;
+          h.liveUpdated=Date.now();
           S.priceCache[h.ticker]={price,ts:Date.now()};
           updated++;
         }else if(h.market==='ASX'){
