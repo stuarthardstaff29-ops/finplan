@@ -139,7 +139,8 @@ body.light .bnav{background:rgba(255,255,255,.85)}
 .nb.on svg{transform:scale(1.05)}
 
 /* FAB */
-.fab{position:fixed;bottom:calc(var(--nav-h) + var(--sb) + 18px);right:18px;width:54px;height:54px;background:linear-gradient(135deg,var(--acc),var(--acc2));border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px var(--accd3),0 0 0 0 var(--accd2);z-index:200;transition:all .25s cubic-bezier(.4,0,.2,1)}
+.fab{position:fixed;bottom:calc(var(--nav-h) + var(--sb) + 18px);right:18px;width:54px;height:54px;background:linear-gradient(135deg,var(--acc),var(--acc2));border-radius:50%;border:none;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 6px 24px var(--accd3),0 0 0 0 var(--accd2);z-index:200;transition:all .25s cubic-bezier(.4,0,.2,1)}
+body.fab-visible .fab{display:flex}
 .fab:hover{box-shadow:0 8px 28px var(--accd3),0 0 0 4px var(--accd)}
 .fab:active{transform:scale(.92)}
 .fab svg{width:24px;height:24px;stroke:#001a13;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
@@ -724,6 +725,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
           <button class="btn btn-ghost btn-sm" onclick="refreshPrices()" id="refresh-prices-btn">↻ Refresh prices</button>
         </div>
         <div id="sync-status" style="font-size:10px;color:var(--t3);margin-top:8px;text-align:center"></div>
+        <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px;color:var(--r);border-color:var(--rd2)" onclick="wipeHoldings()">⚠ Wipe all holdings & contributions</button>
       </div>
 
       <!-- Holdings table -->
@@ -1358,23 +1360,26 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='1.3.1';
+const APP_VERSION='1.4.0';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
   {
-    v:'1.3.1',
-    date:'2026-06-23',
-    title:'CSV Import Tuned to Your CMC Export',
+    v:'1.4.0',
+    date:'2026-06-24',
+    title:'Small fixes: FAB, Glance, cleaner imports',
     sections:{
       features:[
-        'CSV import now matches your exact CMC Profit & Loss export format'
+        'Floating "+ Add transaction" button now only appears on the Transactions page',
+        'CSV re-import now shows a proper diff (new / changed / unchanged / not in this CSV) before you confirm — no more accidental accumulation',
+        '"Wipe holdings" button on the Invest page for a fresh start after import bugs'
       ],
       improvements:[
-        'Detects US vs ASX from the :US code suffix, reads the FX rate column, and skips the TOTALS row',
-        'Portfolio totals reconcile exactly to CMC\u2019s reported figures'
+        'Import defaults to "Sync" which updates existing holdings in place by ticker — never duplicates on re-import',
+        'Diff view highlights exactly which fields (units, cost, market value, P&L) will change per holding'
       ],
       fixes:[
-        'Handles the byte-order mark and AUD-denominated columns in CMC exports correctly'
+        'Glance tab no longer shows empty — was silently crashing due to a removed function from the payday redesign',
+        'Glance now surfaces income awaiting distribution and portfolio P&L'
       ]
     }
   },
@@ -1964,6 +1969,8 @@ function showPg(id,btn){
   if(btn)btn.classList.add('on');
   document.getElementById('scrl').scrollTop=0;
   currentPg=id;
+  // Floating Add Transaction button — only on the Transactions page
+  document.body.classList.toggle('fab-visible',id==='txns');
   if(id==='dash')buildDash();
   if(id==='txns')buildTxnsPage();
   if(id==='goals')buildGoalsPage();
@@ -2010,6 +2017,8 @@ function showPgFromMore(id){
   const tile=document.getElementById('more-'+id);if(tile)tile.classList.add('active');
   document.getElementById('scrl').scrollTop=0;
   currentPg=id;
+  // FAB never shown from More sheet (Transactions is a bottom-nav destination)
+  document.body.classList.remove('fab-visible');
   if(id==='invest')buildInvestPage();
   if(id==='timeline')buildTimeline();
   if(id==='budget'){upAll();buildBudgetActual();}
@@ -3582,6 +3591,29 @@ function deleteHoldingFromModal(){
   closeModal('holding-modal');snapshotNW();save();buildInvestPage();if(currentPg==='dash')buildDash();
 }
 
+// Wipe all investment records — used to fix corrupted historical data.
+// A safety backup is written to localStorage first so nothing's actually gone.
+function wipeHoldings(){
+  const hc=(S.holdings||[]).length;
+  const cc=(S.contributions||[]).length;
+  const dc=Object.values(S.invDividendsReceived||{}).filter(v=>v>0).length;
+  if(hc===0&&cc===0){alert('Nothing to wipe — you have no holdings or contributions.');return;}
+  const msg=`This will DELETE:\n\n• ${hc} holding${hc===1?'':'s'}\n• ${cc} contribution${cc===1?'':'s'}\n• ${dc} recorded dividend${dc===1?'':'s'}\n\nA safety snapshot is saved first (recoverable via Settings ▸ Backup & restore if you kept a backup).\n\nUse this when historical import bugs have left bad data. You can re-import fresh from CMC afterwards.\n\nContinue?`;
+  if(!confirm(msg))return;
+  if(!confirm('Are you absolutely sure? This cannot be undone from within the app.'))return;
+  try{localStorage.setItem('finplan-holdings-wipe-backup',JSON.stringify({when:new Date().toISOString(),holdings:S.holdings||[],contributions:S.contributions||[],invDividendsReceived:S.invDividendsReceived||{}}));}catch(_){}
+  S.holdings=[];
+  S.contributions=[];
+  S.invDividendsReceived={};
+  S.priceCache={};
+  // Also clear the legacy portfolio dictionaries that could still contribute to totals
+  S.portfolio={};
+  S.investCostBasis={};
+  snapshotNW();save();
+  buildInvestPage();if(currentPg==='dash')buildDash();
+  showToast('Investment data wiped — ready for fresh import');
+}
+
 // ═══════════════════════════════════════════════════════════
 // CONTRIBUTIONS CRUD
 // ═══════════════════════════════════════════════════════════
@@ -3794,37 +3826,78 @@ function parseCsvImport(){
 function renderImportPreview(holdings,skipped,source){
   const el=document.getElementById('import-preview');el.style.display='block';
   window._pendingImport={holdings,skipped,source};
-  // Determine which are new vs updates
-  const existing=new Set((S.holdings||[]).map(h=>h.ticker));
-  const newOnes=holdings.filter(h=>!existing.has(h.code));
-  const updates=holdings.filter(h=>existing.has(h.code));
+  // Classify: new / update-with-changes / update-no-change / removed (in app but not in import)
+  const existingHoldings=S.holdings||[];
+  const existingByTicker={};existingHoldings.forEach(h=>{existingByTicker[h.ticker]=h;});
+  const importedTickers=new Set(holdings.map(h=>h.code));
+  const changed=[];const unchanged=[];const newOnes=[];
+  const removed=existingHoldings.filter(h=>!importedTickers.has(h.ticker));
+  holdings.forEach(h=>{
+    const ex=existingByTicker[h.code];
+    if(!ex){newOnes.push({h,changes:null});return;}
+    // Build a diff of the CMC fields that matter
+    const diffs=[];
+    const round=n=>Math.round((n||0)*100)/100;
+    if(round(ex.units)!==round(h.units))diffs.push({f:'Units',from:ex.units,to:h.units});
+    if(round(ex.cost)!==round(h.cost))diffs.push({f:'Cost',from:fmtD(ex.cost||0),to:fmtD(h.cost)});
+    if(round(ex.marketValue)!==round(h.marketValue))diffs.push({f:'Market Value',from:fmtD(ex.marketValue||0),to:fmtD(h.marketValue)});
+    if(round(ex.pnl)!==round(h.pnl))diffs.push({f:'P&L',from:fmtD(ex.pnl||0),to:fmtD(h.pnl)});
+    if(diffs.length)changed.push({h,ex,changes:diffs});
+    else unchanged.push({h,ex});
+  });
   const totalCost=holdings.reduce((a,h)=>a+h.cost,0);
   const totalMV=holdings.reduce((a,h)=>a+h.marketValue,0);
   const totalPnl=totalMV-totalCost;
+  // What the totals ARE now vs what they'd become after
+  const curTotalCost=existingHoldings.reduce((a,h)=>a+(h.cost||0),0);
+  const curTotalMV=existingHoldings.reduce((a,h)=>a+(h.marketValue||0),0);
   const warns=holdings.filter(h=>h.warn);
-  el.innerHTML=`<hr style="border:none;border-top:1px solid var(--bdr);margin:10px 0">
-    <div class="lbl" style="margin-bottom:8px">Import preview — confirm before saving</div>
-    <div style="display:flex;gap:8px;margin-bottom:10px">
-      <div style="flex:1;text-align:center;padding:8px;background:var(--bg3);border-radius:8px"><div style="font-size:9px;color:var(--t3)">INVESTED</div><div style="font-size:14px;font-weight:700;font-family:var(--mono)">${fmtD(totalCost)}</div></div>
-      <div style="flex:1;text-align:center;padding:8px;background:var(--bg3);border-radius:8px"><div style="font-size:9px;color:var(--t3)">VALUE</div><div style="font-size:14px;font-weight:700;font-family:var(--mono)">${fmtD(totalMV)}</div></div>
-      <div style="flex:1;text-align:center;padding:8px;background:var(--bg3);border-radius:8px"><div style="font-size:9px;color:var(--t3)">P&L</div><div style="font-size:14px;font-weight:700;font-family:var(--mono);color:${totalPnl>=0?'var(--acc)':'var(--r)'}">${totalPnl>=0?'+':''}${fmtD(totalPnl)}</div></div>
-    </div>
-    ${holdings.map(h=>`<div class="bench-row" style="align-items:flex-start">
-      <div class="bench-label"><div style="font-size:12px;color:var(--t);font-weight:700">${h.code} <span class="tag ${h.market==='US'?'tb':'ty'}" style="font-size:8px">${h.market}</span> ${existing.has(h.code)?'<span class="tag tg" style="font-size:8px">update</span>':'<span class="tag tb" style="font-size:8px">new</span>'}</div>
+  const hasChanges=changed.length>0||newOnes.length>0||removed.length>0;
+
+  const rowHtml=(item,tag,tagCol)=>{
+    const h=item.h;
+    return `<div class="bench-row" style="align-items:flex-start;padding:9px 0">
+      <div class="bench-label" style="flex:1">
+        <div style="font-size:12px;color:var(--t);font-weight:700">${h.code} <span class="tag ${h.market==='US'?'tb':'ty'}" style="font-size:8px">${h.market}</span> <span class="tag ${tagCol}" style="font-size:8px">${tag}</span></div>
         <div style="font-size:10px;color:var(--t3);margin-top:2px">${h.units!=null?h.units+' units':'—'}${h.lastPrice!=null?' @ '+h.lastPrice+' '+h.priceCcy:''}</div>
-        ${h.warn?'<div style="font-size:9px;color:var(--y);margin-top:2px">⚠️ '+h.warn+'</div>':''}</div>
-      <div style="text-align:right"><div style="font-size:12px;font-weight:700;font-family:var(--mono)">${fmtD(h.marketValue)}</div><div style="font-size:10px;font-family:var(--mono);color:${h.pnl>=0?'var(--acc)':'var(--r)'}">${h.pnl>=0?'+':''}${fmtD(h.pnl)} · ${h.pnl>=0?'+':''}${h.pnlPct.toFixed(2)}%</div></div>
-    </div>`).join('')}
-    <div style="font-size:11px;color:var(--t2);margin:10px 0;line-height:1.6">
-      <strong>${newOnes.length}</strong> new · <strong>${updates.length}</strong> to update${skipped.length?' · <strong>'+skipped.length+'</strong> skipped':''}
-      ${warns.length?'<br><span style="color:var(--y)">⚠️ '+warns.length+' holding(s) have P&L that doesn\'t match cost/value — review above</span>':''}
+        ${item.changes?item.changes.map(d=>`<div style="font-size:10px;color:var(--y);margin-top:2px;font-family:var(--mono)">↳ ${d.f}: ${d.from} → ${d.to}</div>`).join(''):''}
+        ${h.warn?'<div style="font-size:9px;color:var(--y);margin-top:2px">⚠️ '+h.warn+'</div>':''}
+      </div>
+      <div style="text-align:right;flex-shrink:0"><div style="font-size:12px;font-weight:700;font-family:var(--mono)">${fmtD(h.marketValue)}</div><div style="font-size:10px;font-family:var(--mono);color:${h.pnl>=0?'var(--acc)':'var(--r)'}">${h.pnl>=0?'+':''}${fmtD(h.pnl)} · ${h.pnl>=0?'+':''}${h.pnlPct.toFixed(2)}%</div></div>
+    </div>`;
+  };
+  const removedRow=(h)=>`<div class="bench-row" style="align-items:flex-start;padding:9px 0;opacity:.75">
+    <div class="bench-label" style="flex:1"><div style="font-size:12px;color:var(--t);font-weight:700;text-decoration:line-through">${h.ticker} <span class="tag ${h.market==='US'?'tb':'ty'}" style="font-size:8px">${h.market}</span> <span class="tag tr" style="font-size:8px">will be removed</span></div><div style="font-size:10px;color:var(--t3);margin-top:2px">Not in this CSV — was ${fmtD(h.marketValue||0)}</div></div>
+  </div>`;
+
+  el.innerHTML=`<hr style="border:none;border-top:1px solid var(--bdr);margin:10px 0">
+    <div class="lbl" style="margin-bottom:8px">Import preview — review before saving</div>
+
+    <div style="background:var(--bg3);border-radius:10px;padding:10px 12px;margin-bottom:12px">
+      <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Portfolio totals</div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t2);padding:2px 0"><span>Invested</span><span class="mono">${fmtD(curTotalCost)} → <strong style="color:var(--t)">${fmtD(totalCost)}</strong>${Math.abs(totalCost-curTotalCost)>1?` <span style="color:${totalCost>curTotalCost?'var(--y)':'var(--acc)'}">(${totalCost>curTotalCost?'+':''}${fmtD(totalCost-curTotalCost)})</span>`:''}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t2);padding:2px 0"><span>Market Value</span><span class="mono">${fmtD(curTotalMV)} → <strong style="color:var(--t)">${fmtD(totalMV)}</strong></span></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t2);padding:4px 0 0"><span>P&L after</span><span class="mono" style="color:${totalPnl>=0?'var(--acc)':'var(--r)'}"><strong>${totalPnl>=0?'+':''}${fmtD(totalPnl)}</strong></span></div>
+    </div>
+
+    ${newOnes.length?`<div style="font-size:10px;color:var(--acc);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 4px">➕ New (${newOnes.length})</div>${newOnes.map(x=>rowHtml(x,'new','tb')).join('')}`:''}
+    ${changed.length?`<div style="font-size:10px;color:var(--y);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 4px">✎ Changing (${changed.length})</div>${changed.map(x=>rowHtml(x,'update','ty')).join('')}`:''}
+    ${unchanged.length?`<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 4px">• Unchanged (${unchanged.length})</div>${unchanged.map(x=>rowHtml(x,'no change','tg')).join('')}`:''}
+    ${removed.length?`<div style="font-size:10px;color:var(--r);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 4px">− Not in this CSV (${removed.length})</div>${removed.map(removedRow).join('')}`:''}
+
+    <div style="font-size:11px;color:var(--t2);margin:12px 0 4px;line-height:1.55">
+      ${warns.length?'<div style="color:var(--y);margin-bottom:4px">⚠️ '+warns.length+' holding(s) have P&L that doesn\'t match cost/value — review above</div>':''}
+      ${!hasChanges?'<div style="color:var(--t3)">No changes to save.</div>':''}
     </div>
     ${skipped.length?`<details style="font-size:10px;color:var(--t3);margin-bottom:10px"><summary>Skipped rows (${skipped.length})</summary>${skipped.map(s=>`<div style="padding:2px 0">Row ${s.row}: ${s.reason}</div>`).join('')}</details>`:''}
-    <button class="btn btn-acc btn-full" onclick="confirmImport(true)">Save — update existing &amp; add new</button>
-    <button class="btn btn-ghost btn-sm btn-full" style="margin-top:6px" onclick="confirmImport(false)">Replace ALL holdings with this import</button>`;
+    <button class="btn btn-acc btn-full" ${hasChanges?'':'disabled style="opacity:.5"'} onclick="confirmImport('sync')">Sync — apply changes above</button>
+    <button class="btn btn-ghost btn-sm btn-full" style="margin-top:6px" onclick="confirmImport('add')">Add new only (keep everything else as-is)</button>`;
 }
 
-function confirmImport(merge){
+function confirmImport(mode){
+  // mode: 'sync' (default) → new + update in place by ticker (never accumulates)
+  //       'add'            → only insert holdings whose ticker isn't already present
+  //       true/false       → legacy: true=merge, false=replace all (kept for compat)
   const imp=window._pendingImport;if(!imp)return;
   const mk=(h)=>({
     id:uid(),ticker:h.code,market:h.market,assetType:'ETF',
@@ -3835,23 +3908,37 @@ function confirmImport(merge){
     dataSource:imp.source,importedAt:today(),name:h.code,sector:''
   });
   if(!S.holdings)S.holdings=[];
-  let added=0,updated=0;
-  if(merge){
+  let added=0,updated=0,skipped=0;
+  if(mode==='add'){
+    imp.holdings.forEach(h=>{
+      const ex=S.holdings.find(x=>x.ticker===h.code);
+      if(ex){skipped++;}
+      else{S.holdings.push(mk(h));added++;}
+    });
+  }else if(mode===false){
+    // Legacy "replace all" — kept for compatibility; wipes then imports
+    S.holdings=imp.holdings.map(mk);added=S.holdings.length;
+  }else{
+    // 'sync' (default) — update existing by ticker (in place, no accumulation).
+    // NOTE: we do NOT remove holdings that aren't in this CSV — the preview flags
+    // them so the user can wipe manually if needed.
     imp.holdings.forEach(h=>{
       const ex=S.holdings.find(x=>x.ticker===h.code);
       if(ex){Object.assign(ex,mk(h),{id:ex.id});updated++;}
       else{S.holdings.push(mk(h));added++;}
     });
-  }else{
-    S.holdings=imp.holdings.map(mk);added=S.holdings.length;
   }
   window._pendingImport=null;
-  // If the CMC export included an FX rate (US holdings show e.g. 0.7), use it to set
-  // the app's USD→AUD rate so other USD displays stay consistent. audUsdRate = 1 AUD in USD.
+  // Capture FX rate from CMC export (US holdings show e.g. 0.7) → global rate.
   const fxFromImport=imp.holdings.map(h=>h.fxRate).find(r=>r&&r>0.3&&r<1.2);
   if(fxFromImport&&!S.fxManual){S.audUsdRate=fxFromImport;S.fxUpdated=Date.now();}
   closeModal('import-modal');snapshotNW();save();buildInvestPage();if(currentPg==='dash')buildDash();
-  showToast(`Imported ✓ ${added} new, ${updated} updated`);
+  let msg='Imported ✓ ';
+  const parts=[];
+  if(added)parts.push(added+' added');
+  if(updated)parts.push(updated+' updated');
+  if(skipped)parts.push(skipped+' skipped');
+  showToast(msg+(parts.join(', ')||'no changes'));
 }
 // Manual price refresh entry (kept for "needs price" holdings)
 function promptManualPrices(){
@@ -4661,11 +4748,16 @@ function buildGlancePage(){
   const wp=calcBal('westpac'),mq=calcBal('macquarie'),pt=portTotal();
   const nw=wp+mq+pt;
   const ws=weekSpend(),wb=S.sliders.spend;
-  // days to next goal milestone
-  const goalsLeft=Object.entries(GCFG).map(([k,g])=>({k,g,st:S.goalState[k],rem:g.target-S.goalState[k].saved})).filter(x=>x.rem>0).sort((a,b)=>a.rem-b.rem)[0];
-  const {monthly,weekly}=nextPaydayDates();
-  const nextPd=daysUntil(monthly)<=daysUntil(weekly)?{d:monthly,days:daysUntil(monthly),lbl:'Full-time pay'}:{d:weekly,days:daysUntil(weekly),lbl:'Kmart pay'};
-  const nextMs=NW_MILESTONES.find(m=>nw<m);
+  const goalsLeft=Object.entries(GCFG).map(([k,g])=>({k,g,st:S.goalState[k]||{saved:0},rem:g.target-(S.goalState[k]?.saved||0)})).filter(x=>x.rem>0).sort((a,b)=>a.rem-b.rem)[0];
+  const nextMs=(typeof NW_MILESTONES!=='undefined'?NW_MILESTONES:[]).find(m=>nw<m);
+  // Income awaiting distribution (new payday model)
+  const pendingFT=(typeof pendingIncome==='function')?pendingIncome('fulltime'):[];
+  const pendingKM=(typeof pendingIncome==='function')?pendingIncome('kmart'):[];
+  const pendingIncTotal=[...pendingFT,...pendingKM].reduce((a,t)=>a+t.amt,0);
+  // Investments
+  const invGain=portPnl();const invGainPct=portPnlPct();
+  // Portfolio return context
+  const sr=monthIncome()>0?Math.round((monthIncome()-monthSpend())/monthIncome()*100):0;
   el.innerHTML=`
     <div class="hero" style="text-align:center;padding:28px 18px">
       <div class="hero-l">Total net worth</div>
@@ -4680,9 +4772,10 @@ function buildGlancePage(){
     </div>
     <div class="card">
       <div class="bench-row"><div class="bench-label">⏳ Days to university</div><div class="bench-val">${Math.max(0,Math.round((new Date(2028,0,1)-new Date())/(1000*60*60*24)))}</div></div>
-      <div class="bench-row"><div class="bench-label">💰 Next pay (${nextPd.lbl})</div><div class="bench-val col-acc">${nextPd.days===0?'today':nextPd.days+'d'}</div></div>
+      ${pendingIncTotal>0?`<div class="bench-row"><div class="bench-label">💰 Income to distribute</div><div class="bench-val col-y" onclick="showPgFromMore('payday')" style="cursor:pointer">${fmtD(pendingIncTotal)}</div></div>`:''}
+      ${pt>0?`<div class="bench-row"><div class="bench-label">📊 Portfolio P&L</div><div class="bench-val ${invGain>=0?'col-acc':'col-r'}">${invGain>=0?'+':''}${fmtD(invGain)} · ${invGainPct.toFixed(2)}%</div></div>`:''}
       ${goalsLeft?`<div class="bench-row"><div class="bench-label">🎯 Closest goal (${goalsLeft.g.label})</div><div class="bench-val">${pct(goalsLeft.st.saved,goalsLeft.g.target)}%</div></div>`:''}
-      <div class="bench-row" style="border:none"><div class="bench-label">📈 Savings rate</div><div class="bench-val ${monthIncome()>0&&((monthIncome()-monthSpend())/monthIncome()*100)>=30?'col-acc':'col-y'}">${monthIncome()>0?Math.round((monthIncome()-monthSpend())/monthIncome()*100):0}%</div></div>
+      <div class="bench-row" style="border:none"><div class="bench-label">📈 Savings rate</div><div class="bench-val ${sr>=30?'col-acc':'col-y'}">${sr}%</div></div>
     </div>
     <button class="btn btn-ghost btn-full" onclick="showPg('dash',document.querySelector('.nb'))">Open full dashboard</button>`;
 }
