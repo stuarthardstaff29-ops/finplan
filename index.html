@@ -790,6 +790,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
       <div class="alert alert-b" style="font-size:12px;line-height:1.55;margin-bottom:12px">Income you record automatically appears here, ready to distribute. The app never moves your real money — it tells you exactly how much to transfer between accounts. Confirm only after you've moved it.</div>
       <div id="payday-fulltime-card"></div>
       <div id="payday-kmart-card"></div>
+      <div id="payday-budget-card"></div>
       <div class="card">
         <div class="ctitle"><div class="ctitle-l">Distribution history</div></div>
         <div id="payday-history"></div>
@@ -817,6 +818,11 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
     <!-- GLANCE VIEW -->
     <div class="pg" id="pg-glance">
       <div id="glance-content"></div>
+    </div>
+
+    <!-- INSIGHTS -->
+    <div class="pg" id="pg-insights">
+      <div id="insights-content"></div>
     </div>
 
     <!-- RECURRING & QUICK ADD -->
@@ -1002,6 +1008,8 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
           <button class="btn btn-ghost btn-sm" onclick="toggleFmpVis()">Show</button>
         </div>
         <div id="fmp-key-status" style="font-size:11px;margin-top:8px;color:var(--t3)"></div>
+        <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="testFmpConnection()">🧪 Test connection now</button>
+        <div id="fmp-test-out" style="font-size:11px;margin-top:8px;line-height:1.5"></div>
       </div>
 
       <div class="card">
@@ -1072,6 +1080,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
     <button class="more-tile" id="more-recurring" onclick="showPgFromMore('recurring')"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Recurring</button>
     <button class="more-tile" id="more-scenario" onclick="showPgFromMore('scenario')"><svg viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0H5a2 2 0 0 1-2-2v-4m6 6h10a2 2 0 0 0 2-2v-4"/></svg>What-if</button>
     <button class="more-tile" id="more-glance" onclick="showPgFromMore('glance')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Glance</button>
+    <button class="more-tile" id="more-insights" onclick="showPgFromMore('insights')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Insights</button>
     <button class="more-tile" id="more-invest" onclick="showPgFromMore('invest')"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Invest</button>
     <button class="more-tile" id="more-health" onclick="showPgFromMore('health')"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Health</button>
     <button class="more-tile" id="more-streaks" onclick="showPgFromMore('streaks')"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Streaks</button>
@@ -1360,26 +1369,29 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='1.4.0';
+const APP_VERSION='1.5.0';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
   {
-    v:'1.4.0',
-    date:'2026-06-24',
-    title:'Small fixes: FAB, Glance, cleaner imports',
+    v:'1.5.0',
+    date:'2026-06-25',
+    title:'Connected finances: Budget, Payday, Sinking, Insights',
     sections:{
       features:[
-        'Floating "+ Add transaction" button now only appears on the Transactions page',
-        'CSV re-import now shows a proper diff (new / changed / unchanged / not in this CSV) before you confirm — no more accidental accumulation',
-        '"Wipe holdings" button on the Invest page for a fresh start after import bugs'
+        'Insights tab in the More menu — batched view of everything worth reviewing (money flow, spending, investments, goals, wins)',
+        'Payday page now shows Budget targets vs Payday actuals for the current month',
+        'One-tap "Set from budget" auto-populates a payday plan from your budget sliders',
+        'Auto-add all active sinking funds to a payday plan with % suggested by monthly need',
+        'FMP "Test connection" button in Settings to see the exact error when live prices fail'
       ],
       improvements:[
-        'Import defaults to "Sync" which updates existing holdings in place by ticker — never duplicates on re-import',
-        'Diff view highlights exactly which fields (units, cost, market value, P&L) will change per holding'
+        'Dividend calendar rebuilt on the current holdings model — no more phantom data after wipe',
+        'Per-holding recorded vs projected dividend view',
+        'Dividend metrics show recorded, projected, monthly average, and portfolio yield'
       ],
       fixes:[
-        'Glance tab no longer shows empty — was silently crashing due to a removed function from the payday redesign',
-        'Glance now surfaces income awaiting distribution and portfolio P&L'
+        'Dividend calendar was reading the legacy S.portfolio dict — now uses S.holdings',
+        'Unknown tickers no longer silently disappear from the dividend view'
       ]
     }
   },
@@ -1959,7 +1971,7 @@ function applyUiPrefs(){
 // NAV
 // ═══════════════════════════════════════════════════════════
 let currentPg='dash';
-const MORE_PAGES=['budget','analytics','kmart','invest','timeline','settings','health','streaks','sinking','debts','subscriptions','dividends','tax','assistant','payday','scenario','glance','recurring'];
+const MORE_PAGES=['budget','analytics','kmart','invest','timeline','settings','health','streaks','sinking','debts','subscriptions','dividends','tax','assistant','payday','scenario','glance','recurring','insights'];
 function showPg(id,btn){
   document.querySelectorAll('.pg').forEach(p=>{p.classList.remove('on');p.style.display='';});
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
@@ -1993,6 +2005,7 @@ function showPg(id,btn){
   if(id==='scenario')buildScenarioPage();
   if(id==='glance')buildGlancePage();
   if(id==='recurring')buildRecurringPage();
+  if(id==='insights')buildInsightsPage();
 }
 function toggleMore(){
   const sheet=document.getElementById('more-sheet'),ov=document.getElementById('more-overlay');
@@ -2037,6 +2050,7 @@ function showPgFromMore(id){
   if(id==='scenario')buildScenarioPage();
   if(id==='glance')buildGlancePage();
   if(id==='recurring')buildRecurringPage();
+  if(id==='insights')buildInsightsPage();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2751,6 +2765,444 @@ function buildSpendingTrends(){
     ${moversHtml}
     <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 6px">All categories</div>
     ${listHtml}`;
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// ROUND 2 — Payday↔Budget, Sinking auto-suggest, Insights, Dividend audit, FMP test
+// ═══════════════════════════════════════════════════════════
+
+// ── Budget target snapshot ───────────────────────────────────
+// Returns an object mapping "conceptual budget bucket" → monthly target dollar amount,
+// derived from the current sliders. Used by both the Payday↔Budget card and the
+// "Set plan from budget" auto-populate.
+function budgetTargets(){
+  const sl=S.sliders||{};
+  return{
+    rent:sl.rent||0,
+    spending:sl.spend||0,      // variable spending money
+    goals:sl.goals||0,         // combined goal funding
+    invest:sl.invest||0,
+    fixed:recurringFixedMonthly() // rent is included in rent slider; recurring fixed adds subs, etc.
+  };
+}
+function monthlyIncomeEstimate(){
+  // Estimated monthly income for both sources combined.
+  const ft=(S.sliders?.income)||4069; // full-time monthly (from budget)
+  const km=((S.sliders?.kmart)||0)*52/12; // kmart weekly → monthly
+  return ft+km;
+}
+
+// ── Payday↔Budget card: shows target vs actual per bucket for this month ──
+function paydayBudgetProgress(){
+  const targets=budgetTargets();
+  // Pull distributions for the current month
+  const ym=nowYM();
+  const dists=Object.values(S.paydayDistributed||{}).filter(d=>{
+    const dt=d.txnDate||d.date;return dt&&dt.startsWith(ym);
+  });
+  const actualByType={goal:0,invest:0,spending:0,buffer:0,sinking:0};
+  dists.forEach(d=>{(d.allocations||[]).forEach(a=>{
+    if(actualByType[a.type]!=null)actualByType[a.type]+=a.amount||0;
+  });});
+  return{
+    rows:[
+      {label:'Rent & fixed bills',target:targets.fixed,actual:0,note:'paid via recurring, not payday'},
+      {label:'Goals',target:targets.goals,actual:actualByType.goal},
+      {label:'Investments',target:targets.invest,actual:actualByType.invest},
+      {label:'Spending money',target:targets.spending,actual:actualByType.spending},
+      {label:'Sinking funds',target:0,actual:actualByType.sinking,note:'from your sinking targets'}
+    ],
+    month:ym
+  };
+}
+function buildPaydayBudgetCard(){
+  const el=document.getElementById('payday-budget-card');if(!el)return;
+  const pr=paydayBudgetProgress();
+  el.innerHTML=`<div class="card">
+    <div class="ctitle"><div class="ctitle-l">Budget targets vs Payday actuals</div><span style="font-size:9px;color:var(--t3)">${pr.month}</span></div>
+    <div style="font-size:11px;color:var(--t3);margin-bottom:10px;line-height:1.5">Your budget sets targets; payday distributes actuals. This shows how funded each bucket is this month.</div>
+    ${pr.rows.map(r=>{
+      const pct=r.target>0?Math.min(100,Math.round(r.actual/r.target*100)):0;
+      const short=Math.max(0,r.target-r.actual);
+      const col=r.target===0?'var(--t3)':pct>=100?'var(--acc)':pct>=60?'var(--b)':'var(--y)';
+      return`<div style="padding:9px 0;border-bottom:1px solid var(--bdr)">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t);margin-bottom:4px">
+          <span>${r.label}</span>
+          <span class="mono" style="color:${col};font-weight:700">${fmtD(r.actual)}${r.target>0?' / '+fmtD(r.target):''}</span>
+        </div>
+        ${r.target>0?`<div style="height:5px;background:var(--bg3);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${col};transition:width .4s"></div></div>
+        <div style="font-size:10px;color:var(--t3);margin-top:3px">${pct>=100?'✓ Fully funded':short>0?fmtD(short)+' remaining':''}</div>`:r.note?`<div style="font-size:10px;color:var(--t3)">${r.note}</div>`:''}
+      </div>`;
+    }).join('')}
+    <button class="btn btn-ghost btn-sm btn-full" style="margin-top:10px" onclick="showPgFromMore('budget')">Adjust budget targets</button>
+  </div>`;
+}
+
+// ── Set plan from budget ─────────────────────────────────────
+// Auto-populates a source's plan proportionally from budget sliders.
+function setPlanFromBudget(sourceKey){
+  const src=S.paydaySources?.[sourceKey];if(!src)return;
+  const tgt=budgetTargets();
+  const inc=monthlyIncomeEstimate();
+  if(inc<=0){alert('Set your monthly income in the Budget page first.');return;}
+  // For fulltime, split by budget proportions; for kmart, only spending + goals since kmart doesn't cover fixed
+  const plan=[];
+  const addPct=(key,type,label,dollarTarget,ref)=>{
+    const p=Math.round(dollarTarget/inc*100);
+    if(p>0)plan.push({key,type,ref,label,pct:p});
+  };
+  if(sourceKey==='fulltime'){
+    // Split goals by their individual target weights
+    const goalTotal=Object.entries(GCFG).reduce((a,[,g])=>a+g.target,0);
+    Object.entries(GCFG).forEach(([k,g])=>{
+      const share=goalTotal>0?g.target/goalTotal:0.25;
+      addPct('goal_'+k,'goal',g.label,tgt.goals*share,k);
+    });
+    addPct('invest','invest','Investments',tgt.invest);
+    addPct('spending','spending','Spending money',tgt.spending);
+    // Buffer = remainder
+    const used=plan.reduce((a,p)=>a+p.pct,0);
+    if(used<100)plan.push({key:'buffer','type':'buffer',label:'Leave in account',pct:100-used});
+  }else{
+    // Kmart: spending + a bit into goals + buffer
+    addPct('spending','spending','Spending money',tgt.spending*0.5);
+    const goalTotal=Object.entries(GCFG).reduce((a,[,g])=>a+g.target,0);
+    Object.entries(GCFG).forEach(([k,g])=>{
+      const share=goalTotal>0?g.target/goalTotal:0.25;
+      addPct('goal_'+k,'goal',g.label,tgt.goals*0.3*share,k);
+    });
+    addPct('invest','invest','Investments',tgt.invest*0.2);
+    const used=plan.reduce((a,p)=>a+p.pct,0);
+    if(used<100)plan.push({key:'buffer',type:'buffer',label:'Leave in account',pct:100-used});
+  }
+  src.plan=plan;
+  save();closeSheet();
+  showToast('Plan set from budget');
+  openSourceSettings(sourceKey);
+}
+
+// ── Sinking fund monthly-need calculator ─────────────────────
+// Suggests a % for each active sinking fund based on how much it needs per month
+// vs your estimated monthly income for this source.
+function sinkingMonthlyNeed(sf){
+  const rem=Math.max(0,(sf.target||0)-(sf.saved||0));
+  if(rem<=0)return 0;
+  if(sf.month){
+    const now=new Date();
+    const tgt=new Date(sf.month+'-01T00:00:00');
+    const monthsLeft=Math.max(1,(tgt-now)/(1000*60*60*24*30.44));
+    return rem/monthsLeft;
+  }
+  // No deadline → assume 12 months
+  return rem/12;
+}
+function suggestedSinkingPct(sf,sourceKey){
+  // Full-time monthly income share for this source
+  const incFT=(S.sliders?.income)||4069;
+  const incKM=((S.sliders?.kmart)||0)*52/12;
+  const sourceIncome=sourceKey==='fulltime'?incFT:incKM;
+  if(sourceIncome<=0)return 0;
+  const need=sinkingMonthlyNeed(sf);
+  const pct=need/sourceIncome*100;
+  return Math.max(1,Math.min(20,Math.round(pct))); // cap 1-20% per fund
+}
+function autoAddAllSinking(sourceKey){
+  const src=S.paydaySources?.[sourceKey];if(!src)return;
+  const active=(S.sinkingFunds||[]).filter(s=>(s.target||0)>(s.saved||0));
+  if(!active.length){showToast('No active sinking funds to add');return;}
+  const existingRefs=new Set(src.plan.filter(p=>p.type==='sinking').map(p=>p.ref));
+  const toAdd=active.filter(s=>!existingRefs.has(s.id));
+  if(!toAdd.length){showToast('All active funds already in plan');return;}
+  toAdd.forEach(sf=>{
+    const pct=suggestedSinkingPct(sf,sourceKey);
+    src.plan.push({key:'sinking_'+sf.id,type:'sinking',ref:sf.id,label:(sf.icon||'💰')+' '+sf.name,pct});
+  });
+  save();closeSheet();openSourceSettings(sourceKey);
+  showToast(toAdd.length+' sinking fund'+(toAdd.length>1?'s':'')+' added');
+}
+
+// ═══════════════════════════════════════════════════════════
+// INSIGHTS TAB (proactive AI-lite)
+// ═══════════════════════════════════════════════════════════
+function buildInsightsPage(){
+  const el=document.getElementById('insights-content');if(!el)return;
+  const groups={flow:[],spending:[],investments:[],goals:[],wins:[]};
+
+  // ── Money flow ──
+  const pend=(S.pendingTxns||[]);
+  const todayStr=today();
+  const duePend=pend.filter(p=>p.dueDate&&p.dueDate<=todayStr);
+  if(duePend.length){
+    const tot=duePend.reduce((a,p)=>a+(p.dir==='in'?0:p.amount),0);
+    groups.flow.push({pri:1,icon:'📌',title:'Pending bills due',body:`${duePend.length} pending bill${duePend.length>1?'s':''} totalling ${fmtD(tot)} — confirm once paid.`,action:"showPgFromMore('recurring')"});
+  }
+  ['fulltime','kmart'].forEach(src=>{
+    if(typeof pendingIncome!=='function')return;
+    const inc=pendingIncome(src);
+    if(inc.length){
+      const tot=inc.reduce((a,t)=>a+t.amt,0);
+      const label=S.paydaySources?.[src]?.label||src;
+      groups.flow.push({pri:2,icon:'💰',title:'Income to distribute',body:`${fmtD(tot)} from ${label} is sitting undistributed. Distribute to keep budget accurate.`,action:"showPgFromMore('payday')"});
+    }
+  });
+  // Idle cash — Westpac balance > 2× monthly fixed
+  const wp=calcBal('westpac');
+  const monthlyFixed=(S.sliders?.rent||0)+recurringFixedMonthly();
+  if(wp>monthlyFixed*2.5&&monthlyFixed>0){
+    groups.flow.push({pri:3,icon:'💵',title:'Idle cash in Westpac',body:`Westpac holds ${fmtD(wp)} — more than 2.5× your monthly fixed costs (${fmtD(monthlyFixed)}). Consider moving some to Macquarie for interest, or into your emergency/uni fund.`,action:null});
+  }
+
+  // ── Spending ──
+  const ws=weekSpend(),wb=S.sliders?.spend||0;
+  if(wb>0&&ws>wb){
+    groups.spending.push({pri:1,icon:'🔴',title:'Over weekly budget',body:`You're ${fmtD(ws-wb)} over this week's spending budget (${fmtD(ws)} of ${fmtD(wb)}).`,action:"showPgFromMore('analytics')"});
+  }else if(wb>0&&ws>wb*0.85){
+    groups.spending.push({pri:2,icon:'🟡',title:'Approaching weekly limit',body:`${fmtD(wb-ws)} left of ${fmtD(wb)} weekly budget. Watch spending for the rest of the week.`,action:null});
+  }
+  // Category MoM — biggest increase
+  const now=new Date();
+  const thisYM2=nowYM();
+  const lastM=new Date(now.getFullYear(),now.getMonth()-1,1);
+  const lastYM=`${lastM.getFullYear()}-${String(lastM.getMonth()+1).padStart(2,'0')}`;
+  const spendCat=(ym)=>{const o={};(S.transactions||[]).filter(t=>t.dir==='out'&&t.date&&t.date.startsWith(ym)).forEach(t=>{o[t.cat]=(o[t.cat]||0)+t.amt;});return o;};
+  const thisM=spendCat(thisYM2),prevM=spendCat(lastYM);
+  const cm=cmap();
+  const cats=[...new Set([...Object.keys(thisM),...Object.keys(prevM)])];
+  const bigMove=cats.map(c=>({c,cur:thisM[c]||0,prev:prevM[c]||0,diff:(thisM[c]||0)-(prevM[c]||0)})).filter(x=>x.prev>=20&&x.diff>0).sort((a,b)=>b.diff-a.diff)[0];
+  if(bigMove&&bigMove.diff>=20){
+    const info=cm[bigMove.c]||{label:bigMove.c,icon:'📌'};
+    groups.spending.push({pri:2,icon:info.icon,title:`${info.label} spending up`,body:`${info.label} is ${fmtD(bigMove.diff)} higher this month (${fmtD(bigMove.cur)} vs ${fmtD(bigMove.prev)} last month).`,action:"showPgFromMore('analytics')"});
+  }
+
+  // ── Investments ──
+  const pnl=(typeof portPnl==='function')?portPnl():0;
+  const pnlPct=(typeof portPnlPct==='function')?portPnlPct():0;
+  if(Math.abs(pnl)>200){
+    groups.investments.push({pri:3,icon:pnl>=0?'📈':'📉',title:pnl>=0?'Portfolio in profit':'Portfolio down',body:`Total unrealised P&L: ${pnl>=0?'+':''}${fmtD(pnl)} (${pnl>=0?'+':''}${pnlPct.toFixed(2)}%). Long-term investors ignore short-term dips — stay the course.`,action:"showPgFromMore('invest')"});
+  }
+  // Live prices stale check
+  const hs=S.holdings||[];
+  const anyLive=hs.some(h=>h.liveUpdated);
+  const oldestLive=hs.map(h=>h.liveUpdated).filter(Boolean).sort()[0];
+  if(hs.length>0&&(!anyLive||(oldestLive&&Date.now()-oldestLive>7*24*3600*1000))){
+    groups.investments.push({pri:3,icon:'⏱️',title:'Live prices stale',body:`Portfolio hasn't been priced live recently. Re-import from CMC or hit "Refresh prices" for current market values.`,action:"showPgFromMore('invest')"});
+  }
+
+  // ── Goals ──
+  Object.entries(GCFG).forEach(([k,g])=>{
+    const st=S.goalState?.[k];if(!st)return;
+    const pace=(typeof goalPace==='function')?goalPace(k,g,st):null;
+    if(pace&&pace.status==='behind'&&pace.neededPerMonth>0){
+      groups.goals.push({pri:2,icon:'🎯',title:`${g.label} behind pace`,body:`Needs ${fmtD(pace.neededPerMonth)}/month to hit ${g.target?fmtD(g.target):'target'} by deadline. Increase payday allocation to this goal.`,action:"showPgFromMore('payday')"});
+    }else if(pace&&pace.status==='ahead'){
+      groups.wins.push({pri:5,icon:'✅',title:`${g.label} ahead of schedule`,body:`On track and then some — ${pct(st.saved,g.target)}% complete.`,action:null});
+    }
+  });
+
+  // ── Wins ──
+  const inc=monthIncome(),spent=monthSpend(),sr=inc>0?Math.round((inc-spent)/inc*100):0;
+  if(sr>=40){groups.wins.push({pri:5,icon:'🟢',title:'Strong savings rate',body:`Saving ${sr}% of income this month. That's excellent — keep it up.`,action:null});}
+  else if(sr>=25&&sr<40){groups.wins.push({pri:5,icon:'👍',title:'Solid savings rate',body:`Saving ${sr}% this month. A bit more and you'll be at strong territory (40%+).`,action:null});}
+  const nw2=(typeof portTotal==='function'?portTotal():0)+calcBal('westpac')+calcBal('macquarie');
+  const nextMs=(typeof NW_MILESTONES!=='undefined'?NW_MILESTONES:[]).find(m=>nw2<m);
+  if(nextMs&&(nextMs-nw2)<nextMs*0.08){
+    groups.wins.push({pri:5,icon:'🏆',title:`Near ${fmtDI(nextMs)} milestone`,body:`Only ${fmtD(nextMs-nw2)} to go for the next net worth milestone.`,action:null});
+  }
+
+  const sections=[
+    {key:'flow',label:'Money flow',col:'var(--b)'},
+    {key:'spending',label:'Spending',col:'var(--y)'},
+    {key:'investments',label:'Investments',col:'var(--acc)'},
+    {key:'goals',label:'Goals',col:'var(--acc2)'},
+    {key:'wins',label:'Wins',col:'var(--acc)'}
+  ];
+  const total=Object.values(groups).reduce((a,g)=>a+g.length,0);
+  const priColor=p=>p<=1?'var(--r)':p<=3?'var(--y)':'var(--acc)';
+  el.innerHTML=`
+    <div class="hero" style="text-align:center;padding:20px 18px">
+      <div class="hero-l">Insights</div>
+      <div class="hero-v" style="font-size:32px">${total}</div>
+      <div class="hero-s">${total===0?'All clear — nothing needs your attention':'items worth reviewing'}</div>
+    </div>
+    ${total===0?`<div class="card"><div style="text-align:center;padding:20px"><div style="font-size:36px">✨</div><div style="font-size:13px;color:var(--t);margin-top:8px">Everything looks good.</div><div style="font-size:11px;color:var(--t3);margin-top:4px;line-height:1.5">No pending bills, budget on track, no goal warnings.<br>Come back after your next pay day.</div></div></div>`:''}
+    ${sections.map(sec=>{
+      const items=groups[sec.key].sort((a,b)=>a.pri-b.pri);
+      if(!items.length)return'';
+      return`<div class="card">
+        <div class="ctitle"><div class="ctitle-l" style="color:${sec.col}">${sec.label}</div><span style="font-size:10px;color:var(--t3)">${items.length}</span></div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+        ${items.map(it=>`<div ${it.action?`onclick="${it.action}"`:''} style="padding:10px 12px;background:var(--bg3);border-radius:9px;border-left:3px solid ${priColor(it.pri)};${it.action?'cursor:pointer':''}">
+          <div style="display:flex;align-items:flex-start;gap:9px">
+            <div style="font-size:16px;line-height:1.2">${it.icon}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:2px">${it.title}</div>
+              <div style="font-size:11px;color:var(--t2);line-height:1.5">${it.body}</div>
+            </div>
+            ${it.action?'<div style="color:var(--t3);font-size:14px;margin-top:2px">›</div>':''}
+          </div>
+        </div>`).join('')}
+        </div>
+      </div>`;
+    }).join('')}
+    ${S.groqApiKey?`<div class="card acc-b"><div class="ctitle"><div class="ctitle-l">🤖 AI enrichment</div></div><div style="font-size:11px;color:var(--t2);line-height:1.55;margin-bottom:10px">Ask the AI advisor for deeper analysis of what's shown above.</div><button class="btn btn-acc btn-sm btn-full" onclick="askAiFromInsights()">Get AI take on these insights</button></div>`:''}`;
+}
+
+function askAiFromInsights(){
+  showPgFromMore('assistant');
+  setTimeout(()=>{
+    const inp=document.getElementById('ai-inp');if(!inp)return;
+    inp.value='Based on my current financial state — pending bills, spending trends, portfolio, and goals — what should I prioritise this week and why? Be specific to my numbers.';
+    if(typeof sendAi==='function')sendAi();
+  },250);
+}
+
+// ═══════════════════════════════════════════════════════════
+// DIVIDEND SYSTEM — rebuild for S.holdings model
+// ═══════════════════════════════════════════════════════════
+// Extend the schedule/yield maps so unknown tickers can be added without silent failure.
+function tickerDivSchedule(ticker){
+  // Known schedules. Unknown → null (we'll show it with "schedule unknown" note).
+  const KNOWN={VOO:[3,6,9,12],VYM:[3,6,9,12],VYMI:[3,6,9,12],VAF:[1,4,7,10],VGB:[2,5,8,11],VGS:[3,6,9,12]};
+  return KNOWN[ticker]||null;
+}
+function buildDividendCalendar(){
+  const hs=S.holdings||[];
+  const dEl=document.getElementById('div-metrics');
+  const calEl=document.getElementById('div-cal');
+  const totalDiv=(typeof annDiv==='function')?annDiv():0;
+  const received=Object.values(S.invDividendsReceived||{}).reduce((a,v)=>a+v,0);
+  const receivedYtd=(()=>{
+    // For "received this year", we can only use the aggregate since we don't store payment dates.
+    return received;
+  })();
+  if(dEl)dEl.innerHTML=`
+    <div class="met"><div class="ml">Projected annual</div><div class="mv col-acc">${fmtDI(totalDiv)}</div><div class="ms">Est. from holdings × yield</div></div>
+    <div class="met"><div class="ml">Monthly avg</div><div class="mv col-b">${fmtDI(Math.round(totalDiv/12))}</div><div class="ms">Reinvest for growth</div></div>
+    <div class="met"><div class="ml">Recorded received</div><div class="mv">${fmtDI(receivedYtd)}</div><div class="ms">From "Record dividend"</div></div>
+    <div class="met"><div class="ml">Est. yield</div><div class="mv">${portTotal()>0?(totalDiv/portTotal()*100).toFixed(2):'0'}%</div><div class="ms">Portfolio-wide</div></div>`;
+  if(!calEl)return;
+  if(!hs.length){calEl.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-txt">No holdings. Import your CMC portfolio to see your dividend calendar.</div></div>';return;}
+
+  // Warning about estimate quality
+  const unknownTickers=hs.filter(h=>!tickerDivSchedule(h.ticker));
+  let warn='';
+  if(unknownTickers.length){
+    warn=`<div class="alert alert-y" style="font-size:11px;line-height:1.55;margin-bottom:10px">${unknownTickers.length} holding${unknownTickers.length>1?'s':''} (${unknownTickers.map(h=>h.ticker).join(', ')}) don't have a known dividend schedule — projections omit them. Record actuals via "Record dividend" for accuracy.</div>`;
+  }
+
+  // Upcoming 6 months
+  const now=new Date();
+  const upcoming=[];
+  for(let i=0;i<6;i++){
+    const d=new Date(now.getFullYear(),now.getMonth()+i,1);
+    const m=d.getMonth()+1;const yr=d.getFullYear();
+    hs.forEach(h=>{
+      const sched=tickerDivSchedule(h.ticker);if(!sched)return;
+      if(!sched.includes(m))return;
+      const val=holdingValue(h);const y=TYLD[h.ticker]||0.02;
+      const est=val*y/4;
+      if(est<0.5)return; // don't clutter with tiny amounts
+      upcoming.push({ticker:h.ticker,month:m,year:yr,est,val});
+    });
+  }
+  let calendarHtml='';
+  if(!upcoming.length){
+    calendarHtml=`<div class="empty"><div class="empty-ico">📅</div><div class="empty-txt">No upcoming projected dividends in the next 6 months.</div></div>`;
+  }else{
+    const grouped={};
+    upcoming.forEach(u=>{const k=u.year+'-'+String(u.month).padStart(2,'0');if(!grouped[k])grouped[k]=[];grouped[k].push(u);});
+    calendarHtml=Object.entries(grouped).sort().map(([ym,items])=>{
+      const d=new Date(ym+'-01T00:00:00');
+      const monthTotal=items.reduce((a,i)=>a+i.est,0);
+      return`<div class="div-cal-month">
+        <div class="div-cal-hdr" style="display:flex;justify-content:space-between;align-items:center">
+          <span>${d.toLocaleDateString('en-AU',{month:'long',year:'numeric'})}</span>
+          <span style="font-family:var(--mono);font-size:11px;color:var(--acc);font-weight:700">~${fmtD(monthTotal)}</span>
+        </div>
+        ${items.map(it=>`<div class="div-cal-item">
+          <div class="div-cal-date"><div class="div-cal-day">~</div><div class="div-cal-mon">${new Date(it.year,it.month-1,1).toLocaleDateString('en-AU',{month:'short'})}</div></div>
+          <div style="flex:1"><div class="div-cal-ticker">${it.ticker}</div><div class="div-cal-sub">Est. quarterly · yield ~${((TYLD[it.ticker]||0)*100).toFixed(1)}% · on ${fmtDI(it.val)} held</div></div>
+          <div class="div-cal-amt">+${fmtD(it.est)}</div>
+        </div>`).join('')}
+      </div>`;
+    }).join('');
+  }
+
+  // Actual received vs projected (per ticker table)
+  const perTickerRows=hs.map(h=>{
+    const val=holdingValue(h);
+    const proj=val*(TYLD[h.ticker]||0)/4; // quarterly estimate
+    const received=(S.invDividendsReceived||{})[h.ticker]||0;
+    return{ticker:h.ticker,val,proj,received,sched:tickerDivSchedule(h.ticker)};
+  }).sort((a,b)=>b.received+b.proj-(a.received+a.proj));
+  const perTickerHtml=`<div class="card"><div class="ctitle"><div class="ctitle-l">Per-holding dividends</div><button class="btn btn-ghost btn-sm" onclick="openDivModal()">+ Record</button></div>
+    ${perTickerRows.map(r=>`<div class="bench-row" style="align-items:flex-start">
+      <div class="bench-label">
+        <div style="font-size:12px;color:var(--t);font-weight:700">${r.ticker}</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:1px">${r.sched?'Quarterly projection: ~'+fmtD(r.proj)+'/qtr':'No known schedule'}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:12px;font-family:var(--mono);color:${r.received>0?'var(--acc)':'var(--t3)'};font-weight:${r.received>0?700:400}">${r.received>0?'+'+fmtD(r.received):'—'}</div>
+        <div style="font-size:9px;color:var(--t3)">recorded</div>
+      </div>
+    </div>`).join('')}
+  </div>`;
+
+  calEl.innerHTML=warn+calendarHtml+perTickerHtml;
+
+  // 12-month chart
+  const months=[];const amounts=[];
+  for(let i=0;i<12;i++){
+    const d=new Date(now.getFullYear(),now.getMonth()+i,1);
+    const m=d.getMonth()+1;
+    months.push(d.toLocaleDateString('en-AU',{month:'short'}));
+    let mo=0;
+    hs.forEach(h=>{const s=tickerDivSchedule(h.ticker);if(s&&s.includes(m))mo+=holdingValue(h)*(TYLD[h.ticker]||0)/4;});
+    amounts.push(Math.round(mo));
+  }
+  const canvas=document.getElementById('div-chart');if(!canvas)return;
+  const acc=getComputedStyle(document.documentElement).getPropertyValue('--acc').trim()||'#00d4a0';
+  if(typeof divChart!=='undefined'&&divChart){divChart.destroy();divChart=null;}
+  divChart=new Chart(canvas,{type:'bar',data:{labels:months,datasets:[{data:amounts,backgroundColor:acc+'88',borderRadius:4,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'$'+c.parsed.y.toFixed(2)}}},scales:{x:{ticks:{color:'#3d4f63',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#3d4f63',font:{size:9},callback:v=>'$'+v},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+  if(typeof registerChart==='function')registerChart('div-chart',divChart);
+  if(typeof fitChart==='function')fitChart(divChart);
+}
+
+// ═══════════════════════════════════════════════════════════
+// LIVE PRICE DIAGNOSTIC (Round 2 / Priority #4c)
+// ═══════════════════════════════════════════════════════════
+async function testFmpConnection(){
+  const key=(S.fmpApiKey||'').trim();
+  const el=document.getElementById('fmp-test-out');
+  if(!key){if(el)el.innerHTML='<span style="color:var(--r)">No key set. Paste one above first.</span>';return;}
+  if(el)el.innerHTML='<span style="color:var(--t3)">Testing…</span>';
+  const url=`https://financialmodelingprep.com/stable/quote?symbol=VOO&apikey=${encodeURIComponent(key)}`;
+  try{
+    const res=await fetch(url);
+    const status=res.status;
+    let bodyText='';
+    try{bodyText=await res.text();}catch(_){}
+    let bodyParsed=null;try{bodyParsed=JSON.parse(bodyText);}catch(_){}
+    let msg='',col='var(--r)';
+    if(status===200){
+      const q=Array.isArray(bodyParsed)?bodyParsed[0]:bodyParsed;
+      if(q&&(q.price||q.previousClose)){
+        msg=`✅ Connection OK. VOO price returned: $${q.price||q.previousClose} USD (${new Date().toLocaleTimeString()})`;col='var(--acc)';
+      }else if(bodyParsed&&bodyParsed['Error Message']){
+        msg=`⚠️ FMP returned error: "${bodyParsed['Error Message']}"`;col='var(--y)';
+      }else{
+        msg=`⚠️ Got 200 OK but response was unexpected. Raw: ${bodyText.slice(0,200)}`;col='var(--y)';
+      }
+    }else if(status===401){msg=`❌ 401 Unauthorised — your key is invalid. Get a fresh one from FMP dashboard.`;}
+    else if(status===402){msg=`❌ 402 Payment Required — this endpoint isn't included on your FMP plan. Your key may be on a downgraded/expired tier.`;}
+    else if(status===403){msg=`❌ 403 Forbidden — access denied. Key may be revoked.`;}
+    else if(status===429){msg=`❌ 429 Rate Limited — you've hit the daily/hourly limit (free tier = 250/day). Try again later.`;}
+    else{msg=`❌ HTTP ${status}. Response: ${bodyText.slice(0,200)}`;}
+    if(el)el.innerHTML=`<span style="color:${col}">${msg}</span>`;
+  }catch(err){
+    if(el)el.innerHTML=`<span style="color:var(--r)">❌ Network error: ${err.message}. Check internet or CORS.</span>`;
+  }
 }
 
 function buildDash(){
@@ -4278,6 +4730,7 @@ function distributedIncome(){
 function buildPaydayPage(){
   buildSourceCard('fulltime');
   buildSourceCard('kmart');
+  buildPaydayBudgetCard();
   buildPaydayHistory();
 }
 
@@ -4486,10 +4939,16 @@ function openSourceSettings(sourceKey){
   const src=S.paydaySources?.[sourceKey];if(!src)return;
   const goalKeys=Object.keys(S.goalState||{});
   const sinkingList=(S.sinkingFunds||[]).filter(s=>s.target>s.saved);
+  const inPlanRefs=new Set(src.plan.filter(p=>p.type==='sinking').map(p=>p.ref));
+  const unaddedSinking=sinkingList.filter(s=>!inPlanRefs.has(s.id));
   const totalPct=src.plan.reduce((a,p)=>a+p.pct,0);
   showSheet(`${src.label} — distribution plan`,`
     <div style="font-size:12px;color:var(--t2);line-height:1.55;margin-bottom:12px">
       Edit how each ${src.label} pay should be split. Percentages should total 100%. Add or remove categories as your budget changes.
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" onclick="setPlanFromBudget('${sourceKey}')" style="flex:1">📊 Set from budget</button>
+      ${unaddedSinking.length?`<button class="btn btn-ghost btn-sm" onclick="autoAddAllSinking('${sourceKey}')" style="flex:1">💰 Auto-add ${unaddedSinking.length} sinking fund${unaddedSinking.length>1?'s':''}</button>`:''}
     </div>
     <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Keywords (match income to this source)</div>
     <input type="text" class="inp" id="src-keywords" value="${(src.keywords||[]).join(', ')}" placeholder="e.g. ${sourceKey}">
@@ -4504,7 +4963,7 @@ function openSourceSettings(sourceKey){
       <button class="btn btn-ghost btn-sm" onclick="addPlanRow('${sourceKey}','invest','Investments')">+ Invest</button>
     </div>
     ${goalKeys.length?`<div style="margin-top:10px"><div style="font-size:10px;color:var(--t3);margin-bottom:6px">Add goal allocations:</div><div style="display:flex;gap:6px;flex-wrap:wrap">${goalKeys.map(g=>`<button class="btn btn-ghost btn-sm" onclick="addPlanRow('${sourceKey}','goal','${(GCFG?.[g]?.label||g).replace(/'/g,'')}','${g}')">+ ${GCFG?.[g]?.label||g}</button>`).join('')}</div></div>`:''}
-    ${sinkingList.length?`<div style="margin-top:10px"><div style="font-size:10px;color:var(--t3);margin-bottom:6px">Add sinking funds:</div><div style="display:flex;gap:6px;flex-wrap:wrap">${sinkingList.map(s=>`<button class="btn btn-ghost btn-sm" onclick="addPlanRow('${sourceKey}','sinking','${(s.name||'').replace(/'/g,'')}','${s.id}')">+ ${s.icon||'💰'} ${s.name}</button>`).join('')}</div></div>`:''}
+    ${unaddedSinking.length?`<div style="margin-top:10px"><div style="font-size:10px;color:var(--t3);margin-bottom:6px">Add sinking funds individually:</div><div style="display:flex;gap:6px;flex-wrap:wrap">${unaddedSinking.map(s=>`<button class="btn btn-ghost btn-sm" onclick="addPlanRow('${sourceKey}','sinking','${((s.icon||'💰')+' '+(s.name||'')).replace(/'/g,'')}','${s.id}')">+ ${s.icon||'💰'} ${s.name}</button>`).join('')}</div></div>`:''}
     <button class="btn btn-acc btn-full" style="margin-top:14px" onclick="saveSourcePlan('${sourceKey}')">Save plan</button>
   `);
 }
@@ -5202,44 +5661,6 @@ function buildStreaksPage(){
 // ═══════════════════════════════════════════════════════════
 const DIV_SCHED={VOO:[3,6,9,12],VYM:[3,6,9,12],VYMI:[3,6,9,12],VAF:[1,4,7,10],VGB:[2,5,8,11],VGS:[3,6,9,12]};
 let divChart=null;
-function buildDividendCalendar(){
-  const totalDiv=annDiv();
-  const dEl=document.getElementById('div-metrics');
-  if(dEl)dEl.innerHTML=`<div class="met"><div class="ml">Annual dividends</div><div class="mv col-acc">${fmtDI(totalDiv)}</div><div class="ms">Est. from holdings</div></div><div class="met"><div class="ml">Monthly avg</div><div class="mv col-b">${fmtDI(Math.round(totalDiv/12))}</div><div class="ms">Reinvest for growth</div></div>`;
-  const now=new Date();const calEl=document.getElementById('div-cal');if(!calEl)return;
-  const upcoming=[];
-  for(let i=0;i<6;i++){
-    const d=new Date(now.getFullYear(),now.getMonth()+i,1);
-    const m=d.getMonth()+1;const yr=d.getFullYear();
-    TICKERS.forEach(t=>{
-      if((S.portfolio[t]||0)<=0||!DIV_SCHED[t])return;
-      if(DIV_SCHED[t].includes(m))upcoming.push({ticker:t,month:m,year:yr,est:S.portfolio[t]*TYLD[t]/4});
-    });
-  }
-  if(!upcoming.length){calEl.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-txt">No upcoming dividends. Add holdings to see your calendar.</div></div>';return;}
-  const grouped={};
-  upcoming.forEach(u=>{const k=u.year+'-'+String(u.month).padStart(2,'0');if(!grouped[k])grouped[k]=[];grouped[k].push(u);});
-  calEl.innerHTML=Object.entries(grouped).sort().map(([ym,items])=>{
-    const d=new Date(ym+'-01T00:00:00');
-    return`<div class="div-cal-month"><div class="div-cal-hdr">${d.toLocaleDateString('en-AU',{month:'long',year:'numeric'})}</div>${items.map(it=>`<div class="div-cal-item"><div class="div-cal-date"><div class="div-cal-day">15</div><div class="div-cal-mon">${new Date(it.year,it.month-1,1).toLocaleDateString('en-AU',{month:'short'})}</div></div><div style="flex:1"><div class="div-cal-ticker">${TL[it.ticker]}</div><div class="div-cal-sub">Est. quarterly · yield ~${((TYLD[it.ticker]||0)*100).toFixed(1)}%</div></div><div class="div-cal-amt">+${fmtD(it.est)}</div></div>`).join('')}</div>`;
-  }).join('');
-  // 12-month chart
-  const months=[];const amounts=[];
-  for(let i=0;i<12;i++){
-    const d=new Date(now.getFullYear(),now.getMonth()+i,1);
-    const m=d.getMonth()+1;
-    months.push(d.toLocaleDateString('en-AU',{month:'short'}));
-    let mo=0;
-    TICKERS.forEach(t=>{if((S.portfolio[t]||0)>0&&(DIV_SCHED[t]||[]).includes(m))mo+=S.portfolio[t]*TYLD[t]/4;});
-    amounts.push(Math.round(mo));
-  }
-  const canvas=document.getElementById('div-chart');if(!canvas)return;
-  const acc=getComputedStyle(document.documentElement).getPropertyValue('--acc').trim()||'#00d4a0';
-  if(divChart){divChart.destroy();divChart=null;}
-  divChart=new Chart(canvas,{type:'bar',data:{labels:months,datasets:[{data:amounts,backgroundColor:acc+'88',borderRadius:4,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'$'+c.parsed.y.toFixed(2)}}},scales:{x:{ticks:{color:'#3d4f63',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#3d4f63',font:{size:9},callback:v=>'$'+v},grid:{color:'rgba(255,255,255,0.04)'}}}}});
-  registerChart('div-chart',divChart);fitChart(divChart);
-}
-
 // ═══════════════════════════════════════════════════════════
 // FEATURE 10: ATO TAX SUMMARY
 // ═══════════════════════════════════════════════════════════
