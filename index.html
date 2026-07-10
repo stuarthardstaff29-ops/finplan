@@ -999,8 +999,8 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
       </div>
 
       <div class="card">
-        <div class="ctitle"><div class="ctitle-l">Live prices — FMP API key (optional)</div></div>
-        <div style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:10px">Optional. For live portfolio prices, get a free key at <strong style="color:var(--acc)">financialmodelingprep.com</strong> (250 requests/day).<br><br><strong style="color:var(--y)">Important:</strong> The FMP free tier covers <strong>US-listed stocks only</strong> (VOO, VYM, VYMI). ASX-listed ETFs (VAF, VGB, VGS, VAS, NDQ) are not available on the free plan — for those, use screenshot scan or enter prices manually.</div>
+        <div class="ctitle"><div class="ctitle-l">Market prices — FMP API key (optional)</div></div>
+        <div style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:10px">Optional. Get a free key at <strong style="color:var(--acc)">financialmodelingprep.com</strong> (250 requests/day).<br><br><strong style="color:var(--y)">What this gives you:</strong> end-of-day close prices (yesterday's close) for US-listed holdings (VOO, VYM, VYMI). This is <em>not</em> real-time — the FMP free plan no longer includes real-time quotes. ASX-listed ETFs (VAF, VGB, VGS) aren't covered on the free plan either — use screenshot scan or manual entry for those.</div>
         <label class="lbl">FMP API key</label>
         <input type="password" class="inp" id="fmp-key-inp" placeholder="your FMP key" autocomplete="off" spellcheck="false">
         <div style="display:flex;gap:7px">
@@ -1369,29 +1369,25 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='1.5.0';
+const APP_VERSION='1.6.0';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
   {
-    v:'1.5.0',
-    date:'2026-06-25',
-    title:'Connected finances: Budget, Payday, Sinking, Insights',
+    v:'1.6.0',
+    date:'2026-06-27',
+    title:'Market prices actually work now (end-of-day)',
     sections:{
       features:[
-        'Insights tab in the More menu — batched view of everything worth reviewing (money flow, spending, investments, goals, wins)',
-        'Payday page now shows Budget targets vs Payday actuals for the current month',
-        'One-tap "Set from budget" auto-populates a payday plan from your budget sliders',
-        'Auto-add all active sinking funds to a payday plan with % suggested by monthly need',
-        'FMP "Test connection" button in Settings to see the exact error when live prices fail'
+        'Market prices now use FMP\'s free end-of-day endpoint — reliably updates US holdings each day',
+        'Shows "as of" date so you always know how fresh the numbers are'
       ],
       improvements:[
-        'Dividend calendar rebuilt on the current holdings model — no more phantom data after wipe',
-        'Per-holding recorded vs projected dividend view',
-        'Dividend metrics show recorded, projected, monthly average, and portfolio yield'
+        'FMP test button now hits the same endpoint that refresh uses — a passing test proves refresh will work',
+        'Clearer copy throughout — "market prices" not "live prices", so it\'s clear these are end-of-day, not real-time',
+        'AUD/USD exchange rate now fetched from FMP\'s free EOD forex endpoint too'
       ],
       fixes:[
-        'Dividend calendar was reading the legacy S.portfolio dict — now uses S.holdings',
-        'Unknown tickers no longer silently disappear from the dividend view'
+        'Root cause of the persistent 402 errors: FMP moved real-time quotes to paid plans. The app now uses the free EOD endpoint instead — no more upgrade prompts'
       ]
     }
   },
@@ -2986,7 +2982,7 @@ function buildInsightsPage(){
   const anyLive=hs.some(h=>h.liveUpdated);
   const oldestLive=hs.map(h=>h.liveUpdated).filter(Boolean).sort()[0];
   if(hs.length>0&&(!anyLive||(oldestLive&&Date.now()-oldestLive>7*24*3600*1000))){
-    groups.investments.push({pri:3,icon:'⏱️',title:'Live prices stale',body:`Portfolio hasn't been priced live recently. Re-import from CMC or hit "Refresh prices" for current market values.`,action:"showPgFromMore('invest')"});
+    groups.investments.push({pri:3,icon:'⏱️',title:'EOD prices stale',body:`Portfolio hasn't been refreshed recently. Hit "Refresh prices" on the Invest page for latest end-of-day close.`,action:"showPgFromMore('invest')"});
   }
 
   // ── Goals ──
@@ -3177,27 +3173,30 @@ async function testFmpConnection(){
   const el=document.getElementById('fmp-test-out');
   if(!key){if(el)el.innerHTML='<span style="color:var(--r)">No key set. Paste one above first.</span>';return;}
   if(el)el.innerHTML='<span style="color:var(--t3)">Testing…</span>';
-  const url=`https://financialmodelingprep.com/stable/quote?symbol=VOO&apikey=${encodeURIComponent(key)}`;
+  // Test the same free-tier EOD endpoint that refreshPrices uses.
+  const url=`https://financialmodelingprep.com/stable/historical-price-eod/light?symbol=VOO&apikey=${encodeURIComponent(key)}`;
   try{
     const res=await fetch(url);
     const status=res.status;
-    let bodyText='';
-    try{bodyText=await res.text();}catch(_){}
+    let bodyText='';try{bodyText=await res.text();}catch(_){}
     let bodyParsed=null;try{bodyParsed=JSON.parse(bodyText);}catch(_){}
     let msg='',col='var(--r)';
     if(status===200){
-      const q=Array.isArray(bodyParsed)?bodyParsed[0]:bodyParsed;
-      if(q&&(q.price||q.previousClose)){
-        msg=`✅ Connection OK. VOO price returned: $${q.price||q.previousClose} USD (${new Date().toLocaleTimeString()})`;col='var(--acc)';
+      let rec=null;
+      if(Array.isArray(bodyParsed)&&bodyParsed.length)rec=bodyParsed[0];
+      else if(bodyParsed&&Array.isArray(bodyParsed.historical)&&bodyParsed.historical.length)rec=bodyParsed.historical[0];
+      const price=rec&&(rec.price!=null?rec.price:rec.close);
+      if(price){
+        msg=`✅ Connection OK. VOO close: $${price} USD (as of ${rec.date||'recent'}). Your key works for end-of-day prices.`;col='var(--acc)';
       }else if(bodyParsed&&bodyParsed['Error Message']){
-        msg=`⚠️ FMP returned error: "${bodyParsed['Error Message']}"`;col='var(--y)';
+        msg=`⚠️ FMP error: "${bodyParsed['Error Message']}"`;col='var(--y)';
       }else{
-        msg=`⚠️ Got 200 OK but response was unexpected. Raw: ${bodyText.slice(0,200)}`;col='var(--y)';
+        msg=`⚠️ 200 OK but unexpected response. Raw: ${bodyText.slice(0,200)}`;col='var(--y)';
       }
-    }else if(status===401){msg=`❌ 401 Unauthorised — your key is invalid. Get a fresh one from FMP dashboard.`;}
-    else if(status===402){msg=`❌ 402 Payment Required — this endpoint isn't included on your FMP plan. Your key may be on a downgraded/expired tier.`;}
-    else if(status===403){msg=`❌ 403 Forbidden — access denied. Key may be revoked.`;}
-    else if(status===429){msg=`❌ 429 Rate Limited — you've hit the daily/hourly limit (free tier = 250/day). Try again later.`;}
+    }else if(status===401){msg=`❌ 401 Unauthorised — key is invalid. Get a fresh one from FMP dashboard.`;}
+    else if(status===402){msg=`❌ 402 Payment Required — even the EOD endpoint isn't in your plan. Try re-registering for a fresh free key.`;}
+    else if(status===403){msg=`❌ 403 Forbidden — key may be revoked.`;}
+    else if(status===429){msg=`❌ 429 Rate Limited — you've hit the 250/day free-tier cap. Try tomorrow.`;}
     else{msg=`❌ HTTP ${status}. Response: ${bodyText.slice(0,200)}`;}
     if(el)el.innerHTML=`<span style="color:${col}">${msg}</span>`;
   }catch(err){
@@ -3723,7 +3722,7 @@ function updateSyncStatus(){
   const parts=[];
   parts.push(cmcSourced>0?`✅ ${cmcSourced} from CMC`:'⚠️ No CMC import yet');
   parts.push(hasMigrated?'⚠️ Some estimated':'✅ Cost & value');
-  parts.push(hasLive?'✅ Live price check':'○ Live prices idle');
+  parts.push(hasLive?'✅ EOD price check':'○ EOD prices idle');
   el.innerHTML=parts.map(p=>`<span style="margin-right:8px;font-size:9px">${p}</span>`).join('');
 }
 function timeAgo(ts){const s=Math.floor((Date.now()-ts)/1000);if(s<60)return'just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';}
@@ -4491,73 +4490,86 @@ async function scanScreenshot(){
 async function refreshPrices(){
   const key=(S.fmpApiKey||'').trim();
   if(!key){
-    if(confirm('Live pricing needs a free Financial Modeling Prep API key. Open Settings to add one?'))showPgFromMore('settings');
+    if(confirm('Market prices need a free Financial Modeling Prep API key. Open Settings to add one?'))showPgFromMore('settings');
     return;
   }
   const hs=S.holdings||[];if(!hs.length){showToast('No holdings to price');return;}
   const btn=document.getElementById('refresh-prices-btn');if(btn){btn.disabled=true;btn.textContent='↻ …';}
+  // FREE PLAN endpoint: end-of-day historical prices (light) — returns date + price array.
+  // We take the most recent record. NOT real-time, but reliable and free.
   const BASE='https://financialmodelingprep.com/stable';
-  let updated=0;const failed=[];const skipped=[];
+  let updated=0;const failed=[];const skipped=[];let asOfDate=null;
   try{
-    // 1. Refresh the AUD/USD FX rate first (one call) so conversions are current.
-    if(!S.fxManual){await refreshFxRate(key);}
-    // 2. Fetch quotes. The stable quote endpoint takes ONE symbol per call:
-    //    /stable/quote?symbol=VOO&apikey=KEY  → returns an array with one object.
-    //    We call per-symbol (free tier = 250/day, plenty for a handful of holdings).
+    // 1. Refresh AUD/USD via EOD forex (free tier)
+    if(!S.fxManual){await refreshFxRateEod(key);}
+    // 2. Fetch EOD close per symbol
     for(const h of hs){
-      const sym=h.market==='ASX'?h.ticker+'.AX':h.ticker;
+      // ASX still not covered on free plan — skip with a clear message rather than fail
+      if(h.market==='ASX'){skipped.push(h.ticker+' (ASX — not on free plan)');continue;}
+      const sym=h.ticker;
       try{
-        const res=await fetch(`${BASE}/quote?symbol=${encodeURIComponent(sym)}&apikey=${encodeURIComponent(key)}`);
-        if(res.status===401){alert('FMP says your API key is invalid (401).\n\nGo to Settings → FMP API key and paste a fresh key from the FMP dashboard.');return;}
-        if(res.status===402){alert('FMP says this needs a paid plan (402). Your key may be on a tier that doesn\'t cover this endpoint.');return;}
-        if(res.status===429){alert('FMP rate limit hit (429). The free tier allows 250 calls/day — try again later.');return;}
+        const res=await fetch(`${BASE}/historical-price-eod/light?symbol=${encodeURIComponent(sym)}&apikey=${encodeURIComponent(key)}`);
+        if(res.status===401){alert('FMP: your API key is invalid (401).\n\nGo to Settings → FMP API key and paste a fresh key from your FMP dashboard.');return;}
+        if(res.status===402){alert('FMP: this endpoint requires a paid plan (402). Even the EOD endpoint is now paid — try re-registering for a fresh free key.');return;}
+        if(res.status===429){alert('FMP rate limit hit (429). Free tier allows 250 calls/day — try again tomorrow.');return;}
         if(!res.ok){failed.push(h.ticker+' (HTTP '+res.status+')');continue;}
         const data=await res.json();
-        if(data&&data['Error Message']){alert('FMP error: '+data['Error Message']);return;}
-        const q=Array.isArray(data)?data[0]:data;
-        const price=q&&(q.price!=null?q.price:q.previousClose);
+        if(data&&data['Error Message']){failed.push(h.ticker+' ('+data['Error Message']+')');continue;}
+        // Response shape: {symbol, historical:[{date,close,...}]} or a flat array [{date,price}]
+        let record=null;
+        if(Array.isArray(data)&&data.length){record=data[0];} // newest first
+        else if(data&&Array.isArray(data.historical)&&data.historical.length){record=data.historical[0];}
+        if(!record){failed.push(h.ticker+' (no data returned)');continue;}
+        const price=record.price!=null?record.price:(record.close!=null?record.close:null);
+        const dateStr=record.date||null;
         if(price&&!isNaN(price)&&price>0){
-          // Live price is stored SEPARATELY — never overwrites CMC's imported lastPrice/marketValue.
-          h.livePrice=price;
+          h.livePrice=price;               // stored SEPARATELY — never overwrites CMC's lastPrice
           h.liveUpdated=Date.now();
-          S.priceCache[h.ticker]={price,ts:Date.now()};
+          h.livePriceDate=dateStr;
+          S.priceCache[h.ticker]={price,ts:Date.now(),date:dateStr};
+          if(dateStr&&(!asOfDate||dateStr>asOfDate))asOfDate=dateStr;
           updated++;
-        }else if(h.market==='ASX'){
-          skipped.push(h.ticker+' (ASX — needs paid plan)');
         }else{
-          failed.push(h.ticker+' (no price returned)');
+          failed.push(h.ticker+' (no price in record)');
         }
       }catch(e){failed.push(h.ticker+' ('+(e.message||'error')+')');}
     }
     save();buildInvestPage();if(currentPg==='dash')buildDash();
+    const asOfLabel=asOfDate?' as of '+asOfDate:'';
     if(updated===0&&skipped.length&&!failed.length){
-      alert('No prices updated. Your holdings are ASX-listed ('+skipped.map(s=>s.split(' ')[0]).join(', ')+'), which aren\'t covered by the free FMP plan — only US stocks (VOO, VYM, VYMI) are.\n\nFor ASX prices, use "Scan screenshot" or enter prices manually.');
+      alert(`No prices updated. Your holdings are ASX-listed (${skipped.map(s=>s.split(' ')[0]).join(', ')}), which aren't covered by the FMP free plan — only US tickers (VOO, VYM, VYMI) can be priced.\n\nFor ASX, use "Scan screenshot" or edit prices manually.`);
     }else if(skipped.length||failed.length){
-      if(updated>0)showToast('Updated '+updated+' price'+(updated>1?'s':''));
+      if(updated>0)showToast(`Updated ${updated} EOD price${updated>1?'s':''}${asOfLabel}`);
       const details=[...skipped,...failed].slice(0,6).join('\n• ');
-      alert(`Refreshed ${updated} of ${hs.length} holdings (FX 1 USD = ${fxUsdAud().toFixed(3)} AUD).\n\nNot updated:\n• ${details}\n\nFor the rest, scan a screenshot or enter prices manually.`);
+      alert(`EOD prices refreshed for ${updated} of ${hs.length} holdings${asOfLabel}.\n\nNot updated:\n• ${details}\n\nFor these, scan a screenshot or enter prices manually.`);
     }else{
-      showToast('Updated '+updated+' price'+(updated>1?'s':'')+' ✓');
+      showToast(`Updated ${updated} EOD price${updated>1?'s':''}${asOfLabel}`);
     }
   }catch(err){
     alert('Unexpected error during price refresh:\n\n'+(err.message||err));
   }finally{if(btn){btn.disabled=false;btn.textContent='↻ Refresh prices';}}
 }
-// Fetch AUD/USD from FMP stable forex endpoint. Stores audUsdRate = 1 AUD in USD.
-async function refreshFxRate(key){
+
+// Fetch AUDUSD end-of-day from FMP historical-price-eod/light (free tier).
+async function refreshFxRateEod(key){
   try{
-    const res=await fetch(`https://financialmodelingprep.com/stable/quote?symbol=AUDUSD&apikey=${encodeURIComponent(key)}`);
+    const res=await fetch(`https://financialmodelingprep.com/stable/historical-price-eod/light?symbol=AUDUSD&apikey=${encodeURIComponent(key)}`);
     if(!res.ok)return false;
     const data=await res.json();
-    const q=Array.isArray(data)?data[0]:data;
-    const rate=q&&(q.price!=null?q.price:q.previousClose);
-    if(rate&&!isNaN(rate)&&rate>0.3&&rate<1.2){ // sanity bound for AUDUSD
+    let rec=null;
+    if(Array.isArray(data)&&data.length)rec=data[0];
+    else if(data&&Array.isArray(data.historical)&&data.historical.length)rec=data.historical[0];
+    if(!rec)return false;
+    const rate=rec.price!=null?rec.price:rec.close;
+    if(rate&&!isNaN(rate)&&rate>0.3&&rate<1.2){
       S.audUsdRate=rate;S.fxUpdated=Date.now();S.fxManual=false;
       return true;
     }
   }catch(e){}
   return false;
 }
+// Keep the old helper name aliased for any lingering caller
+async function refreshFxRate(key){return refreshFxRateEod(key);}
 function saveManualFx(){
   const v=parseFloat(document.getElementById('fx-manual-inp').value);
   if(isNaN(v)||v<=0){alert('Enter a valid rate (1 USD in AUD), e.g. 1.54');return;}
