@@ -141,6 +141,27 @@ body.light .bnav{background:rgba(255,255,255,.85)}
 /* FAB */
 .fab{position:fixed;bottom:calc(var(--nav-h) + var(--sb) + 18px);right:18px;width:54px;height:54px;background:linear-gradient(135deg,var(--acc),var(--acc2));border-radius:50%;border:none;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 6px 24px var(--accd3),0 0 0 0 var(--accd2);z-index:200;transition:all .25s cubic-bezier(.4,0,.2,1)}
 body.fab-visible .fab{display:flex}
+
+/* PERSISTENT CONTEXT PANEL (v1.8.0) */
+.ctx-panel{position:fixed;left:0;right:0;bottom:calc(var(--nav-h) + var(--sb));background:linear-gradient(180deg,rgba(20,24,31,.96),rgba(10,14,20,.98));backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid rgba(245,177,60,.18);padding:6px 14px 10px;z-index:150;transform:translateY(calc(100% + var(--nav-h) + var(--sb)));transition:transform .28s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.ctx-panel.on{transform:translateY(0);pointer-events:all}
+.ctx-handle{width:34px;height:3px;background:var(--bdr2);border-radius:2px;margin:0 auto 6px}
+.ctx-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.ctx-title{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.09em;font-weight:600}
+.ctx-count{font-size:10px;color:var(--y);font-weight:600}
+.ctx-count.q{color:var(--t3);font-weight:400}
+.ctx-rows{display:flex;flex-direction:column;gap:1px}
+.ctx-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;cursor:pointer}
+.ctx-l{font-size:11px;color:var(--t2);display:flex;align-items:center;gap:7px}
+.ctx-v{font-size:12px;font-family:var(--mono);font-weight:600}
+.ctx-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+body.ctx-showing .fab{bottom:calc(var(--nav-h) + var(--sb) + 130px);transition:bottom .28s cubic-bezier(.4,0,.2,1)}
+
+/* DASHBOARD JUMP CHIPS */
+.dash-jump{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;margin-bottom:10px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.dash-jump::-webkit-scrollbar{display:none}
+.jump-chip{flex-shrink:0;background:var(--bg2);border:1px solid var(--bdr);border-radius:20px;padding:7px 14px;font-size:11px;color:var(--t2);cursor:pointer;font-weight:500;transition:all .18s;font-family:inherit}
+.jump-chip:hover,.jump-chip:active{background:var(--bg3);border-color:var(--bdr2);color:var(--t);transform:translateY(-1px)}
 .fab:hover{box-shadow:0 8px 28px var(--accd3),0 0 0 4px var(--accd)}
 .fab:active{transform:scale(.92)}
 .fab svg{width:24px;height:24px;stroke:#001a13;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
@@ -578,14 +599,21 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
     <!-- DASHBOARD -->
     <div class="pg on" id="pg-dash">
       <div id="dash-install"></div>
-      <div id="dash-briefing"></div>
       <div class="hero">
-        <div class="hero-l">Total net worth</div>
+        <div class="hero-l">Net worth</div>
         <div class="hero-v" id="d-nw">—</div>
         <div class="hero-s" id="d-nw-sub">Loading…</div>
         <div class="tag-row" id="d-tags"></div>
       </div>
+      <div id="dash-briefing"></div>
       <div class="mg" id="d-metrics"></div>
+      <div class="dash-jump" id="dash-jump">
+        <button class="jump-chip" onclick="showPgFromMore('budget')">📊 Budget</button>
+        <button class="jump-chip" onclick="showPgFromMore('invest')">📈 Invest</button>
+        <button class="jump-chip" onclick="showPg('goals',document.querySelector('[data-pg=goals]'))">🎯 Goals</button>
+        <button class="jump-chip" onclick="showPgFromMore('recurring')">🔁 Recurring</button>
+        <button class="jump-chip" onclick="showPgFromMore('insights')">✨ Insights</button>
+      </div>
       <div id="dash-pending"></div>
       <div class="card">
         <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Net worth over time</div></div>
@@ -1051,6 +1079,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
       <div class="card">
         <div class="ctitle"><div class="ctitle-l">Update history</div><button class="btn btn-ghost btn-sm" onclick="showWhatsNewManual()">What's new</button></div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span class="wn-badge" id="settings-version" style="margin:0">v1.0.0</span><span style="font-size:11px;color:var(--t3)">Current version</span></div>
+        <button class="btn btn-ghost btn-sm btn-full" onclick="forceRefreshApp()" style="margin-bottom:10px">↻ Force refresh (if update seems stuck)</button>
         <div id="changelog-list"></div>
       </div>
     </div>
@@ -1058,6 +1087,16 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
   </div><!-- end scrl -->
 
   <button class="fab" onclick="openTxnModal()" aria-label="Add transaction"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+
+  <!-- PERSISTENT CONTEXT PANEL -->
+  <div class="ctx-panel" id="ctx-panel">
+    <div class="ctx-handle"></div>
+    <div class="ctx-header">
+      <span class="ctx-title">At a glance</span>
+      <span class="ctx-count" id="ctx-count"></span>
+    </div>
+    <div class="ctx-rows" id="ctx-rows"></div>
+  </div>
 
   <nav class="bnav">
     <button class="nb on" data-pg="dash" onclick="showPg('dash',this)"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dash</button>
@@ -1079,14 +1118,12 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
     <button class="more-tile" id="more-payday" onclick="showPgFromMore('payday')"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="12" cy="14.5" r="1.5"/></svg>Pay day</button>
     <button class="more-tile" id="more-recurring" onclick="showPgFromMore('recurring')"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Recurring</button>
     <button class="more-tile" id="more-scenario" onclick="showPgFromMore('scenario')"><svg viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0H5a2 2 0 0 1-2-2v-4m6 6h10a2 2 0 0 0 2-2v-4"/></svg>What-if</button>
-    <button class="more-tile" id="more-glance" onclick="showPgFromMore('glance')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Glance</button>
     <button class="more-tile" id="more-insights" onclick="showPgFromMore('insights')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Insights</button>
     <button class="more-tile" id="more-invest" onclick="showPgFromMore('invest')"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Invest</button>
     <button class="more-tile" id="more-health" onclick="showPgFromMore('health')"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Health</button>
     <button class="more-tile" id="more-streaks" onclick="showPgFromMore('streaks')"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Streaks</button>
     <button class="more-tile" id="more-sinking" onclick="showPgFromMore('sinking')"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Sinking</button>
     <button class="more-tile" id="more-debts" onclick="showPgFromMore('debts')"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Net worth</button>
-    <button class="more-tile" id="more-subscriptions" onclick="showPgFromMore('subscriptions')"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>Subs</button>
     <button class="more-tile" id="more-dividends" onclick="showPgFromMore('dividends')"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Divs</button>
     <button class="more-tile" id="more-tax" onclick="showPgFromMore('tax')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>ATO Tax</button>
     <button class="more-tile" id="more-timeline" onclick="showPgFromMore('timeline')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Timeline</button>
@@ -1369,25 +1406,41 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='1.6.0';
+const APP_VERSION='1.8.0';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
   {
-    v:'1.6.0',
-    date:'2026-06-27',
-    title:'Market prices actually work now (end-of-day)',
+    v:'1.8.0',
+    date:'2026-06-29',
+    title:'One intelligent platform',
     sections:{
       features:[
-        'Market prices now use FMP\'s free end-of-day endpoint — reliably updates US holdings each day',
-        'Shows "as of" date so you always know how fresh the numbers are'
+        'Persistent context panel — undistributed pay, bills due, weekly spend and net worth follow you across every page',
+        'Panel auto-shows when you scroll up, hides when you scroll down, briefly appears when you change page',
+        'Redesigned dashboard as the central hub: hero, today briefing, key metrics, quick-jump chips'
       ],
       improvements:[
-        'FMP test button now hits the same endpoint that refresh uses — a passing test proves refresh will work',
-        'Clearer copy throughout — "market prices" not "live prices", so it\'s clear these are end-of-day, not real-time',
-        'AUD/USD exchange rate now fetched from FMP\'s free EOD forex endpoint too'
+        'Dashboard hero now shows portfolio P&L directly under net worth',
+        'More menu decluttered — Glance (replaced by Insights) and Subs (replaced by Recurring) removed'
       ],
       fixes:[
-        'Root cause of the persistent 402 errors: FMP moved real-time quotes to paid plans. The app now uses the free EOD endpoint instead — no more upgrade prompts'
+        'Dashboard sub-line now colour-codes portfolio gain/loss'
+      ]
+    }
+  },
+  {
+    v:'1.7.0',
+    date:'2026-06-28',
+    title:'What\'s New popup fixed & Force refresh',
+    sections:{
+      features:[
+        'New "Force refresh" button in Settings ▸ Update history — clears the offline cache and reloads if a version update ever gets stuck again'
+      ],
+      improvements:[
+        'HTML now loads network-first, so version updates appear on your next launch instead of two launches later'
+      ],
+      fixes:[
+        'Root cause of the missed "What\'s New" popups: the service worker was serving cached HTML before the new version could load. Now fixed'
       ]
     }
   },
@@ -1918,6 +1971,7 @@ function launchApp(){
   buildDash();buildStaticTimeline();buildAiWelcome();buildThemeGrid();buildSettingsPage();
   if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
   scheduleLocalNotifs();
+  initContextPanel();
   // What's New popup — once per version (Priority 2 & 3)
   maybeShowWhatsNew();
 }
@@ -1951,6 +2005,26 @@ function dismissWhatsNew(){
   S.lastSeenVersion=APP_VERSION;save();
   const m=document.getElementById('whatsnew-modal');if(m)m.classList.remove('open');
 }
+// Force-refresh — clears service worker cache and reloads. Use when a version update
+// seems stuck. Preserves localStorage (your financial data) since that's independent.
+async function forceRefreshApp(){
+  if(!confirm('Force-refresh the app? This clears the offline cache and reloads. Your data is preserved.'))return;
+  showToast('Clearing cache…');
+  try{
+    if('serviceWorker'in navigator){
+      const regs=await navigator.serviceWorker.getRegistrations();
+      // Tell the SW to clear caches, then unregister
+      regs.forEach(r=>{if(r.active)r.active.postMessage('CLEAR_CACHE_AND_RELOAD');});
+      // Belt and braces: also unregister directly
+      await Promise.all(regs.map(r=>r.unregister()));
+    }
+    if('caches'in window){
+      const keys=await caches.keys();
+      await Promise.all(keys.map(k=>caches.delete(k)));
+    }
+  }catch(e){console.warn('Cache clear error:',e);}
+  setTimeout(()=>location.reload(true),300);
+}
 // Manually re-openable from Settings
 function showWhatsNewManual(){
   renderWhatsNew([CHANGELOG[0]]);
@@ -1961,6 +2035,82 @@ function applyUiPrefs(){
   const osReduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   document.body.classList.toggle('reduce-motion',!!S.uiPrefs.reduceMotion||osReduce);
   document.body.classList.toggle('compact',!!S.uiPrefs.compact);
+}
+
+// ═══════════════════════════════════════════════════════════
+// PERSISTENT CONTEXT PANEL (v1.8.0)
+// Slides up when the user scrolls up (or reaches top), hides when scrolling down.
+// Shows the 3 most important "at a glance" numbers, tappable to jump to the source page.
+// ═══════════════════════════════════════════════════════════
+let _ctxLastScroll=0;let _ctxHideTimer=null;
+function initContextPanel(){
+  const sc=document.getElementById('scrl');if(!sc)return;
+  renderContextPanel();
+  _ctxLastScroll=sc.scrollTop;
+  sc.addEventListener('scroll',()=>{
+    const cur=sc.scrollTop;
+    const delta=cur-_ctxLastScroll;
+    // Only react to real scroll movements
+    if(Math.abs(delta)<4){_ctxLastScroll=cur;return;}
+    if(delta<0||cur<20){
+      // Scrolling up OR near top → show
+      showContextPanel();
+    }else if(delta>0){
+      // Scrolling down → hide
+      hideContextPanel();
+    }
+    _ctxLastScroll=cur;
+  },{passive:true});
+}
+function showContextPanel(){
+  const p=document.getElementById('ctx-panel');if(!p)return;
+  renderContextPanel(); // refresh values every show
+  p.classList.add('on');
+  document.body.classList.add('ctx-showing');
+  // Auto-hide after 5s of no scroll activity
+  if(_ctxHideTimer)clearTimeout(_ctxHideTimer);
+  _ctxHideTimer=setTimeout(hideContextPanel,5000);
+}
+function hideContextPanel(){
+  const p=document.getElementById('ctx-panel');if(!p)return;
+  p.classList.remove('on');
+  document.body.classList.remove('ctx-showing');
+  if(_ctxHideTimer){clearTimeout(_ctxHideTimer);_ctxHideTimer=null;}
+}
+function renderContextPanel(){
+  const rowsEl=document.getElementById('ctx-rows');if(!rowsEl)return;
+  const items=[];
+  // 1. Undistributed pay across both sources
+  if(typeof pendingIncome==='function'){
+    const ft=pendingIncome('fulltime'),km=pendingIncome('kmart');
+    const total=[...ft,...km].reduce((a,t)=>a+t.amt,0);
+    if(total>0){items.push({dot:'var(--y)',label:'Undistributed pay',val:fmtD(total),cls:'hi',action:"showPgFromMore('payday')"});}
+  }
+  // 2. Pending bills due today or overdue
+  const pend=S.pendingTxns||[];const todayStr=today();
+  const due=pend.filter(p=>p.dueDate&&p.dueDate<=todayStr);
+  if(due.length){
+    const tot=due.reduce((a,p)=>a+(p.dir==='in'?0:p.amount),0);
+    items.push({dot:'var(--y)',label:`Bills due (${due.length})`,val:'−'+fmtD(tot),cls:'hi',action:"showPgFromMore('recurring')"});
+  }
+  // 3. Weekly spend vs budget
+  const ws=weekSpend(),wb=S.sliders?.spend||0;
+  if(wb>0){
+    const over=ws>wb;const near=!over&&ws>wb*0.85;
+    items.push({dot:over?'var(--r)':near?'var(--y)':'var(--acc)',label:'This week',val:fmtD(ws)+'/'+fmtD(wb),cls:over?'hi':near?'hi':'ok',action:"showPgFromMore('analytics')"});
+  }
+  // 4. Net worth — always show as the anchor
+  const nw=portTotal()+calcBal('westpac')+calcBal('macquarie');
+  items.push({dot:'var(--t3)',label:'Net worth',val:fmtD(nw),cls:'dim',action:"showPgFromMore('debts')"});
+  // Take top 3 (net worth stays at position 4 → shows if fewer than 3 alerts)
+  const top=items.slice(0,3);
+  const alerts=top.filter(x=>x.cls==='hi').length;
+  const ctxCount=document.getElementById('ctx-count');
+  if(ctxCount){
+    if(alerts>0){ctxCount.textContent=alerts+' need attention';ctxCount.classList.remove('q');}
+    else{ctxCount.textContent='all quiet';ctxCount.classList.add('q');}
+  }
+  rowsEl.innerHTML=top.map(it=>`<div class="ctx-row" onclick="${it.action}"><div class="ctx-l"><span class="ctx-dot" style="background:${it.dot}"></span>${it.label}</div><div class="ctx-v" style="color:${it.cls==='hi'?'var(--y)':it.cls==='ok'?'var(--acc)':it.cls==='dim'?'var(--t2)':'var(--t)'}">${it.val}</div></div>`).join('');
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1979,6 +2129,10 @@ function showPg(id,btn){
   currentPg=id;
   // Floating Add Transaction button — only on the Transactions page
   document.body.classList.toggle('fab-visible',id==='txns');
+  // Context panel: refresh values on every page change, and briefly show it as an
+  // orientation hint after switching (auto-hides via the same 5s timer)
+  if(typeof renderContextPanel==='function')renderContextPanel();
+  if(typeof showContextPanel==='function')showContextPanel();
   if(id==='dash')buildDash();
   if(id==='txns')buildTxnsPage();
   if(id==='goals')buildGoalsPage();
@@ -2028,6 +2182,9 @@ function showPgFromMore(id){
   currentPg=id;
   // FAB never shown from More sheet (Transactions is a bottom-nav destination)
   document.body.classList.remove('fab-visible');
+  // Refresh + briefly show context panel on page change
+  if(typeof renderContextPanel==='function')renderContextPanel();
+  if(typeof showContextPanel==='function')showContextPanel();
   if(id==='invest')buildInvestPage();
   if(id==='timeline')buildTimeline();
   if(id==='budget'){upAll();buildBudgetActual();}
@@ -2353,6 +2510,7 @@ function refreshAfterChange(){
   if(currentPg==='txns')buildTxnsPage();
   if(currentPg==='recurring')buildRecurringPage();
   if(currentPg==='budget')buildBudgetActual();
+  if(typeof renderContextPanel==='function')renderContextPanel();
 }
 
 // ── Pending balance widget (current vs after) ────────────────
@@ -3208,7 +3366,17 @@ function buildDash(){
   buildDashBriefing();
   const pt=portTotal(),wp=calcBal('westpac'),mq=calcBal('macquarie'),nw=pt+wp+mq;
   document.getElementById('d-nw').textContent=fmtD(nw);
-  document.getElementById('d-nw-sub').textContent=`Portfolio ${fmtDI(pt)} · Westpac ${fmtD(wp)} · Macquarie ${fmtD(mq)}`;
+  // Sub line: portfolio P&L is the most personally meaningful metric
+  const pnl=(typeof portPnl==='function')?portPnl():0;
+  const pnlPct=(typeof portPnlPct==='function')?portPnlPct():0;
+  const subEl=document.getElementById('d-nw-sub');
+  if(pt>0){
+    const sign=pnl>=0?'+':'';
+    subEl.innerHTML=`<span style="color:${pnl>=0?'var(--acc)':'var(--r)'}">${sign}${fmtD(pnl)} · ${sign}${pnlPct.toFixed(2)}% portfolio</span>`;
+  }else{
+    subEl.textContent=`Westpac ${fmtD(wp)} · Macquarie ${fmtD(mq)}`;
+  }
+  if(typeof renderContextPanel==='function')renderContextPanel();
   const inc=monthIncome(),spent=monthSpend(),inv=monthInv(),sr=inc>0?Math.round((inc-spent)/inc*100):0;
   const mVar=monthVariableSpend(),mFix=monthFixedSpend(),varBudget=Math.round(S.sliders.spend*4.33);
   document.getElementById('d-metrics').innerHTML=`<div class="met"><div class="ml">Variable spend</div><div class="mv ${mVar>varBudget?'col-r':'col-y'}">${fmtDI(mVar)}</div><div class="ms">vs ${fmtDI(varBudget)} budget</div></div><div class="met"><div class="ml">Fixed spend</div><div class="mv col-b">${fmtDI(mFix)}</div><div class="ms">rent, bills, subs</div></div><div class="met"><div class="ml">Savings rate</div><div class="mv ${sr>=30?'col-acc':sr>=20?'col-y':'col-r'}">${sr}%</div></div><div class="met"><div class="ml">Portfolio</div><div class="mv">${fmtDI(pt)}</div><div class="ms">+${fmtDI(annDiv())}/yr divs</div></div>`;
