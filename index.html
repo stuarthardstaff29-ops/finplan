@@ -1183,9 +1183,11 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
   <div style="display:flex;gap:7px;margin-top:4px"><button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeModal('rec-modal')">Cancel</button><button class="btn btn-acc" style="flex:2" onclick="saveRecurring()">Save</button></div>
 </div></div>
 
-<div class="overlay" id="bal-modal"><div class="modal"><div class="modal-handle"></div><div class="modal-title" id="bal-title">Edit balance</div>
-  <div class="alert-b" style="margin-bottom:12px;font-size:12px;line-height:1.55">Set the real-world starting balance. Recorded transactions apply on top of this.</div>
-  <label class="lbl">Starting balance $</label><input type="number" class="inp" id="bal-inp" placeholder="0.00" step="0.01">
+<div class="overlay" id="bal-modal"><div class="modal"><div class="modal-handle"></div><div class="modal-title" id="bal-title">Set current balance</div>
+  <div class="alert alert-b" style="margin-bottom:12px;font-size:12px;line-height:1.55">Enter your <strong>actual current balance</strong> shown in the bank app. The app will recalculate the starting balance so recorded transactions add up correctly.</div>
+  <div id="bal-current-preview" style="font-size:11px;color:var(--t3);margin-bottom:8px;padding:8px 10px;background:var(--bg3);border-radius:8px"></div>
+  <label class="lbl">Actual current balance $</label><input type="number" class="inp" id="bal-inp" placeholder="0.00" step="0.01">
+  <details style="margin:8px 0"><summary style="font-size:10px;color:var(--t3);cursor:pointer">Advanced — edit starting balance directly</summary><div style="font-size:11px;color:var(--t3);line-height:1.5;margin-top:6px">Toggle this to enter the balance at the very start of your recorded history instead of the current balance.</div><label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11px;color:var(--t2)"><input type="checkbox" id="bal-mode-starting" onchange="updateBalancePreview()"> I want to set the starting balance instead</label></details>
   <div style="display:flex;gap:7px"><button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeModal('bal-modal')">Cancel</button><button class="btn btn-acc" style="flex:2" onclick="saveBalance()">Save</button></div>
 </div></div>
 
@@ -1402,9 +1404,24 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.0.0';
+const APP_VERSION='2.0.1';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.0.1',
+    date:'2026-07-11',
+    title:'Set current balance directly',
+    sections:{
+      features:[
+        'Balance edit modal now accepts your ACTUAL current balance from the bank — the app back-solves the starting balance so everything reconciles',
+        'Preview shows the current calculated balance before you edit, so you can see the mismatch',
+        'Advanced toggle to fall back to editing the starting balance directly if needed'
+      ],
+      fixes:[
+        'Fixes the "imported CSV goes back further than starting balance" mismatch — just enter your real current balance and everything lines up'
+      ]
+    }
+  },
   {
     v:'2.0.0',
     date:'2026-07-11',
@@ -2312,8 +2329,58 @@ function deleteRecurring(id){S.recurring=S.recurring.filter(r=>r.id!==id);save()
 // ═══════════════════════════════════════════════════════════
 // BALANCE MODAL
 // ═══════════════════════════════════════════════════════════
-function openBalModal(acct){S.editingBalAcct=acct;document.getElementById('bal-title').textContent=`Edit ${acct==='westpac'?'Westpac':'Macquarie'} starting balance`;document.getElementById('bal-inp').value=S.acctBalances[acct]||0;openModal('bal-modal');}
-function saveBalance(){S.acctBalances[S.editingBalAcct]=parseFloat(document.getElementById('bal-inp').value)||0;closeModal('bal-modal');snapshotNW();save();buildSettingsPage();if(currentPg==='txns')buildAcctHero();if(currentPg==='dash')buildDash();}
+function openBalModal(acct){
+  S.editingBalAcct=acct;
+  document.getElementById('bal-title').textContent=`Set ${acct==='westpac'?'Westpac':'Macquarie'} balance`;
+  // Show the CURRENT calculated balance and pre-fill the input with it
+  const currentBal=calcBal(acct);
+  const inp=document.getElementById('bal-inp');
+  inp.value=(Math.round(currentBal*100)/100).toFixed(2);
+  const modeChk=document.getElementById('bal-mode-starting');if(modeChk)modeChk.checked=false;
+  updateBalancePreview();
+  openModal('bal-modal');
+  setTimeout(()=>{inp.focus();inp.select();},50);
+}
+function updateBalancePreview(){
+  const acct=S.editingBalAcct;if(!acct)return;
+  const el=document.getElementById('bal-current-preview');if(!el)return;
+  const currentBal=calcBal(acct);
+  const startingBal=S.acctBalances[acct]||0;
+  const txnCount=(S.transactions||[]).filter(t=>t.acct===acct).length;
+  const modeChk=document.getElementById('bal-mode-starting');
+  const isStarting=modeChk&&modeChk.checked;
+  if(isStarting){
+    el.innerHTML=`<div>Starting balance: <strong style="color:var(--t)">${fmtD(startingBal)}</strong></div>
+      <div style="margin-top:2px">Current calculated balance: <strong style="color:${currentBal<0?'var(--r)':'var(--t)'}">${fmtD(currentBal)}</strong></div>
+      <div style="margin-top:2px;color:var(--t3);font-size:10px">Setting the starting balance changes the anchor from which ${txnCount} transaction${txnCount===1?'':'s'} are calculated.</div>`;
+  }else{
+    el.innerHTML=`<div>Currently showing: <strong style="color:${currentBal<0?'var(--r)':'var(--t)'}">${fmtD(currentBal)}</strong></div>
+      <div style="margin-top:2px;color:var(--t3);font-size:10px">The app has ${txnCount} recorded transaction${txnCount===1?'':'s'} on this account. Setting the current balance will adjust the starting balance so everything reconciles.</div>`;
+  }
+}
+function saveBalance(){
+  const acct=S.editingBalAcct;if(!acct)return;
+  const input=parseFloat(document.getElementById('bal-inp').value);
+  if(isNaN(input)){alert('Enter a valid number.');return;}
+  const isStarting=(document.getElementById('bal-mode-starting')||{}).checked;
+  if(isStarting){
+    // Direct: set the starting balance
+    S.acctBalances[acct]=input;
+  }else{
+    // Back-solve: desired_current = starting + sum_of_txns + net_transfers
+    //   → starting = desired_current − (sum_of_txns + net_transfers)
+    //   which equals: starting = desired_current − (currentBal − starting_old)
+    //   i.e. new_starting = starting_old + (desired_current − currentBal)
+    const currentBal=calcBal(acct);
+    const oldStart=S.acctBalances[acct]||0;
+    const delta=input-currentBal;
+    S.acctBalances[acct]=Math.round((oldStart+delta)*100)/100;
+  }
+  closeModal('bal-modal');snapshotNW();save();buildSettingsPage();
+  if(currentPg==='txns')buildAcctHero();
+  if(currentPg==='dash')buildDash();
+  showToast(`${acct==='westpac'?'Westpac':'Macquarie'} balance set to ${fmtD(input)}`);
+}
 
 // ═══════════════════════════════════════════════════════════
 // MODAL HELPERS
