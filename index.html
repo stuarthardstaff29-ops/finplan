@@ -63,6 +63,18 @@ body{display:flex;flex-direction:column;position:fixed;width:100%;height:100%;ba
 /* WHAT'S NEW MODAL */
 .whatsnew-modal{text-align:left}
 .wn-badge{display:inline-block;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#001a13;font-family:var(--mono);font-weight:700;font-size:12px;padding:4px 12px;border-radius:20px;margin-bottom:12px;box-shadow:0 2px 12px var(--accd2)}
+
+/* Persistent update banner — guaranteed visible even if modal fails */
+.update-banner{background:linear-gradient(90deg,var(--acc)22,var(--acc2)22);border:1px solid var(--acc);border-radius:12px;padding:11px 14px;margin:10px 14px 0;display:flex;align-items:center;gap:10px;cursor:pointer;transition:transform .15s;position:relative;overflow:hidden}
+.update-banner:active{transform:scale(.98)}
+.update-banner::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--acc)}
+.update-banner-emoji{font-size:22px;flex-shrink:0}
+.update-banner-body{flex:1;min-width:0}
+.update-banner-t{font-size:12px;font-weight:700;color:var(--t);line-height:1.3}
+.update-banner-s{font-size:10px;color:var(--t2);margin-top:1px;line-height:1.4}
+.update-banner-arrow{color:var(--acc);font-size:16px;flex-shrink:0}
+.update-banner-x{background:transparent;border:none;color:var(--t3);font-size:16px;cursor:pointer;padding:2px 6px;line-height:1;flex-shrink:0}
+.update-banner-x:hover{color:var(--t)}
 .wn-title{font-family:var(--display);font-size:24px;font-weight:800;color:var(--t);letter-spacing:-.5px;margin-bottom:18px;line-height:1.1}
 .wn-vhead{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--bdr)}
 .wn-section{margin-bottom:16px}
@@ -615,6 +627,8 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
       </button>
     </div>
   </div>
+
+  <div id="update-banner"></div>
 
   <div class="scrl" id="scrl">
 
@@ -1405,9 +1419,28 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.0.3';
+const APP_VERSION='2.0.4';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.0.4',
+    date:'2026-07-11',
+    title:'Update notifications you can\'t miss',
+    sections:{
+      features:[
+        'Persistent update banner at the top of the app — shows whenever there\'s a new version, impossible to miss',
+        'Banner is tappable to view the changelog, with an ✕ to dismiss when you\'re done',
+        'Modal popup still tries to auto-open too, so you get both — but the banner is the guaranteed-visible one'
+      ],
+      improvements:[
+        'Update banner shows how many versions you\'re behind if you\'ve missed several',
+        'Reset "What\'s New" from Settings now instantly brings back the banner (no need to relaunch)'
+      ],
+      fixes:[
+        'Fixes the persistent popup issue: the banner is a normal DOM element, not a modal — no timing, z-index, or service worker complications can hide it'
+      ]
+    }
+  },
   {
     v:'2.0.3',
     date:'2026-07-11',
@@ -2026,59 +2059,64 @@ function launchApp(){
   syncSliderUI();snapshotNW();
   generatePendingFromRules();
   buildDash();buildStaticTimeline();buildAiWelcome();buildThemeGrid();buildSettingsPage();
-  // Service worker: register AND listen for updates. When a new SW takes control,
-  // reload so the fresh HTML (with the correct APP_VERSION) loads and the popup
-  // check runs against the right version.
-  if('serviceWorker'in navigator){
-    navigator.serviceWorker.register('./sw.js').then(reg=>{
-      // When a new SW is found, install & activate it
-      reg.addEventListener('updatefound',()=>{
-        const nw=reg.installing;if(!nw)return;
-        nw.addEventListener('statechange',()=>{
-          if(nw.state==='activated'&&navigator.serviceWorker.controller){
-            // Already have a controller and a new SW just activated — reload once to pick up fresh HTML
-            if(!sessionStorage.getItem('finplan-reloaded-for-sw')){
-              sessionStorage.setItem('finplan-reloaded-for-sw','1');
-              location.reload();
-            }
-          }
-        });
-      });
-      // Also check for updates now (belt-and-braces)
-      reg.update().catch(()=>{});
-    }).catch(()=>{});
-    // If the controlling SW changes (new version took over), reload once so we run under it
-    let _swReloaded=false;
-    navigator.serviceWorker.addEventListener('controllerchange',()=>{
-      if(_swReloaded)return;
-      _swReloaded=true;
-      if(!sessionStorage.getItem('finplan-reloaded-for-sw')){
-        sessionStorage.setItem('finplan-reloaded-for-sw','1');
-        location.reload();
-      }
-    });
-  }
-  // Clear the reload flag on next full launch so future updates work
-  setTimeout(()=>{sessionStorage.removeItem('finplan-reloaded-for-sw');},2000);
   scheduleLocalNotifs();
   initContextPanel();
-  // What's New popup — once per version (Priority 2 & 3)
+  // What's New popup + persistent banner
   maybeShowWhatsNew();
 }
 // ── What's New popup ─────────────────────────────────────────
 function maybeShowWhatsNew(){
-  // If lastSeenVersion is somehow >= the current version (e.g. from a rollback), don't show.
-  // But if we've never seen it OR it's an older version, show.
+  // Always render the banner state (in or out) based on version comparison
+  renderUpdateBanner();
+  // If nothing new to see, return
   const last=S.lastSeenVersion;
-  if(last===APP_VERSION)return; // already acknowledged current version
+  if(last===APP_VERSION)return;
   const entries=changelogSince(last);
-  if(!entries.length){
-    // No changelog entries strictly newer than lastSeenVersion. But we're on a version we haven't seen.
-    // This can happen if the changelog is out of order — bump lastSeenVersion silently.
-    S.lastSeenVersion=APP_VERSION;save();return;
-  }
+  if(!entries.length){S.lastSeenVersion=APP_VERSION;save();renderUpdateBanner();return;}
+  // Also try to auto-open the modal (as before). Even if this fails silently for any reason,
+  // the banner at the top of the app is the guaranteed-visible fallback.
   renderWhatsNew(entries);
   setTimeout(()=>{const m=document.getElementById('whatsnew-modal');if(m)m.classList.add('open');},700);
+}
+
+// Persistent banner — shows whenever APP_VERSION differs from S.lastSeenVersion.
+// Impossible to miss and impossible to fail: no modal, no timers, no z-index games.
+function renderUpdateBanner(){
+  const el=document.getElementById('update-banner');if(!el)return;
+  const last=S.lastSeenVersion;
+  if(last===APP_VERSION){el.innerHTML='';return;}
+  const latest=CHANGELOG[0];const versionsBehind=(()=>{
+    if(!last)return CHANGELOG.length;
+    const idx=CHANGELOG.findIndex(c=>c.v===last);
+    return idx===-1?CHANGELOG.length:idx;
+  })();
+  const label=versionsBehind>1?`${versionsBehind} updates since you last checked`:`New — v${latest.v}`;
+  el.innerHTML=`<div class="update-banner" onclick="openWhatsNewFromBanner()">
+    <div class="update-banner-emoji">🎉</div>
+    <div class="update-banner-body">
+      <div class="update-banner-t">${label}</div>
+      <div class="update-banner-s">${latest.title}</div>
+    </div>
+    <div class="update-banner-arrow">→</div>
+    <button class="update-banner-x" onclick="event.stopPropagation();dismissUpdateBanner()" title="Dismiss">✕</button>
+  </div>`;
+}
+
+function openWhatsNewFromBanner(){
+  const entries=changelogSince(S.lastSeenVersion);
+  const toShow=entries.length?entries:CHANGELOG.slice(0,5);
+  renderWhatsNew(toShow);
+  const m=document.getElementById('whatsnew-modal');
+  if(m){m.classList.add('open');}
+  else{
+    // Fallback if the modal element got removed somehow
+    alert('What\'s New in v'+CHANGELOG[0].v+': '+CHANGELOG[0].title);
+    dismissUpdateBanner();
+  }
+}
+function dismissUpdateBanner(){
+  S.lastSeenVersion=APP_VERSION;save();
+  renderUpdateBanner();
 }
 function renderWhatsNew(entries){
   const latest=entries[0];
@@ -2101,6 +2139,7 @@ function renderWhatsNew(entries){
 function dismissWhatsNew(){
   S.lastSeenVersion=APP_VERSION;save();
   const m=document.getElementById('whatsnew-modal');if(m)m.classList.remove('open');
+  renderUpdateBanner();
 }
 // Force-refresh — clears service worker cache and reloads. Use when a version update
 // seems stuck. Preserves localStorage (your financial data) since that's independent.
@@ -2131,7 +2170,8 @@ function showWhatsNewManual(){
 // Wipe lastSeenVersion so the popup will fire again on next launch. Also useful for debugging.
 function resetWhatsNewSeen(){
   S.lastSeenVersion=null;save();
-  showToast('What\'s New will show on next app launch');
+  renderUpdateBanner();
+  showToast('Update banner reset — see it at the top of your screen');
 }
 function applyUiPrefs(){
   if(!S.uiPrefs)S.uiPrefs={reduceMotion:false,compact:false};
@@ -6716,7 +6756,29 @@ setTimeout(()=>{
   sp.style.transition='opacity .5s ease';sp.style.opacity='0';
   setTimeout(()=>{sp.style.display='none';if(!S.setupDone){showSetup();}else{launchApp();}},500);
 },2500);
-if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+if('serviceWorker'in navigator){
+  navigator.serviceWorker.register('./sw.js').then(reg=>{
+    reg.addEventListener('updatefound',()=>{
+      const nw=reg.installing;if(!nw)return;
+      nw.addEventListener('statechange',()=>{
+        if(nw.state==='activated'&&navigator.serviceWorker.controller){
+          if(!sessionStorage.getItem('finplan-reloaded-for-sw')){
+            sessionStorage.setItem('finplan-reloaded-for-sw','1');
+            location.reload();
+          }
+        }
+      });
+    });
+    reg.update().catch(()=>{});
+  }).catch(()=>{});
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(!sessionStorage.getItem('finplan-reloaded-for-sw')){
+      sessionStorage.setItem('finplan-reloaded-for-sw','1');
+      location.reload();
+    }
+  });
+  setTimeout(()=>{sessionStorage.removeItem('finplan-reloaded-for-sw');},3000);
+}
 </script>
 </body>
 </html>
