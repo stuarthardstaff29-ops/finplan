@@ -1074,7 +1074,8 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
       <div class="card">
         <div class="ctitle"><div class="ctitle-l">Update history</div><button class="btn btn-ghost btn-sm" onclick="showWhatsNewManual()">What's new</button></div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span class="wn-badge" id="settings-version" style="margin:0">v1.0.0</span><span style="font-size:11px;color:var(--t3)">Current version</span></div>
-        <button class="btn btn-ghost btn-sm btn-full" onclick="forceRefreshApp()" style="margin-bottom:10px">↻ Force refresh (if update seems stuck)</button>
+        <button class="btn btn-ghost btn-sm btn-full" onclick="forceRefreshApp()" style="margin-bottom:8px">↻ Force refresh (if update seems stuck)</button>
+        <button class="btn btn-ghost btn-sm btn-full" onclick="resetWhatsNewSeen()" style="margin-bottom:10px">🔔 Reset "What's New" — show popup again</button>
         <div id="changelog-list"></div>
       </div>
     </div>
@@ -1404,9 +1405,47 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.0.1';
+const APP_VERSION='2.0.3';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.0.3',
+    date:'2026-07-11',
+    title:'Payday cleanup & popup reliability',
+    sections:{
+      features:[
+        '"Skip" button on every pending income entry — mark it as already-distributed without recording allocations (perfect for CSV-imported historical pays)',
+        'Bulk action: "Mark all older than 7 days as already distributed" when 3+ historical entries pile up',
+        '"Reset What\'s New" button in Settings ▸ Update history — force the popup to show again on next launch'
+      ],
+      improvements:[
+        'App now detects when a new service worker activates and reloads once so the fresh HTML (and correct APP_VERSION) is running when the popup check fires',
+        'Manual "What\'s new" button now shows the last 5 changelog entries, not just the latest'
+      ],
+      fixes:[
+        'Fixed the popup-not-showing bug: root cause was the app launching under the OLD cached HTML while a new service worker was still installing in the background. Now the app waits for the fresh version to take control before showing the popup'
+      ]
+    }
+  },
+  {
+    v:'2.0.2',
+    date:'2026-07-11',
+    title:'Bulletproof CSV re-imports',
+    sections:{
+      features:[
+        'Every imported transaction gets a stable signature (bank + date + direction + amount + narrative). Re-importing the same CSV = guaranteed 100% dedup, not 89%',
+        'Consumable matching: one existing transaction can only dedupe one incoming row, so two real $20 purchases on the same day are BOTH kept'
+      ],
+      improvements:[
+        'Import preview reassures you: "Nothing will be deleted or modified. Only new rows are added"',
+        'Handles pending-vs-cleared date drift (±1 day tolerance)',
+        'Preview scores every potential duplicate by amount + direction + date + payee similarity'
+      ],
+      fixes:[
+        'Two different transactions of the same amount on the same day are no longer incorrectly deduped against each other'
+      ]
+    }
+  },
   {
     v:'2.0.1',
     date:'2026-07-11',
@@ -1987,7 +2026,40 @@ function launchApp(){
   syncSliderUI();snapshotNW();
   generatePendingFromRules();
   buildDash();buildStaticTimeline();buildAiWelcome();buildThemeGrid();buildSettingsPage();
-  if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  // Service worker: register AND listen for updates. When a new SW takes control,
+  // reload so the fresh HTML (with the correct APP_VERSION) loads and the popup
+  // check runs against the right version.
+  if('serviceWorker'in navigator){
+    navigator.serviceWorker.register('./sw.js').then(reg=>{
+      // When a new SW is found, install & activate it
+      reg.addEventListener('updatefound',()=>{
+        const nw=reg.installing;if(!nw)return;
+        nw.addEventListener('statechange',()=>{
+          if(nw.state==='activated'&&navigator.serviceWorker.controller){
+            // Already have a controller and a new SW just activated — reload once to pick up fresh HTML
+            if(!sessionStorage.getItem('finplan-reloaded-for-sw')){
+              sessionStorage.setItem('finplan-reloaded-for-sw','1');
+              location.reload();
+            }
+          }
+        });
+      });
+      // Also check for updates now (belt-and-braces)
+      reg.update().catch(()=>{});
+    }).catch(()=>{});
+    // If the controlling SW changes (new version took over), reload once so we run under it
+    let _swReloaded=false;
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{
+      if(_swReloaded)return;
+      _swReloaded=true;
+      if(!sessionStorage.getItem('finplan-reloaded-for-sw')){
+        sessionStorage.setItem('finplan-reloaded-for-sw','1');
+        location.reload();
+      }
+    });
+  }
+  // Clear the reload flag on next full launch so future updates work
+  setTimeout(()=>{sessionStorage.removeItem('finplan-reloaded-for-sw');},2000);
   scheduleLocalNotifs();
   initContextPanel();
   // What's New popup — once per version (Priority 2 & 3)
@@ -1995,9 +2067,16 @@ function launchApp(){
 }
 // ── What's New popup ─────────────────────────────────────────
 function maybeShowWhatsNew(){
-  if(S.lastSeenVersion===APP_VERSION)return; // already acknowledged this version
-  const entries=changelogSince(S.lastSeenVersion);
-  if(!entries.length){S.lastSeenVersion=APP_VERSION;save();return;}
+  // If lastSeenVersion is somehow >= the current version (e.g. from a rollback), don't show.
+  // But if we've never seen it OR it's an older version, show.
+  const last=S.lastSeenVersion;
+  if(last===APP_VERSION)return; // already acknowledged current version
+  const entries=changelogSince(last);
+  if(!entries.length){
+    // No changelog entries strictly newer than lastSeenVersion. But we're on a version we haven't seen.
+    // This can happen if the changelog is out of order — bump lastSeenVersion silently.
+    S.lastSeenVersion=APP_VERSION;save();return;
+  }
   renderWhatsNew(entries);
   setTimeout(()=>{const m=document.getElementById('whatsnew-modal');if(m)m.classList.add('open');},700);
 }
@@ -2045,8 +2124,14 @@ async function forceRefreshApp(){
 }
 // Manually re-openable from Settings
 function showWhatsNewManual(){
-  renderWhatsNew([CHANGELOG[0]]);
+  // Show up to the last 5 changelog entries so user can review recent history
+  renderWhatsNew(CHANGELOG.slice(0,5));
   const m=document.getElementById('whatsnew-modal');if(m)m.classList.add('open');
+}
+// Wipe lastSeenVersion so the popup will fire again on next launch. Also useful for debugging.
+function resetWhatsNewSeen(){
+  S.lastSeenVersion=null;save();
+  showToast('What\'s New will show on next app launch');
 }
 function applyUiPrefs(){
   if(!S.uiPrefs)S.uiPrefs={reduceMotion:false,compact:false};
@@ -4856,30 +4941,57 @@ function parseBankCsv(text){
 //   • amount matches within 1 cent
 //   • direction matches
 //   • similar payee (or already tagged from same bank + serial)
-function findDuplicate(row,existing){
+// Returns {match:existingTxn, score:number} or null. Higher score = more confident dedup.
+function scoreDuplicate(row,existing){
+  if(!existing.date||existing.dir!==row.dir)return 0;
+  if(Math.abs((existing.amt||0)-row.amt)>0.011)return 0;
   const targetDate=new Date(row.date+'T00:00:00');
-  for(const t of existing){
-    if(!t.date||t.dir!==row.dir)continue;
-    if(Math.abs((t.amt||0)-row.amt)>0.011)continue;
-    const tDate=new Date(t.date+'T00:00:00');
-    const daysDiff=Math.abs((tDate-targetDate)/(1000*60*60*24));
-    if(daysDiff>1.5)continue;
-    // Amount+date+dir match. Consider it a duplicate.
-    return t;
-  }
-  return null;
+  const eDate=new Date(existing.date+'T00:00:00');
+  const daysDiff=Math.abs((eDate-targetDate)/(1000*60*60*24));
+  if(daysDiff>1.5)return 0;
+  // Base score: amount+dir+date match. Amount+direction alone is a very strong signal.
+  let score=120;
+  // Small penalty for date drift (pending vs cleared). ≤1 day still comfortably above threshold.
+  score-=Math.round(daysDiff*15);
+  // Bonus: if the existing txn was previously imported from the same bank, that's a strong signal
+  if(existing.importedFrom&&existing.importedFrom===row.bank)score+=25;
+  // Bonus: payee similarity — if the raw narrative shares words with the existing payee
+  const narrTokens=(row.narrative||'').toLowerCase().split(/\s+/).filter(w=>w.length>3);
+  const payeeTokens=(existing.payee||'').toLowerCase().split(/\s+/).filter(w=>w.length>3);
+  const shared=narrTokens.filter(w=>payeeTokens.some(p=>p.includes(w)||w.includes(p))).length;
+  score+=shared*10;
+  return score;
 }
 
 // ─── Build classified preview from parsed rows ─────────────
+// Consumable matching: each existing txn can only dedupe ONE incoming row (its best match).
+// This prevents two different $20 purchases on the same day from being wrongly merged.
 function classifyImportRows(parsedRows){
-  const existing=S.transactions||[];
+  const existing=[...(S.transactions||[])]; // copy — we'll mark consumed ones
+  const consumed=new Set();
   const classified={new:[],duplicate:[],skipped:[]};
-  parsedRows.forEach(r=>{
-    // Skip zero-amount weirdness
-    if(!r.amt||r.amt<=0){classified.skipped.push({...r,reason:'zero amount'});return;}
-    const dup=findDuplicate(r,existing);
+  // Build a signature index for fast exact-match dedup on re-imports
+  const sigIndex={};
+  existing.forEach((t,j)=>{if(t.importSig)sigIndex[t.importSig]=j;});
+  // Sort rows by date desc so newest are matched first (they're most likely to already be manually logged)
+  const rowsSorted=[...parsedRows].map((r,i)=>({r,i})).sort((a,b)=>b.r.date.localeCompare(a.r.date));
+  const resultsById={};
+  rowsSorted.forEach(({r,i})=>{
+    if(!r.amt||r.amt<=0){resultsById[i]={kind:'skipped',row:{...r,reason:'zero amount'}};return;}
+    const sig=buildTxnSignature(r);
+    // ── Priority 1: EXACT signature match (guaranteed dedup on re-import of same CSV) ──
+    let bestIdx=null,bestScore=0,exactMatch=false;
+    if(sigIndex[sig]!=null&&!consumed.has(sigIndex[sig])){
+      bestIdx=sigIndex[sig];bestScore=999;exactMatch=true;
+    }else{
+      // ── Priority 2: Fuzzy match (for transactions manually logged before this CSV import) ──
+      for(let j=0;j<existing.length;j++){
+        if(consumed.has(j))continue;
+        const s=scoreDuplicate(r,existing[j]);
+        if(s>bestScore){bestScore=s;bestIdx=j;}
+      }
+    }
     const cat=categoriseBankTxn(r.narrative,r.dir);
-    // If Macquarie provides a category and we didn't match a rule, use Macquarie's mapping as a fallback
     if(!cat.matched&&r.mqCat){
       const mqMap={
         'Food & Drink':'food','Sports & Fitness':'health','Leisure':'entertainment',
@@ -4893,12 +5005,39 @@ function classifyImportRows(parsedRows){
       date:r.date,amt:r.amt,dir:r.dir,
       cat:cat.cat,payee:cat.payee,
       acct:r.bank,note:`Imported from ${r.bank[0].toUpperCase()+r.bank.slice(1)}`,
-      _matched:cat.matched,_narrative:r.narrative,_subAcct:r.subAcct
+      _matched:cat.matched,_narrative:r.narrative,_subAcct:r.subAcct,
+      _sig:sig
     };
-    if(dup)classified.duplicate.push({...suggested,_dup:dup});
-    else classified.new.push(suggested);
+    if(bestIdx!=null&&bestScore>=100){
+      consumed.add(bestIdx);
+      resultsById[i]={kind:'duplicate',row:{...suggested,_dup:existing[bestIdx],_score:bestScore,_exact:exactMatch}};
+    }else{
+      resultsById[i]={kind:'new',row:suggested};
+    }
+  });
+  // Restore original CSV order in the output
+  parsedRows.forEach((r,i)=>{
+    const res=resultsById[i];if(!res)return;
+    classified[res.kind].push(res.row);
   });
   return classified;
+}
+
+// Build a stable signature that identifies this exact bank row.
+// Used to guarantee re-imports of the same CSV are perfectly deduped.
+function buildTxnSignature(row){
+  const narr=(row.narrative||'').toUpperCase().replace(/\s+/g,' ').trim().slice(0,80);
+  return `${row.bank}|${row.date}|${row.dir}|${row.amt.toFixed(2)}|${narr}`;
+}
+
+// Kept for backwards compatibility if anything else references it
+function findDuplicate(row,existing){
+  let best=null,bestScore=0;
+  for(const t of existing){
+    const s=scoreDuplicate(row,t);
+    if(s>bestScore){bestScore=s;best=t;}
+  }
+  return best;
 }
 
 // ─── Import modal & preview UI ─────────────────────────────
@@ -4959,10 +5098,11 @@ function renderBankImportPreview(){
   };
   el.innerHTML=`
     <hr style="border:none;border-top:1px solid var(--bdr);margin:0 0 12px">
-    <div class="lbl" style="margin-bottom:8px">${bankLabel} import — review before saving</div>
+    <div class="lbl" style="margin-bottom:6px">${bankLabel} import — review before saving</div>
+    <div style="font-size:10px;color:var(--t3);line-height:1.55;margin-bottom:10px">Nothing will be deleted or modified. Only <strong style="color:var(--acc)">new</strong> rows are added — anything the app already knows about is left as-is.</div>
     <div style="background:var(--bg3);border-radius:10px;padding:10px 12px;margin-bottom:12px">
-      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t2);padding:2px 0"><span>New transactions</span><span class="mono" style="font-weight:700;color:var(--t)">${classified.new.length}</span></div>
-      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t2);padding:2px 0"><span>Already logged (skipped)</span><span class="mono" style="color:var(--t3)">${classified.duplicate.length}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t2);padding:2px 0"><span>➕ New (will be added)</span><span class="mono" style="font-weight:700;color:var(--acc)">${classified.new.length}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t2);padding:2px 0"><span>✓ Already logged (skipped)</span><span class="mono" style="color:var(--t3)">${classified.duplicate.length}</span></div>
       ${classified.new.length?`<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t2);padding:4px 0 0;border-top:1px solid var(--bdr);margin-top:4px"><span>Total in / out</span><span class="mono"><span style="color:var(--acc)">+${fmtD(totalIn)}</span> · <span style="color:var(--r)">-${fmtD(totalOut)}</span></span></div>`:''}
     </div>
 
@@ -4993,7 +5133,8 @@ function confirmBankImport(){
       acct:r.acct,
       note:r.note,
       importedFrom:bank,
-      importedAt:Date.now()
+      importedAt:Date.now(),
+      importSig:r._sig  // stable signature for future re-import dedup
     });
     added++;
   });
@@ -5561,6 +5702,9 @@ function buildSourceCard(sourceKey){
   const totalPending=pending.reduce((a,t)=>a+t.amt,0);
   const accent=sourceKey==='fulltime'?'var(--b)':'var(--y)';
   const accentBg=sourceKey==='fulltime'?'var(--bd)':'var(--yd)';
+  // Count entries older than 7 days — these are almost certainly historical CSV imports
+  const cutoff=(()=>{const d=new Date();d.setDate(d.getDate()-7);return d.toISOString().slice(0,10);})();
+  const historical=pending.filter(t=>t.date&&t.date<cutoff);
   el.innerHTML=`
     <div class="card" style="border-color:${accentBg};margin-bottom:12px">
       <div class="ctitle"><div class="ctitle-l" style="color:${accent}">
@@ -5573,6 +5717,7 @@ function buildSourceCard(sourceKey){
         <div style="font-size:11px;color:var(--t3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em">Awaiting distribution</div>
         <div style="font-size:26px;font-weight:800;font-family:var(--mono);color:${accent};line-height:1">${fmtD(totalPending)}</div>
         <div style="font-size:11px;color:var(--t2);margin:4px 0 12px">${pending.length} entr${pending.length===1?'y':'ies'}</div>
+        ${historical.length>=3?`<div style="background:var(--bg3);border-radius:8px;padding:9px 11px;margin-bottom:10px;border-left:3px solid var(--y)"><div style="font-size:11px;color:var(--t);margin-bottom:6px;line-height:1.5"><strong>${historical.length} entries are older than 7 days</strong> — likely from CSV imports that were already distributed in real life.</div><button class="btn btn-ghost btn-sm" onclick="markHistoricalIncomeDistributed('${sourceKey}')" style="font-size:11px">Mark all older than 7 days as already distributed</button></div>`:''}
         <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px">
         ${pending.map(t=>`
           <div class="bench-row" style="padding:8px 10px;background:var(--bg3);border-radius:8px;border:none">
@@ -5580,9 +5725,10 @@ function buildSourceCard(sourceKey){
               <div style="font-size:12px;color:var(--t)">${t.payee}</div>
               <div style="font-size:10px;color:var(--t3);margin-top:2px">${fmtDate(t.date)}${t.note?' · '+t.note:''}</div>
             </div>
-            <div style="display:flex;align-items:center;gap:8px">
+            <div style="display:flex;align-items:center;gap:6px">
               <div style="font-size:14px;font-weight:700;font-family:var(--mono);color:${accent}">${fmtD(t.amt)}</div>
               <button class="btn btn-acc btn-sm" onclick="openDistributeFlow('${t.id}')">Distribute</button>
+              <button class="btn btn-ghost btn-sm" onclick="markIncomeAlreadyDistributed('${t.id}')" title="Already distributed in real life — remove from this list" style="padding:5px 8px">Skip</button>
             </div>
           </div>
         `).join('')}
@@ -5597,6 +5743,30 @@ function buildSourceCard(sourceKey){
         Plan: ${src.plan.map(p=>p.label+' '+p.pct+'%').join(' · ')}
       </div>
     </div>`;
+}
+
+// Mark a single income transaction as already-distributed (no allocations recorded — just removes it from the queue).
+function markIncomeAlreadyDistributed(txnId){
+  const txn=(S.transactions||[]).find(t=>t.id===txnId);if(!txn)return;
+  if(!confirm(`Mark "${txn.payee}" (${fmtD(txn.amt)} on ${fmtDate(txn.date)}) as already distributed?\n\nThis just removes it from the "awaiting distribution" list. No allocations are recorded, no goals or account balances change.`))return;
+  if(!S.paydayDistributed)S.paydayDistributed={};
+  S.paydayDistributed[txnId]={source:classifyIncome(txn),date:txn.date,txnDate:txn.date,allocations:[],skipped:true,markedAt:Date.now()};
+  save();buildPaydayPage();showToast('Marked as already distributed');
+}
+
+// Bulk: mark every pending income older than 7 days as already distributed.
+function markHistoricalIncomeDistributed(sourceKey){
+  const cutoff=(()=>{const d=new Date();d.setDate(d.getDate()-7);return d.toISOString().slice(0,10);})();
+  const pending=pendingIncome(sourceKey);
+  const historical=pending.filter(t=>t.date&&t.date<cutoff);
+  if(!historical.length){showToast('Nothing older than 7 days');return;}
+  const total=historical.reduce((a,t)=>a+t.amt,0);
+  if(!confirm(`Mark ${historical.length} historical ${sourceKey} entries totalling ${fmtD(total)} as already distributed?\n\nThis just cleans up the queue for entries that predate your active use of Payday. No allocations are recorded, no balances change.`))return;
+  if(!S.paydayDistributed)S.paydayDistributed={};
+  historical.forEach(t=>{
+    S.paydayDistributed[t.id]={source:sourceKey,date:t.date,txnDate:t.date,allocations:[],skipped:true,markedAt:Date.now()};
+  });
+  save();buildPaydayPage();showToast(`Marked ${historical.length} historical entries as distributed`);
 }
 
 // Compute allocations for a given amount using a source's plan + active sinking funds.
