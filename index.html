@@ -635,6 +635,9 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
         <button class="tog-b" onclick="switchAcct('macquarie',this)">Macquarie</button>
       </div>
       <div id="acct-hero-wrap"></div>
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <button class="btn btn-ghost btn-sm" onclick="openBankImportModal()" style="flex:1"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;vertical-align:-1px;margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Import bank CSV</button>
+      </div>
       <div class="search-wrap"><span class="search-icon">🔍</span><input class="search-inp" id="txn-search" placeholder="Search transactions…" oninput="buildTxnList()"></div>
       <div class="chips" id="txn-chips"></div>
       <div style="font-size:9px;color:var(--t3);text-align:right;margin-bottom:5px">tap actions below each transaction</div>
@@ -1399,27 +1402,30 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='1.9.0';
+const APP_VERSION='2.0.0';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
   {
-    v:'1.9.0',
-    date:'2026-06-30',
-    title:'Customise your dashboard',
+    v:'2.0.0',
+    date:'2026-07-11',
+    title:'Bank CSV import — Phase 1',
     sections:{
       features:[
-        'Fully customisable dashboard — toggle, reorder and resize every widget',
-        '14 widgets available: net worth hero, today briefing, jump chips, single-metric cards, charts, cash flow forecast, goals, recent transactions and more',
-        'HALF/FULL width per widget — consecutive HALF widgets pair up side-by-side',
-        'Context panel is now opt-in via Settings ▸ Display & motion'
+        'Import Westpac & Macquarie CSV exports directly into the app',
+        'Auto-detects which bank from the CSV headers',
+        'Auto-categorises every transaction using a rules dictionary tuned to your merchants (KFC, Halifax Lunch, Steam, KandRHardstaff, Anthropic, Ampol, etc.)',
+        'Recognises income sources: METAL MANU (full-time salary) and KMART AUSTRALIA (Kmart casual pay)',
+        'Detects internal Westpac transfers (TFR Westpac) and marks them as transfers, not spending',
+        'Duplicate detection: matches by date (±1 day), amount, and direction — already-logged transactions are shown separately, not re-imported',
+        'Import preview with diff view: ➕ New / already logged / parser skipped — review before you save'
       ],
       improvements:[
-        'Dashboard now starts minimal — just net worth + today briefing — add what you actually want to see',
-        'Customise button on the dashboard opens the widget editor in a sheet',
-        'Reset-to-default option in the editor if you want to start over'
+        '"Import bank CSV" button on the Transactions page',
+        'Uses Macquarie\'s own categorisation as a fallback when no rule matches',
+        'Unmatched transactions are tagged so you can quickly re-categorise them'
       ],
       fixes:[
-        'Dashboard no longer forces content on you — the previous fixed layout is replaced by whatever you choose'
+        'Kmart shopping (KMART 1187) is now correctly distinguished from Kmart salary (KMART AUSTRALIA)'
       ]
     }
   },
@@ -4574,6 +4580,362 @@ function parseCmcNumber(raw){
   const value=numStr===''||numStr==='-'?NaN:parseFloat(numStr);
   return{value,ccy};
 }
+
+// ═══════════════════════════════════════════════════════════
+// BANK CSV IMPORT (v2.0.0) — Westpac & Macquarie
+// ═══════════════════════════════════════════════════════════
+
+// Auto-categorisation dictionary. Rules ordered by specificity (most specific first).
+// Each rule: {match:string|RegExp, cat:categoryId, payee:cleanName, direction?:'in'|'out'|null}
+// direction=null means it applies to both; 'in' means only for credits, 'out' for debits.
+const BANK_RULES=[
+  // ── Stuart's specific rules ────────────────────────────────
+  {match:/HALIFAX LUNCH SUPPLY/i,     cat:'food',          payee:'Halifax Lunch (work lunch)'},
+  {match:/STEAMGAMES\.COM|STEAM POWERED/i, cat:'entertainment', payee:'Steam'},
+  {match:/KandRHardstaff|K and R Hardstaff/i, cat:'rent',    payee:'Rent (parents)', direction:'out'},
+  {match:/DEPOSIT-SALARY KMART AUSTRALIA/i,   cat:'income',  payee:'Kmart (casual pay)',   direction:'in'},
+  {match:/DEPOSIT-SALARY METAL MANU/i,        cat:'income',  payee:'Full-time salary',     direction:'in'},
+  {match:/TFR Westpac|WITHDRAWAL MOBILE.*TFR|DEPOSIT ONLINE.*TFR/i, cat:'transfer', payee:'Westpac internal transfer'},
+  {match:/WITHDRAWAL-OSKO PAYMENT.*Stuart Austin Hardstaff/i, cat:'transfer', payee:'Own account (Osko)'},
+  // ── Food & fast food ───────────────────────────────────────
+  {match:/\bKFC\b/i,                  cat:'food',          payee:'KFC'},
+  {match:/MCDONALDS|MCD FWY|MCD BUNBURY/i, cat:'food',     payee:"McDonald's"},
+  {match:/DOMINOS/i,                  cat:'food',          payee:"Domino's"},
+  {match:/\bNANDOS\b/i,               cat:'food',          payee:"Nando's"},
+  {match:/HJs Bunbury|HUNGRY JACK/i,  cat:'food',          payee:'Hungry Jacks'},
+  {match:/DOORDASH/i,                 cat:'food',          payee:'DoorDash'},
+  {match:/UBER *EATS/i,               cat:'food',          payee:'Uber Eats'},
+  {match:/BOOST JUICE/i,              cat:'food',          payee:'Boost Juice'},
+  {match:/BAKERS DELIGHT|HARPER STREET BAKERY|DARDANUP BAKERY/i, cat:'food', payee:'Bakery'},
+  {match:/CITY KEBAB|GRAB N GO DELI/i, cat:'food',         payee:'Kebab/deli'},
+  {match:/CHATIME|ZLR\*Chatime/i,     cat:'food',          payee:'Chatime'},
+  {match:/YUM URBAN MARKET|MARKET CITY/i, cat:'food',      payee:'Market'},
+  {match:/SUBWAY/i,                   cat:'food',          payee:'Subway'},
+  {match:/GUZMAN Y GOMEZ|GYG/i,       cat:'food',          payee:'Guzman y Gomez'},
+  {match:/RED ROOSTER/i,              cat:'food',          payee:'Red Rooster'},
+  // ── Groceries ──────────────────────────────────────────────
+  {match:/\bCOLES\b/i,                cat:'food',          payee:'Coles'},
+  {match:/WOOLWORTHS|\bWOW \b/i,      cat:'food',          payee:'Woolworths'},
+  {match:/ALDI/i,                     cat:'food',          payee:'ALDI'},
+  {match:/KARRINYUP FRESH MARKET/i,   cat:'food',          payee:'Fresh market'},
+  // ── Fuel & transport ───────────────────────────────────────
+  {match:/AMPOL/i,                    cat:'fuel',          payee:'Ampol'},
+  {match:/LIBERTY (BUSSELTON|DALYELLUP)/i, cat:'fuel',     payee:'Liberty fuel'},
+  {match:/EG GROUP|FUEL DISTRIBUTORS/i, cat:'fuel',        payee:'Fuel'},
+  {match:/\bBP \b|BP CONNECT/i,       cat:'fuel',          payee:'BP'},
+  {match:/CALTEX|SHELL|7-ELEVEN/i,    cat:'fuel',          payee:'Fuel station'},
+  {match:/BEAM MOBILITY/i,            cat:'transport',     payee:'Beam scooter'},
+  {match:/TRANSPERTH|PUBLIC TRANSPORT/i, cat:'transport', payee:'Transperth'},
+  // ── Shopping & retail ──────────────────────────────────────
+  {match:/\bKMART\b(?! AUSTRALIA)/i,  cat:'shopping',      payee:'Kmart'}, // note: excludes Kmart salary
+  {match:/BIG W|BIGW/i,               cat:'shopping',      payee:'Big W'},
+  {match:/BUNNINGS/i,                 cat:'shopping',      payee:'Bunnings'},
+  {match:/H&M HENNES|H AND M/i,       cat:'shopping',      payee:'H&M'},
+  {match:/JB HI-?FI|JBHIFI/i,         cat:'shopping',      payee:'JB Hi-Fi'},
+  {match:/NEWSXPRESS/i,               cat:'shopping',      payee:'Newsagent'},
+  // ── Subscriptions ──────────────────────────────────────────
+  {match:/ANTHROPIC.*CLAUDE|CLAUDE\.AI/i, cat:'subscriptions', payee:'Anthropic (Claude)'},
+  {match:/NETFLIX/i,                  cat:'subscriptions', payee:'Netflix'},
+  {match:/SPOTIFY/i,                  cat:'subscriptions', payee:'Spotify'},
+  {match:/DISNEY *PLUS/i,             cat:'subscriptions', payee:'Disney+'},
+  {match:/AMAZON PRIME/i,             cat:'subscriptions', payee:'Amazon Prime'},
+  {match:/YOUTUBE PREMIUM|GOOGLE.*YOUTUBE/i, cat:'subscriptions', payee:'YouTube Premium'},
+  // ── Utilities ──────────────────────────────────────────────
+  {match:/SYNERGY/i,                  cat:'utilities',     payee:'Synergy (energy)'},
+  {match:/WATER CORPORATION|WATERCORP/i, cat:'utilities', payee:'Water Corp'},
+  {match:/TELSTRA|OPTUS|VODAFONE|BELONG/i, cat:'utilities', payee:'Phone/internet'},
+  // ── Entertainment / going out ──────────────────────────────
+  {match:/FITZGERALDS IRISH BAR|BURLINGTON HOTEL|NOVOTELPer/i, cat:'entertainment', payee:'Pub/hotel'},
+  {match:/BOOKINGS?\.COM|BOOKING\.COM/i, cat:'entertainment', payee:'Booking.com'},
+  {match:/CINEMA|EVENT CINEMA|HOYTS|VILLAGE/i, cat:'entertainment', payee:'Cinema'},
+  // ── Health / fitness ───────────────────────────────────────
+  {match:/FITNESS INVESTMENTS|SWISH|GYM|F45|ANYTIME FITNESS/i, cat:'health', payee:'Gym/fitness'},
+  {match:/CHEMIST WAREHOUSE|PRICELINE|TERRY WHITE/i, cat:'health', payee:'Pharmacy'},
+  // ── Investments (CMC etc.) ─────────────────────────────────
+  {match:/CMC MARKETS|CMC INVEST/i,   cat:'investments',   payee:'CMC Invest'},
+  {match:/SELFWEALTH|STAKE|PEARLER/i, cat:'investments',   payee:'Broker'}
+];
+
+// Categorise a description. Returns {cat, payee, matched:boolean, ruleIdx:number}
+function categoriseBankTxn(desc,direction){
+  const clean=(desc||'').trim();
+  for(let i=0;i<BANK_RULES.length;i++){
+    const r=BANK_RULES[i];
+    if(r.direction&&r.direction!==direction)continue;
+    if(r.match instanceof RegExp?r.match.test(clean):clean.toUpperCase().includes(r.match.toUpperCase())){
+      return{cat:r.cat,payee:r.payee,matched:true,ruleIdx:i};
+    }
+  }
+  // Fallback: try to extract merchant name from Westpac's structured narrative
+  // "DEBIT CARD PURCHASE MERCHANT NAME LOCATION AUS" → "MERCHANT NAME"
+  let payee=clean;
+  const m=clean.match(/^(?:DEBIT CARD PURCHASE|EFTPOS DEBIT|DEBIT CARD REFUND)\s+(.+?)(?:\s+[A-Z][A-Z ]{2,}\s+(?:AUS|USA|NZ)|\s{2,})/i);
+  if(m)payee=m[1].trim();
+  // Cleanup: strip trailing numbers, "AUS"/"USA"
+  payee=payee.replace(/\s+(?:AUS|USA|NZ|GBR)$/i,'').replace(/\s+\d{3,}\s*$/,'').replace(/\s+/g,' ').trim();
+  const defaultCat=direction==='in'?'income':'other';
+  return{cat:defaultCat,payee:payee||'Unknown',matched:false,ruleIdx:-1};
+}
+
+// ─── PARSER: Westpac ───────────────────────────────────────
+// Format: Bank Account, Date (DD/MM/YYYY), Narrative, Debit Amount, Credit Amount, Balance, Categories, Serial
+function parseWestpacCsv(text){
+  const lines=text.replace(/\r\n/g,'\n').split('\n').filter(l=>l.trim().length);
+  if(!lines.length)return{ok:false,error:'Empty file'};
+  const header=lines[0].toLowerCase();
+  if(!header.includes('bank account')||!header.includes('narrative')){
+    return{ok:false,error:'Not a Westpac CSV — headers don\'t match'};
+  }
+  const rows=[];const errors=[];
+  for(let i=1;i<lines.length;i++){
+    try{
+      const cols=parseCsvLine(lines[i]);
+      if(cols.length<6)continue;
+      const [acctNum,dateStr,narrative,debitStr,creditStr,balanceStr]=cols;
+      // Parse date DD/MM/YYYY → YYYY-MM-DD
+      const dmy=dateStr.split('/');
+      if(dmy.length!==3){errors.push({row:i+1,reason:'bad date: '+dateStr});continue;}
+      const date=`${dmy[2]}-${dmy[1].padStart(2,'0')}-${dmy[0].padStart(2,'0')}`;
+      const debit=parseFloat(debitStr)||0;
+      const credit=parseFloat(creditStr)||0;
+      if(debit===0&&credit===0){errors.push({row:i+1,reason:'no amount'});continue;}
+      const dir=debit>0?'out':'in';
+      const amt=debit>0?debit:credit;
+      // Account routing: 036... = savings/salary account, 736... = spending
+      // The app currently has one 'westpac' account. Map both to 'westpac' but tag with subAcct.
+      const subAcct=acctNum.startsWith('036')?'westpac-savings':'westpac-spending';
+      rows.push({
+        date,narrative:narrative.trim(),amt,dir,
+        bank:'westpac',bankAcct:acctNum,subAcct,
+        rawRow:i+1
+      });
+    }catch(e){errors.push({row:i+1,reason:e.message});}
+  }
+  return{ok:true,rows,errors,bank:'westpac'};
+}
+
+// ─── PARSER: Macquarie ─────────────────────────────────────
+// Format: Transaction Date (DD Mon YYYY), Details, Account, Category, Subcategory, Tags, Notes, Debit, Credit, Balance, Original Description
+function parseMacquarieCsv(text){
+  const lines=text.replace(/\r\n/g,'\n').split('\n').filter(l=>l.trim().length);
+  if(!lines.length)return{ok:false,error:'Empty file'};
+  const header=lines[0].toLowerCase();
+  if(!header.includes('transaction date')||!header.includes('details')){
+    return{ok:false,error:'Not a Macquarie CSV — headers don\'t match'};
+  }
+  const rows=[];const errors=[];
+  const MONTHS={jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12'};
+  for(let i=1;i<lines.length;i++){
+    try{
+      const cols=parseCsvLine(lines[i]);
+      if(cols.length<10)continue;
+      const [dateStr,details,acctName,mqCat,mqSubcat,tags,notes,debitStr,creditStr,balanceStr,origDesc]=cols;
+      // "10 Jul 2026" → "2026-07-10"
+      const dmy=dateStr.trim().split(/\s+/);
+      if(dmy.length!==3){errors.push({row:i+1,reason:'bad date: '+dateStr});continue;}
+      const mo=MONTHS[dmy[1].toLowerCase().slice(0,3)];
+      if(!mo){errors.push({row:i+1,reason:'bad month: '+dmy[1]});continue;}
+      const date=`${dmy[2]}-${mo}-${dmy[0].padStart(2,'0')}`;
+      const debit=parseFloat(debitStr)||0;
+      const credit=parseFloat(creditStr)||0;
+      if(debit===0&&credit===0){errors.push({row:i+1,reason:'no amount'});continue;}
+      const dir=debit>0?'out':'in';
+      const amt=debit>0?debit:credit;
+      // Use the "Original Description" for categorisation (matches raw Westpac format)
+      const narrative=(origDesc||details||'').trim();
+      rows.push({
+        date,narrative,amt,dir,
+        bank:'macquarie',bankAcct:'macquarie',subAcct:'macquarie',
+        mqCat,mqSubcat, // Macquarie's own categorisation, used as fallback
+        rawRow:i+1
+      });
+    }catch(e){errors.push({row:i+1,reason:e.message});}
+  }
+  return{ok:true,rows,errors,bank:'macquarie'};
+}
+
+// ─── CSV line parser (handles quoted fields with commas) ───
+function parseCsvLine(line){
+  const out=[];let cur='';let inQ=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(c==='"'){
+      if(inQ&&line[i+1]==='"'){cur+='"';i++;}
+      else inQ=!inQ;
+    }else if(c===','&&!inQ){out.push(cur);cur='';}
+    else cur+=c;
+  }
+  out.push(cur);
+  return out.map(s=>s.trim());
+}
+
+// ─── Auto-detect bank from CSV headers ─────────────────────
+function detectBank(text){
+  const firstLine=(text.split('\n')[0]||'').toLowerCase();
+  if(firstLine.includes('bank account')&&firstLine.includes('narrative'))return'westpac';
+  if(firstLine.includes('transaction date')&&firstLine.includes('original description'))return'macquarie';
+  return null;
+}
+function parseBankCsv(text){
+  const bank=detectBank(text);
+  if(bank==='westpac')return parseWestpacCsv(text);
+  if(bank==='macquarie')return parseMacquarieCsv(text);
+  return{ok:false,error:'Unknown CSV format. Expected Westpac or Macquarie export.'};
+}
+
+// ─── Duplicate detection ───────────────────────────────────
+// A parsed row is a duplicate of an existing transaction if:
+//   • date matches (± 1 day tolerance)
+//   • amount matches within 1 cent
+//   • direction matches
+//   • similar payee (or already tagged from same bank + serial)
+function findDuplicate(row,existing){
+  const targetDate=new Date(row.date+'T00:00:00');
+  for(const t of existing){
+    if(!t.date||t.dir!==row.dir)continue;
+    if(Math.abs((t.amt||0)-row.amt)>0.011)continue;
+    const tDate=new Date(t.date+'T00:00:00');
+    const daysDiff=Math.abs((tDate-targetDate)/(1000*60*60*24));
+    if(daysDiff>1.5)continue;
+    // Amount+date+dir match. Consider it a duplicate.
+    return t;
+  }
+  return null;
+}
+
+// ─── Build classified preview from parsed rows ─────────────
+function classifyImportRows(parsedRows){
+  const existing=S.transactions||[];
+  const classified={new:[],duplicate:[],skipped:[]};
+  parsedRows.forEach(r=>{
+    // Skip zero-amount weirdness
+    if(!r.amt||r.amt<=0){classified.skipped.push({...r,reason:'zero amount'});return;}
+    const dup=findDuplicate(r,existing);
+    const cat=categoriseBankTxn(r.narrative,r.dir);
+    // If Macquarie provides a category and we didn't match a rule, use Macquarie's mapping as a fallback
+    if(!cat.matched&&r.mqCat){
+      const mqMap={
+        'Food & Drink':'food','Sports & Fitness':'health','Leisure':'entertainment',
+        'Financial':'transfer','Transport':'transport','Shopping':'shopping',
+        'Bills':'utilities','Home':'utilities','Cash':'other','Income':'income'
+      };
+      const mapped=mqMap[r.mqCat];
+      if(mapped)cat.cat=mapped;
+    }
+    const suggested={
+      date:r.date,amt:r.amt,dir:r.dir,
+      cat:cat.cat,payee:cat.payee,
+      acct:r.bank,note:`Imported from ${r.bank[0].toUpperCase()+r.bank.slice(1)}`,
+      _matched:cat.matched,_narrative:r.narrative,_subAcct:r.subAcct
+    };
+    if(dup)classified.duplicate.push({...suggested,_dup:dup});
+    else classified.new.push(suggested);
+  });
+  return classified;
+}
+
+// ─── Import modal & preview UI ─────────────────────────────
+let _pendingBankImport=null;
+function openBankImportModal(){
+  showSheet('Import bank CSV',`
+    <div style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:12px">
+      Paste or upload a CSV from Westpac (Online Banking → Download Transactions) or Macquarie (Transaction Search → Download). The app auto-detects which bank, categorises each transaction, and shows a diff so you can review before saving.
+    </div>
+    <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Upload a file</div>
+    <input type="file" id="bank-csv-file" accept=".csv,text/csv" onchange="handleBankCsvFile(event)" style="width:100%;padding:8px;background:var(--bg3);border:1px solid var(--bdr);border-radius:8px;color:var(--t);font-size:12px;margin-bottom:12px">
+    <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">…or paste CSV text</div>
+    <textarea id="bank-csv-paste" class="inp" placeholder="Paste CSV content here…" style="min-height:100px;font-family:var(--mono);font-size:11px;margin-bottom:12px"></textarea>
+    <button class="btn btn-acc btn-full" onclick="parseBankCsvFromSheet()">Parse & preview</button>
+    <div id="bank-import-preview" style="margin-top:14px"></div>
+  `);
+}
+function handleBankCsvFile(ev){
+  const f=ev.target.files&&ev.target.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=e=>{
+    const paste=document.getElementById('bank-csv-paste');
+    if(paste)paste.value=e.target.result;
+    parseBankCsvFromSheet();
+  };
+  rd.readAsText(f);
+}
+function parseBankCsvFromSheet(){
+  const text=(document.getElementById('bank-csv-paste')||{}).value||'';
+  if(!text.trim()){alert('Paste some CSV first, or upload a file.');return;}
+  const result=parseBankCsv(text);
+  if(!result.ok){alert('Import failed: '+result.error);return;}
+  const classified=classifyImportRows(result.rows);
+  _pendingBankImport={bank:result.bank,classified,errors:result.errors};
+  renderBankImportPreview();
+}
+function renderBankImportPreview(){
+  const el=document.getElementById('bank-import-preview');if(!el||!_pendingBankImport)return;
+  const{bank,classified,errors}=_pendingBankImport;
+  const cm=cmap();
+  const bankLabel=bank==='westpac'?'Westpac':'Macquarie';
+  const totalIn=classified.new.filter(r=>r.dir==='in').reduce((a,r)=>a+r.amt,0);
+  const totalOut=classified.new.filter(r=>r.dir==='out').reduce((a,r)=>a+r.amt,0);
+  const rowHtml=(r,idx,section)=>{
+    const c=cm[r.cat]||{icon:'📌',col:'#7d8fa3',label:r.cat};
+    return`<div class="bench-row" style="align-items:flex-start;padding:8px 0">
+      <div class="bench-label" style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;color:var(--t);display:flex;align-items:center;gap:6px">
+          <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${c.col}"></span>
+          ${r.payee}
+          ${!r._matched?'<span class="tag ty" style="font-size:8px">unmatched</span>':''}
+        </div>
+        <div style="font-size:10px;color:var(--t3);margin-top:2px">${r.date} · ${c.icon} ${c.label}</div>
+        <details style="margin-top:3px"><summary style="font-size:9px;color:var(--t3);cursor:pointer">raw narrative</summary><div style="font-size:9px;color:var(--t3);font-family:var(--mono);margin-top:2px;word-break:break-all">${r._narrative}</div></details>
+      </div>
+      <div style="text-align:right;flex-shrink:0"><div style="font-size:12px;font-family:var(--mono);color:${r.dir==='in'?'var(--acc)':'var(--r)'};font-weight:700">${r.dir==='in'?'+':'-'}${fmtD(r.amt)}</div><div style="font-size:9px;color:var(--t3)">${r.dir}</div></div>
+    </div>`;
+  };
+  el.innerHTML=`
+    <hr style="border:none;border-top:1px solid var(--bdr);margin:0 0 12px">
+    <div class="lbl" style="margin-bottom:8px">${bankLabel} import — review before saving</div>
+    <div style="background:var(--bg3);border-radius:10px;padding:10px 12px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t2);padding:2px 0"><span>New transactions</span><span class="mono" style="font-weight:700;color:var(--t)">${classified.new.length}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t2);padding:2px 0"><span>Already logged (skipped)</span><span class="mono" style="color:var(--t3)">${classified.duplicate.length}</span></div>
+      ${classified.new.length?`<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t2);padding:4px 0 0;border-top:1px solid var(--bdr);margin-top:4px"><span>Total in / out</span><span class="mono"><span style="color:var(--acc)">+${fmtD(totalIn)}</span> · <span style="color:var(--r)">-${fmtD(totalOut)}</span></span></div>`:''}
+    </div>
+
+    ${classified.new.length?`<div style="font-size:10px;color:var(--acc);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 4px">➕ New (${classified.new.length})</div>${classified.new.map((r,i)=>rowHtml(r,i,'new')).join('')}`:'<div class="empty"><div class="empty-ico">✓</div><div class="empty-txt">Nothing new to import — everything is already logged.</div></div>'}
+
+    ${classified.duplicate.length?`<details style="margin-top:12px"><summary style="font-size:10px;color:var(--t3);cursor:pointer">Already logged (${classified.duplicate.length}) — click to expand</summary><div style="margin-top:4px">${classified.duplicate.slice(0,20).map((r,i)=>rowHtml(r,i,'dup')).join('')}${classified.duplicate.length>20?`<div style="font-size:10px;color:var(--t3);padding:6px 0">+ ${classified.duplicate.length-20} more…</div>`:''}</div></details>`:''}
+
+    ${errors.length?`<details style="margin-top:8px"><summary style="font-size:10px;color:var(--y);cursor:pointer">Parser skipped ${errors.length} row(s)</summary>${errors.slice(0,10).map(e=>`<div style="font-size:9px;color:var(--t3);padding:2px 0">Row ${e.row}: ${e.reason}</div>`).join('')}</details>`:''}
+
+    <button class="btn btn-acc btn-full" ${classified.new.length?'':'disabled style="opacity:.5"'} onclick="confirmBankImport()" style="margin-top:14px">Import ${classified.new.length} transaction${classified.new.length===1?'':'s'}</button>
+    <button class="btn btn-ghost btn-sm btn-full" style="margin-top:6px" onclick="closeSheet()">Cancel</button>
+  `;
+}
+function confirmBankImport(){
+  if(!_pendingBankImport)return;
+  const {classified,bank}=_pendingBankImport;
+  if(!classified.new.length){closeSheet();return;}
+  if(!S.transactions)S.transactions=[];
+  let added=0;
+  classified.new.forEach(r=>{
+    S.transactions.unshift({
+      id:uid(),
+      date:r.date,
+      amt:Math.round(r.amt*100)/100,
+      dir:r.dir,
+      payee:r.payee,
+      cat:r.cat,
+      acct:r.acct,
+      note:r.note,
+      importedFrom:bank,
+      importedAt:Date.now()
+    });
+    added++;
+  });
+  _pendingBankImport=null;
+  save();snapshotNW();closeSheet();
+  refreshAfterChange();
+  showToast(`Imported ${added} transaction${added===1?'':'s'} from ${bank[0].toUpperCase()+bank.slice(1)}`);
+}
+
 function parseCsvImport(){
   let raw=document.getElementById('csv-paste').value;
   if(!raw||!raw.trim()){alert('Upload or paste your CMC portfolio CSV first.');return;}
