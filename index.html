@@ -81,6 +81,78 @@ body{display:flex;flex-direction:column;position:fixed;width:100%;height:100%;ba
 .payee-sug{padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--bdr);transition:background .15s}
 .payee-sug:last-child{border-bottom:none}
 .payee-sug:hover,.payee-sug:active{background:var(--bg4,rgba(255,255,255,.03))}
+
+/* ═══════════ DETAIL VIEW (v2.3.0) ═══════════ */
+.detail-view{position:fixed;inset:0;background:var(--bg);z-index:400;transform:translateX(100%);transition:transform .32s cubic-bezier(.2,0,.2,1);display:flex;flex-direction:column}
+.detail-view.open{transform:translateX(0)}
+.detail-header{padding:calc(14px + var(--st)) 18px 8px;flex-shrink:0}
+.detail-back{background:none;border:none;color:var(--t2);font-size:14px;font-weight:500;font-family:var(--sans);display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 4px;letter-spacing:-.2px}
+.detail-back:hover{color:var(--t)}
+.detail-scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(28px + var(--sb))}
+.detail-body{padding:8px 18px}
+
+/* Hero section: circular icon, uppercase label, title, big amount, status pill */
+.detail-hero-wrap{text-align:center;padding:14px 12px 26px}
+.detail-hero-icon{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 20px;border:1px solid transparent}
+.detail-hero-label{font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.16em;margin-bottom:12px;font-weight:600}
+.detail-hero-title{font-size:22px;font-weight:700;color:var(--t);letter-spacing:-.4px;margin-bottom:16px;line-height:1.2}
+.detail-hero-amt{font-size:38px;font-weight:700;color:var(--t);letter-spacing:-1.2px;line-height:1;margin-bottom:14px}
+.detail-hero-sub{font-size:12px;color:var(--t2);margin-top:6px}
+.detail-hero-status{display:flex;justify-content:center;margin-top:2px}
+
+/* Goal-specific hero (with ring visualization) */
+.detail-hero-goal .detail-goal-ring{position:relative;width:130px;height:130px;margin:0 auto 20px}
+.detail-goal-ring-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:var(--t);letter-spacing:-.5px}
+
+/* Status pill */
+.status-pill{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:14px;font-size:11px;font-weight:500;letter-spacing:-.1px;border:1px solid transparent}
+.status-pill-ok{background:var(--accd);color:var(--acc);border-color:var(--accd2)}
+.status-pill-warn{background:var(--yd);color:var(--y);border-color:var(--yd2)}
+.status-pill-info{background:var(--bd);color:var(--b);border-color:var(--bd2)}
+.status-pill-dim{background:var(--bg3);color:var(--t3);border-color:var(--bdr)}
+.status-pill-ico{font-size:10px;line-height:1}
+
+/* Detail cards */
+.detail-card{background:var(--bg2);border:1px solid var(--bdr);border-radius:20px;padding:18px;margin-bottom:14px}
+.detail-card-accent{border-color:var(--accd2);background:linear-gradient(180deg,var(--accd) 0%,var(--bg2) 100%)}
+.detail-card-title{font-size:14px;font-weight:600;color:var(--t);margin-bottom:6px;letter-spacing:-.2px}
+.detail-card-body{font-size:12px;color:var(--t2);line-height:1.55}
+
+.detail-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--bdr);gap:12px}
+.detail-row:first-child{padding-top:4px}
+.detail-row:last-child{padding-bottom:4px;border-bottom:none}
+.detail-row-btn{display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:2px 0}
+.detail-label{font-size:12px;color:var(--t3);font-weight:400}
+.detail-value{font-size:13px;color:var(--t);font-weight:500;letter-spacing:-.1px}
+
+/* Metric strip for detail views */
+.detail-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.detail-metric{background:var(--bg2);border:1px solid var(--bdr);border-radius:14px;padding:12px 14px}
+.detail-metric-l{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;font-weight:500;margin-bottom:4px}
+.detail-metric-v{font-size:17px;font-weight:700;color:var(--t);letter-spacing:-.4px;line-height:1.1}
+
+/* Sparkline */
+.detail-sparkline{display:block;width:100%;height:auto;margin-top:12px}
+.detail-sparkline-labels{display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:var(--t3);letter-spacing:.05em;text-transform:uppercase}
+
+/* Detail transaction rows (inside cards) */
+.detail-txn-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--bdr);gap:12px;cursor:pointer;transition:opacity .15s}
+.detail-txn-row:last-child{border-bottom:none}
+.detail-txn-row:active{opacity:.6}
+
+/* Detail actions */
+.detail-actions{display:flex;gap:8px;margin-top:18px;padding-bottom:20px}
+.detail-actions .btn{flex:1}
+
+/* ═══════════ SUCCESS MOMENT ═══════════ */
+.success-moment{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:600;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .28s}
+.success-moment.open{opacity:1;pointer-events:all}
+.success-inner{text-align:center;padding:24px;max-width:320px;transform:scale(.9);transition:transform .35s cubic-bezier(.2,0,.2,1) .05s}
+.success-moment.open .success-inner{transform:scale(1)}
+.success-icon{width:96px;height:96px;border-radius:50%;background:var(--accd2);border:2px solid var(--acc);color:var(--acc);display:flex;align-items:center;justify-content:center;font-size:42px;margin:0 auto 22px;box-shadow:0 0 60px var(--accd3),inset 0 0 40px var(--accd)}
+.success-title{font-size:22px;font-weight:700;color:var(--t);letter-spacing:-.4px;margin-bottom:8px}
+.success-subtitle{font-size:14px;color:var(--t2);margin-bottom:6px;line-height:1.5}
+.success-detail{font-size:12px;color:var(--acc);font-family:var(--mono);font-weight:600;margin-top:10px}
 .wn-title{font-family:var(--display);font-size:24px;font-weight:800;color:var(--t);letter-spacing:-.5px;margin-bottom:18px;line-height:1.1}
 .wn-vhead{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--bdr)}
 .wn-section{margin-bottom:16px}
@@ -1291,6 +1363,22 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 <!-- CONFETTI CONTAINER -->
 <div class="confetti-wrap" id="confetti-wrap" style="pointer-events:none"></div>
 
+<!-- DETAIL VIEW OVERLAY (v2.3.0) -->
+<div class="detail-view" id="detail-view">
+  <div class="detail-header">
+    <button class="detail-back" onclick="closeDetail()">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      Back
+    </button>
+  </div>
+  <div class="detail-scroll" id="detail-scroll">
+    <div class="detail-body" id="detail-body"></div>
+  </div>
+</div>
+
+<!-- SUCCESS MOMENT OVERLAY -->
+<div class="success-moment" id="success-moment"></div>
+
 <script>
 // ═══════════════════════════════════════════════════════════
 // CONSTANTS & THEMES
@@ -1432,9 +1520,28 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.2.0';
+const APP_VERSION='2.3.0';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.3.0',
+    date:'2026-07-12',
+    title:'Tap anywhere — detail views everywhere',
+    sections:{
+      features:[
+        '📄 Transaction detail view — tap any transaction to see date, account, note, original bank narrative, plus a spending-insight sparkline showing how it compares to your usual for that category',
+        '🏪 Merchant detail view — tap a merchant name in the transaction detail to see all your visits, total spent, month-over-month change, median cost, top day, and a monthly trend sparkline',
+        '📊 Category detail view — tap any category in Analytics to see this month vs last, top merchants within the category, and a 12-month trend sparkline',
+        '🎯 Goal detail view — tap a goal name or the progress ring to see progress ring, pace analysis, projected completion date, and contribution history',
+        '🎉 Success moment overlays — payday distributions, goal completions and large bank imports now show a big celebratory checkmark screen (auto-dismisses)'
+      ],
+      improvements:[
+        'Full-page slide-in detail views with a proper Back button — no more cluttered inline UI',
+        'Every detail view uses the same design language: uppercase tracked labels, big hero numbers, status pills, subtle sparklines'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'2.2.0',
     date:'2026-07-12',
@@ -2108,6 +2215,424 @@ function rerunSetup(){closeMore();swStep=0;renderSW();document.getElementById('s
 // ═══════════════════════════════════════════════════════════
 // LAUNCH
 // ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+// DETAIL VIEWS (v2.3.0) — Transaction, Merchant, Category, Goal + Success Moments
+// ═══════════════════════════════════════════════════════════
+
+// ── Shared: open/close ──────────────────────────────────────
+function openDetail(html){
+  const v=document.getElementById('detail-view');if(!v)return;
+  document.getElementById('detail-body').innerHTML=html;
+  v.classList.add('open');
+  // Reset scroll to top on open
+  const sc=document.getElementById('detail-scroll');if(sc)sc.scrollTop=0;
+}
+function closeDetail(){
+  const v=document.getElementById('detail-view');if(!v)return;
+  v.classList.remove('open');
+}
+
+// ── Sparkline SVG generator ────────────────────────────────
+function sparklineSvg(values,opts){
+  opts=opts||{};
+  const width=opts.width||280,height=opts.height||50;
+  const color=opts.color||'var(--acc)';
+  if(!values||values.length<2)return`<svg class="detail-sparkline" viewBox="0 0 ${width} ${height}"></svg>`;
+  const max=Math.max(...values),min=Math.min(...values);
+  const range=(max-min)||1;
+  const dx=width/(values.length-1);
+  const points=values.map((v,i)=>{
+    const x=i*dx;
+    const y=height-((v-min)/range)*(height-4)-2;
+    return`${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  const areaPoints=`0,${height} `+points+` ${width},${height}`;
+  return`<svg class="detail-sparkline" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+    <defs><linearGradient id="spark-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity="0.28"/><stop offset="100%" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
+    <polygon points="${areaPoints}" fill="url(#spark-grad)"/>
+    <polyline points="${points}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+// ── Status pill component ──────────────────────────────────
+function statusPill(kind){
+  // kind: 'completed', 'pending', 'skipped', 'imported', 'confirmed'
+  const map={
+    completed:{cls:'ok',ico:'✓',lbl:'Completed'},
+    confirmed:{cls:'ok',ico:'✓',lbl:'Confirmed'},
+    pending:{cls:'warn',ico:'⏳',lbl:'Pending'},
+    skipped:{cls:'dim',ico:'—',lbl:'Skipped'},
+    imported:{cls:'info',ico:'↓',lbl:'Imported'},
+    unmatched:{cls:'warn',ico:'?',lbl:'Needs review'}
+  };
+  const s=map[kind]||{cls:'dim',ico:'•',lbl:kind};
+  return`<span class="status-pill status-pill-${s.cls}"><span class="status-pill-ico">${s.ico}</span>${s.lbl}</span>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// 1. TRANSACTION DETAIL
+// ═══════════════════════════════════════════════════════════
+function openTxnDetail(txnId){
+  const t=(S.transactions||[]).find(x=>x.id===txnId);
+  if(!t){showToast('Transaction not found');return;}
+  const cm=cmap();
+  const c=cm[t.cat]||{icon:'📌',col:'#7d8fa3',label:t.cat};
+  const acctLbl=t.acct==='westpac'?'Westpac':t.acct==='macquarie'?'Macquarie':(t.acct||'Manual');
+  // Status: pending queue? Imported? Manual?
+  const isPending=(S.pendingTxns||[]).some(p=>p.id===txnId);
+  const status=isPending?'pending':(t.importedFrom?'imported':'completed');
+  // Insight: compare to median of this category over last 60 days
+  const now=new Date();
+  const cutoff=(()=>{const d=new Date();d.setDate(d.getDate()-60);return d.toISOString().slice(0,10);})();
+  const catRecent=(S.transactions||[]).filter(x=>x.cat===t.cat&&x.dir===t.dir&&(x.date||'')>=cutoff&&x.id!==t.id);
+  const sortedAmts=catRecent.map(x=>x.amt).sort((a,b)=>a-b);
+  const median=sortedAmts.length?sortedAmts[Math.floor(sortedAmts.length/2)]:t.amt;
+  const deltaPct=median>0?Math.round((t.amt-median)/median*100):0;
+  const insightText=(()=>{
+    if(!catRecent.length)return`First recorded transaction in ${c.label}.`;
+    if(Math.abs(deltaPct)<=10)return`Close to your ${c.label} median (${fmtD(median)}).`;
+    const dir=deltaPct>0?'above':'below';
+    return`This is ${Math.abs(deltaPct)}% ${dir} your usual ${c.label} spend (median ${fmtD(median)}).`;
+  })();
+  // Sparkline: daily spend in this category over last 30 days
+  const spark=(()=>{
+    const days=30;const buckets=new Array(days).fill(0);
+    const start=new Date();start.setDate(start.getDate()-days+1);
+    (S.transactions||[]).forEach(x=>{
+      if(x.cat!==t.cat||x.dir!==t.dir)return;
+      const d=new Date(x.date+'T00:00:00');
+      const idx=Math.floor((d-start)/(1000*60*60*24));
+      if(idx>=0&&idx<days)buckets[idx]+=x.amt;
+    });
+    return buckets;
+  })();
+  // Same-payee stats
+  const payeeMatches=(S.transactions||[]).filter(x=>(x.payee||'').toLowerCase()===(t.payee||'').toLowerCase());
+  const payeeCount=payeeMatches.length;
+  const payeeTotal=payeeMatches.reduce((a,x)=>a+x.amt,0);
+
+  const amtColor=t.dir==='in'?'var(--acc)':'var(--t)';
+  const amtSign=t.dir==='in'?'+':'-';
+  openDetail(`
+    <div class="detail-hero-wrap">
+      <div class="detail-hero-icon" style="background:${c.col}22;color:${c.col};border-color:${c.col}44">${c.icon}</div>
+      <div class="detail-hero-label">${c.label}</div>
+      <div class="detail-hero-title">${t.payee}</div>
+      <div class="detail-hero-amt" style="color:${amtColor}">${amtSign}${fmtD(t.amt)}</div>
+      <div class="detail-hero-status">${statusPill(status)}</div>
+    </div>
+
+    <div class="detail-card">
+      <div class="detail-row"><span class="detail-label">Date</span><span class="detail-value">${fmtDate(t.date)}</span></div>
+      <div class="detail-row"><span class="detail-label">Account</span><span class="detail-value">${acctLbl}</span></div>
+      <div class="detail-row"><span class="detail-label">Category</span><span class="detail-value">${c.icon} ${c.label}</span></div>
+      <div class="detail-row"><span class="detail-label">Direction</span><span class="detail-value">${t.dir==='in'?'Money in':'Money out'}</span></div>
+      ${t.note?`<div class="detail-row"><span class="detail-label">Note</span><span class="detail-value">${t.note}</span></div>`:''}
+      ${t.importedFrom?`<div class="detail-row"><span class="detail-label">Imported from</span><span class="detail-value">${t.importedFrom[0].toUpperCase()+t.importedFrom.slice(1)}</span></div>`:''}
+      ${t.originalNarrative?`<div class="detail-row" style="border-bottom:none"><span class="detail-label">Original text</span><span class="detail-value" style="font-family:var(--mono);font-size:11px;text-align:right;max-width:60%">${t.originalNarrative.slice(0,80)}</span></div>`:''}
+    </div>
+
+    <div class="detail-card detail-card-accent">
+      <div class="detail-card-title">Spending Insight</div>
+      <div class="detail-card-body">${insightText}</div>
+      ${sparklineSvg(spark,{width:280,height:52})}
+    </div>
+
+    ${payeeCount>1?`<div class="detail-card" onclick="openMerchantDetail('${(t.payee||'').replace(/'/g,"\\'")}')">
+      <div class="detail-row-btn">
+        <div>
+          <div class="detail-label">${t.payee} history</div>
+          <div class="detail-value" style="font-size:12px;margin-top:2px">${payeeCount} transactions · ${fmtD(payeeTotal)} total</div>
+        </div>
+        <div style="color:var(--t3);font-size:16px">›</div>
+      </div>
+    </div>`:''}
+
+    <div class="detail-actions">
+      <button class="btn btn-ghost" onclick="closeDetail();setTimeout(()=>openTxnModal('${t.id}'),200)">Edit</button>
+      <button class="btn btn-ghost" onclick="deleteTxnFromDetail('${t.id}')" style="color:var(--r)">Delete</button>
+    </div>
+  `);
+}
+
+function deleteTxnFromDetail(id){
+  if(!confirm('Delete this transaction?'))return;
+  S.transactions=S.transactions.filter(t=>t.id!==id);
+  save();snapshotNW();closeDetail();
+  refreshAfterChange();
+  showToast('Transaction deleted');
+}
+
+// ═══════════════════════════════════════════════════════════
+// 2. MERCHANT DETAIL
+// ═══════════════════════════════════════════════════════════
+function openMerchantDetail(payee){
+  const p=(payee||'').toLowerCase();
+  const matches=(S.transactions||[]).filter(x=>(x.payee||'').toLowerCase()===p)
+    .sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  if(!matches.length){showToast('No transactions found');return;}
+  const cm=cmap();
+  const first=matches[0];
+  const c=cm[first.cat]||{icon:'📌',col:'#7d8fa3',label:first.cat};
+  const total=matches.reduce((a,x)=>a+x.amt,0);
+  const sortedAmts=matches.map(x=>x.amt).sort((a,b)=>a-b);
+  const median=sortedAmts[Math.floor(sortedAmts.length/2)];
+  const firstDate=matches[matches.length-1].date;
+  // Monthly spend for last 12 months
+  const monthlyBuckets={};
+  matches.forEach(x=>{
+    const ym=(x.date||'').slice(0,7);if(!ym)return;
+    monthlyBuckets[ym]=(monthlyBuckets[ym]||0)+x.amt;
+  });
+  const sortedMonths=Object.keys(monthlyBuckets).sort();
+  const last12=sortedMonths.slice(-12);
+  const monthlyVals=last12.map(m=>monthlyBuckets[m]);
+  // This month vs last month
+  const now=new Date();
+  const thisYM=now.toISOString().slice(0,7);
+  const lastYM=(()=>{const d=new Date(now);d.setMonth(d.getMonth()-1);return d.toISOString().slice(0,7);})();
+  const thisMonthAmt=monthlyBuckets[thisYM]||0;
+  const lastMonthAmt=monthlyBuckets[lastYM]||0;
+  const momPct=lastMonthAmt>0?Math.round((thisMonthAmt-lastMonthAmt)/lastMonthAmt*100):(thisMonthAmt>0?100:0);
+  // Day of week pattern
+  const dowBuckets=[0,0,0,0,0,0,0];
+  matches.forEach(x=>{const d=new Date(x.date+'T00:00:00');dowBuckets[d.getDay()]++;});
+  const dowNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const maxDow=Math.max(...dowBuckets);
+  const topDow=dowNames[dowBuckets.indexOf(maxDow)];
+
+  openDetail(`
+    <div class="detail-hero-wrap">
+      <div class="detail-hero-icon" style="background:${c.col}22;color:${c.col};border-color:${c.col}44">${c.icon}</div>
+      <div class="detail-hero-label">Merchant</div>
+      <div class="detail-hero-title">${first.payee}</div>
+      <div class="detail-hero-amt">${fmtD(total)}</div>
+      <div class="detail-hero-sub">${matches.length} transactions · since ${fmtDate(firstDate)}</div>
+    </div>
+
+    <div class="detail-metrics">
+      <div class="detail-metric"><div class="detail-metric-l">This month</div><div class="detail-metric-v">${fmtD(thisMonthAmt)}</div></div>
+      <div class="detail-metric"><div class="detail-metric-l">vs last month</div><div class="detail-metric-v" style="color:${momPct>0?'var(--y)':momPct<0?'var(--acc)':'var(--t)'}">${momPct>0?'+':''}${momPct}%</div></div>
+      <div class="detail-metric"><div class="detail-metric-l">Median visit</div><div class="detail-metric-v">${fmtD(median)}</div></div>
+      <div class="detail-metric"><div class="detail-metric-l">Top day</div><div class="detail-metric-v">${topDow}</div></div>
+    </div>
+
+    ${monthlyVals.length>1?`<div class="detail-card detail-card-accent">
+      <div class="detail-card-title">Monthly trend</div>
+      <div class="detail-card-body">Last ${last12.length} months at ${first.payee}</div>
+      ${sparklineSvg(monthlyVals,{width:280,height:60})}
+      <div class="detail-sparkline-labels">
+        <span>${last12[0]}</span>
+        <span>${last12[last12.length-1]}</span>
+      </div>
+    </div>`:''}
+
+    <div class="detail-card">
+      <div class="detail-card-title" style="margin-bottom:8px">Recent transactions</div>
+      ${matches.slice(0,10).map(x=>{
+        const cc=cm[x.cat]||c;
+        return`<div class="detail-txn-row" onclick="closeDetail();setTimeout(()=>openTxnDetail('${x.id}'),200)">
+          <div><div style="font-size:12px;color:var(--t)">${fmtDate(x.date)}</div><div style="font-size:10px;color:var(--t3)">${cc.icon} ${cc.label}</div></div>
+          <div style="font-size:14px;font-weight:600;color:${x.dir==='in'?'var(--acc)':'var(--t)'}">${x.dir==='in'?'+':'-'}${fmtD(x.amt)}</div>
+        </div>`;
+      }).join('')}
+      ${matches.length>10?`<div style="text-align:center;font-size:11px;color:var(--t3);padding:8px 0 0">+ ${matches.length-10} more</div>`:''}
+    </div>
+  `);
+}
+
+// ═══════════════════════════════════════════════════════════
+// 3. CATEGORY DETAIL
+// ═══════════════════════════════════════════════════════════
+function openCategoryDetail(catId){
+  const cm=cmap();
+  const c=cm[catId];if(!c){showToast('Category not found');return;}
+  const dir=c.type==='income'?'in':'out';
+  const matches=(S.transactions||[]).filter(x=>x.cat===catId&&x.dir===dir)
+    .sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const total=matches.reduce((a,x)=>a+x.amt,0);
+  const now=new Date();
+  const thisYM=now.toISOString().slice(0,7);
+  const lastYM=(()=>{const d=new Date(now);d.setMonth(d.getMonth()-1);return d.toISOString().slice(0,7);})();
+  const thisMonthAmt=matches.filter(x=>(x.date||'').startsWith(thisYM)).reduce((a,x)=>a+x.amt,0);
+  const lastMonthAmt=matches.filter(x=>(x.date||'').startsWith(lastYM)).reduce((a,x)=>a+x.amt,0);
+  const momPct=lastMonthAmt>0?Math.round((thisMonthAmt-lastMonthAmt)/lastMonthAmt*100):(thisMonthAmt>0?100:0);
+  // Merchant breakdown for this category
+  const merchGroups={};
+  matches.forEach(x=>{
+    const p=x.payee||'Unknown';
+    merchGroups[p]=(merchGroups[p]||0)+x.amt;
+  });
+  const topMerchants=Object.entries(merchGroups).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  // Monthly trend last 12 months
+  const monthlyBuckets={};
+  matches.forEach(x=>{
+    const ym=(x.date||'').slice(0,7);if(!ym)return;
+    monthlyBuckets[ym]=(monthlyBuckets[ym]||0)+x.amt;
+  });
+  const sortedMonths=Object.keys(monthlyBuckets).sort().slice(-12);
+  const monthlyVals=sortedMonths.map(m=>monthlyBuckets[m]);
+
+  openDetail(`
+    <div class="detail-hero-wrap">
+      <div class="detail-hero-icon" style="background:${c.col}22;color:${c.col};border-color:${c.col}44">${c.icon}</div>
+      <div class="detail-hero-label">Category</div>
+      <div class="detail-hero-title">${c.label}</div>
+      <div class="detail-hero-amt">${fmtD(thisMonthAmt)}</div>
+      <div class="detail-hero-sub">This month · <span style="color:${momPct>0?'var(--y)':momPct<0?'var(--acc)':'var(--t2)'}">${momPct>0?'+':''}${momPct}% vs last</span></div>
+    </div>
+
+    <div class="detail-metrics">
+      <div class="detail-metric"><div class="detail-metric-l">This month</div><div class="detail-metric-v">${fmtD(thisMonthAmt)}</div></div>
+      <div class="detail-metric"><div class="detail-metric-l">Last month</div><div class="detail-metric-v">${fmtD(lastMonthAmt)}</div></div>
+      <div class="detail-metric"><div class="detail-metric-l">Total tracked</div><div class="detail-metric-v">${fmtD(total)}</div></div>
+      <div class="detail-metric"><div class="detail-metric-l">Transactions</div><div class="detail-metric-v">${matches.length}</div></div>
+    </div>
+
+    ${monthlyVals.length>1?`<div class="detail-card detail-card-accent">
+      <div class="detail-card-title">Monthly trend</div>
+      <div class="detail-card-body">${c.label} spending over the last ${sortedMonths.length} months</div>
+      ${sparklineSvg(monthlyVals,{width:280,height:60,color:c.col})}
+      <div class="detail-sparkline-labels">
+        <span>${sortedMonths[0]}</span>
+        <span>${sortedMonths[sortedMonths.length-1]}</span>
+      </div>
+    </div>`:''}
+
+    ${topMerchants.length?`<div class="detail-card">
+      <div class="detail-card-title" style="margin-bottom:8px">Top merchants</div>
+      ${topMerchants.map(([m,amt])=>{
+        const share=total>0?Math.round(amt/total*100):0;
+        return`<div class="detail-txn-row" onclick="closeDetail();setTimeout(()=>openMerchantDetail('${m.replace(/'/g,"\\'")}'),200)">
+          <div style="flex:1;min-width:0"><div style="font-size:12px;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m}</div><div style="font-size:10px;color:var(--t3)">${share}% of category</div></div>
+          <div style="font-size:13px;font-weight:600;color:var(--t)">${fmtD(amt)}</div>
+        </div>`;
+      }).join('')}
+    </div>`:''}
+  `);
+}
+
+// ═══════════════════════════════════════════════════════════
+// 4. GOAL DETAIL
+// ═══════════════════════════════════════════════════════════
+function openGoalDetail(goalKey){
+  const g=GCFG[goalKey];const st=(S.goalState||{})[goalKey];
+  if(!g||!st){showToast('Goal not found');return;}
+  const pctDone=g.target>0?Math.min(100,Math.round(st.saved/g.target*100)):0;
+  const remaining=Math.max(0,g.target-st.saved);
+  // Contribution history from paydayDistributed
+  const contribs=[];
+  Object.values(S.paydayDistributed||{}).forEach(d=>{
+    (d.allocations||[]).forEach(a=>{
+      if(a.type==='goal'&&a.ref===goalKey&&a.amount>0){
+        contribs.push({date:d.txnDate||d.date,amt:a.amount});
+      }
+    });
+  });
+  contribs.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  // Sparkline: cumulative saved over time
+  const cumulative=[];let running=0;
+  contribs.forEach(c=>{running+=c.amt;cumulative.push(running);});
+  // Pace analysis: months since first contribution vs progress
+  let paceMsg='';let projectedDate='';
+  if(contribs.length>=2){
+    const first=new Date(contribs[0].date+'T00:00:00');
+    const now=new Date();
+    const monthsElapsed=Math.max(1,(now-first)/(1000*60*60*24*30.44));
+    const perMonth=st.saved/monthsElapsed;
+    if(perMonth>0){
+      const monthsRemaining=remaining/perMonth;
+      const eta=new Date(now.getTime()+monthsRemaining*30.44*24*60*60*1000);
+      projectedDate=eta.toISOString().slice(0,10);
+      paceMsg=`At ${fmtD(Math.round(perMonth))}/month current pace, you'll hit target on ${projectedDate}.`;
+    }
+  }else{
+    paceMsg='Not enough contribution history yet to project. Distribute a few paydays to see pace.';
+  }
+  // Suggested increase if deadline set
+  let suggestedMsg='';
+  if(g.due&&remaining>0){
+    const dueDate=new Date(g.due+'-01T00:00:00');
+    const now=new Date();
+    const monthsToDeadline=Math.max(1,(dueDate-now)/(1000*60*60*24*30.44));
+    const neededPerMonth=remaining/monthsToDeadline;
+    suggestedMsg=`To hit ${g.due} deadline, you need ${fmtD(Math.round(neededPerMonth))}/month from now.`;
+  }
+  // SVG progress ring
+  const ringR=48,ringC=2*Math.PI*ringR;
+  const ringFill=ringC*pctDone/100;
+
+  openDetail(`
+    <div class="detail-hero-wrap detail-hero-goal">
+      <div class="detail-goal-ring">
+        <svg viewBox="0 0 120 120" style="width:130px;height:130px;transform:rotate(-90deg)">
+          <circle cx="60" cy="60" r="${ringR}" fill="none" stroke="var(--bg3)" stroke-width="8"/>
+          <circle cx="60" cy="60" r="${ringR}" fill="none" stroke="${g.col||'var(--acc)'}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${ringFill} ${ringC}" style="filter:drop-shadow(0 0 12px ${g.col||'var(--acc)'}66)"/>
+        </svg>
+        <div class="detail-goal-ring-pct">${pctDone}%</div>
+      </div>
+      <div class="detail-hero-label">Goal</div>
+      <div class="detail-hero-title">${g.label}</div>
+      <div class="detail-hero-amt">${fmtD(st.saved)}</div>
+      <div class="detail-hero-sub">of ${fmtD(g.target)} target${g.due?' · due '+g.due:''}</div>
+    </div>
+
+    <div class="detail-metrics">
+      <div class="detail-metric"><div class="detail-metric-l">Remaining</div><div class="detail-metric-v">${fmtD(remaining)}</div></div>
+      <div class="detail-metric"><div class="detail-metric-l">Contributions</div><div class="detail-metric-v">${contribs.length}</div></div>
+    </div>
+
+    <div class="detail-card detail-card-accent">
+      <div class="detail-card-title">Pace analysis</div>
+      <div class="detail-card-body">${paceMsg}</div>
+      ${suggestedMsg?`<div class="detail-card-body" style="margin-top:6px;color:var(--y)">${suggestedMsg}</div>`:''}
+      ${cumulative.length>1?sparklineSvg(cumulative,{width:280,height:60,color:g.col||'var(--acc)'}):''}
+    </div>
+
+    ${contribs.length?`<div class="detail-card">
+      <div class="detail-card-title" style="margin-bottom:8px">Recent contributions</div>
+      ${contribs.slice(-8).reverse().map(c=>`<div class="detail-txn-row">
+        <div style="font-size:12px;color:var(--t)">${fmtDate(c.date)}</div>
+        <div style="font-size:13px;font-weight:600;color:var(--acc)">+${fmtD(c.amt)}</div>
+      </div>`).join('')}
+    </div>`:''}
+
+    <div class="detail-actions">
+      <button class="btn btn-acc btn-full" onclick="closeDetail();showPgFromMore('payday')">Distribute income to goals</button>
+    </div>
+  `);
+}
+
+// ═══════════════════════════════════════════════════════════
+// 5. SUCCESS MOMENT OVERLAY
+// ═══════════════════════════════════════════════════════════
+function showSuccessMoment(opts){
+  opts=opts||{};
+  const ic=opts.icon||'✓';
+  const title=opts.title||'Done';
+  const subtitle=opts.subtitle||'';
+  const detail=opts.detail||'';
+  const el=document.getElementById('success-moment');if(!el)return;
+  el.innerHTML=`
+    <div class="success-inner">
+      <div class="success-icon">${ic}</div>
+      <div class="success-title">${title}</div>
+      ${subtitle?`<div class="success-subtitle">${subtitle}</div>`:''}
+      ${detail?`<div class="success-detail">${detail}</div>`:''}
+    </div>`;
+  el.classList.add('open');
+  // Auto-dismiss after 2.5s, or tap to dismiss
+  el.onclick=hideSuccessMoment;
+  clearTimeout(window._smTimer);
+  window._smTimer=setTimeout(hideSuccessMoment,2500);
+}
+function hideSuccessMoment(){
+  const el=document.getElementById('success-moment');if(!el)return;
+  el.classList.remove('open');
+  el.onclick=null;
+  clearTimeout(window._smTimer);
+}
+
 function launchApp(){
   document.getElementById('setup').style.display='none';
   const app=document.getElementById('app');app.style.display='flex';
@@ -2630,7 +3155,7 @@ function buildTxnList(){
     }
     const c=cm[it.cat]||cm.other||{icon:'📌',col:'#7d8fa3',label:'Other'};
     const typeTag=c.type==='fixed'?'<span class="tag tb" style="margin-left:4px">FIXED</span>':'';
-    return`<div class="txn fadein"><div class="txn-ico" style="background:${c.col}22">${c.icon}</div><div class="txn-mid"><div class="txn-p">${it.payee}</div><div class="txn-m"><span class="tag ${it.dir==='in'?'tg':'tr'}">${it.dir==='in'?'IN':'OUT'}</span>${c.label}${typeTag}${it.note?` · ${it.note}`:''}</div><div class="txn-acts"><button class="txn-act" onclick="openTxnModal('${it.id}')">Edit</button><button class="txn-act" onclick="deleteTxn('${it.id}')">Delete</button></div></div><div class="txn-r"><div class="txn-a ${it.dir}">${it.dir==='out'?'-':'+'}${fmtD(it.amt)}</div><div class="txn-d">${fmtDate(it.date)}</div></div></div>`;
+    return`<div class="txn fadein" onclick="openTxnDetail('${it.id}')" style="cursor:pointer"><div class="txn-ico" style="background:${c.col}22">${c.icon}</div><div class="txn-mid"><div class="txn-p">${it.payee}</div><div class="txn-m"><span class="tag ${it.dir==='in'?'tg':'tr'}">${it.dir==='in'?'IN':'OUT'}</span>${c.label}${typeTag}${it.note?` · ${it.note}`:''}</div><div class="txn-acts"><button class="txn-act" onclick="event.stopPropagation();openTxnModal('${it.id}')">Edit</button><button class="txn-act" onclick="event.stopPropagation();deleteTxn('${it.id}')">Delete</button></div></div><div class="txn-r"><div class="txn-a ${it.dir}">${it.dir==='out'?'-':'+'}${fmtD(it.amt)}</div><div class="txn-d">${fmtDate(it.date)}</div></div></div>`;
   }).join('')}</div>`;
 }
 function buildRecList(){const el=document.getElementById('rec-list');if(!el)return;const cm=cmap();const recs=S.recurring.filter(r=>r.acct===S.selectedAcct);if(!recs.length){el.innerHTML=`<div class="empty"><div class="empty-ico">🔁</div><div class="empty-txt">No recurring bills yet.</div></div>`;return;}el.innerHTML=recs.map(r=>{const c=cm[r.cat]||{icon:'📌',col:'#7d8fa3',label:'Other'};return`<div class="rec"><div class="txn-ico" style="background:${c.col}22;width:28px;height:28px;font-size:12px;border-radius:7px">${c.icon}</div><div class="rec-i"><div class="rec-n">${r.name}</div><div class="rec-m">Day ${r.day} · ${c.label}</div></div><div style="display:flex;align-items:center;gap:6px"><div class="rec-a">-${fmtD(r.amt)}</div><button class="txn-act" onclick="deleteRecurring('${r.id}')">×</button></div></div>`;}).join('');}
@@ -3753,7 +4278,7 @@ const DASH_WIDGETS={
     canHalfWidth:false,defaultOn:false,alwaysOn:false,
     render(){
       const cm=cmap();const recent=S.transactions.slice(0,5);
-      const body=recent.length?recent.map(t=>{const c=cm[t.cat]||{icon:'📌',col:'#7d8fa3',label:'Other'};return`<div class="txn"><div class="txn-ico" style="background:${c.col}22;width:28px;height:28px;font-size:12px;border-radius:7px">${c.icon}</div><div class="txn-mid"><div class="txn-p" style="font-size:12px">${t.payee}</div><div class="txn-m">${c.label}</div></div><div class="txn-r"><div class="txn-a ${t.dir}" style="font-size:11px">${t.dir==='out'?'-':'+'}${fmtD(t.amt)}</div><div class="txn-d">${fmtDate(t.date)}</div></div></div>`;}).join(''):`<div class="empty"><div class="empty-ico">📭</div><div class="empty-txt">No transactions yet.</div></div>`;
+      const body=recent.length?recent.map(t=>{const c=cm[t.cat]||{icon:'📌',col:'#7d8fa3',label:'Other'};return`<div class="txn" onclick="openTxnDetail('${t.id}')" style="cursor:pointer"><div class="txn-ico" style="background:${c.col}22;width:28px;height:28px;font-size:12px;border-radius:7px">${c.icon}</div><div class="txn-mid"><div class="txn-p" style="font-size:12px">${t.payee}</div><div class="txn-m">${c.label}</div></div><div class="txn-r"><div class="txn-a ${t.dir}" style="font-size:11px">${t.dir==='out'?'-':'+'}${fmtD(t.amt)}</div><div class="txn-d">${fmtDate(t.date)}</div></div></div>`;}).join(''):`<div class="empty"><div class="empty-ico">📭</div><div class="empty-txt">No transactions yet.</div></div>`;
       return`<div class="card"><div class="ctitle"><div class="ctitle-l">Recent</div><button class="btn btn-ghost btn-sm" onclick="showPg('txns',document.querySelector('[data-pg=txns]'))">All</button></div>${body}</div>`;
     }
   },
@@ -3906,7 +4431,7 @@ function buildGoalsPage(){
     const st=S.goalState[k],p=pct(st.saved,g.target);
     if(i>0)html+='<hr class="dvdr">';
     const log=st.log.slice(-4).reverse().map(e=>`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:10px;border-bottom:1px solid var(--bdr)"><span style="color:var(--t3)">${e.date}</span><span style="color:var(--acc)">+${fmtD(e.amount)}</span></div>`).join('');
-    html+=`<div class="prog"><div class="p-lr"><span class="p-n">${g.label}</span><span class="p-v">${fmtD(st.saved)} / ${fmtD(g.target)}</span></div><div class="p-track"><div class="p-fill" style="width:${p}%;background:${g.col}"></div></div><div class="p-sub">${p}%${g.due?' · due '+g.due:''} · ${g.tip}</div><div style="display:flex;gap:6px;margin-top:8px"><input type="number" id="gi-${k}" class="inp" placeholder="Add $" style="margin:0;flex:1" min="0" step="10"><button class="btn btn-acc btn-sm" onclick="addToGoal('${k}')">Add</button><button class="btn btn-ghost btn-sm" onclick="resetGoal('${k}')">Reset</button></div>${log?`<div style="margin-top:5px">${log}</div>`:''}</div>`;
+    html+=`<div class="prog"><div class="p-lr"><span class="p-n" onclick="openGoalDetail('${k}')" style="cursor:pointer;text-decoration:underline;text-decoration-color:var(--bdr);text-underline-offset:3px">${g.label}</span><span class="p-v">${fmtD(st.saved)} / ${fmtD(g.target)}</span></div><div class="p-track" onclick="openGoalDetail('${k}')" style="cursor:pointer"><div class="p-fill" style="width:${p}%;background:${g.col}"></div></div><div class="p-sub">${p}%${g.due?' · due '+g.due:''} · ${g.tip}</div><div style="display:flex;gap:6px;margin-top:8px"><input type="number" id="gi-${k}" class="inp" placeholder="Add $" style="margin:0;flex:1" min="0" step="10"><button class="btn btn-acc btn-sm" onclick="addToGoal('${k}')">Add</button><button class="btn btn-ghost btn-sm" onclick="openGoalDetail('${k}')">Details</button></div>${log?`<div style="margin-top:5px">${log}</div>`:''}</div>`;
   });
   document.getElementById('goal-items').innerHTML=html;
   buildGoalsTotals();
@@ -3941,7 +4466,17 @@ function checkMilestone(key,prevPct,newPct){
       ms.push(mp);S.goalState[key].milestones=ms;
       const g=GCFG[key];
       fireConfetti();
-      showToast(`🎉 ${g.label} hit ${mp}%!`);
+      // 100% is a proper "you did it" moment — full success screen
+      if(mp>=100&&typeof showSuccessMoment==='function'){
+        showSuccessMoment({
+          icon:'🏆',
+          title:`${g.label} reached!`,
+          subtitle:`${fmtD(g.target)} saved`,
+          detail:'Goal complete'
+        });
+      }else{
+        showToast(`🎉 ${g.label} hit ${mp}%!`);
+      }
     }
   });
 }
@@ -4229,7 +4764,7 @@ function buildCatBreakdown(){
   const sorted=Object.entries(catSpend).sort((a,b)=>b[1]-a[1]);
   const total=sorted.reduce((a,[,v])=>a+v,0);
   if(!sorted.length){el.innerHTML=`<div class="empty"><div class="empty-ico">📊</div><div class="empty-txt">No spending recorded for ${periodLabel(p).toLowerCase()}.</div></div>`;return;}
-  el.innerHTML=sorted.map(([id,v])=>{const c=cm[id]||{icon:'📌',col:'#7d8fa3',label:id,type:'variable'};const pp=Math.round(v/total*100);const typeTag=c.type==='fixed'?'<span class="tag tb" style="font-size:8px;margin-left:4px">FIXED</span>':'<span class="tag ty" style="font-size:8px;margin-left:4px">VAR</span>';return`<div class="cat-bar-row"><div class="cat-ico-sm" style="background:${c.col}22">${c.icon}</div><div class="cat-bar-info"><div class="cat-bar-name">${c.label}${typeTag} <span style="font-size:9px;color:var(--t3)">${pp}%</span></div><div class="cat-bar-track"><div class="cat-bar-fill" style="width:${pp}%;background:${c.col}"></div></div></div><div class="cat-bar-val">${fmtDI(v)}</div></div>`;}).join('');
+  el.innerHTML=sorted.map(([id,v])=>{const c=cm[id]||{icon:'📌',col:'#7d8fa3',label:id,type:'variable'};const pp=Math.round(v/total*100);const typeTag=c.type==='fixed'?'<span class="tag tb" style="font-size:8px;margin-left:4px">FIXED</span>':'<span class="tag ty" style="font-size:8px;margin-left:4px">VAR</span>';return`<div class="cat-bar-row" onclick="openCategoryDetail('${id}')" style="cursor:pointer"><div class="cat-ico-sm" style="background:${c.col}22">${c.icon}</div><div class="cat-bar-info"><div class="cat-bar-name">${c.label}${typeTag} <span style="font-size:9px;color:var(--t3)">${pp}%</span></div><div class="cat-bar-track"><div class="cat-bar-fill" style="width:${pp}%;background:${c.col}"></div></div></div><div class="cat-bar-val">${fmtDI(v)}</div></div>`;}).join('');
 }
 function buildBudgetPerformance(){
   const el=document.getElementById('budget-performance');if(!el)return;
@@ -5592,7 +6127,16 @@ function confirmBankImport(){
   _pendingBankImport=null;
   save();snapshotNW();closeSheet();
   refreshAfterChange();
-  showToast(`Imported ${added} transaction${added===1?'':'s'} from ${bank[0].toUpperCase()+bank.slice(1)}`);
+  if(added>=5&&typeof showSuccessMoment==='function'){
+    showSuccessMoment({
+      icon:'↓',
+      title:'Import complete',
+      subtitle:`${added} transactions added from ${bank[0].toUpperCase()+bank.slice(1)}`,
+      detail:'Categorised & ready to review'
+    });
+  }else{
+    showToast(`Imported ${added} transaction${added===1?'':'s'} from ${bank[0].toUpperCase()+bank.slice(1)}`);
+  }
 }
 
 function parseCsvImport(){
@@ -6315,7 +6859,15 @@ function confirmDistribution(txnId){
   };
   closeSheet();snapshotNW();save();
   buildPaydayPage();if(currentPg==='dash')buildDash();
-  fireConfetti();showToast(fmtD(txn.amt)+' distributed ✓');
+  fireConfetti();
+  // Success moment
+  const srcLabel=src.label||sourceKey;
+  showSuccessMoment({
+    icon:'✓',
+    title:'Payday distributed',
+    subtitle:`${fmtD(txn.amt)} from ${srcLabel}`,
+    detail:allocs.filter(a=>a.amount>0).map(a=>a.label+' '+fmtDI(a.amount)).slice(0,3).join(' · ')
+  });
 }
 
 function buildPaydayHistory(){
