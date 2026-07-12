@@ -75,6 +75,12 @@ body{display:flex;flex-direction:column;position:fixed;width:100%;height:100%;ba
 .update-banner-arrow{color:var(--acc);font-size:16px;flex-shrink:0}
 .update-banner-x{background:transparent;border:none;color:var(--t3);font-size:16px;cursor:pointer;padding:2px 6px;line-height:1;flex-shrink:0}
 .update-banner-x:hover{color:var(--t)}
+
+/* Payee autocomplete dropdown (v2.1.0) */
+.payee-suggestions{background:var(--bg3);border:1px solid var(--bdr);border-radius:10px;margin:-8px 0 10px;max-height:220px;overflow-y:auto}
+.payee-sug{padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--bdr);transition:background .15s}
+.payee-sug:last-child{border-bottom:none}
+.payee-sug:hover,.payee-sug:active{background:var(--bg4,rgba(255,255,255,.03))}
 .wn-title{font-family:var(--display);font-size:24px;font-weight:800;color:var(--t);letter-spacing:-.5px;margin-bottom:18px;line-height:1.1}
 .wn-vhead{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--bdr)}
 .wn-section{margin-bottom:16px}
@@ -865,6 +871,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
     <div class="pg" id="pg-recurring">
       <div class="alert alert-b" style="font-size:12px;line-height:1.55;margin-bottom:12px">Set up regular bills once. They appear as <strong>pending</strong> on their due date — your balance shows current and "after confirmed", and only updates fully when you confirm you've paid.</div>
       <div id="recurring-pending"></div>
+      <div id="sub-suggestions"></div>
       <div class="card">
         <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Recurring transactions</div><button class="btn btn-acc btn-sm" onclick="openRuleModal()">+ Add</button></div>
         <div id="recurring-rules"></div>
@@ -1006,6 +1013,11 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
           <select class="inp" id="new-cat-type" style="margin:0;flex:1"><option value="variable">Variable expense</option><option value="fixed">Fixed expense</option></select>
           <button class="btn btn-acc btn-sm" onclick="addCustomCat()">Add</button>
         </div>
+      </div>
+      <div class="card">
+        <div class="ctitle"><div class="ctitle-l">Learned categorisation rules</div><span style="font-size:9px;color:var(--t3)">from your corrections</span></div>
+        <div style="font-size:11px;color:var(--t2);line-height:1.55;margin-bottom:10px">When you edit an imported transaction's category or payee, the app offers to remember. Future imports containing the same keyword will auto-categorise.</div>
+        <div id="learned-rules-body"></div>
       </div>
       <div class="card">
         <div class="ctitle"><div class="ctitle-l">Notifications</div></div>
@@ -1172,7 +1184,8 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
   <!-- Standard txn fields -->
   <div id="txn-standard-fields">
     <div class="inp-row"><div><label class="lbl">Amount $</label><input type="number" class="inp" id="txn-amt" placeholder="0.00" min="0" step="0.01"></div><div><label class="lbl">Date</label><input type="date" class="inp" id="txn-date"></div></div>
-    <label class="lbl">Payee / description</label><input type="text" class="inp" id="txn-payee" placeholder="e.g. Woolworths">
+    <label class="lbl">Payee / description</label><input type="text" class="inp" id="txn-payee" placeholder="e.g. Woolworths" oninput="onPayeeInput(event)" onblur="hidePayeeSuggestions()" autocomplete="off">
+    <div id="payee-suggestions" class="payee-suggestions" style="display:none"></div>
     <label class="lbl">Category</label><select class="inp" id="txn-cat"></select>
     <label class="lbl">Account</label><select class="inp" id="txn-acct"><option value="westpac">Westpac</option><option value="macquarie">Macquarie</option></select>
     <label class="lbl">Note (optional)</label><input type="text" class="inp" id="txn-note" placeholder="Optional note">
@@ -1419,9 +1432,30 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.0.4';
+const APP_VERSION='2.1.0';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.1.0',
+    date:'2026-07-12',
+    title:'Phase 2 — Smart suggestions & learning',
+    sections:{
+      features:[
+        '📚 The app learns from your corrections — edit an imported transaction\'s category or payee and it offers to remember, so future imports auto-categorise the same merchant',
+        '🔁 Subscription detection — the app scans your CSV history for recurring monthly charges (Anthropic, Netflix etc.) and offers to add them to Recurring so they auto-generate as pending each month',
+        '🔍 Payee autocomplete — when you manually add a transaction, typing 2+ characters shows matching past payees with their usual category and amount, auto-fillable with one tap',
+        '⏰ Pattern insights — the Insights tab now surfaces gaps in your regular spending patterns (e.g. "Halifax Lunch usually every 3 days, but 10 days since last")'
+      ],
+      improvements:[
+        'Imported transactions now store their original bank narrative so learning rules extract the right keyword',
+        'Learned rules card in Settings — review or remove any auto-taught rule',
+        'Bank auto-categoriser checks your learned rules FIRST, so your corrections always win over built-in rules'
+      ],
+      fixes:[
+        'Editing an imported transaction now preserves the import metadata (signature, narrative) so re-imports still dedupe correctly'
+      ]
+    }
+  },
   {
     v:'2.0.4',
     date:'2026-07-11',
@@ -2418,13 +2452,27 @@ function saveTxn(){
   const amt=parseFloat(document.getElementById('txn-amt').value);
   const payee=document.getElementById('txn-payee').value.trim();
   if(!amt||amt<=0||!payee){alert('Enter amount and payee.');return;}
-  const txn={id:S.editingTxnId||uid(),amt,dir:txnDir,date:document.getElementById('txn-date').value,payee,cat:document.getElementById('txn-cat').value,acct:document.getElementById('txn-acct').value,note:document.getElementById('txn-note').value.trim()};
-  if(S.editingTxnId){const i=S.transactions.findIndex(x=>x.id===S.editingTxnId);if(i!==-1)S.transactions[i]=txn;}
-  else S.transactions.unshift(txn);
+  const newTxn={id:S.editingTxnId||uid(),amt,dir:txnDir,date:document.getElementById('txn-date').value,payee,cat:document.getElementById('txn-cat').value,acct:document.getElementById('txn-acct').value,note:document.getElementById('txn-note').value.trim()};
+  let oldTxn=null;
+  if(S.editingTxnId){
+    const i=S.transactions.findIndex(x=>x.id===S.editingTxnId);
+    if(i!==-1){oldTxn={...S.transactions[i]};
+      // Preserve import metadata so learning works on re-edits
+      newTxn.importedFrom=S.transactions[i].importedFrom;
+      newTxn.importedAt=S.transactions[i].importedAt;
+      newTxn.importSig=S.transactions[i].importSig;
+      newTxn.originalNarrative=S.transactions[i].originalNarrative;
+      S.transactions[i]=newTxn;}
+  }
+  else S.transactions.unshift(newTxn);
   closeModal('txn-modal');snapshotNW();save();
   if(currentPg==='txns')buildTxnsPage();
   if(currentPg==='dash')buildDash();
   if(currentPg==='analytics')buildAnalytics();
+  // Feature 1: Offer to learn from corrections on imported transactions
+  if(oldTxn&&typeof offerToLearnRule==='function'){
+    setTimeout(()=>offerToLearnRule(oldTxn,newTxn),200);
+  }
 }
 function saveTransfer(){
   const from=document.getElementById('tr-from').value;
@@ -2765,6 +2813,7 @@ function buildPendingWidget(containerId,acct){
 function buildRecurringPage(){
   generatePendingFromRules();
   buildPendingWidget('recurring-pending',null);
+  if(typeof buildSubscriptionSuggestionsCard==='function')buildSubscriptionSuggestionsCard();
   buildRecurringRulesList();
 }
 function buildRecurringRulesList(){
@@ -3324,6 +3373,18 @@ function buildInsightsPage(){
   if(bigMove&&bigMove.diff>=20){
     const info=cm[bigMove.c]||{label:bigMove.c,icon:'📌'};
     groups.spending.push({pri:2,icon:info.icon,title:`${info.label} spending up`,body:`${info.label} is ${fmtD(bigMove.diff)} higher this month (${fmtD(bigMove.cur)} vs ${fmtD(bigMove.prev)} last month).`,action:"showPgFromMore('analytics')"});
+  }
+  // Pattern insights: regular payees that haven't appeared as expected
+  if(typeof detectPayeePatterns==='function'){
+    const patterns=detectPayeePatterns().slice(0,3);
+    patterns.forEach(p=>{
+      groups.spending.push({
+        pri:p.priority,icon:'⏰',
+        title:`${p.payee} pattern gap`,
+        body:`${p.payee} usually appears every ~${p.expectedInterval} day${p.expectedInterval===1?'':'s'}, but it's been ${p.daysSinceLast} days since the last one. Missing a purchase, or a subscription lapsed?`,
+        action:"showPgFromMore('analytics')"
+      });
+    });
   }
 
   // ── Investments ──
@@ -4975,6 +5036,333 @@ function parseBankCsv(text){
   return{ok:false,error:'Unknown CSV format. Expected Westpac or Macquarie export.'};
 }
 
+
+// ═══════════════════════════════════════════════════════════
+// PHASE 2 (v2.1.0) — Smart suggestions, learning, subscription detection
+// ═══════════════════════════════════════════════════════════
+
+// ── FEATURE 1: LEARNING FROM CORRECTIONS ────────────────────
+// S.customRules stores user-taught categorisations. Structure:
+//   [{keyword:'HALIFAX LUNCH', cat:'food', payee:'Halifax Lunch (work lunch)', createdAt:ms}]
+// These take priority over BANK_RULES so user overrides always win.
+function ensureCustomRules(){if(!Array.isArray(S.customRules))S.customRules=[];return S.customRules;}
+
+// Extract a distinctive keyword from a raw narrative.
+// Strips common prefixes (DEBIT CARD PURCHASE, EFTPOS DEBIT, WITHDRAWAL etc.) and takes
+// the first 2-3 distinctive tokens (skipping locations, numbers, country codes).
+function extractKeyword(narrative){
+  if(!narrative)return'';
+  let s=narrative.toUpperCase()
+    .replace(/^(DEBIT CARD PURCHASE|EFTPOS DEBIT|DEBIT CARD REFUND|WITHDRAWAL[- ]MOBILE|WITHDRAWAL[- ]OSKO PAYMENT|WITHDRAWAL[- ]?ATM|DEPOSIT[- ]?ONLINE|DEPOSIT[- ]?SALARY|WITHDRAWAL[- ]?BPAY|CREDIT CARD PURCHASE|BPAY)\s+/i,'')
+    .replace(/\s+(AUS|USA|NZ|GBR|GER)\s*$/i,'')
+    .replace(/\s+\d{5,}\s*/g,' ')       // strip long numbers
+    .replace(/\s+/g,' ').trim();
+  // Take first 2-3 tokens that are ≥3 chars, prefer alphabetic
+  const tokens=s.split(/\s+/).filter(w=>w.length>=3);
+  const chosen=[];
+  for(const t of tokens){
+    if(chosen.length>=3)break;
+    // skip pure numbers, common location words, single-letter+dot patterns
+    if(/^\d+$/.test(t))continue;
+    if(/^(WEST|EAST|NORTH|SOUTH|BUNBURY|PERTH|EATON|JOONDALUP|MIDLAND|OSBORNE|BUSSELTON|DALYELLUP|KARRINYUP)$/i.test(t))continue;
+    chosen.push(t);
+  }
+  return chosen.join(' ')||s.slice(0,30);
+}
+
+// Try customRules first, then falls back to BANK_RULES.
+// This SHADOWS the earlier categoriseBankTxn — declared later in the file, later wins.
+function categoriseBankTxn(desc,direction){
+  const clean=(desc||'').trim();
+  const upper=clean.toUpperCase();
+  // Priority 1: user-taught rules
+  const custom=ensureCustomRules();
+  for(let i=0;i<custom.length;i++){
+    const r=custom[i];
+    if(r.direction&&r.direction!==direction)continue;
+    if(!r.keyword)continue;
+    if(upper.includes(r.keyword.toUpperCase())){
+      return{cat:r.cat,payee:r.payee,matched:true,ruleIdx:'custom:'+i};
+    }
+  }
+  // Priority 2: built-in BANK_RULES
+  for(let i=0;i<BANK_RULES.length;i++){
+    const r=BANK_RULES[i];
+    if(r.direction&&r.direction!==direction)continue;
+    if(r.match instanceof RegExp?r.match.test(clean):upper.includes(r.match.toUpperCase())){
+      return{cat:r.cat,payee:r.payee,matched:true,ruleIdx:i};
+    }
+  }
+  // Fallback: extract merchant from Westpac narrative structure
+  let payee=clean;
+  const m=clean.match(/^(?:DEBIT CARD PURCHASE|EFTPOS DEBIT|DEBIT CARD REFUND)\s+(.+?)(?:\s+[A-Z][A-Z ]{2,}\s+(?:AUS|USA|NZ)|\s{2,})/i);
+  if(m)payee=m[1].trim();
+  payee=payee.replace(/\s+(?:AUS|USA|NZ|GBR)$/i,'').replace(/\s+\d{3,}\s*$/,'').replace(/\s+/g,' ').trim();
+  const defaultCat=direction==='in'?'income':'other';
+  return{cat:defaultCat,payee:payee||'Unknown',matched:false,ruleIdx:-1};
+}
+
+// When user edits an imported transaction, offer to save the mapping as a rule.
+function offerToLearnRule(oldTxn,newTxn){
+  // Only offer if this was an imported transaction with a narrative
+  if(!oldTxn.originalNarrative)return;
+  // Only if payee OR category actually changed
+  if(oldTxn.payee===newTxn.payee&&oldTxn.cat===newTxn.cat)return;
+  const keyword=extractKeyword(oldTxn.originalNarrative);
+  if(!keyword||keyword.length<3)return;
+  const custom=ensureCustomRules();
+  // Skip if a rule with this keyword already exists (avoid duplicates)
+  if(custom.some(r=>r.keyword===keyword))return;
+  const msg=`Remember this? Any future imported transaction containing "${keyword}" will be categorised as:\n\n📌 ${newTxn.payee}\n📂 ${cmap()[newTxn.cat]?.label||newTxn.cat}\n\n(You can review or remove learned rules in Settings.)`;
+  if(confirm(msg)){
+    custom.push({keyword,cat:newTxn.cat,payee:newTxn.payee,direction:newTxn.dir,createdAt:Date.now()});
+    save();
+    showToast('Rule saved — future imports will auto-categorise');
+  }
+}
+
+// Settings UI for reviewing/removing learned rules.
+function buildLearnedRulesCard(){
+  const el=document.getElementById('learned-rules-body');if(!el)return;
+  const rules=ensureCustomRules();
+  if(!rules.length){el.innerHTML='<div style="font-size:11px;color:var(--t3);padding:6px 0">No learned rules yet. Edit an imported transaction\'s category or payee, and you\'ll be offered to save a rule so future imports auto-categorise.</div>';return;}
+  const cm=cmap();
+  el.innerHTML=rules.map((r,i)=>{
+    const c=cm[r.cat]||{icon:'📌',col:'#7d8fa3',label:r.cat};
+    return`<div class="bench-row" style="align-items:flex-start;padding:8px 0">
+      <div class="bench-label" style="flex:1;min-width:0">
+        <div style="font-size:11px;color:var(--t);font-weight:600">"${r.keyword}"</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:2px">→ ${r.payee} · ${c.icon} ${c.label}</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="removeLearnedRule(${i})" style="padding:4px 8px;font-size:10px">✕</button>
+    </div>`;
+  }).join('');
+}
+function removeLearnedRule(idx){
+  const rules=ensureCustomRules();
+  if(!rules[idx])return;
+  if(!confirm(`Remove learned rule for "${rules[idx].keyword}"?`))return;
+  rules.splice(idx,1);save();buildLearnedRulesCard();showToast('Rule removed');
+}
+
+// ── FEATURE 2: SUBSCRIPTION DETECTION ───────────────────────
+// Scan transactions for recurring monthly charges and offer to add them to Recurring.
+function detectSubscriptions(){
+  const txns=(S.transactions||[]).filter(t=>t.dir==='out');
+  // Group by payee (case-insensitive, normalised)
+  const groups={};
+  txns.forEach(t=>{
+    const key=(t.payee||'').toLowerCase().replace(/\s+/g,' ').trim();
+    if(!key)return;
+    if(!groups[key])groups[key]=[];
+    groups[key].push(t);
+  });
+  const candidates=[];
+  Object.entries(groups).forEach(([key,list])=>{
+    if(list.length<2)return; // need at least 2 occurrences
+    // Sort by date
+    list.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+    // Compute gaps in days
+    const gaps=[];
+    for(let i=1;i<list.length;i++){
+      const d1=new Date(list[i-1].date+'T00:00:00');
+      const d2=new Date(list[i].date+'T00:00:00');
+      gaps.push((d2-d1)/(1000*60*60*24));
+    }
+    // Compute average gap; require most gaps to be in the 25-35 day monthly window
+    const avgGap=gaps.reduce((a,g)=>a+g,0)/gaps.length;
+    const monthlyGaps=gaps.filter(g=>g>=25&&g<=35).length;
+    // Also check amounts are similar (max within 15% of median)
+    const amounts=list.map(t=>t.amt).sort((a,b)=>a-b);
+    const medAmt=amounts[Math.floor(amounts.length/2)];
+    const amtOk=amounts.every(a=>Math.abs(a-medAmt)/medAmt<0.15);
+    if(monthlyGaps>=gaps.length*0.6&&avgGap>=25&&avgGap<=35&&amtOk){
+      // Check if we already have a recurring rule for this payee (name field on recurringRules)
+      const alreadyRecurring=(S.recurringRules||[]).some(r=>{
+        const rn=(r.name||'').toLowerCase();
+        return rn&&(rn.includes(key)||key.includes(rn));
+      });
+      if(alreadyRecurring)return;
+      candidates.push({
+        payee:list[list.length-1].payee,
+        cat:list[list.length-1].cat,
+        avgAmount:Math.round(medAmt*100)/100,
+        avgGap:Math.round(avgGap),
+        occurrences:list.length,
+        lastDate:list[list.length-1].date,
+        acct:list[list.length-1].acct||'westpac'
+      });
+    }
+  });
+  return candidates;
+}
+
+// Build a "possible subscriptions" card that renders on the Recurring page.
+function buildSubscriptionSuggestionsCard(){
+  const el=document.getElementById('sub-suggestions');if(!el)return;
+  const candidates=detectSubscriptions();
+  if(!candidates.length){el.innerHTML='';return;}
+  const cm=cmap();
+  el.innerHTML=`<div class="card" style="border-color:var(--acc);border-width:1px">
+    <div class="ctitle"><div class="ctitle-l" style="color:var(--acc)">✨ Possible subscriptions detected</div><span style="font-size:9px;color:var(--t3)">from your history</span></div>
+    <div style="font-size:11px;color:var(--t2);line-height:1.55;margin-bottom:10px">These payees look like monthly recurring charges. Add them as recurring rules so they auto-generate as pending each month?</div>
+    ${candidates.map((c,i)=>{
+      const cat=cm[c.cat]||{icon:'📌',label:c.cat,col:'#7d8fa3'};
+      return`<div class="bench-row" style="align-items:flex-start;padding:9px 0">
+        <div class="bench-label" style="flex:1;min-width:0">
+          <div style="font-size:12px;color:var(--t);font-weight:600">${cat.icon} ${c.payee}</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:2px">${fmtD(c.avgAmount)}/mo · seen ${c.occurrences}x · last on ${fmtDate(c.lastDate)}</div>
+        </div>
+        <div style="display:flex;gap:5px;flex-shrink:0">
+          <button class="btn btn-acc btn-sm" onclick="addSuggestedSubscription(${i})">Add</button>
+          <button class="btn btn-ghost btn-sm" onclick="dismissSuggestedSubscription(${i})" style="padding:5px 8px">Skip</button>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+  window._subCandidatesCache=candidates;
+}
+function addSuggestedSubscription(idx){
+  const c=(window._subCandidatesCache||[])[idx];if(!c)return;
+  if(!Array.isArray(S.recurringRules))S.recurringRules=[];
+  const lastDay=parseInt(c.lastDate.split('-')[2],10)||1;
+  S.recurringRules.push({
+    id:uid(),
+    name:c.payee,
+    amount:c.avgAmount,
+    freq:'monthly',
+    dayOfMonth:lastDay,
+    weekday:1,
+    cat:c.cat,
+    acct:c.acct,
+    dir:'out',
+    active:true,
+    lastGenerated:null,
+    nextDue:null,
+    autoDetected:true
+  });
+  save();
+  if(typeof generatePendingFromRules==='function')generatePendingFromRules();
+  buildSubscriptionSuggestionsCard();
+  if(currentPg==='recurring'&&typeof buildRecurringRulesList==='function')buildRecurringRulesList();
+  showToast(`"${c.payee}" added to Recurring — will auto-generate each month`);
+}
+function dismissSuggestedSubscription(idx){
+  // Track dismissed payees so we don't nag
+  if(!S.dismissedSubs)S.dismissedSubs=[];
+  const c=(window._subCandidatesCache||[])[idx];if(!c)return;
+  S.dismissedSubs.push((c.payee||'').toLowerCase());
+  save();buildSubscriptionSuggestionsCard();
+}
+
+// Override detectSubscriptions to also exclude dismissed payees
+const _detectSubscriptionsOrig=detectSubscriptions;
+function detectSubscriptionsFiltered(){
+  const cands=_detectSubscriptionsOrig();
+  const dismissed=new Set((S.dismissedSubs||[]).map(s=>s.toLowerCase()));
+  return cands.filter(c=>!dismissed.has((c.payee||'').toLowerCase()));
+}
+// Repoint the earlier function so buildSubscriptionSuggestionsCard uses the filtered version
+detectSubscriptions=detectSubscriptionsFiltered;
+
+// ── FEATURE 3: PAYEE AUTOCOMPLETE ───────────────────────────
+// When adding a transaction, dropdown suggests payees from history.
+// Selecting one auto-fills category and recent amount.
+function buildPayeeSuggestions(query){
+  const q=(query||'').toLowerCase().trim();
+  if(q.length<2)return[];
+  const seen={};
+  (S.transactions||[]).forEach(t=>{
+    const p=(t.payee||'').trim();if(!p)return;
+    if(!p.toLowerCase().includes(q))return;
+    if(!seen[p]){seen[p]={payee:p,cats:{},amounts:[],lastDate:t.date,count:0};}
+    seen[p].count++;
+    seen[p].cats[t.cat]=(seen[p].cats[t.cat]||0)+1;
+    seen[p].amounts.push(t.amt);
+    if((t.date||'')>seen[p].lastDate)seen[p].lastDate=t.date;
+  });
+  const results=Object.values(seen).map(s=>{
+    // Pick most common category
+    const topCat=Object.entries(s.cats).sort((a,b)=>b[1]-a[1])[0];
+    const sortedAmts=[...s.amounts].sort((a,b)=>a-b);
+    const median=sortedAmts[Math.floor(sortedAmts.length/2)];
+    return{payee:s.payee,cat:topCat?topCat[0]:'other',amount:median,count:s.count,lastDate:s.lastDate};
+  });
+  // Rank by frequency + recency
+  results.sort((a,b)=>{
+    if(b.count!==a.count)return b.count-a.count;
+    return(b.lastDate||'').localeCompare(a.lastDate||'');
+  });
+  return results.slice(0,6);
+}
+function onPayeeInput(ev){
+  const val=ev.target.value;
+  const el=document.getElementById('payee-suggestions');if(!el)return;
+  const suggestions=buildPayeeSuggestions(val);
+  if(!suggestions.length){el.style.display='none';el.innerHTML='';return;}
+  const cm=cmap();
+  el.style.display='block';
+  el.innerHTML=suggestions.map(s=>{
+    const c=cm[s.cat]||{icon:'📌',label:s.cat,col:'#7d8fa3'};
+    return`<div class="payee-sug" onclick="pickPayeeSuggestion('${s.payee.replace(/'/g,"\\'")}','${s.cat}',${s.amount})">
+      <div style="font-size:12px;color:var(--t);font-weight:500">${s.payee}</div>
+      <div style="font-size:10px;color:var(--t3);margin-top:1px">${c.icon} ${c.label} · usually ${fmtD(s.amount)} · seen ${s.count}x</div>
+    </div>`;
+  }).join('');
+}
+function pickPayeeSuggestion(payee,cat,amount){
+  document.getElementById('txn-payee').value=payee;
+  document.getElementById('txn-cat').value=cat;
+  const amtEl=document.getElementById('txn-amt');
+  if(!amtEl.value)amtEl.value=(Math.round(amount*100)/100).toFixed(2);
+  const el=document.getElementById('payee-suggestions');
+  if(el){el.style.display='none';el.innerHTML='';}
+}
+function hidePayeeSuggestions(){
+  setTimeout(()=>{const el=document.getElementById('payee-suggestions');if(el){el.style.display='none';}},200);
+}
+
+// ── FEATURE 4: PATTERN INSIGHTS ─────────────────────────────
+// Detect regular payees and flag missing occurrences ("Halifax Lunch usually 3x/week, only 1x this week")
+function detectPayeePatterns(){
+  const outTxns=(S.transactions||[]).filter(t=>t.dir==='out'&&t.cat!=='transfer');
+  const groups={};
+  outTxns.forEach(t=>{
+    const key=(t.payee||'').toLowerCase().trim();if(!key)return;
+    if(!groups[key])groups[key]=[];
+    groups[key].push(t);
+  });
+  const insights=[];
+  const now=new Date();
+  Object.entries(groups).forEach(([key,list])=>{
+    if(list.length<4)return; // need enough data
+    list.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+    const first=new Date(list[0].date+'T00:00:00');
+    const last=new Date(list[list.length-1].date+'T00:00:00');
+    const spanDays=Math.max(1,(last-first)/(1000*60*60*24));
+    if(spanDays<14)return; // need at least 2 weeks of data
+    // Frequency per week
+    const perWeek=list.length/(spanDays/7);
+    // How long since last occurrence?
+    const daysSinceLast=(now-last)/(1000*60*60*24);
+    // Expected interval (days between occurrences)
+    const expectedInterval=spanDays/list.length;
+    // Flag if it's been more than 2x the expected interval since last
+    if(daysSinceLast>expectedInterval*2&&daysSinceLast>7){
+      insights.push({
+        type:'missing',
+        payee:list[0].payee,
+        cat:list[0].cat,
+        perWeek:Math.round(perWeek*10)/10,
+        daysSinceLast:Math.round(daysSinceLast),
+        expectedInterval:Math.round(expectedInterval),
+        priority:daysSinceLast>expectedInterval*4?2:3
+      });
+    }
+  });
+  return insights.sort((a,b)=>a.priority-b.priority);
+}
+
 // ─── Duplicate detection ───────────────────────────────────
 // A parsed row is a duplicate of an existing transaction if:
 //   • date matches (± 1 day tolerance)
@@ -5174,7 +5562,8 @@ function confirmBankImport(){
       note:r.note,
       importedFrom:bank,
       importedAt:Date.now(),
-      importSig:r._sig  // stable signature for future re-import dedup
+      importSig:r._sig,             // stable signature for future re-import dedup
+      originalNarrative:r._narrative // raw bank text — used for "learn from correction"
     });
     added++;
   });
@@ -6301,6 +6690,7 @@ function buildSettingsPage(){
   document.getElementById('mode-dark').classList.toggle('active',(S.mode||'dark')==='dark');
   document.getElementById('mode-light').classList.toggle('active',S.mode==='light');
   ['spend','payday','monthly'].forEach(k=>{const el=document.getElementById(`notif-${k}-btn`);if(el)el.classList.toggle('on',S.notifSettings?.[k]);});
+  if(typeof buildLearnedRulesCard==='function')buildLearnedRulesCard();
   // Populate Groq key field
   const keyInp=document.getElementById('groq-key-inp');
   if(keyInp)keyInp.value=S.groqApiKey||'';
