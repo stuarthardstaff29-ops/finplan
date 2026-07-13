@@ -1577,9 +1577,26 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.6.2';
+const APP_VERSION='2.6.3';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.6.3',
+    date:'2026-07-13',
+    title:'Three fixes: projection, growth chart, benchmarks',
+    sections:{
+      features:[
+        '↻ Auto-fetch button on benchmark comparison — one tap fetches real % returns for each selected benchmark using ETF proxies (SPY for S&P 500, QQQ for Nasdaq, URTH for MSCI, EWA for ASX). No more looking up numbers on Google Finance and typing them in manually'
+      ],
+      improvements:[
+        'Growth vs contributions chart now falls back to your investment transactions (cat=investments) when the structured contributions list is empty, so you get a real graph without needing to log every buy through the contribution modal',
+        'Benchmark rows now show which ETF proxy is being used, so you know what you\'re actually comparing to'
+      ],
+      fixes:[
+        'Fixed the "Projected at Jan 2028: $18.00" bug on the Contributions card. Two functions named projectPortfolio existed and mine was getting shadowed by the older one, which returned an array. Renamed my helper so the projection now correctly computes ~$X compounded at 7% with your monthly contribution pace'
+      ]
+    }
+  },
   {
     v:'2.6.2',
     date:'2026-07-13',
@@ -5712,8 +5729,7 @@ function computeContributions(){
   const avgMonthly=total/monthsElapsed;
   return{thisMonth,lastMonth,thisQuarter,thisYear,total,avgMonthly,txnCount:invTxns.length};
 }
-function projectPortfolio(months,monthlyContrib){
-  // Simple projection: current portfolio value grows at 7% annual real + monthly contributions grow
+function projectContribGrowth(months,monthlyContrib){
   const cur=portTotal();
   const rMonthly=Math.pow(1.07,1/12)-1;
   let val=cur;
@@ -5727,7 +5743,7 @@ function buildContributionCard(){
   // Uni is Jan 2028 — compute months from now
   const uniDate=new Date('2028-01-01T00:00:00');
   const monthsToUni=Math.max(0,Math.round((uniDate-new Date())/(1000*60*60*24*30.44)));
-  const projected=monthsToUni>0?projectPortfolio(monthsToUni,c.avgMonthly):portTotal();
+  const projected=monthsToUni>0?projectContribGrowth(monthsToUni,c.avgMonthly):portTotal();
   el.innerHTML=`<div class="card">
     <div class="ctitle"><div class="ctitle-l">💵 Contributions</div><span style="font-size:9px;color:var(--t3)">${c.txnCount} recorded</span></div>
     <div class="mg">
@@ -6127,7 +6143,8 @@ function calcReturn(){
   const earliest=comps.length?new Date(comps.map(c=>c.date).sort()[0]):new Date(Date.now()-365*24*60*60*1000);
   const yrs=Math.max(0.08,(Date.now()-earliest.getTime())/(365.25*24*60*60*1000));
   const ann=cost>0?(Math.pow(Math.max(0.0001,(tv+td)/cost),1/yrs)-1)*100:0;
-  return{tv,cost,td,contributed,netGain,simplePct,twr,irr,ann,yrs};
+  const startDate=earliest.toISOString().slice(0,10);
+  return{tv,cost,td,contributed,netGain,simplePct,twr,irr,ann,yrs,startDate};
 }
 
 // Money-weighted IRR via bisection over dated cashflows.
@@ -6179,28 +6196,32 @@ function buildReturnSection(){
 // ── Growth vs contributions chart (real, from contribution history) ──
 function renderGrowthChart(){
   const canvas=document.getElementById('growth-chart');if(!canvas)return;
-  const comps=(S.contributions||[]).filter(c=>c.status==='completed'&&c.date).sort((a,b)=>a.date.localeCompare(b.date));
+  // Primary source: S.contributions (proper structured contributions)
+  let comps=(S.contributions||[]).filter(c=>c.status==='completed'&&c.date&&c.amount>0)
+    .map(c=>({date:c.date,amount:c.amount}));
+  // Fallback: derive from S.transactions where cat === 'investments'
+  if(!comps.length){
+    comps=(S.transactions||[]).filter(t=>t.cat==='investments'&&t.dir==='out'&&t.date&&t.amt>0)
+      .map(t=>({date:t.date,amount:t.amt}));
+  }
+  comps.sort((a,b)=>a.date.localeCompare(b.date));
   const labels=[],valueLine=[],contribLine=[];
   if(comps.length){
-    // Build cumulative contributions over time; value line ends at current portfolio value
     let cum=0;
     const tv=portTotal();
     const firstD=new Date(comps[0].date+'T12:00:00');
     const months=Math.max(1,Math.ceil((Date.now()-firstD.getTime())/(1000*60*60*24*30)));
-    // monthly buckets
     for(let i=0;i<=months;i++){
       const d=new Date(firstD.getFullYear(),firstD.getMonth()+i,1);
-      const cutoff=d.getTime();
       cum=comps.filter(c=>new Date(c.date+'T12:00:00')<=d).reduce((a,c)=>a+c.amount,0);
       labels.push(d.toLocaleDateString('en-AU',{month:'short',year:'2-digit'}));
       contribLine.push(Math.round(cum));
-      // value line: interpolate cost→current proportionally to time (simple, honest about being an estimate)
       const frac=months>0?i/months:1;
       const totalCost=comps.reduce((a,c)=>a+c.amount,0);
       valueLine.push(Math.round(cum + (tv-totalCost)*frac*(cum/Math.max(1,totalCost))));
     }
   }else{
-    // No contribution history — show current snapshot only
+    // Truly no data — leave the chart empty and let the caller show a message
     labels.push('Now');valueLine.push(Math.round(portTotal()));contribLine.push(Math.round(portCostBasis()));
   }
   const acc=getComputedStyle(document.documentElement).getPropertyValue('--acc').trim()||'#00d4a0';
@@ -6214,26 +6235,74 @@ function renderGrowthChart(){
   registerChart('growth-chart',growthChart);fitChart(growthChart);
 }
 
-// ── Benchmark comparison (redesigned, multi-select) ──────────
+// ── Benchmark comparison (auto-fetch via FMP proxies) ──────
+// Each benchmark maps to a US-listed ETF proxy that FMP's free plan can fetch.
 const BENCHMARKS={
-  sp500:{label:'S&P 500',col:'#5cb1ff'},
-  asx200:{label:'ASX 200',col:'#f5b13c'},
-  ndx:{label:'Nasdaq 100',col:'#b58aff'},
-  msci:{label:'MSCI World',col:'#ff8c5c'}
+  sp500:{label:'S&P 500',col:'#5cb1ff',proxy:'SPY',proxyLabel:'via SPY ETF'},
+  asx200:{label:'ASX 200',col:'#f5b13c',proxy:'EWA',proxyLabel:'via EWA (US-listed AU ETF, close proxy)'},
+  ndx:{label:'Nasdaq 100',col:'#b58aff',proxy:'QQQ',proxyLabel:'via QQQ ETF'},
+  msci:{label:'MSCI World',col:'#ff8c5c',proxy:'URTH',proxyLabel:'via URTH ETF'}
 };
 function buildBenchmarkSelector(){
   const el=document.getElementById('benchmark-selector');if(!el)return;
   if(!S.benchmarkSel)S.benchmarkSel=['sp500'];
-  el.innerHTML=Object.entries(BENCHMARKS).map(([k,b])=>{
+  const chips=Object.entries(BENCHMARKS).map(([k,b])=>{
     const on=S.benchmarkSel.includes(k);
     return`<button class="chip${on?' on':''}" onclick="toggleBenchmark('${k}')" style="border-color:${on?b.col:'var(--bdr2)'};color:${on?b.col:'var(--t3)'}">${b.label}</button>`;
   }).join('');
+  el.innerHTML=`${chips}<button class="btn btn-ghost btn-sm" id="bench-fetch-btn" style="margin-left:6px;font-size:11px" onclick="autoFetchBenchmarkReturns()" title="Auto-fetch % returns for the selected benchmarks">↻ Auto-fetch</button>`;
 }
 function toggleBenchmark(k){
   if(!S.benchmarkSel)S.benchmarkSel=[];
   const i=S.benchmarkSel.indexOf(k);
   if(i>=0)S.benchmarkSel.splice(i,1);else S.benchmarkSel.push(k);
   save();buildBenchmarkSelector();buildBenchmarkChart();buildBenchmarkTable();
+}
+
+// Fetch benchmark % return for the same period as the user's portfolio using ETF proxies via FMP.
+async function autoFetchBenchmarkReturns(){
+  const key=(S.fmpApiKey||'').trim();
+  if(!key){
+    if(confirm('Auto-fetch needs your FMP API key. Open Settings?'))showPgFromMore('settings');
+    return;
+  }
+  const sel=S.benchmarkSel||[];
+  if(!sel.length){showToast('Select at least one benchmark first');return;}
+  const r=calcReturn();
+  // r.startDate is set to the earliest contribution/purchase date. Fallback to 1yr ago.
+  let start=r.startDate;
+  if(!start){const d=new Date();d.setFullYear(d.getFullYear()-1);start=d.toISOString().slice(0,10);}
+  if(!S.benchmarkReturns)S.benchmarkReturns={};
+  let fetched=0;const failed=[];
+  const btn=document.getElementById('bench-fetch-btn');
+  if(btn){btn.disabled=true;btn.textContent='↻ …';}
+  for(const k of sel){
+    const b=BENCHMARKS[k];if(!b||!b.proxy)continue;
+    try{
+      const url=`https://financialmodelingprep.com/stable/historical-price-eod/light?symbol=${encodeURIComponent(b.proxy)}&apikey=${encodeURIComponent(key)}`;
+      const res=await fetch(url);
+      if(!res.ok){failed.push(b.label+' (HTTP '+res.status+')');continue;}
+      const data=await res.json();
+      const arr=Array.isArray(data)?data:(data?.historical||[]);
+      if(!arr.length){failed.push(b.label+' (no data)');continue;}
+      const sorted=[...arr].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+      const latest=sorted[0];
+      const startRow=sorted.find(x=>(x.date||'')<=start)||sorted[sorted.length-1];
+      const priceLatest=latest.price||latest.close;
+      const priceStart=startRow.price||startRow.close;
+      if(priceStart>0&&priceLatest>0){
+        const pct=((priceLatest-priceStart)/priceStart)*100;
+        S.benchmarkReturns[k]=pct.toFixed(1);
+        fetched++;
+      }else{failed.push(b.label+' (bad price data)');}
+    }catch(e){failed.push(b.label+' ('+(e.message||'error')+')');}
+  }
+  save();
+  if(btn){btn.disabled=false;btn.textContent='↻ Auto-fetch';}
+  buildBenchmarkChart();buildBenchmarkTable();
+  if(fetched>0&&!failed.length)showToast(`Fetched ${fetched} benchmark return${fetched===1?'':'s'} from ${start}`);
+  else if(fetched>0)showToast(`Fetched ${fetched}, ${failed.length} failed`);
+  else alert('Benchmark fetch failed:\n\n'+failed.join('\n'));
 }
 function buildBenchmarkChart(){
   const canvas=document.getElementById('benchmark-chart');if(!canvas)return;
@@ -6263,14 +6332,18 @@ function buildBenchmarkTable(){
     const diff=isNaN(pctv)?null:myPct-pctv;
     const dollarDiff=isNaN(pctv)?null:invested*(myPct-pctv)/100;
     rows+=`<div class="bench-row" style="align-items:center">
-      <div class="bench-label"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${b.col};margin-right:6px"></span>${b.label}</div>
+      <div class="bench-label"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${b.col};margin-right:6px"></span>${b.label}<br><span style="font-size:9px;color:var(--t3)">${b.proxyLabel||''}</span></div>
       <div style="display:flex;align-items:center;gap:7px">
         <input type="number" class="inp" style="margin:0;width:70px;font-size:12px;padding:5px 7px" placeholder="%" value="${val}" oninput="setBenchReturn('${k}',this.value)" step="0.1">
         ${diff==null?'':`<span class="bench-val ${diff>=0?'col-acc':'col-r'}" style="min-width:54px;text-align:right">${diff>=0?'+':''}${diff.toFixed(1)}%</span>`}
       </div>
     </div>${dollarDiff==null?'':`<div style="font-size:10px;color:${dollarDiff>=0?'var(--acc)':'var(--r)'};text-align:right;padding:2px 0 6px">${dollarDiff>=0?'You\'re ahead by ':'Behind by '}${fmtD(Math.abs(dollarDiff))} vs ${b.label}</div>`}`;
   });
-  if(!(S.benchmarkSel||[]).length)rows+=`<div style="font-size:11px;color:var(--t3);padding:8px 0">Select benchmarks above to compare. Enter each index's % return for your holding period (from Google Finance or your broker).</div>`;
+  if(!(S.benchmarkSel||[]).length){
+    rows+=`<div style="font-size:11px;color:var(--t3);padding:8px 0;line-height:1.55">Select benchmarks above, then tap <strong style="color:var(--acc)">↻ Auto-fetch</strong> to compare your return against major indices. Uses ETF proxies via your FMP API key — no manual data entry needed.</div>`;
+  }else if(!Object.keys(S.benchmarkReturns||{}).length){
+    rows+=`<div style="font-size:11px;color:var(--t3);padding:8px 0">Tap <strong style="color:var(--acc)">↻ Auto-fetch</strong> above to populate automatically, or enter each index's % return manually below.</div>`;
+  }
   el.innerHTML=rows;
 }
 function setBenchReturn(k,v){if(!S.benchmarkReturns)S.benchmarkReturns={};S.benchmarkReturns[k]=v;save();buildBenchmarkChart();buildBenchmarkTable();}
