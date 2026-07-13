@@ -1569,9 +1569,23 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.6.0';
+const APP_VERSION='2.6.1';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.6.1',
+    date:'2026-07-13',
+    title:'Fix: Risk lens & rebalancing suggestions',
+    sections:{
+      features:[],
+      improvements:[],
+      fixes:[
+        'Risk lens now correctly counts bonds — VGB and VAF (AU government / fixed interest ETFs) are recognised as bonds even when the sector label is missing on a specific holding',
+        'Rebalancing suggestions now use the same target allocations as the pie chart and gap table (previously they were reading from an empty override field, which made every holding look massively overweight)',
+        'Holding detail view now shows the correct target % and drift'
+      ]
+    }
+  },
   {
     v:'2.6.0',
     date:'2026-07-13',
@@ -5506,8 +5520,9 @@ function openHoldingDetail(holdingId){
   const unitsFmt=h.units!=null?(+h.units).toLocaleString(undefined,{maximumFractionDigits:4}):'—';
   const priceFmt=h.lastPrice!=null?(+h.lastPrice).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:3}):'—';
   const avgCost=(h.units>0&&cost>0)?(cost/h.units):null;
-  // Target allocation gap
-  const tgt=(S.allocTarget||{})[h.ticker]||0;
+  // Target allocation gap — read from TPCT (real target source), then user override
+  const targets={...(typeof TPCT!=='undefined'?TPCT:{}),...(S.allocTarget||{})};
+  const tgt=targets[h.ticker]||0;
   const tgtVal=total>0?(total*(tgt/100)):0;
   const drift=weight-tgt;
   // Estimated annual dividend for this holding
@@ -5597,10 +5612,12 @@ function findBuyTransactionsForTicker(ticker){
 function computeRebalanceActions(){
   const hs=S.holdings||[];if(!hs.length)return[];
   const total=portTotal();if(!total)return[];
-  const target=S.allocTarget||{};
+  // Use TPCT (the real target source used by the pie chart and gap table).
+  // Falls back to S.allocTarget if user has overridden targets there.
+  const target={...(typeof TPCT!=='undefined'?TPCT:{}),...(S.allocTarget||{})};
   const cur={};hs.forEach(h=>{const v=holdingValue(h);cur[h.ticker]=(cur[h.ticker]||0)+v/total*100;});
   const actions=[];
-  // Underweights (need to buy)
+  // Underweights (need to buy). Only consider tickers we actually hold OR have a positive target.
   Object.entries(target).forEach(([tk,tgt])=>{
     if(!tk||!tgt)return;
     const c=cur[tk]||0;
@@ -5611,9 +5628,10 @@ function computeRebalanceActions(){
         text:`You're ${drift.toFixed(1)}% underweight on ${tk}. Consider allocating ~${fmtD(Math.round(dollarGap))} to it (next contribution or rebalance).`});
     }
   });
-  // Overweights (consider trimming or diverting new contributions)
+  // Overweights — only trigger when the ticker HAS a target defined (otherwise every holding without a target looks 'overweight')
   Object.entries(cur).forEach(([tk,c])=>{
-    const tgt=target[tk]||0;
+    const tgt=target[tk];
+    if(tgt==null)return;  // no target defined — skip, don't treat as 0
     const drift=c-tgt;
     if(drift>=3){
       const dollarOver=total*(drift/100);
@@ -5777,9 +5795,16 @@ async function refreshWatchlistPrice(idx){
 function computeRiskAnalysis(){
   const hs=S.holdings||[];const total=portTotal();
   if(!hs.length||!total)return null;
-  // Equity vs bonds
-  const bondSectors=['AU Bonds','Fixed Interest','Bonds'];
-  const bondVal=hs.filter(h=>bondSectors.some(s=>(h.sector||'').includes(s))).reduce((a,h)=>a+holdingValue(h),0);
+  // Equity vs bonds — check BOTH sector string AND known bond tickers, so missing sector labels don't hide bonds
+  const bondSectors=['AU Bonds','Fixed Interest','Bonds','Bond'];
+  const bondTickers=['VGB','VAF','IAF','VBND','BOND','VDCO','BILL','VACF','GOVT'];
+  const isBond=h=>{
+    const sec=(h.sector||'').trim();
+    if(sec&&bondSectors.some(s=>sec.includes(s)))return true;
+    if(bondTickers.includes((h.ticker||'').toUpperCase()))return true;
+    return false;
+  };
+  const bondVal=hs.filter(isBond).reduce((a,h)=>a+holdingValue(h),0);
   const bondPct=bondVal/total*100;
   const equityPct=100-bondPct;
   // Concentration: largest holding %
@@ -5788,8 +5813,7 @@ function computeRiskAnalysis(){
   const usdVal=hs.filter(h=>h.market==='US').reduce((a,h)=>a+holdingValue(h),0);
   const usdPct=usdVal/total*100;
   // Uni deadline analysis
-  const uniGoal=(S.goalState||{}).uni;
-  const uniCfg=(GCFG||{}).uni;
+  const uniCfg=(typeof GCFG!=='undefined'?GCFG:{}).uni;
   const uniActive=uniCfg&&uniCfg.due;
   let monthsToUni=null;
   if(uniActive){
