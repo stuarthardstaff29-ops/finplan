@@ -1,5 +1,5 @@
 // v1.7.0 — network-first for HTML (so updates apply immediately), cache-first for other assets
-const CACHE='finplan-v2-5-0';
+const CACHE='finplan-v2-6-0';
 const ASSETS=['./manifest.json'];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));
