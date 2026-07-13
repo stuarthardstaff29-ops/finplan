@@ -872,6 +872,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
           <button class="btn btn-acc btn-sm" onclick="openImportModal('screenshot')"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;vertical-align:-2px;margin-right:4px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Scan screenshot</button>
           <button class="btn btn-ghost btn-sm" onclick="openHoldingModal()">+ Add holding</button>
           <button class="btn btn-ghost btn-sm" onclick="refreshPrices()" id="refresh-prices-btn">↻ Refresh prices</button>
+          <button class="btn btn-ghost btn-sm" onclick="openManualPriceSync()">✏ Sync manually</button>
         </div>
         <div id="sync-status" style="font-size:10px;color:var(--t3);margin-top:8px;text-align:center"></div>
         <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px;color:var(--r);border-color:var(--rd2)" onclick="wipeHoldings()">⚠ Wipe all holdings & contributions</button>
@@ -1349,10 +1350,17 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 
 <!-- CONTRIBUTION MODAL -->
 <div class="overlay" id="contrib-modal"><div class="modal"><div class="modal-handle"></div><div class="modal-title" id="contrib-modal-title">Add contribution</div>
-  <div class="inp-row"><div><label class="lbl">Ticker</label><input type="text" class="inp" id="ctr-ticker" placeholder="e.g. VOO" style="text-transform:uppercase"></div><div><label class="lbl">Amount $</label><input type="number" class="inp" id="ctr-amount" placeholder="0.00" min="0" step="0.01"></div></div>
-  <div class="inp-row"><div><label class="lbl">Date</label><input type="date" class="inp" id="ctr-date"></div><div><label class="lbl">Status</label><select class="inp" id="ctr-status"><option value="completed">Completed</option><option value="pending">Pending</option><option value="cancelled">Cancelled</option></select></div></div>
-  <label class="lbl">Note (optional)</label><input type="text" class="inp" id="ctr-note" placeholder="e.g. monthly DCA">
-  <div class="alert alert-b" style="font-size:11px;margin-top:2px">Pending and cancelled contributions are tracked but excluded from invested totals until completed.</div>
+  <div class="inp-row"><div><label class="lbl">Ticker</label><input type="text" class="inp" id="ctr-ticker" placeholder="e.g. VOO" style="text-transform:uppercase" oninput="onCtrTickerChange()"></div><div><label class="lbl">Date</label><input type="date" class="inp" id="ctr-date"></div></div>
+  <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin:6px 0 4px">Purchase details</div>
+  <div class="inp-row"><div><label class="lbl">Units</label><input type="number" class="inp" id="ctr-units" placeholder="e.g. 1.5" min="0" step="any" oninput="recalcCtrAmount()"></div><div><label class="lbl">Price / unit</label><input type="number" class="inp" id="ctr-price" placeholder="0.00" min="0" step="any" oninput="recalcCtrAmount()"></div></div>
+  <div class="inp-row"><div><label class="lbl">Fees (optional)</label><input type="number" class="inp" id="ctr-fees" placeholder="0.00" min="0" step="0.01" oninput="recalcCtrAmount()"></div><div><label class="lbl">Total $</label><input type="number" class="inp" id="ctr-amount" placeholder="0.00" min="0" step="0.01"></div></div>
+  <div style="font-size:10px;color:var(--t3);margin:-4px 0 8px">Fill units + price/unit → total auto-calculates. Or enter total directly if you don't have unit details.</div>
+  <div class="inp-row"><div><label class="lbl">Status</label><select class="inp" id="ctr-status"><option value="completed">Completed</option><option value="pending">Pending</option><option value="cancelled">Cancelled</option></select></div><div><label class="lbl">Note</label><input type="text" class="inp" id="ctr-note" placeholder="e.g. monthly DCA"></div></div>
+  <label style="display:flex;align-items:center;gap:8px;margin:8px 0 4px;font-size:12px;color:var(--t2);cursor:pointer">
+    <input type="checkbox" id="ctr-apply-to-holding" checked style="width:16px;height:16px;accent-color:var(--acc)">
+    Also add these units to my holding (updates avg cost & last price)
+  </label>
+  <div class="alert alert-b" style="font-size:11px;margin-top:2px">Pending and cancelled contributions are tracked but excluded from invested totals. "Apply to holding" only runs when status = completed.</div>
   <div style="display:flex;gap:7px;margin-top:4px"><button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeModal('contrib-modal')">Cancel</button><button class="btn btn-r btn-sm" id="ctr-delete-btn" style="display:none" onclick="deleteContribFromModal()">Delete</button><button class="btn btn-acc" style="flex:2" onclick="saveContribution()">Save</button></div>
 </div></div>
 
@@ -1569,9 +1577,27 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.6.1';
+const APP_VERSION='2.6.2';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.6.2',
+    date:'2026-07-13',
+    title:'Portfolio value accuracy + easier contributions',
+    sections:{
+      features:[
+        '✏ Sync prices manually — new button on the Invest page. One sheet lists every holding with a current-price input. Type prices for ASX holdings (which FMP\'s free plan can\'t fetch) in ~30 seconds. All prices become "live" for calculations',
+        '+ Add purchase button on the Holding Detail view — opens the full contribution modal (ticker + units + price + fees + total auto-calc) pre-filled with that ticker'
+      ],
+      improvements:[
+        'Invest hero now shows a price-freshness tag: fresh (with age), stale count, or a red "may be stale" prompt if nothing has been synced',
+        'Manual sync flags holdings that are 7+ days out of date so you know which need attention'
+      ],
+      fixes:[
+        'Portfolio value should now be accurate for ASX holdings — the manual sync path bypasses FMP\'s free-plan ASX gap that was leaving stale CMC-snapshot values in place'
+      ]
+    }
+  },
   {
     v:'2.6.1',
     date:'2026-07-13',
@@ -2213,9 +2239,14 @@ function fxUsdAud(){const r=S.audUsdRate||0.65;return r>0?1/r:1.54;} // 1 USD = 
 // holding.cost, .marketValue, .pnl, .pnlPct are stored in AUD as CMC reports them.
 // These are the source of truth. Live prices are kept in .livePrice separately.
 function holdingValue(h){
-  // CMC-reported AUD market value is authoritative
+  // Priority 1: live-refreshed price (respects user's explicit "Refresh prices" action)
+  if(h.livePrice!=null&&h.units!=null){
+    const native=h.units*h.livePrice;
+    return h.market==='US'?usdToAud(native):native;
+  }
+  // Priority 2: CMC-reported AUD market value (snapshot from CSV upload)
   if(h.marketValue!=null)return h.marketValue;
-  // Fallback: derive from units × native price, converted to AUD
+  // Priority 3: derive from units × native price, converted to AUD
   if(h.units!=null&&h.lastPrice!=null){
     const native=h.units*h.lastPrice;
     return h.market==='US'?usdToAud(native):native;
@@ -2231,8 +2262,10 @@ function holdingCost(h){
   return 0;
 }
 function holdingPnl(h){
-  if(h.pnl!=null)return h.pnl;            // CMC P&L authoritative
-  return holdingValue(h)-holdingCost(h);  // else derive
+  // If we're using live-refreshed prices, always recalculate P&L (stored h.pnl would be stale)
+  if(h.livePrice!=null&&h.units!=null)return holdingValue(h)-holdingCost(h);
+  if(h.pnl!=null)return h.pnl;            // else CMC P&L is authoritative
+  return holdingValue(h)-holdingCost(h);  // final fallback: derive
 }
 function holdingPnlPct(h){
   if(h.pnlPct!=null)return h.pnlPct;
@@ -5569,7 +5602,8 @@ function openHoldingDetail(holdingId){
     </div>`:''}
 
     <div class="detail-actions">
-      <button class="btn btn-ghost" onclick="closeDetail();setTimeout(()=>openHoldingModal('${h.id}'),200)">Edit holding</button>
+      <button class="btn btn-acc" onclick="addPurchaseForTicker('${h.ticker}')">+ Add purchase</button>
+      <button class="btn btn-ghost" onclick="closeDetail();setTimeout(()=>openHoldingModal('${h.id}'),200)">Edit</button>
       <button class="btn btn-ghost" onclick="deleteHoldingFromDetail('${h.id}')" style="color:var(--r)">Delete</button>
     </div>
   `);
@@ -5892,6 +5926,81 @@ function buildDividendIncomeCard(){
   </div>`;
 }
 
+// ═══════════════════════════════════════════════════════════
+// PRICE SYNC + BETTER CONTRIBUTION FLOW (v2.6.2)
+// ═══════════════════════════════════════════════════════════
+
+// ── Manual price sync: type a current price for every holding, updates livePrice all at once ──
+function openManualPriceSync(){
+  const hs=(S.holdings||[]).filter(h=>h.units>0);
+  if(!hs.length){showToast('No holdings to price');return;}
+  const rows=hs.map(h=>{
+    const cur=h.livePrice!=null?h.livePrice:(h.lastPrice!=null?h.lastPrice:'');
+    const ccy=h.market==='US'?'USD':'AUD';
+    const ago=h.liveUpdated?daysAgo(h.liveUpdated):null;
+    const staleTag=ago!=null&&ago>=7?`<span class="tag ty" style="font-size:8px;margin-left:4px">${ago}d old</span>`:'';
+    return`<div style="padding:10px 0;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--t)">${h.ticker} ${staleTag}</div>
+        <div style="font-size:10px;color:var(--t3)">${(+h.units).toLocaleString(undefined,{maximumFractionDigits:4})} units · ${ccy}</div>
+      </div>
+      <div style="flex-shrink:0"><input type="number" class="inp" id="msp-${h.id}" value="${cur}" step="any" style="margin:0;width:110px;text-align:right;font-family:var(--mono);font-size:13px"></div>
+    </div>`;
+  }).join('');
+  showSheet('Sync prices manually',`
+    <div style="font-size:12px;color:var(--t2);line-height:1.55;margin-bottom:12px">Fastest way to get accurate values. Look up current prices in your CMC app or Yahoo Finance, type them here, tap Save. All prices update at once.</div>
+    <div>${rows}</div>
+    <button class="btn btn-acc btn-full" style="margin-top:14px" onclick="saveManualPriceSync()">Save prices</button>
+    <div style="font-size:10px;color:var(--t3);margin-top:8px;text-align:center">Prices marked as "live" for the value calculation. Refresh prices button still works alongside this.</div>
+  `);
+}
+function saveManualPriceSync(){
+  const hs=(S.holdings||[]).filter(h=>h.units>0);
+  let updated=0;
+  hs.forEach(h=>{
+    const el=document.getElementById('msp-'+h.id);if(!el)return;
+    const v=parseFloat(el.value);
+    if(!isNaN(v)&&v>0){
+      h.livePrice=v;
+      h.liveUpdated=Date.now();
+      h.livePriceDate=today();
+      updated++;
+    }
+  });
+  save();snapshotNW();closeSheet();
+  if(currentPg==='invest')buildInvestPage();
+  if(currentPg==='dash')buildDash();
+  showToast(`Updated ${updated} price${updated===1?'':'s'} — portfolio value refreshed`);
+}
+
+// ── Compute most recent price update across all holdings ──
+function latestPriceUpdate(){
+  const hs=S.holdings||[];
+  let latest=null;let stale=0;
+  const now=Date.now();
+  hs.forEach(h=>{
+    if(!h.units)return;
+    const ts=h.liveUpdated;
+    if(ts){
+      if(!latest||ts>latest)latest=ts;
+      if((now-ts)>7*24*60*60*1000)stale++;
+    }else{
+      stale++;
+    }
+  });
+  return{latest,stale,total:hs.filter(h=>h.units>0).length};
+}
+
+// ── Add purchase from a specific ticker (called from holding detail) ──
+function addPurchaseForTicker(ticker){
+  closeDetail();
+  setTimeout(()=>{
+    openContribModal();
+    const t=document.getElementById('ctr-ticker');
+    if(t){t.value=(ticker||'').toUpperCase();onCtrTickerChange();}
+  },220);
+}
+
 function buildInvestPage(){
   buildInvHero();
   if(typeof buildRiskCard==='function')buildRiskCard();
@@ -5917,6 +6026,18 @@ function buildInvHero(){
   const hs=S.holdings||[];
   const hasMigrated=hs.some(h=>h.dataSource==='migration');
   const hasUS=hs.some(h=>h.market==='US');
+  // Price freshness
+  const p=(typeof latestPriceUpdate==='function')?latestPriceUpdate():{latest:null,stale:0,total:0};
+  let freshTag='';
+  if(p.total>0){
+    if(p.stale===p.total){
+      freshTag=`<span class="tag tr" style="font-size:8px">Prices may be stale · tap Sync manually</span>`;
+    }else if(p.stale>0){
+      freshTag=`<span class="tag ty" style="font-size:8px">${p.stale} of ${p.total} prices stale</span>`;
+    }else if(p.latest){
+      freshTag=`<span class="tag tg" style="font-size:8px">Prices fresh · ${timeAgo(p.latest)}</span>`;
+    }
+  }
   el.innerHTML=`
     <div class="hero-l">Portfolio value <span style="font-size:9px;opacity:.7">AUD</span></div>
     <div class="hero-v">${fmtD(val)}</div>
@@ -5931,6 +6052,7 @@ function buildInvHero(){
     <div class="tag-row">
       <span class="tag tg">${activeHoldings().length} holdings</span>
       <span class="tag ty">+${fmtDI(annDiv())}/yr est. income</span>
+      ${freshTag}
       ${hasMigrated?'<span class="tag tr" style="font-size:8px">estimated — re-import CSV for accuracy</span>':''}
     </div>`;
 }
@@ -6296,40 +6418,123 @@ function openContribModal(id){
   document.getElementById('contrib-modal-title').textContent=id?'Edit contribution':'Add contribution';
   document.getElementById('ctr-date').value=today();
   const del=document.getElementById('ctr-delete-btn');
+  const applyChk=document.getElementById('ctr-apply-to-holding');
   if(id){
     const c=(S.contributions||[]).find(x=>x.id===id);
     if(c){
       document.getElementById('ctr-ticker').value=c.ticker||'';
+      document.getElementById('ctr-units').value=c.units!=null?c.units:'';
+      document.getElementById('ctr-price').value=c.price!=null?c.price:'';
+      document.getElementById('ctr-fees').value=c.fees!=null?c.fees:'';
       document.getElementById('ctr-amount').value=c.amount||'';
       document.getElementById('ctr-date').value=c.date||today();
       document.getElementById('ctr-status').value=c.status||'completed';
       document.getElementById('ctr-note').value=c.note||'';
     }
     del.style.display='';
+    if(applyChk)applyChk.checked=false; // don't re-apply on edits (holding was likely already updated)
   }else{
-    ['ctr-ticker','ctr-amount','ctr-note'].forEach(i=>document.getElementById(i).value='');
+    ['ctr-ticker','ctr-units','ctr-price','ctr-fees','ctr-amount','ctr-note'].forEach(i=>document.getElementById(i).value='');
     document.getElementById('ctr-status').value='completed';
     del.style.display='none';
+    if(applyChk)applyChk.checked=true;
   }
   openModal('contrib-modal');
 }
+// When units or price changes, auto-fill total (unless user is directly editing total)
+function recalcCtrAmount(){
+  const u=parseFloat(document.getElementById('ctr-units').value);
+  const p=parseFloat(document.getElementById('ctr-price').value);
+  const fees=parseFloat(document.getElementById('ctr-fees').value)||0;
+  if(!isNaN(u)&&!isNaN(p)&&u>0&&p>0){
+    const total=Math.round((u*p+fees)*100)/100;
+    document.getElementById('ctr-amount').value=total.toFixed(2);
+  }
+}
+// When ticker changes, pre-fill price from that holding's last known price
+function onCtrTickerChange(){
+  const tk=(document.getElementById('ctr-ticker').value||'').trim().toUpperCase();
+  if(!tk)return;
+  document.getElementById('ctr-ticker').value=tk;
+  const h=(S.holdings||[]).find(x=>(x.ticker||'').toUpperCase()===tk);
+  if(!h)return;
+  const priceInp=document.getElementById('ctr-price');
+  if(!priceInp.value){
+    const px=h.livePrice||h.lastPrice;
+    if(px)priceInp.value=(+px).toFixed(3);
+  }
+}
 function saveContribution(){
   const ticker=document.getElementById('ctr-ticker').value.trim().toUpperCase();
-  const amount=parseFloat(document.getElementById('ctr-amount').value);
+  const units=parseFloat(document.getElementById('ctr-units').value);
+  const price=parseFloat(document.getElementById('ctr-price').value);
+  const fees=parseFloat(document.getElementById('ctr-fees').value)||0;
+  let amount=parseFloat(document.getElementById('ctr-amount').value);
   const date=document.getElementById('ctr-date').value||today();
   const status=document.getElementById('ctr-status').value;
   const note=document.getElementById('ctr-note').value.trim();
-  if(!ticker||isNaN(amount)||amount<=0){alert('Enter ticker and amount.');return;}
+  const applyToHolding=(document.getElementById('ctr-apply-to-holding')||{}).checked;
+  // Derive amount if user filled units + price but not total
+  if((!amount||isNaN(amount))&&!isNaN(units)&&!isNaN(price)&&units>0&&price>0){
+    amount=Math.round((units*price+fees)*100)/100;
+  }
+  if(!ticker||isNaN(amount)||amount<=0){alert('Enter a ticker and either amount, or units + price.');return;}
   if(!S.contributions)S.contributions=[];
+  const record={
+    ticker,
+    amount,
+    units:!isNaN(units)&&units>0?units:null,
+    price:!isNaN(price)&&price>0?price:null,
+    fees:fees>0?fees:null,
+    date,status,note
+  };
   if(editingContribId){
     const c=S.contributions.find(x=>x.id===editingContribId);
-    if(c)Object.assign(c,{ticker,amount,date,status,note});
+    if(c)Object.assign(c,record);
   }else{
-    S.contributions.unshift({id:uid(),ticker,amount,units:null,price:null,date,status,note});
+    S.contributions.unshift({id:uid(),...record});
   }
-  closeModal('contrib-modal');save();
+  // Apply to holding: only when adding a NEW completed contribution with unit details, and box is ticked
+  let applied=false;
+  if(applyToHolding&&status==='completed'&&record.units&&record.price&&!editingContribId){
+    applied=applyContributionToHolding(record);
+  }
+  closeModal('contrib-modal');save();snapshotNW();
   if(document.getElementById('contrib-list-modal'))openContribList();
-  buildInvestPage();showToast('Contribution saved');
+  buildInvestPage();
+  showToast(applied?`Saved · ${units} units added to ${ticker}`:'Contribution saved');
+}
+// Adds units to the matching holding and recomputes the weighted-average cost basis.
+// Returns true if applied, false otherwise.
+function applyContributionToHolding(record){
+  if(!Array.isArray(S.holdings))S.holdings=[];
+  let h=S.holdings.find(x=>(x.ticker||'').toUpperCase()===record.ticker);
+  if(!h){
+    // Create a new holding stub — user can fill market details later via Edit
+    h={
+      id:uid(),ticker:record.ticker,name:record.ticker,
+      market:record.ticker.length===3?'ASX':'US',
+      sector:'',units:0,lastPrice:0,netAvgPrice:0,cost:0,marketValue:null,
+      livePrice:null,pnl:null,pnlPct:null,dataSource:'manual'
+    };
+    S.holdings.push(h);
+  }
+  const oldUnits=h.units||0;
+  const oldAvg=h.netAvgPrice||0;
+  const addUnits=record.units;
+  const addCostNative=record.units*record.price+(record.fees||0);
+  // Weighted average price/unit in native currency
+  const newUnits=oldUnits+addUnits;
+  const newAvg=newUnits>0?((oldUnits*oldAvg)+addCostNative)/newUnits:record.price;
+  h.units=Math.round(newUnits*10000)/10000;
+  h.netAvgPrice=Math.round(newAvg*10000)/10000;
+  h.lastPrice=record.price; // recent purchase price is a reasonable "latest" fill
+  // Recompute cost basis in AUD (approximate — CMC's stored `cost` gets stale, so we recompute)
+  const nativeCost=h.units*h.netAvgPrice;
+  h.cost=h.market==='US'?usdToAud(nativeCost):nativeCost;
+  // Clear stored marketValue and pnl so holdingValue/Pnl derive fresh
+  h.marketValue=null;h.pnl=null;h.pnlPct=null;
+  return true;
 }
 function deleteContribFromModal(){
   if(!editingContribId)return;
