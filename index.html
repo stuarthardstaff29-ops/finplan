@@ -1537,9 +1537,23 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.4.0';
+const APP_VERSION='2.4.1';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.4.1',
+    date:'2026-07-13',
+    title:'Fix: Reminders widget now appears for existing users',
+    sections:{
+      features:[],
+      improvements:[
+        'Dashboard layout migration: when a new default-on widget is added, it\'s auto-inserted into your saved layout on next launch (so you don\'t have to Reset dashboard to see it)'
+      ],
+      fixes:[
+        'Reminders widget now appears on the dashboard even if your layout was set before v2.4.0'
+      ]
+    }
+  },
   {
     v:'2.4.0',
     date:'2026-07-13',
@@ -2969,6 +2983,7 @@ function launchApp(){
   applyTheme(S.themeIdx||0);applyMode(S.mode||'dark');applyUiPrefs();
   syncSliderUI();snapshotNW();
   generatePendingFromRules();
+  if(typeof migrateDashLayout==='function')migrateDashLayout();
   buildDash();buildStaticTimeline();buildAiWelcome();buildThemeGrid();buildSettingsPage();
   scheduleLocalNotifs();
   initContextPanel();
@@ -4653,8 +4668,28 @@ const DASH_WIDGETS={
 // Each entry: {id, size:'full'|'half'}
 const DEFAULT_DASH_LAYOUT=[
   {id:'netWorth',size:'full'},
+  {id:'reminders',size:'full'},
   {id:'briefing',size:'full'}
 ];
+// Migration: add new default-on widgets to layouts saved before those widgets existed.
+// Guarded by version so it only runs once per new widget wave.
+function migrateDashLayout(){
+  const version='2.4.0';
+  if(S.dashLayoutMigratedTo===version)return;
+  if(!Array.isArray(S.dashLayout)||!S.dashLayout.length){S.dashLayoutMigratedTo=version;return;}
+  // For any widget with defaultOn:true that's missing from the saved layout, insert it
+  Object.values(DASH_WIDGETS).forEach(w=>{
+    if(!w.defaultOn||w.alwaysOn)return;
+    if(!S.dashLayout.some(l=>l.id===w.id)){
+      // Insert after netWorth if it exists, otherwise at the top
+      const nwIdx=S.dashLayout.findIndex(l=>l.id==='netWorth');
+      const insertAt=nwIdx>=0?nwIdx+1:0;
+      S.dashLayout.splice(insertAt,0,{id:w.id,size:'full'});
+    }
+  });
+  S.dashLayoutMigratedTo=version;
+  save();
+}
 function getDashLayout(){
   if(!Array.isArray(S.dashLayout)||!S.dashLayout.length){
     S.dashLayout=JSON.parse(JSON.stringify(DEFAULT_DASH_LAYOUT));
