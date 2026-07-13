@@ -98,6 +98,23 @@ body{display:flex;flex-direction:column;position:fixed;width:100%;height:100%;ba
 .nudge-x{background:transparent;border:none;color:var(--t3);font-size:14px;cursor:pointer;padding:2px 6px;line-height:1;flex-shrink:0;border-radius:6px}
 .nudge-x:hover{color:var(--t);background:var(--bg5)}
 
+/* ═══════════ BULK EDIT (v2.5.0) ═══════════ */
+.bulk-action-bar{position:fixed;left:14px;right:14px;bottom:calc(var(--nav-h) + var(--sb) + 22px);background:rgba(13,15,18,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--acc);border-radius:18px;padding:12px 14px;z-index:150;transform:translateY(calc(100% + var(--nav-h) + var(--sb) + 40px));transition:transform .28s cubic-bezier(.4,0,.2,1);pointer-events:none;box-shadow:0 -8px 32px rgba(0,229,153,.15)}
+.bulk-action-bar.open{transform:translateY(0);pointer-events:all}
+.bulk-bar-count{font-size:11px;color:var(--acc);font-weight:600;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;text-align:center}
+.bulk-bar-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.bulk-bar-actions .btn{flex:1;min-width:0;font-size:11px;padding:8px 10px}
+
+/* Transaction row when in bulk-select mode */
+.txn-selectable{cursor:pointer;padding-left:6px;transition:background .15s,border-color .15s}
+.txn-selectable:active{background:var(--bg3)}
+.txn-check{width:22px;height:22px;border-radius:7px;border:2px solid var(--bdr2);flex-shrink:0;margin-right:6px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.txn-check.on{background:var(--acc);border-color:var(--acc);color:#001a13}
+.txn-selectable.selected{background:var(--accd);border-radius:12px}
+
+/* Uncategorised filter chip badge */
+.chip-badge{display:inline-flex;align-items:center;justify-content:center;background:var(--y);color:#001a13;min-width:16px;height:16px;padding:0 5px;border-radius:8px;font-size:9px;font-weight:700;margin-left:5px;line-height:1}
+
 /* ═══════════ DETAIL VIEW (v2.3.0) ═══════════ */
 .detail-view{position:fixed;inset:0;background:var(--bg);z-index:400;transform:translateX(100%);transition:transform .32s cubic-bezier(.2,0,.2,1);display:flex;flex-direction:column}
 .detail-view.open{transform:translateX(0)}
@@ -746,6 +763,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
       <div style="display:flex;gap:6px;margin-bottom:10px">
         <button class="btn btn-ghost btn-sm" onclick="openBankImportModal()" style="flex:1"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;vertical-align:-1px;margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Import bank CSV</button>
         <button class="btn btn-ghost btn-sm" onclick="openReceiptScanner()" style="flex:1"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;vertical-align:-1px;margin-right:4px"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Scan receipt</button>
+        <button class="btn btn-ghost btn-sm" id="bulk-toggle-btn" onclick="toggleBulkMode()">☑ Select</button>
       </div>
       <div class="search-wrap"><span class="search-icon">🔍</span><input class="search-inp" id="txn-search" placeholder="Search transactions…" oninput="buildTxnList()"></div>
       <div class="chips" id="txn-chips"></div>
@@ -1396,6 +1414,9 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 <!-- SUCCESS MOMENT OVERLAY -->
 <div class="success-moment" id="success-moment"></div>
 
+<!-- BULK ACTION BAR (v2.5.0) -->
+<div class="bulk-action-bar" id="bulk-action-bar"></div>
+
 <script>
 // ═══════════════════════════════════════════════════════════
 // CONSTANTS & THEMES
@@ -1537,9 +1558,28 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.4.1';
+const APP_VERSION='2.5.0';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.5.0',
+    date:'2026-07-13',
+    title:'Bulk edit & tackle uncategorised',
+    sections:{
+      features:[
+        '☑ Select mode on Transactions — tap the Select button, then tap any rows to build a selection',
+        '⚠ Uncategorised filter chip — one-tap filter to everything still sitting in "Other" (with a badge showing how many)',
+        '📚 Bulk change category — pick a category, all selected transactions move at once, and the app offers to remember rules for their merchants',
+        '🗑 Bulk delete — remove multiple transactions in one go with a single confirm',
+        'Batch learn: when you re-categorise several imports at once, the app extracts one keyword per unique merchant and offers to save them all as rules in a single prompt'
+      ],
+      improvements:[
+        '"Select all visible" respects the current search and filter — so you can filter to Uncategorised, tap "All visible", pick a category, done',
+        'Selection state is in-memory only; leaving Select mode clears it automatically'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'2.4.1',
     date:'2026-07-13',
@@ -3463,6 +3503,148 @@ document.addEventListener('click',e=>{if(e.target.classList.contains('overlay'))
 // TRANSACTIONS PAGE
 // ═══════════════════════════════════════════════════════════
 function switchAcct(acct,btn){S.selectedAcct=acct;document.querySelectorAll('#acct-tog .tog-b').forEach(b=>b.classList.remove('on'));if(btn)btn.classList.add('on');S.txnFilter='all';buildTxnsPage();save();}
+// ═══════════════════════════════════════════════════════════
+// BULK EDIT + CATEGORISATION REFINEMENT (v2.5.0)
+// ═══════════════════════════════════════════════════════════
+
+// Selection state — in-memory only, cleared when leaving Transactions or exiting bulk mode
+let _bulkMode=false;
+let _bulkSelection=new Set();
+
+function toggleBulkMode(){
+  _bulkMode=!_bulkMode;
+  if(!_bulkMode)_bulkSelection.clear();
+  buildTxnList();
+  updateBulkActionBar();
+  // Also update the button label
+  const btn=document.getElementById('bulk-toggle-btn');
+  if(btn)btn.innerHTML=_bulkMode?'✕ Done':'☑ Select';
+}
+function toggleTxnInSelection(id){
+  if(_bulkSelection.has(id))_bulkSelection.delete(id);
+  else _bulkSelection.add(id);
+  buildTxnList();
+  updateBulkActionBar();
+}
+function clearBulkSelection(){
+  _bulkSelection.clear();
+  buildTxnList();
+  updateBulkActionBar();
+}
+function selectAllVisible(){
+  // Select every transaction currently visible (respects search + filter)
+  document.querySelectorAll('[data-txn-selectable]').forEach(el=>{
+    const id=el.getAttribute('data-txn-id');
+    if(id)_bulkSelection.add(id);
+  });
+  buildTxnList();
+  updateBulkActionBar();
+}
+function updateBulkActionBar(){
+  const bar=document.getElementById('bulk-action-bar');if(!bar)return;
+  const n=_bulkSelection.size;
+  if(!_bulkMode){bar.classList.remove('open');return;}
+  bar.classList.add('open');
+  bar.innerHTML=`
+    <div class="bulk-bar-count">${n} selected</div>
+    <div class="bulk-bar-actions">
+      <button class="btn btn-ghost btn-sm" onclick="selectAllVisible()">All visible</button>
+      <button class="btn btn-ghost btn-sm" onclick="clearBulkSelection()" ${n?'':'disabled'}>Clear</button>
+      <button class="btn btn-ghost btn-sm" onclick="openBulkCategoryPicker()" ${n?'':'disabled style="opacity:.4"'}>Change category</button>
+      <button class="btn btn-ghost btn-sm" onclick="bulkDeleteSelected()" ${n?'style="color:var(--r)"':'disabled style="opacity:.4"'}>Delete</button>
+    </div>`;
+}
+
+// ── Bulk category picker ───────────────────────────────────
+function openBulkCategoryPicker(){
+  if(!_bulkSelection.size)return;
+  const cm=cmap();
+  const cats=allCats().filter(c=>c.id!=='transfer'); // don't allow bulk-move to transfer
+  showSheet(`Change category (${_bulkSelection.size})`,`
+    <div style="font-size:12px;color:var(--t2);line-height:1.55;margin-bottom:12px">
+      All ${_bulkSelection.size} selected transactions will move to the category you pick.
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      ${cats.map(c=>`<button class="btn btn-ghost" style="text-align:left;padding:12px 14px;display:flex;align-items:center;gap:10px" onclick="applyBulkCategory('${c.id}')">
+        <span style="font-size:18px">${c.icon}</span>
+        <span style="font-size:13px;color:var(--t)">${c.label}</span>
+      </button>`).join('')}
+    </div>
+  `);
+}
+function applyBulkCategory(catId){
+  const cm=cmap();
+  const c=cm[catId];if(!c){showToast('Unknown category');return;}
+  const ids=[..._bulkSelection];
+  let changed=0;
+  // Track unique merchant/keyword pairs from imports so we can offer to learn rules
+  const learnCandidates=new Map(); // narrative → {payee, cat}
+  ids.forEach(id=>{
+    const t=(S.transactions||[]).find(x=>x.id===id);if(!t)return;
+    if(t.cat===catId)return;
+    t.cat=catId;
+    changed++;
+    if(t.originalNarrative&&t.payee&&typeof extractKeyword==='function'){
+      const kw=extractKeyword(t.originalNarrative);
+      if(kw&&kw.length>=3&&!learnCandidates.has(kw)){
+        learnCandidates.set(kw,{keyword:kw,payee:t.payee,cat:catId,direction:t.dir});
+      }
+    }
+  });
+  save();snapshotNW();closeSheet();
+  _bulkSelection.clear();_bulkMode=false;
+  buildTxnList();updateBulkActionBar();
+  const btn=document.getElementById('bulk-toggle-btn');if(btn)btn.innerHTML='☑ Select';
+  refreshAfterChange();
+  showToast(`${changed} transaction${changed===1?'':'s'} moved to ${c.icon} ${c.label}`);
+  // Batch offer to learn rules
+  if(learnCandidates.size){
+    setTimeout(()=>offerBatchLearn([...learnCandidates.values()]),300);
+  }
+}
+
+// Offer to learn rules from a bulk change. Prompts the user with the list of merchants
+// that will be auto-categorised in future imports.
+function offerBatchLearn(candidates){
+  if(!Array.isArray(candidates)||!candidates.length)return;
+  // De-dupe against existing rules
+  const existing=(S.customRules||[]).map(r=>(r.keyword||'').toUpperCase());
+  const fresh=candidates.filter(c=>!existing.includes((c.keyword||'').toUpperCase()));
+  if(!fresh.length)return;
+  const cm=cmap();
+  const preview=fresh.slice(0,6).map(c=>`• "${c.keyword}" → ${cm[c.cat]?.icon||''} ${cm[c.cat]?.label||c.cat}`).join('\n');
+  const more=fresh.length>6?`\n…and ${fresh.length-6} more`:'';
+  if(!confirm(`Remember ${fresh.length} auto-categorisation rule${fresh.length===1?'':'s'}?\n\n${preview}${more}\n\nFuture CSV imports will auto-categorise these merchants.`))return;
+  if(!Array.isArray(S.customRules))S.customRules=[];
+  fresh.forEach(c=>S.customRules.push({...c,createdAt:Date.now()}));
+  save();
+  showToast(`Saved ${fresh.length} rule${fresh.length===1?'':'s'}`);
+}
+
+function bulkDeleteSelected(){
+  const n=_bulkSelection.size;if(!n)return;
+  if(!confirm(`Delete ${n} transaction${n===1?'':'s'}?\n\nThis can\'t be undone.`))return;
+  const ids=new Set(_bulkSelection);
+  S.transactions=(S.transactions||[]).filter(t=>!ids.has(t.id));
+  _bulkSelection.clear();_bulkMode=false;
+  save();snapshotNW();
+  buildTxnList();updateBulkActionBar();
+  const btn=document.getElementById('bulk-toggle-btn');if(btn)btn.innerHTML='☑ Select';
+  refreshAfterChange();
+  showToast(`Deleted ${n} transaction${n===1?'':'s'}`);
+}
+
+// ── Uncategorised counter for the filter chip badge ─────────
+function uncategorisedCount(){
+  return(S.transactions||[]).filter(t=>{
+    if(t.acct!==S.selectedAcct)return false;
+    if(t.cat==='other')return true;
+    // Also flag ones with placeholder payees from failed extraction
+    if(!t.payee||t.payee==='Unknown')return true;
+    return false;
+  }).length;
+}
+
 function buildTxnsPage(){buildAcctHero();buildFilterRow();buildTxnList();buildRecList();}
 function buildAcctHero(){
   const acct=S.selectedAcct,bal=calcBal(acct),txns=S.transactions.filter(t=>t.acct===acct);
@@ -3471,7 +3653,12 @@ function buildAcctHero(){
   const isWP=acct==='westpac';
   document.getElementById('acct-hero-wrap').innerHTML=`<div class="acct-hero ${isWP?'wp':'mq'}"><div class="acct-bdg">${isWP?'Westpac — Everyday':'Macquarie — HISA Savings'}</div><div class="acct-bal">${fmtD(bal)}</div><div class="acct-stats"><div class="acct-si"><div class="acct-sl">Total in</div><div class="acct-sv">+${fmtDI(totalIn)}</div></div><div class="acct-si"><div class="acct-sl">Total out</div><div class="acct-sv">-${fmtDI(totalOut)}</div></div><div class="acct-si"><div class="acct-sl">Transactions</div><div class="acct-sv">${txns.length}</div></div></div><div style="margin-top:9px"><button class="btn btn-ghost btn-sm" onclick="openBalModal('${acct}')">✏ Edit starting balance</button></div></div>`;
 }
-function buildFilterRow(){const filters=[{id:'all',l:'All'},...allCats().map(c=>({id:c.id,l:c.icon+' '+c.label.split(' ')[0]}))];document.getElementById('txn-chips').innerHTML=filters.map(f=>`<div class="chip${S.txnFilter===f.id?' on':''}" onclick="setTxnFilter('${f.id}')">${f.l}</div>`).join('');}
+function buildFilterRow(){
+  const uncatN=(typeof uncategorisedCount==='function')?uncategorisedCount():0;
+  const uncatChip=uncatN>0?[{id:'__uncat',l:'⚠ Uncategorised',badge:uncatN}]:[];
+  const filters=[{id:'all',l:'All'},...uncatChip,...allCats().map(c=>({id:c.id,l:c.icon+' '+c.label.split(' ')[0]}))];
+  document.getElementById('txn-chips').innerHTML=filters.map(f=>`<div class="chip${S.txnFilter===f.id?' on':''}" onclick="setTxnFilter('${f.id}')">${f.l}${f.badge?`<span class="chip-badge">${f.badge}</span>`:''}</div>`).join('');
+}
 function setTxnFilter(f){S.txnFilter=f;buildFilterRow();buildTxnList();}
 function buildTxnList(){
   const cm=cmap();const q=(document.getElementById('txn-search')?.value||'').toLowerCase();
@@ -3480,8 +3667,11 @@ function buildTxnList(){
   // Transfers touching this account (shown on both sides)
   let transfers=(S.transfers||[]).filter(tr=>tr.fromAcct===S.selectedAcct||tr.toAcct===S.selectedAcct)
     .map(tr=>({...tr,_type:'transfer',_outgoing:tr.fromAcct===S.selectedAcct}));
-  // Category filter only applies to standard transactions; hide transfers unless 'all' or 'transfer'
-  if(S.txnFilter!=='all'){
+  // Category filter — special __uncat filter shows only unmatched/other transactions
+  if(S.txnFilter==='__uncat'){
+    txns=txns.filter(t=>t.cat==='other'||!t.payee||t.payee==='Unknown');
+    transfers=[];
+  }else if(S.txnFilter!=='all'){
     txns=txns.filter(t=>t.cat===S.txnFilter);
     if(S.txnFilter!=='transfer')transfers=[];
   }
@@ -3505,6 +3695,16 @@ function buildTxnList(){
     }
     const c=cm[it.cat]||cm.other||{icon:'📌',col:'#7d8fa3',label:'Other'};
     const typeTag=c.type==='fixed'?'<span class="tag tb" style="margin-left:4px">FIXED</span>':'';
+    // Bulk mode: swap open-detail for toggle-selection; add checkbox
+    if(_bulkMode){
+      const sel=_bulkSelection.has(it.id);
+      return`<div class="txn txn-selectable ${sel?'selected':''} fadein" data-txn-selectable="1" data-txn-id="${it.id}" onclick="toggleTxnInSelection('${it.id}')">
+        <div class="txn-check ${sel?'on':''}">${sel?'✓':''}</div>
+        <div class="txn-ico" style="background:${c.col}22">${c.icon}</div>
+        <div class="txn-mid"><div class="txn-p">${it.payee}</div><div class="txn-m"><span class="tag ${it.dir==='in'?'tg':'tr'}">${it.dir==='in'?'IN':'OUT'}</span>${c.label}</div></div>
+        <div class="txn-r"><div class="txn-a ${it.dir}">${it.dir==='out'?'-':'+'}${fmtD(it.amt)}</div><div class="txn-d">${fmtDate(it.date)}</div></div>
+      </div>`;
+    }
     return`<div class="txn fadein" onclick="openTxnDetail('${it.id}')" style="cursor:pointer"><div class="txn-ico" style="background:${c.col}22">${c.icon}</div><div class="txn-mid"><div class="txn-p">${it.payee}</div><div class="txn-m"><span class="tag ${it.dir==='in'?'tg':'tr'}">${it.dir==='in'?'IN':'OUT'}</span>${c.label}${typeTag}${it.note?` · ${it.note}`:''}</div><div class="txn-acts"><button class="txn-act" onclick="event.stopPropagation();openTxnModal('${it.id}')">Edit</button><button class="txn-act" onclick="event.stopPropagation();deleteTxn('${it.id}')">Delete</button></div></div><div class="txn-r"><div class="txn-a ${it.dir}">${it.dir==='out'?'-':'+'}${fmtD(it.amt)}</div><div class="txn-d">${fmtDate(it.date)}</div></div></div>`;
   }).join('')}</div>`;
 }
