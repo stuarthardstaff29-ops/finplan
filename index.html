@@ -790,7 +790,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
     </div>
 
     <!-- AI ADVISOR -->
-    <div class="pg ai-pg" id="pg-ai" style="display:none;flex-direction:column;height:calc(100vh - calc(var(--hdr-h,56px) + var(--st)) - calc(var(--nav-h) + var(--sb)))">
+    <div class="pg ai-pg" id="pg-ai" style="display:none;flex-direction:column;height:calc(100vh - calc(var(--hdr-h,56px) + var(--st)) - calc(var(--nav-h) + var(--sb) + 32px))">
       <div class="ai-messages" id="ai-msgs"></div>
       <div class="ai-input-wrap">
         <div class="ai-qchips" id="ai-chips"></div>
@@ -1018,7 +1018,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 
     <!-- BUDGET -->
     <div class="pg" id="pg-budget">
-      <div class="card"><div class="ctitle"><div class="ctitle-l">Income</div></div><div class="sl-grp"><div class="sl-lr"><span class="sl-l">Kmart weekly earnings</span><span class="sl-v" id="out-kmart">$110</span></div><input type="range" min="0" max="400" step="5" value="110" id="sl-kmart" oninput="upAll()"></div></div>
+      <div class="card"><div class="ctitle"><div class="ctitle-l">Income</div></div><div class="sl-grp"><div class="sl-lr"><span class="sl-l">Dominos weekly earnings</span><span class="sl-v" id="out-kmart">$110</span></div><input type="range" min="0" max="400" step="5" value="110" id="sl-kmart" oninput="upAll()"></div></div>
       <div class="card"><div class="ctitle"><div class="ctitle-l">Fixed</div></div><div class="sl-grp"><div class="sl-lr"><span class="sl-l">Rent / month</span><span class="sl-v" id="out-rent">$400</span></div><input type="range" min="0" max="800" step="50" value="400" id="sl-rent" oninput="upAll()"></div></div>
       <div class="card"><div class="ctitle"><div class="ctitle-l">Spending</div></div><div class="sl-grp"><div class="sl-lr"><span class="sl-l">Personal spend / week</span><span class="sl-v" id="out-spend">$600</span></div><input type="range" min="0" max="1500" step="10" value="600" id="sl-spend" oninput="upAll()"></div></div>
       <div class="card"><div class="ctitle"><div class="ctitle-l">Savings & investing</div></div>
@@ -1107,6 +1107,11 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
       <div class="card"><div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>ATO tax estimate</div></div><div id="tax-summary"></div></div>
       <div class="card"><div class="ctitle"><div class="ctitle-l">Contributions this FY</div></div><div id="tax-contribs" style="font-size:12px;color:var(--t2);line-height:1.8"></div></div>
       <div class="card"><div class="ctitle"><div class="ctitle-l">Holdings cost base (CGT reference)</div></div><div id="tax-costbase" style="font-size:12px;color:var(--t2);line-height:1.8"></div></div>
+    </div>
+
+    <!-- JOBS (v2.7.3) -->
+    <div class="pg" id="pg-jobs">
+      <div id="jobs-content"></div>
     </div>
 
     <!-- SETTINGS -->
@@ -1262,6 +1267,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
     <button class="more-tile" id="more-budget" onclick="showPgFromMore('budget')"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Budget</button>
     <button class="more-tile" id="more-analytics" onclick="showPgFromMore('analytics')"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics</button>
+    <button class="more-tile" id="more-jobs" onclick="showPgFromMore('jobs')"><svg viewBox="0 0 24 24"><path d="M20 7h-4V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM10 5h4v2h-4V5z"/></svg>Jobs</button>
     <button class="more-tile" id="more-kmart" onclick="showPgFromMore('kmart')"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Shifts</button>
     <button class="more-tile" id="more-payday" onclick="showPgFromMore('payday')"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="12" cy="14.5" r="1.5"/></svg>Pay day</button>
     <button class="more-tile" id="more-recurring" onclick="showPgFromMore('recurring')"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Recurring</button>
@@ -1561,7 +1567,7 @@ let S={
       {key:'spend',type:'spending',label:'Spending money',pct:15},
       {key:'buffer',type:'buffer',label:'Leave in account',pct:5}
     ]},
-    kmart:{label:'Kmart',keywords:['kmart'],plan:[
+    kmart:{label:"Domino's",keywords:["domino","dominos","pizza","kmart"],plan:[
       {key:'emergency',type:'goal',ref:'emergency',label:'Emergency fund',pct:30},
       {key:'holiday',type:'goal',ref:'holiday',label:'Holiday fund',pct:20},
       {key:'pc',type:'goal',ref:'pc',label:'PC & laptop fund',pct:15},
@@ -1584,9 +1590,43 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.1';
+const APP_VERSION='2.7.3';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.3',
+    date:'2026-07-14',
+    title:'Jobs section — full-time + Domino\'s, AU tax calculator',
+    sections:{
+      features:[
+        '💼 New Jobs page (More menu → Jobs). Shows every income source as its own card with employer, salary/weekly, current tax bracket, income tax + Medicare levy, take-home annual and monthly. Combined income summary at the top',
+        '🇦🇺 Australian tax calculator — uses 2025-26 brackets (0% under $18,200, 16%, 30%, 37%, 45%) plus 2% Medicare levy. Auto-computes take-home from any salary you enter, and shows which bracket you\'re in',
+        'Full-time job pre-configured with your new $60,000 salary → ~$50,012 take-home → $4,168/mo (matches your actual $4,190)',
+        "Domino's added as your second job — delivery driver, weekly pay, keyword-based detection so future imports auto-tag it as income",
+        'Edit any job to change employer name, gross pay, tax type, notes, or bank-detection keywords. Add extra jobs anytime for side income',
+        '+ Add another job button — track multiple income streams (side gigs, freelance, etc.) alongside your main ones'
+      ],
+      improvements:[
+        'Kmart references throughout the payday planner + insights renamed to Domino\'s. Historical Kmart transactions in your records stay as-is (they were Kmart), but going forward everything says Domino\'s',
+        'Bank rules updated to recognise DOMINO\'S / DOMINOS PIZZA / DOMINO PIZZA in transaction narratives and auto-tag as income from Domino\'s'
+      ],
+      fixes:[]
+    }
+  },
+  {
+    v:'2.7.2',
+    date:'2026-07-14',
+    title:'Three fixes: AI scroll, dividend chart, contributions graph',
+    sections:{
+      features:[],
+      improvements:[],
+      fixes:[
+        'AI chat page — floating pill nav no longer covers the input field. The page now reserves 32px extra bottom clearance so messages scroll fully above the nav and the input is always visible',
+        '12-month projected income chart on the Dividends page is back. Was accidentally removed when I cleaned up the legacy buildDividendCalendar in v2.7.0. Now uses the v2.7.0 payment-based projections to build the 12-month bar chart',
+        'Growth vs Contributions graph on Invest page — the contributions line now anchors to your real cost basis. If tracked transactions and structured contributions add up to less than what your holdings actually cost (which happens when older buys aren\'t captured in the tagged-investment transactions), the app back-fills the gap at the earliest date so the line reflects total invested. No more $2,000 line when your holdings cost $12,000+'
+      ]
+    }
+  },
   {
     v:'2.7.1',
     date:'2026-07-14',
@@ -1892,7 +1932,7 @@ const CHANGELOG=[
         'Import Westpac & Macquarie CSV exports directly into the app',
         'Auto-detects which bank from the CSV headers',
         'Auto-categorises every transaction using a rules dictionary tuned to your merchants (KFC, Halifax Lunch, Steam, KandRHardstaff, Anthropic, Ampol, etc.)',
-        'Recognises income sources: METAL MANU (full-time salary) and KMART AUSTRALIA (Kmart casual pay)',
+        'Recognises income sources: METAL MANU (full-time salary) and KMART AUSTRALIA (Dominos delivery pay)',
         'Detects internal Westpac transfers (TFR Westpac) and marks them as transfers, not spending',
         'Duplicate detection: matches by date (±1 day), amount, and direction — already-logged transactions are shown separately, not re-imported',
         'Import preview with diff view: ➕ New / already logged / parser skipped — review before you save'
@@ -2109,7 +2149,7 @@ const MIGRATIONS={
           {key:'spend',type:'spending',label:'Spending money',pct:15},
           {key:'buffer',type:'buffer',label:'Leave in account',pct:5}
         ]},
-        kmart:{label:'Kmart',keywords:['kmart'],plan:[
+        kmart:{label:"Domino's",keywords:["domino","dominos","pizza","kmart"],plan:[
           {key:'emergency',type:'goal',ref:'emergency',label:'Emergency fund',pct:30},
           {key:'holiday',type:'goal',ref:'holiday',label:'Holiday fund',pct:20},
           {key:'pc',type:'goal',ref:'pc',label:'PC & laptop fund',pct:15},
@@ -2434,7 +2474,7 @@ function sw0(){document.getElementById('sw-body').innerHTML=`<div style="text-al
 function sw1(){document.getElementById('sw-body').innerHTML=`<p style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:16px">Enter the <strong>current real balance</strong> of each account. Transactions you log will be applied on top of these.</p><div class="sw-field"><div class="sw-lbl">Westpac — everyday account $</div><input type="number" class="sw-inp" id="sw-wp" placeholder="e.g. 600" value="${S.acctBalances.westpac||''}"></div><div class="sw-field"><div class="sw-lbl">Macquarie — HISA savings $</div><input type="number" class="sw-inp" id="sw-mq" placeholder="e.g. 0" value="${S.acctBalances.macquarie||''}"></div><div class="sw-info">💡 Westpac should only hold your weekly expense money. Savings accumulate in Macquarie.</div>`;}
 function sw2(){document.getElementById('sw-body').innerHTML=`<p style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:14px">Enter your current holding value for each ETF. Leave $0 if you don't hold it.</p><div class="sw-ticker-grid">${TICKERS.map(t=>`<div class="sw-ticker-item"><div class="sw-ticker-name"><div class="sw-dot" style="background:${TC[t]}"></div>${TL[t]}</div><input type="number" class="sw-inp" id="sw-${t}" placeholder="0.00" value="${Math.round((S.portfolio[t]||0)*100)/100}" style="font-size:13px;padding:8px 10px;margin:0"></div>`).join('')}</div>`;}
 function sw3(){document.getElementById('sw-body').innerHTML=`<p style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:14px">How much have you already saved toward each goal?</p>${Object.entries(GCFG).map(([k,g])=>`<div class="sw-field"><div class="sw-lbl" style="display:flex;align-items:center;gap:5px"><span style="width:7px;height:7px;border-radius:50%;background:${g.col}"></span>${g.label}${g.due?' · due '+g.due:' · priority'} (target ${fmtDI(g.target)})</div><input type="number" class="sw-inp" id="sw-goal-${k}" placeholder="0.00" value="${S.goalState[k].saved||''}"></div>`).join('')}`;}
-function sw4(){document.getElementById('sw-body').innerHTML=`<p style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:14px">Set your income and budget parameters. Adjustable anytime in the Budget tab.</p><div class="sw-field"><div class="sw-lbl">Kmart casual weekly avg $</div><input type="number" class="sw-inp" id="sw-kmart" value="${S.sliders.kmart}"></div><div class="sw-row"><div class="sw-field"><div class="sw-lbl">Rent / month $</div><input type="number" class="sw-inp" id="sw-rent" value="${S.sliders.rent}"></div><div class="sw-field"><div class="sw-lbl">Personal spend / week $</div><input type="number" class="sw-inp" id="sw-spend" value="${S.sliders.spend}"></div></div><div class="sw-row"><div class="sw-field"><div class="sw-lbl">Goal savings / month $</div><input type="number" class="sw-inp" id="sw-goals" value="${S.sliders.goals}"></div><div class="sw-field"><div class="sw-lbl">Monthly invest target $</div><input type="number" class="sw-inp" id="sw-invest" value="${S.sliders.invest}"></div></div>`;}
+function sw4(){document.getElementById('sw-body').innerHTML=`<p style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:14px">Set your income and budget parameters. Adjustable anytime in the Budget tab.</p><div class="sw-field"><div class="sw-lbl">Dominos weekly avg $</div><input type="number" class="sw-inp" id="sw-kmart" value="${S.sliders.kmart}"></div><div class="sw-row"><div class="sw-field"><div class="sw-lbl">Rent / month $</div><input type="number" class="sw-inp" id="sw-rent" value="${S.sliders.rent}"></div><div class="sw-field"><div class="sw-lbl">Personal spend / week $</div><input type="number" class="sw-inp" id="sw-spend" value="${S.sliders.spend}"></div></div><div class="sw-row"><div class="sw-field"><div class="sw-lbl">Goal savings / month $</div><input type="number" class="sw-inp" id="sw-goals" value="${S.sliders.goals}"></div><div class="sw-field"><div class="sw-lbl">Monthly invest target $</div><input type="number" class="sw-inp" id="sw-invest" value="${S.sliders.invest}"></div></div>`;}
 function swSave(){
   if(swStep===1){S.acctBalances={westpac:parseFloat(document.getElementById('sw-wp').value)||0,macquarie:parseFloat(document.getElementById('sw-mq').value)||0};}
   else if(swStep===2){TICKERS.forEach(t=>{const el=document.getElementById('sw-'+t);if(el)S.portfolio[t]=parseFloat(el.value)||0;});}
@@ -3073,7 +3113,7 @@ function detectMissingActivity(){
         nudges.push({
           id:'distribute_'+src,
           icon:'💰',
-          title:`${src==='fulltime'?'Full-time':'Kmart'} pay awaiting distribution`,
+          title:`${src==='fulltime'?'Full-time':"Domino's"} pay awaiting distribution`,
           body:`${fmtD(total)} sitting undistributed for ${daysSince}+ days. Distribute to keep budget accurate.`,
           action:"showPgFromMore('payday')",
           priority:1
@@ -3444,6 +3484,68 @@ function buildDividendCalendar(){
   // Record button + history list — build a card container if not present
   ensureDividendHistoryCard();
   buildDividendHistoryList();
+  // v2.7.2: 12-month projected income chart (was lost in the v2.7.0 legacy cleanup)
+  renderDividendChart();
+}
+
+// Render the 12-month projected dividend income bar chart from computeUpcomingDividendsV2
+function renderDividendChart(){
+  const canvas=document.getElementById('div-chart');if(!canvas||typeof Chart==='undefined')return;
+  // Compute 12 months of upcoming dividend payments
+  const now=new Date();
+  const monthlyTotals=new Array(12).fill(0);
+  const labels=[];
+  for(let i=0;i<12;i++){
+    const d=new Date(now.getFullYear(),now.getMonth()+i,1);
+    labels.push(d.toLocaleDateString('en-AU',{month:'short'}));
+  }
+  // Use the same upcoming-payments logic, extended to 12 months
+  (S.holdings||[]).forEach(h=>{
+    if(!h.units)return;
+    const payments=(S.dividendPayments||[])
+      .filter(p=>p.ticker===h.ticker&&p.amount>0)
+      .sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    let freq='quarterly',perPayment=0,nextDate;
+    if(payments.length){
+      const latest=payments[0];
+      freq=latest.frequency||'quarterly';
+      const days=freqIntervalDays(freq);
+      nextDate=new Date(latest.date+'T00:00:00');
+      while(nextDate<=now){nextDate.setDate(nextDate.getDate()+days);}
+      const scale=(latest.units>0&&h.units>0)?(h.units/latest.units):1;
+      perPayment=latest.amount*scale;
+    }else{
+      const annual=(typeof estAnnDivForHolding==='function')?estAnnDivForHolding(h):0;
+      perPayment=annual/freqPerYear(freq);
+      nextDate=new Date(now);nextDate.setDate(nextDate.getDate()+45);
+    }
+    if(perPayment<0.5)return;
+    // Walk forward 12 months and add each payment to the correct bucket
+    const days=freqIntervalDays(freq);
+    let d=new Date(nextDate);
+    const endD=new Date(now.getFullYear(),now.getMonth()+12,1);
+    while(d<endD){
+      const bucketIdx=(d.getFullYear()-now.getFullYear())*12+d.getMonth()-now.getMonth();
+      if(bucketIdx>=0&&bucketIdx<12)monthlyTotals[bucketIdx]+=perPayment;
+      d=new Date(d);d.setDate(d.getDate()+days);
+    }
+  });
+  const acc=getComputedStyle(document.documentElement).getPropertyValue('--acc').trim()||'#00e599';
+  if(typeof divChart!=='undefined'&&divChart){divChart.destroy();divChart=null;}
+  divChart=new Chart(canvas,{
+    type:'bar',
+    data:{labels,datasets:[{data:monthlyTotals.map(v=>+v.toFixed(2)),backgroundColor:acc+'88',borderRadius:4,borderWidth:0}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'$'+c.parsed.y.toFixed(2)}}},
+      scales:{
+        x:{ticks:{color:'#4a5d72',font:{size:9}},grid:{display:false}},
+        y:{ticks:{color:'#4a5d72',font:{size:9},callback:v=>'$'+v},grid:{color:'rgba(255,255,255,0.04)'}}
+      }
+    }
+  });
+  if(typeof registerChart==='function')registerChart('div-chart',divChart);
+  if(typeof fitChart==='function')fitChart(divChart);
 }
 function ensureDividendHistoryCard(){
   if(document.getElementById('div-history-card'))return;
@@ -3472,17 +3574,33 @@ function computeContributionSeries(){
     }
   });
   merged.sort((a,b)=>a.date.localeCompare(b.date));
-  if(!merged.length)return{labels:['Now'],series:[0]};
-  const firstD=new Date(merged[0].date+'T12:00:00');
+  // v2.7.2: anchor to portCostBasis. If holdings' actual cost basis is meaningfully higher
+  // than what we can derive from transaction/contribution history, back-fill a starting balance
+  // at the earliest date. This handles the common case where the CSV import doesn't capture
+  // every historical buy (they may be old, or were transfers to CMC rather than tagged as investments).
+  const derivedTotal=merged.reduce((a,m)=>a+m.amount,0);
+  const trueCost=(typeof portCostBasis==='function')?portCostBasis():0;
+  let backfill=0;
+  if(trueCost>derivedTotal+50){ // >$50 gap = real gap, not rounding
+    backfill=trueCost-derivedTotal;
+  }
+  if(!merged.length&&backfill<=0)return{labels:['Now'],series:[0]};
+  // Determine start date. If backfill exists but no merged entries, use "12 months ago" as an anchor.
+  let firstD;
+  if(merged.length){
+    firstD=new Date(merged[0].date+'T12:00:00');
+  }else{
+    firstD=new Date();firstD.setFullYear(firstD.getFullYear()-1);
+  }
   const months=Math.max(1,Math.ceil((Date.now()-firstD.getTime())/(1000*60*60*24*30)));
   const labels=[],series=[];
   for(let i=0;i<=months;i++){
     const d=new Date(firstD.getFullYear(),firstD.getMonth()+i,1);
     const cum=merged.filter(m=>new Date(m.date+'T12:00:00')<=d).reduce((a,m)=>a+m.amount,0);
     labels.push(d.toLocaleDateString('en-AU',{month:'short',year:'2-digit'}));
-    series.push(Math.round(cum));
+    series.push(Math.round(cum+backfill));
   }
-  return{labels,series,totalContributed:merged[merged.length-1]?merged.reduce((a,m)=>a+m.amount,0):0};
+  return{labels,series,totalContributed:derivedTotal+backfill,backfill};
 }
 
 // ── AUTO DAILY CHECK-IN ────────────────────────────────────
@@ -3748,6 +3866,292 @@ function showNav(){
 }
 
 
+// ═══════════════════════════════════════════════════════════
+// v2.7.3 — JOBS + AU TAX CALCULATOR
+// ═══════════════════════════════════════════════════════════
+
+// ── Australian tax brackets (2025-26 FY) ──────────────────
+const AU_TAX_BRACKETS=[
+  {min:0,max:18200,rate:0,base:0},
+  {min:18200,max:45000,rate:0.16,base:0},
+  {min:45000,max:135000,rate:0.30,base:4288},        // 16% × ($45k-$18.2k) = $4,288
+  {min:135000,max:190000,rate:0.37,base:31288},      // 4,288 + 30% × $90k = $31,288
+  {min:190000,max:Infinity,rate:0.45,base:51638}     // 31,288 + 37% × $55k
+];
+const AU_MEDICARE_LEVY=0.02;
+const AU_MEDICARE_LEVY_THRESHOLD=27222; // 2025-26 low-income threshold — no levy below this
+
+function calcIncomeTax(grossAnnual){
+  if(!(grossAnnual>0))return 0;
+  const bracket=AU_TAX_BRACKETS.find(b=>grossAnnual>b.min&&grossAnnual<=b.max)||AU_TAX_BRACKETS[AU_TAX_BRACKETS.length-1];
+  return bracket.base+(grossAnnual-bracket.min)*bracket.rate;
+}
+function calcMedicareLevy(grossAnnual){
+  if(grossAnnual<=AU_MEDICARE_LEVY_THRESHOLD)return 0;
+  return grossAnnual*AU_MEDICARE_LEVY;
+}
+function calcNetAnnual(grossAnnual){
+  return grossAnnual-calcIncomeTax(grossAnnual)-calcMedicareLevy(grossAnnual);
+}
+function currentTaxBracket(grossAnnual){
+  return AU_TAX_BRACKETS.find(b=>grossAnnual>b.min&&grossAnnual<=b.max)||AU_TAX_BRACKETS[AU_TAX_BRACKETS.length-1];
+}
+function taxBracketLabel(b){
+  if(!b)return '—';
+  if(b.max===Infinity)return `${(b.rate*100).toFixed(0)}% ($${(b.min/1000).toFixed(0)}k+)`;
+  return `${(b.rate*100).toFixed(0)}% ($${(b.min/1000).toFixed(0)}k–$${(b.max/1000).toFixed(0)}k)`;
+}
+
+// ── Jobs data model ────────────────────────────────────────
+// S.jobs = [{id, label, employer, type, grossAnnual, netMonthly, payFrequency, keywords, hourlyRate, hoursPerWeek, startDate, active, notes}]
+function ensureJobs(){
+  if(Array.isArray(S.jobs)&&S.jobs.length)return S.jobs;
+  // Seed with defaults + migrate from Kmart config
+  const dominosWeekly=(S.sliders&&S.sliders.dominos)||(S.sliders&&S.sliders.kmart)||110;
+  S.jobs=[
+    {
+      id:'fulltime',
+      label:'Full-time',
+      employer:'METAL MANU LTD',
+      type:'full-time',
+      grossAnnual:60000,
+      netMonthly:4190,
+      payFrequency:'monthly',
+      keywords:['metal manu','full-time','fulltime','salary'],
+      active:true,
+      notes:'Off probation as of 2026',
+      startDate:null
+    },
+    {
+      id:'dominos',
+      label:"Domino's",
+      employer:"Domino's Pizza",
+      type:'part-time',
+      grossHourly:null,
+      hoursPerWeek:null,
+      grossWeekly:dominosWeekly,
+      payFrequency:'weekly',
+      keywords:['domino','pizza','dominos'],
+      active:true,
+      notes:'Delivery driver',
+      startDate:null
+    }
+  ];
+  save();
+  return S.jobs;
+}
+function getJob(id){ensureJobs();return S.jobs.find(j=>j.id===id);}
+function updateJob(id,updates){
+  const j=getJob(id);if(!j)return;
+  Object.assign(j,updates);
+  // Recompute net monthly if gross changed
+  if(updates.grossAnnual!=null){
+    j.netMonthly=Math.round(calcNetAnnual(updates.grossAnnual)/12);
+  }
+  save();
+  if(currentPg==='jobs'&&typeof buildJobsPage==='function')buildJobsPage();
+}
+
+// Migrate one-time — copy S.sliders.kmart to S.sliders.dominos, run job seed
+function runV273Migrations(){
+  if(S.v273Migrated)return;
+  if(S.sliders){
+    if(S.sliders.kmart!=null&&S.sliders.dominos==null){
+      S.sliders.dominos=S.sliders.kmart;
+    }
+  }
+  // Update paydaySources keywords + label so Dominos pays get detected + labelled correctly
+  if(S.paydaySources&&S.paydaySources.kmart){
+    S.paydaySources.kmart.label="Domino's";
+    const kws=S.paydaySources.kmart.keywords||[];
+    ['domino','dominos','pizza'].forEach(k=>{if(!kws.includes(k))kws.push(k);});
+    S.paydaySources.kmart.keywords=kws;
+  }
+  ensureJobs();
+  S.v273Migrated=true;
+  save();
+}
+
+// ── Recent pays from transactions for a job ────────────────
+function recentPaysForJob(jobId,limit=6){
+  const j=getJob(jobId);if(!j)return[];
+  const keywords=(j.keywords||[]).map(k=>k.toLowerCase());
+  return(S.transactions||[])
+    .filter(t=>t.dir==='in'&&t.date&&keywords.some(k=>(t.payee||'').toLowerCase().includes(k)||(t.note||'').toLowerCase().includes(k)))
+    .sort((a,b)=>(b.date||'').localeCompare(a.date||''))
+    .slice(0,limit);
+}
+function ytdPayForJob(jobId){
+  const j=getJob(jobId);if(!j)return 0;
+  const keywords=(j.keywords||[]).map(k=>k.toLowerCase());
+  const yr=new Date().getFullYear().toString();
+  return(S.transactions||[])
+    .filter(t=>t.dir==='in'&&(t.date||'').startsWith(yr)&&keywords.some(k=>(t.payee||'').toLowerCase().includes(k)||(t.note||'').toLowerCase().includes(k)))
+    .reduce((a,t)=>a+t.amt,0);
+}
+
+// ── Jobs page renderer ─────────────────────────────────────
+function buildJobsPage(){
+  const el=document.getElementById('jobs-content');if(!el)return;
+  ensureJobs();
+  const jobs=S.jobs.filter(j=>j.active);
+  // Combined summary
+  const totalGross=jobs.reduce((a,j)=>{
+    if(j.grossAnnual)return a+j.grossAnnual;
+    if(j.grossWeekly)return a+(j.grossWeekly*52);
+    return a;
+  },0);
+  const totalNet=jobs.reduce((a,j)=>{
+    if(j.netMonthly)return a+j.netMonthly*12;
+    if(j.grossWeekly)return a+calcNetAnnual(j.grossWeekly*52);
+    return a;
+  },0);
+  const combinedBracket=currentTaxBracket(totalGross);
+  const summary=`<div class="hero">
+    <div class="hero-l">Combined income</div>
+    <div class="hero-v">${fmtDI(totalGross)}/yr</div>
+    <div style="font-size:12px;color:var(--t2);margin-top:6px">Take-home ~${fmtDI(totalNet)}/yr · ${fmtDI(Math.round(totalNet/12))}/mo · Bracket ${taxBracketLabel(combinedBracket)}</div>
+  </div>`;
+  const cards=jobs.map(j=>renderJobCard(j)).join('');
+  el.innerHTML=summary+cards+`<div style="text-align:center;margin-top:14px"><button class="btn btn-ghost btn-sm" onclick="openAddJobModal()">+ Add another job</button></div>`;
+}
+
+function renderJobCard(j){
+  const gross=j.grossAnnual||(j.grossWeekly?j.grossWeekly*52:0);
+  const net=j.netMonthly||(gross?Math.round(calcNetAnnual(gross)/12):0);
+  const bracket=currentTaxBracket(gross);
+  const tax=calcIncomeTax(gross);
+  const levy=calcMedicareLevy(gross);
+  const ytd=ytdPayForJob(j.id);
+  const recentPays=recentPaysForJob(j.id,4);
+  const isFullTime=j.type==='full-time';
+  const isPartTime=j.type==='part-time'||j.type==='casual';
+  const payLabel=j.payFrequency==='weekly'?'per week':j.payFrequency==='fortnightly'?'per fortnight':'per month';
+  const grossPerPeriod=j.payFrequency==='weekly'?j.grossWeekly||(gross/52):j.payFrequency==='fortnightly'?(gross/26):(gross/12);
+  return`<div class="card" style="border-color:${j.id==='fulltime'?'var(--accd2)':'var(--bdr)'}">
+    <div class="ctitle">
+      <div class="ctitle-l">
+        <span style="font-size:16px">${isFullTime?'💼':'🍕'}</span>
+        ${j.label}
+        <span style="font-size:10px;color:var(--t3);font-weight:400;margin-left:4px;text-transform:none;letter-spacing:0">${j.employer||''}</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="openEditJobModal('${j.id}')" style="font-size:10px;padding:4px 8px">Edit</button>
+    </div>
+    <div class="mg">
+      <div class="met"><div class="ml">Gross ${payLabel.replace('per ','')}</div><div class="mv">${fmtD(grossPerPeriod)}</div></div>
+      <div class="met"><div class="ml">Take-home / mo</div><div class="mv col-acc">${fmtD(net)}</div></div>
+    </div>
+    ${gross>0?`<div style="background:var(--bg3);border-radius:12px;padding:10px 12px;font-size:11px;color:var(--t2);line-height:1.7;margin-bottom:10px">
+      <div><strong style="color:var(--t)">Annual gross</strong> ${fmtDI(gross)}</div>
+      <div><strong style="color:var(--t)">Income tax</strong> ${fmtDI(tax)} <span style="color:var(--t3)">(bracket ${taxBracketLabel(bracket)})</span></div>
+      <div><strong style="color:var(--t)">Medicare levy</strong> ${fmtDI(levy)} <span style="color:var(--t3)">(${(AU_MEDICARE_LEVY*100).toFixed(0)}%)</span></div>
+      <div style="padding-top:6px;margin-top:6px;border-top:1px solid var(--bdr)"><strong style="color:var(--acc)">Take-home annual</strong> ${fmtDI(gross-tax-levy)}</div>
+    </div>`:''}
+    ${ytd>0?`<div style="font-size:11px;color:var(--t2);margin-bottom:8px"><strong style="color:var(--t)">${fmtDI(ytd)}</strong> received this year from ${j.label}</div>`:''}
+    ${recentPays.length?`<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Recent pays</div>
+    ${recentPays.map(t=>`<div class="detail-txn-row" style="cursor:pointer" onclick="openTxnDetail('${t.id}')">
+      <div style="font-size:11px;color:var(--t)">${fmtDate(t.date)}<div style="font-size:10px;color:var(--t3)">${t.payee}</div></div>
+      <div style="font-size:13px;font-weight:600;color:var(--acc);font-family:var(--mono)">+${fmtD(t.amt)}</div>
+    </div>`).join('')}`:'<div style="font-size:11px;color:var(--t3);padding:6px 0">No recent pays detected. Bank rules match on: '+j.keywords.join(', ')+'</div>'}
+    ${j.notes?`<div style="font-size:10px;color:var(--t3);margin-top:8px;font-style:italic">${j.notes}</div>`:''}
+  </div>`;
+}
+
+// ── Edit / Add job modals ──────────────────────────────────
+function openEditJobModal(id){
+  const j=getJob(id);if(!j)return;
+  const isSalaried=j.type==='full-time';
+  showSheet(`Edit ${j.label}`,`
+    <label class="lbl">Employer name</label>
+    <input type="text" class="inp" id="jb-employer" value="${(j.employer||'').replace(/"/g,'&quot;')}">
+    <label class="lbl">Display label</label>
+    <input type="text" class="inp" id="jb-label" value="${(j.label||'').replace(/"/g,'&quot;')}">
+    <div class="inp-row">
+      <div>
+        <label class="lbl">Job type</label>
+        <select class="inp" id="jb-type">
+          <option value="full-time" ${j.type==='full-time'?'selected':''}>Full-time</option>
+          <option value="part-time" ${j.type==='part-time'?'selected':''}>Part-time</option>
+          <option value="casual" ${j.type==='casual'?'selected':''}>Casual</option>
+          <option value="contract" ${j.type==='contract'?'selected':''}>Contract</option>
+        </select>
+      </div>
+      <div>
+        <label class="lbl">Pay frequency</label>
+        <select class="inp" id="jb-freq">
+          <option value="weekly" ${j.payFrequency==='weekly'?'selected':''}>Weekly</option>
+          <option value="fortnightly" ${j.payFrequency==='fortnightly'?'selected':''}>Fortnightly</option>
+          <option value="monthly" ${j.payFrequency==='monthly'?'selected':''}>Monthly</option>
+        </select>
+      </div>
+    </div>
+    ${isSalaried?`
+      <label class="lbl">Gross annual salary ($)</label>
+      <input type="number" class="inp" id="jb-gross-annual" value="${j.grossAnnual||''}" step="500" min="0">
+      <div style="font-size:11px;color:var(--t3);margin-top:4px;line-height:1.5">Take-home will be auto-calculated using 2025-26 AU tax brackets + 2% Medicare levy.</div>
+    `:`
+      <label class="lbl">Gross weekly earnings ($)</label>
+      <input type="number" class="inp" id="jb-gross-weekly" value="${j.grossWeekly||''}" step="5" min="0">
+      <label class="lbl">Hourly rate (optional)</label>
+      <input type="number" class="inp" id="jb-hourly" value="${j.grossHourly||''}" step="0.5" min="0">
+      <label class="lbl">Avg hours per week (optional)</label>
+      <input type="number" class="inp" id="jb-hours" value="${j.hoursPerWeek||''}" step="1" min="0">
+    `}
+    <label class="lbl">Notes (optional)</label>
+    <input type="text" class="inp" id="jb-notes" value="${(j.notes||'').replace(/"/g,'&quot;')}">
+    <label class="lbl">Bank-detection keywords (comma-separated)</label>
+    <input type="text" class="inp" id="jb-keywords" value="${(j.keywords||[]).join(', ')}">
+    <div style="font-size:11px;color:var(--t3);line-height:1.5;margin-top:4px">These are matched against transaction payee names to identify income from this job.</div>
+    <div style="display:flex;gap:6px;margin-top:14px">
+      ${j.id!=='fulltime'&&j.id!=='dominos'?`<button class="btn btn-ghost" style="color:var(--r)" onclick="deleteJob('${j.id}')">Delete</button>`:''}
+      <button class="btn btn-acc" style="flex:1" onclick="saveJobEdits('${j.id}')">Save changes</button>
+    </div>
+  `);
+}
+function saveJobEdits(id){
+  const j=getJob(id);if(!j)return;
+  const updates={
+    employer:(document.getElementById('jb-employer').value||'').trim(),
+    label:(document.getElementById('jb-label').value||'').trim(),
+    type:document.getElementById('jb-type').value,
+    payFrequency:document.getElementById('jb-freq').value,
+    notes:(document.getElementById('jb-notes').value||'').trim(),
+    keywords:(document.getElementById('jb-keywords').value||'').split(',').map(k=>k.trim().toLowerCase()).filter(Boolean)
+  };
+  const grossAnnualEl=document.getElementById('jb-gross-annual');
+  const grossWeeklyEl=document.getElementById('jb-gross-weekly');
+  const hourlyEl=document.getElementById('jb-hourly');
+  const hoursEl=document.getElementById('jb-hours');
+  if(grossAnnualEl){
+    const v=parseFloat(grossAnnualEl.value);
+    if(!isNaN(v)&&v>0){updates.grossAnnual=v;updates.netMonthly=Math.round(calcNetAnnual(v)/12);}
+  }
+  if(grossWeeklyEl){
+    const v=parseFloat(grossWeeklyEl.value);
+    if(!isNaN(v)&&v>0){updates.grossWeekly=v;updates.grossAnnual=v*52;updates.netMonthly=Math.round(calcNetAnnual(v*52)/12);}
+    // Also sync to sliders for backward compat with existing payday logic
+    if(!isNaN(v)&&v>0&&id==='dominos'){if(!S.sliders)S.sliders={};S.sliders.dominos=v;S.sliders.kmart=v;}
+  }
+  if(hourlyEl){const v=parseFloat(hourlyEl.value);if(!isNaN(v)&&v>0)updates.grossHourly=v;}
+  if(hoursEl){const v=parseFloat(hoursEl.value);if(!isNaN(v)&&v>0)updates.hoursPerWeek=v;}
+  Object.assign(j,updates);
+  save();closeSheet();
+  buildJobsPage();
+  showToast('Job updated');
+}
+function deleteJob(id){
+  if(!confirm('Delete this job? Historical pay data will remain in your transactions.'))return;
+  S.jobs=(S.jobs||[]).filter(j=>j.id!==id);
+  save();closeSheet();buildJobsPage();
+  showToast('Job removed');
+}
+function openAddJobModal(){
+  const id='job_'+Date.now().toString(36);
+  S.jobs.push({id,label:'New job',employer:'',type:'casual',grossWeekly:0,payFrequency:'weekly',keywords:[],active:true,notes:''});
+  save();
+  openEditJobModal(id);
+}
+
 function launchApp(){
   document.getElementById('setup').style.display='none';
   const app=document.getElementById('app');app.style.display='flex';
@@ -3756,6 +4160,7 @@ function launchApp(){
   generatePendingFromRules();
   if(typeof migrateDashLayout==='function')migrateDashLayout();
   if(typeof runV27Migrations==='function')runV27Migrations();
+  if(typeof runV273Migrations==='function')runV273Migrations();
   if(typeof ensureAiConversations==='function')ensureAiConversations();
   if(typeof autoDailyCheckIn==='function')autoDailyCheckIn();
   buildDash();buildStaticTimeline();buildAiWelcome();buildThemeGrid();buildSettingsPage();
@@ -3969,7 +4374,7 @@ function renderContextPanel(){
 // NAV
 // ═══════════════════════════════════════════════════════════
 let currentPg='dash';
-const MORE_PAGES=['budget','analytics','kmart','invest','timeline','settings','health','streaks','sinking','debts','subscriptions','dividends','tax','assistant','payday','scenario','glance','recurring','insights'];
+const MORE_PAGES=['budget','analytics','kmart','jobs','invest','timeline','settings','health','streaks','sinking','debts','subscriptions','dividends','tax','assistant','payday','scenario','glance','recurring','insights'];
 function showPg(id,btn){
   document.querySelectorAll('.pg').forEach(p=>{p.classList.remove('on');p.style.display='';});
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
@@ -4000,6 +4405,7 @@ function showPg(id,btn){
   if(id==='subscriptions')buildSubScan();
   if(id==='dividends')buildDividendCalendar();
   if(id==='tax')buildTaxSummary();
+  if(id==='jobs'&&typeof buildJobsPage==='function')buildJobsPage();
   if(id==='assistant'){buildAssistantWelcome();scrollAssistantBottom();}
   if(id==='payday')buildPaydayPage();
   if(id==='scenario')buildScenarioPage();
@@ -4047,6 +4453,7 @@ function showPgFromMore(id){
   if(id==='subscriptions')buildSubScan();
   if(id==='dividends')buildDividendCalendar();
   if(id==='tax')buildTaxSummary();
+  if(id==='jobs'&&typeof buildJobsPage==='function')buildJobsPage();
   if(id==='assistant'){buildAssistantWelcome();scrollAssistantBottom();}
   if(id==='payday')buildPaydayPage();
   if(id==='scenario')buildScenarioPage();
@@ -7277,7 +7684,8 @@ const BANK_RULES=[
   {match:/HALIFAX LUNCH SUPPLY/i,     cat:'food',          payee:'Halifax Lunch (work lunch)'},
   {match:/STEAMGAMES\.COM|STEAM POWERED/i, cat:'entertainment', payee:'Steam'},
   {match:/KandRHardstaff|K and R Hardstaff/i, cat:'rent',    payee:'Rent (parents)', direction:'out'},
-  {match:/DEPOSIT-SALARY KMART AUSTRALIA/i,   cat:'income',  payee:'Kmart (casual pay)',   direction:'in'},
+  {match:/DEPOSIT-SALARY KMART AUSTRALIA/i,   cat:'income',  payee:'Kmart (historical pay)',   direction:'in'},
+  {match:/DOMINO'?S|DOMINOS PIZZA|DOMINO PIZZA/i, cat:'income',  payee:"Domino's (delivery pay)",   direction:'in'},
   {match:/DEPOSIT-SALARY METAL MANU/i,        cat:'income',  payee:'Full-time salary',     direction:'in'},
   {match:/TFR Westpac|WITHDRAWAL MOBILE.*TFR|DEPOSIT ONLINE.*TFR/i, cat:'transfer', payee:'Westpac internal transfer'},
   {match:/WITHDRAWAL-OSKO PAYMENT.*Stuart Austin Hardstaff/i, cat:'transfer', payee:'Own account (Osko)'},
