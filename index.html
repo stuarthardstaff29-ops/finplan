@@ -252,7 +252,14 @@ body.light .hdr{background:rgba(255,255,255,.8)}
 .scrl::-webkit-scrollbar{display:none}
 
 /* BOTTOM NAV */
-.bnav{position:fixed;bottom:calc(14px + var(--sb));left:14px;right:14px;background:rgba(13,15,18,.92);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border:1px solid var(--bdr2);border-radius:22px;display:flex;padding:8px 6px;z-index:100;height:var(--nav-h);box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.bnav{position:fixed;bottom:calc(14px + var(--sb));left:14px;right:14px;background:rgba(13,15,18,.92);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border:1px solid var(--bdr2);border-radius:22px;display:flex;padding:8px 6px;z-index:100;height:var(--nav-h);box-shadow:0 8px 32px rgba(0,0,0,.5);transition:transform .22s cubic-bezier(.4,0,.2,1),opacity .22s}
+.bnav.hidden{transform:translateY(calc(100% + 40px));opacity:0;pointer-events:none}
+.fab.nav-hidden{transform:translateY(calc(var(--nav-h) + 40px));opacity:.5;pointer-events:none;transition:transform .22s cubic-bezier(.4,0,.2,1),opacity .22s}
+.conv-row{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg3);border:1px solid var(--bdr);border-radius:12px;margin-bottom:6px;transition:background .15s}
+.conv-row.active{border-color:var(--acc);background:var(--accd)}
+.conv-row:hover{background:var(--bg4)}
+.conv-title{font-size:13px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conv-sub{font-size:10px;color:var(--t3);margin-top:2px}
 body.light .bnav{background:rgba(255,255,255,.92)}
 .nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;color:var(--t3);font-size:10px;font-weight:500;letter-spacing:.02em;border:none;background:none;transition:all .2s;padding:6px 2px;position:relative;border-radius:14px}
 .nb.on{color:var(--acc)}
@@ -1577,9 +1584,26 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.0';
+const APP_VERSION='2.7.1';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.1',
+    date:'2026-07-14',
+    title:'AI conversations, floating nav auto-hide, dividend card fix',
+    sections:{
+      features:[
+        '💬 AI conversation management. Every chat is now a separate conversation. Tap ☰ in the AI header to see the list, switch between them, rename, or delete. Tap + to start a new one. Up to 20 saved conversations, with the oldest auto-deleted as you make new ones',
+        '✨ Auto-titled conversations. After your first message + reply, the app quietly asks Groq to generate a short 3-5 word title so you can find the chat later. You can always rename it manually',
+        '📱 Floating nav auto-hides when you\'re typing. As soon as you focus any input, textarea, or on-screen keyboard opens, the pill nav slides out of the way. It comes back the moment you tap outside. FAB fades too. No more nav bar covering the AI chat input or form fields'
+      ],
+      improvements:[],
+      fixes:[
+        'Projected Dividend Income card on the Dividends page now uses the v2.7.0 payment-based projection (was still calling the old yield-only estimate, hence the wrong numbers)',
+        'Per-holding rows in the income card now show a small "actuals" or "est" badge so you can see which holdings\' projections come from your recorded payments vs the yield fallback'
+      ]
+    }
+  },
   {
     v:'2.7.0',
     date:'2026-07-14',
@@ -3508,6 +3532,222 @@ function runV27Migrations(){
   }
 }
 
+// ═══════════════════════════════════════════════════════════
+// v2.7.1 — AI CONVERSATIONS + NAV AUTO-HIDE
+// ═══════════════════════════════════════════════════════════
+
+// ── AI CONVERSATION MANAGEMENT ─────────────────────────────
+// Data: S.aiConversations = [{id, title, createdAt, updatedAt, messages:[{role,content,ts}]}]
+// S.aiActiveConversationId = current
+// Cap at 20 — oldest by updatedAt auto-deleted.
+
+const AI_CONV_CAP=20;
+
+function ensureAiConversations(){
+  if(!Array.isArray(S.aiConversations))S.aiConversations=[];
+  // Migrate flat S.aiHistory (v2.7.0 and earlier) into a single conversation
+  if(!S.aiConversationsMigrated&&Array.isArray(S.aiHistory)&&S.aiHistory.length){
+    const conv={
+      id:uid(),
+      title:'Earlier conversation',
+      createdAt:Date.now()-24*3600*1000,
+      updatedAt:Date.now()-1000,
+      messages:S.aiHistory.map(m=>({role:m.role,content:m.content,ts:Date.now()}))
+    };
+    S.aiConversations.push(conv);
+    S.aiActiveConversationId=conv.id;
+  }
+  S.aiConversationsMigrated=true;
+  // Always ensure there's an active conversation
+  if(!S.aiActiveConversationId||!S.aiConversations.find(c=>c.id===S.aiActiveConversationId)){
+    if(S.aiConversations.length){
+      // Pick most recently updated
+      const sorted=[...S.aiConversations].sort((a,b)=>b.updatedAt-a.updatedAt);
+      S.aiActiveConversationId=sorted[0].id;
+    }
+  }
+  save();
+}
+
+function getActiveConversation(){
+  ensureAiConversations();
+  let c=S.aiConversations.find(x=>x.id===S.aiActiveConversationId);
+  if(!c){
+    c=startNewConversation(false);
+  }
+  return c;
+}
+
+function startNewConversation(refresh=true){
+  ensureAiConversations();
+  const now=Date.now();
+  const conv={id:uid(),title:'New chat',createdAt:now,updatedAt:now,messages:[]};
+  S.aiConversations.push(conv);
+  S.aiActiveConversationId=conv.id;
+  pruneOldConversations();
+  save();
+  if(refresh){
+    buildAiWelcome();
+    closeSheet();
+  }
+  return conv;
+}
+
+function pruneOldConversations(){
+  if(S.aiConversations.length<=AI_CONV_CAP)return;
+  // Sort by updatedAt desc, keep top AI_CONV_CAP, remove rest. Never delete the active one.
+  const sorted=[...S.aiConversations].sort((a,b)=>b.updatedAt-a.updatedAt);
+  const keep=sorted.slice(0,AI_CONV_CAP).map(c=>c.id);
+  if(!keep.includes(S.aiActiveConversationId))keep.push(S.aiActiveConversationId);
+  S.aiConversations=S.aiConversations.filter(c=>keep.includes(c.id));
+}
+
+function switchConversation(id){
+  const c=S.aiConversations.find(x=>x.id===id);if(!c)return;
+  S.aiActiveConversationId=id;save();
+  closeSheet();
+  buildAiWelcome();
+}
+
+function deleteConversation(id){
+  const c=S.aiConversations.find(x=>x.id===id);if(!c)return;
+  if(!confirm(`Delete "${c.title}"? This can't be undone.`))return;
+  S.aiConversations=S.aiConversations.filter(x=>x.id!==id);
+  if(S.aiActiveConversationId===id){
+    S.aiActiveConversationId=null;
+    // Pick next most recent or create new
+    if(S.aiConversations.length){
+      const sorted=[...S.aiConversations].sort((a,b)=>b.updatedAt-a.updatedAt);
+      S.aiActiveConversationId=sorted[0].id;
+    }else{
+      startNewConversation(false);
+    }
+  }
+  save();
+  buildAiWelcome();
+  openConversationList();
+}
+
+function renameConversation(id){
+  const c=S.aiConversations.find(x=>x.id===id);if(!c)return;
+  const newTitle=prompt('Rename conversation:',c.title);
+  if(newTitle===null)return;
+  const trimmed=newTitle.trim();
+  if(!trimmed)return;
+  c.title=trimmed.slice(0,60);
+  c.updatedAt=Date.now();
+  save();
+  openConversationList();
+}
+
+// Auto-title after first user+assistant exchange via Groq
+async function autoTitleConversation(id){
+  const c=S.aiConversations.find(x=>x.id===id);
+  if(!c||c.title!=='New chat'||c.messages.length<2)return;
+  const key=(S.groqApiKey||'').trim();
+  if(!key.startsWith('gsk_'))return;
+  const firstUser=c.messages.find(m=>m.role==='user');
+  const firstAssistant=c.messages.find(m=>m.role==='assistant');
+  if(!firstUser||!firstAssistant)return;
+  try{
+    const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body:JSON.stringify({
+        model:'llama-3.3-70b-versatile',
+        max_completion_tokens:16,
+        temperature:0.3,
+        messages:[
+          {role:'system',content:'You generate short 3-5 word titles for chat conversations. Return ONLY the title, no quotes, no punctuation at the end.'},
+          {role:'user',content:`User: ${firstUser.content.slice(0,200)}\nAssistant: ${firstAssistant.content.slice(0,200)}\n\nTitle:`}
+        ]
+      })
+    });
+    if(!res.ok)return;
+    const data=await res.json();
+    const raw=data.choices?.[0]?.message?.content||'';
+    const title=raw.trim().replace(/^["']|["']$/g,'').replace(/[.!?]+$/,'').slice(0,60);
+    if(title&&title.length>=3){
+      c.title=title;
+      save();
+      if(currentPg==='ai')updateAiHeader();
+    }
+  }catch(_){/* silent — not critical */}
+}
+
+function openConversationList(){
+  ensureAiConversations();
+  const convs=[...S.aiConversations].sort((a,b)=>b.updatedAt-a.updatedAt);
+  const rows=convs.map(c=>{
+    const isActive=c.id===S.aiActiveConversationId;
+    const preview=c.messages.length?c.messages[c.messages.length-1].content.slice(0,60):'No messages yet';
+    return`<div class="conv-row ${isActive?'active':''}">
+      <div style="flex:1;min-width:0;cursor:pointer" onclick="switchConversation('${c.id}')">
+        <div class="conv-title">${isActive?'▸ ':''}${c.title}</div>
+        <div class="conv-sub">${c.messages.length} msg${c.messages.length===1?'':'s'} · ${timeAgo(c.updatedAt)}</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:10px" onclick="renameConversation('${c.id}')" title="Rename">✎</button>
+      <button class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:10px;color:var(--r)" onclick="deleteConversation('${c.id}')" title="Delete">✕</button>
+    </div>`;
+  }).join('');
+  showSheet('Conversations',`
+    <button class="btn btn-acc btn-full" style="margin-bottom:12px" onclick="startNewConversation()">+ New chat</button>
+    <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">${convs.length} of ${AI_CONV_CAP} slots</div>
+    ${rows||'<div class="empty" style="padding:16px"><div class="empty-txt" style="font-size:11px">No conversations yet. Start one!</div></div>'}
+    <div style="font-size:10px;color:var(--t3);line-height:1.55;margin-top:12px">Oldest conversations are auto-deleted when you reach ${AI_CONV_CAP} — the ones you\'re actively using stay put.</div>
+  `);
+}
+
+function updateAiHeader(){
+  const el=document.getElementById('ai-header-title');
+  if(!el)return;
+  const c=getActiveConversation();
+  el.textContent=c?.title||'AI Advisor';
+}
+
+// ── NAV AUTO-HIDE ──────────────────────────────────────────
+// Hides the floating pill nav when interacting with inputs (especially AI chat)
+let _navHideTimer=null;
+function setupNavAutoHide(){
+  const inputSelector='input,textarea,select,[contenteditable="true"]';
+  document.addEventListener('focusin',e=>{
+    const t=e.target;
+    if(!t.matches||!t.matches(inputSelector))return;
+    hideNav();
+  },true);
+  document.addEventListener('focusout',e=>{
+    // Delay so switching between inputs doesn't cause flicker
+    clearTimeout(_navHideTimer);
+    _navHideTimer=setTimeout(()=>{
+      // Only re-show if no input is focused
+      const active=document.activeElement;
+      if(!active||!active.matches||!active.matches(inputSelector)){
+        showNav();
+      }
+    },150);
+  },true);
+  // Also react on visualViewport height changes (mobile keyboard opens)
+  if(window.visualViewport){
+    let lastHeight=window.visualViewport.height;
+    window.visualViewport.addEventListener('resize',()=>{
+      const nowH=window.visualViewport.height;
+      // If viewport shrunk significantly (>150px), assume keyboard
+      if(lastHeight-nowH>150){hideNav();}
+      else if(nowH-lastHeight>150){showNav();}
+      lastHeight=nowH;
+    });
+  }
+}
+function hideNav(){
+  const nav=document.querySelector('.bnav');if(nav)nav.classList.add('hidden');
+  const fab=document.querySelector('.fab');if(fab)fab.classList.add('nav-hidden');
+}
+function showNav(){
+  const nav=document.querySelector('.bnav');if(nav)nav.classList.remove('hidden');
+  const fab=document.querySelector('.fab');if(fab)fab.classList.remove('nav-hidden');
+}
+
+
 function launchApp(){
   document.getElementById('setup').style.display='none';
   const app=document.getElementById('app');app.style.display='flex';
@@ -3516,10 +3756,12 @@ function launchApp(){
   generatePendingFromRules();
   if(typeof migrateDashLayout==='function')migrateDashLayout();
   if(typeof runV27Migrations==='function')runV27Migrations();
+  if(typeof ensureAiConversations==='function')ensureAiConversations();
   if(typeof autoDailyCheckIn==='function')autoDailyCheckIn();
   buildDash();buildStaticTimeline();buildAiWelcome();buildThemeGrid();buildSettingsPage();
   scheduleLocalNotifs();
   initContextPanel();
+  if(typeof setupNavAutoHide==='function')setupNavAutoHide();
   if(typeof markAppOpened==='function')markAppOpened();
   // What's New popup + persistent banner
   maybeShowWhatsNew();
@@ -5478,22 +5720,40 @@ function showToast(msg){
 // AI ADVISOR
 // ═══════════════════════════════════════════════════════════
 function buildAiWelcome(){
+  // v2.7.1: use active conversation instead of flat S.aiHistory
+  if(typeof ensureAiConversations==='function')ensureAiConversations();
+  const activeConv=(typeof getActiveConversation==='function')?getActiveConversation():null;
+  const messages=activeConv?activeConv.messages:(S.aiHistory||[]);
   const msgs=document.getElementById('ai-msgs');
   const chips=document.getElementById('ai-chips');
   const hasKey=S.groqApiKey&&S.groqApiKey.startsWith('gsk_');
-  msgs.innerHTML=`<div class="ai-welcome">
-    <div class="ai-welcome-ico">${hasKey?'🧠':'⚙️'}</div>
-    <div class="ai-welcome-title">${hasKey?'AI Financial Advisor':'Setup required'}</div>
-    <div class="ai-welcome-sub">${hasKey
-      ?'I can see all your transactions, goals, investments, and budget. Ask me anything — from specific spending advice to full portfolio analysis.'
-      :'To activate the AI Advisor, you need a free Groq API key.<br><br><strong style="color:var(--acc)">Steps:</strong><br>1. Go to <strong>console.groq.com</strong> and sign up free<br>2. Create an API key (starts with gsk_)<br>3. Go to <strong>More → Settings → AI Advisor</strong><br>4. Paste your key and tap Save<br><br>Takes about 2 minutes — no credit card needed.'
-    }</div>
-    ${!hasKey?'<div style="margin-top:14px"><button class="btn btn-acc btn-full" onclick="showPgFromMore(\'settings\')">Go to Settings → Enter key</button></div>':''}
-  </div>`;
+  // Show header with conversation title + list button
+  const headerHtml=hasKey&&activeConv?`<div id="ai-conv-header" style="position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--bdr);padding:8px 12px;display:flex;align-items:center;gap:8px;z-index:5">
+    <button class="btn btn-ghost btn-sm" onclick="openConversationList()" title="Conversations" style="padding:4px 8px">☰</button>
+    <div id="ai-header-title" style="flex:1;font-size:13px;font-weight:600;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${activeConv.title}</div>
+    <button class="btn btn-ghost btn-sm" onclick="startNewConversation()" title="New chat" style="padding:4px 8px">+</button>
+  </div>`:'';
+  if(!messages.length){
+    msgs.innerHTML=headerHtml+`<div class="ai-welcome">
+      <div class="ai-welcome-ico">${hasKey?'🧠':'⚙️'}</div>
+      <div class="ai-welcome-title">${hasKey?'AI Financial Advisor':'Setup required'}</div>
+      <div class="ai-welcome-sub">${hasKey
+        ?'I can see all your transactions, goals, investments, and budget. Ask me anything — from specific spending advice to full portfolio analysis.'
+        :'To activate the AI Advisor, you need a free Groq API key.<br><br><strong style="color:var(--acc)">Steps:</strong><br>1. Go to <strong>console.groq.com</strong> and sign up free<br>2. Create an API key (starts with gsk_)<br>3. Go to <strong>More → Settings → AI Advisor</strong><br>4. Paste your key and tap Save<br><br>Takes about 2 minutes — no credit card needed.'
+      }</div>
+      ${!hasKey?'<div style="margin-top:14px"><button class="btn btn-acc btn-full" onclick="showPgFromMore(\'settings\')">Go to Settings → Enter key</button></div>':''}
+    </div>`;
+  }else{
+    msgs.innerHTML=headerHtml;
+    messages.forEach(m=>appendMsg(m.role,m.content,false));
+    scrollAiBottom();
+  }
   chips.innerHTML=hasKey?AI_QUICK.map(q=>`<button class="ai-qchip" onclick="askQuick('${q.replace(/'/g,"\\'")}')"> ${q}</button>`).join(''):'';
-  if(S.aiHistory?.length>0&&hasKey)rebuildAiHistory();
 }
-function rebuildAiHistory(){const msgs=document.getElementById('ai-msgs');msgs.innerHTML='';S.aiHistory.forEach(m=>appendMsg(m.role,m.content,false));scrollAiBottom();}
+function rebuildAiHistory(){
+  // Legacy path — now just delegates
+  buildAiWelcome();
+}
 function appendMsg(role,content,scroll=true){
   const msgs=document.getElementById('ai-msgs');
   const time=new Date().toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'});
@@ -5519,8 +5779,15 @@ async function sendAiMsg(){
 
   inp.value='';inp.style.height='auto';
   document.getElementById('ai-send-btn').disabled=true;
-  if(!S.aiHistory)S.aiHistory=[];
-  S.aiHistory.push({role:'user',content:txt});
+  // v2.7.1: save to active conversation
+  const _activeConv=(typeof getActiveConversation==='function')?getActiveConversation():null;
+  if(_activeConv){
+    _activeConv.messages.push({role:'user',content:txt,ts:Date.now()});
+    _activeConv.updatedAt=Date.now();
+  }else{
+    if(!S.aiHistory)S.aiHistory=[];
+    S.aiHistory.push({role:'user',content:txt});
+  }
   appendMsg('user',txt);
 
   // Typing indicator
@@ -5560,9 +5827,10 @@ BUDGET: Rent $${S.sliders.rent}/mo, Goal savings $${S.sliders.goals}/mo, Monthly
 
 Reply conversationally but precisely. Use **bold** for key dollar figures. Keep responses under 300 words unless a deep analysis is specifically requested. Always reference the user's actual numbers, never hypothetical examples.`;
 
-  // Build message history for context (last 6 exchanges)
+  // Build message history for context (last 6 exchanges) — v2.7.1 uses active conversation
   const historyMessages=[];
-  const recent=S.aiHistory.slice(-12);
+  const _srcMessages=_activeConv?_activeConv.messages:(S.aiHistory||[]);
+  const recent=_srcMessages.slice(-12);
   for(const m of recent){
     if(m.role==='user'||m.role==='assistant'){
       historyMessages.push({role:m.role,content:m.content});
@@ -5599,7 +5867,18 @@ Reply conversationally but precisely. Use **bold** for key dollar figures. Keep 
     const data=await res.json();
     const reply=data.choices?.[0]?.message?.content||'No response received. Please try again.';
     document.getElementById('ai-typing')?.remove();
-    S.aiHistory.push({role:'assistant',content:reply});
+    // v2.7.1: save reply to active conversation
+    if(_activeConv){
+      _activeConv.messages.push({role:'assistant',content:reply,ts:Date.now()});
+      _activeConv.updatedAt=Date.now();
+      // Trigger auto-title if this is the first exchange (fire and forget)
+      if(_activeConv.title==='New chat'&&_activeConv.messages.length>=2&&typeof autoTitleConversation==='function'){
+        autoTitleConversation(_activeConv.id);
+      }
+    }else{
+      if(!S.aiHistory)S.aiHistory=[];
+      S.aiHistory.push({role:'assistant',content:reply});
+    }
     appendMsg('ai',reply);
     save();
 
@@ -6208,17 +6487,27 @@ function projectDividendIncome(){
   const hs=S.holdings||[];
   const total=portTotal();
   if(!hs.length||!total)return{annual:0,yield:0,byHolding:[]};
-  const byHolding=hs.map(h=>({ticker:h.ticker,name:h.name,annual:estAnnDivForHolding(h),weight:holdingValue(h)/total*100}))
+  // v2.7.1 fix: use projectAnnualDivForHolding (payment-based) not estAnnDivForHolding (yield-only)
+  const projFn=(typeof projectAnnualDivForHolding==='function')?projectAnnualDivForHolding:estAnnDivForHolding;
+  const byHolding=hs.map(h=>{
+    const annual=projFn(h);
+    const hasHistory=(S.dividendPayments||[]).some(p=>p.ticker===h.ticker&&p.amount>0);
+    return{ticker:h.ticker,name:h.name,annual,weight:holdingValue(h)/total*100,hasHistory};
+  })
     .filter(x=>x.annual>0)
     .sort((a,b)=>b.annual-a.annual);
   const annual=byHolding.reduce((a,x)=>a+x.annual,0);
   const yieldPct=total>0?(annual/total*100):0;
-  return{annual,yield:yieldPct,byHolding,monthly:annual/12,quarterly:annual/4};
+  const holdingsWithHistory=byHolding.filter(x=>x.hasHistory).length;
+  return{annual,yield:yieldPct,byHolding,monthly:annual/12,quarterly:annual/4,holdingsWithHistory};
 }
 function buildDividendIncomeCard(){
   const el=document.getElementById('div-income-card');if(!el)return;
   const p=projectDividendIncome();
   if(!p.byHolding.length){el.innerHTML='';return;}
+  const historyNote=p.holdingsWithHistory>0
+    ?`<span style="color:var(--acc)">${p.holdingsWithHistory}/${p.byHolding.length} from recorded payments</span>`
+    :'<span style="color:var(--t3)">All yield-based estimates — record payments for accuracy</span>';
   el.innerHTML=`<div class="card">
     <div class="ctitle"><div class="ctitle-l">💰 Projected dividend income</div><span style="font-size:9px;color:var(--t3)">Based on current holdings</span></div>
     <div class="mg" style="margin-bottom:12px">
@@ -6227,15 +6516,16 @@ function buildDividendIncomeCard(){
       <div class="met"><div class="ml">Monthly avg</div><div class="mv">${fmtD(p.monthly)}</div></div>
       <div class="met"><div class="ml">Quarterly avg</div><div class="mv">${fmtD(p.quarterly)}</div></div>
     </div>
-    <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">By holding</div>
+    <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">By holding · ${historyNote}</div>
     ${p.byHolding.slice(0,8).map(h=>{
       const share=p.annual>0?(h.annual/p.annual*100):0;
+      const badge=h.hasHistory?'<span style="font-size:8px;color:var(--acc);text-transform:uppercase;letter-spacing:.06em">actuals</span>':'<span style="font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">est</span>';
       return`<div class="detail-txn-row" style="cursor:default">
-        <div style="flex:1;min-width:0"><div style="font-size:12px;color:var(--t)">${h.ticker}</div><div style="font-size:10px;color:var(--t3)">${share.toFixed(1)}% of dividend income</div></div>
+        <div style="flex:1;min-width:0"><div style="font-size:12px;color:var(--t)">${h.ticker} · ${badge}</div><div style="font-size:10px;color:var(--t3)">${share.toFixed(1)}% of dividend income</div></div>
         <div style="font-size:13px;font-weight:600;color:var(--acc)">${fmtD(h.annual)}</div>
       </div>`;
     }).join('')}
-    <div style="font-size:10px;color:var(--t3);line-height:1.55;margin-top:10px;padding-top:8px;border-top:1px solid var(--bdr)">Estimated using approximate yield rates for each holding type. Actual dividends will vary with company decisions and market conditions.</div>
+    <div style="font-size:10px;color:var(--t3);line-height:1.55;margin-top:10px;padding-top:8px;border-top:1px solid var(--bdr)">Actual payments scale projection by frequency × current units. Yield-based estimates used only where no history exists — record payments to sharpen accuracy.</div>
   </div>`;
 }
 
