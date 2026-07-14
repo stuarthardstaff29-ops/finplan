@@ -260,6 +260,48 @@ body.light .hdr{background:rgba(255,255,255,.8)}
 .conv-row:hover{background:var(--bg4)}
 .conv-title{font-size:13px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .conv-sub{font-size:10px;color:var(--t3);margin-top:2px}
+
+/* ═══════════ REPORTS (v2.7.5) ═══════════ */
+.report-view{position:fixed;inset:0;background:var(--bg);z-index:500;transform:translateY(100%);transition:transform .3s cubic-bezier(.2,0,.2,1);display:flex;flex-direction:column;overflow:hidden}
+.report-view.open{transform:translateY(0)}
+.report-toolbar{padding:calc(14px + var(--st)) 18px 12px;display:flex;align-items:center;gap:10px;flex-shrink:0;background:var(--bg2);border-bottom:1px solid var(--bdr)}
+.report-title{flex:1;font-size:14px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.2px}
+.report-body{flex:1;overflow-y:auto;padding:20px;background:var(--bg2)}
+.rep-hdr{text-align:center;padding:12px 0 24px;border-bottom:1px solid var(--bdr);margin-bottom:22px}
+.rep-eyebrow{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.16em;font-weight:600;margin-bottom:8px}
+.rep-title{font-size:26px;font-weight:700;color:var(--t);letter-spacing:-.8px;line-height:1.15}
+.rep-sub{font-size:11px;color:var(--t3);margin-top:8px}
+.rep-metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px}
+.rep-metric{background:var(--bg3);border:1px solid var(--bdr);border-radius:14px;padding:14px}
+.rep-metric-l{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;font-weight:600;margin-bottom:5px}
+.rep-metric-v{font-size:20px;font-weight:700;color:var(--t);letter-spacing:-.4px;line-height:1.15}
+.rep-section{margin-bottom:24px}
+.rep-h2{font-size:14px;font-weight:700;color:var(--t);letter-spacing:-.2px;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--acc)}
+.rep-table{width:100%;border-collapse:collapse;font-size:12px}
+.rep-table th{text-align:left;padding:8px 6px;background:var(--bg3);color:var(--t3);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--bdr)}
+.rep-table td{padding:8px 6px;border-bottom:1px solid var(--bdr);color:var(--t);vertical-align:top}
+.rep-table tfoot td{background:var(--bg3);font-weight:600;border-top:2px solid var(--bdr)}
+.rep-nw{font-size:13px;color:var(--t2);padding:10px 14px;background:var(--bg3);border-radius:10px}
+.rep-notice{background:var(--yd);border:1px solid var(--yd2);border-radius:12px;padding:12px 14px;font-size:11px;color:var(--t);line-height:1.55;margin-bottom:18px}
+.rep-note{font-size:10px;color:var(--t3);margin-top:8px;line-height:1.5;font-style:italic}
+.rep-empty{font-size:12px;color:var(--t3);padding:20px 0;text-align:center}
+.rep-footer{margin-top:32px;padding-top:16px;border-top:1px solid var(--bdr);font-size:10px;color:var(--t3);text-align:center;line-height:1.6}
+
+/* Print styles: only the report content appears when printing */
+@media print{
+  body{background:#ffffff!important;color:#000!important}
+  .hdr,.bnav,.fab,.pg:not(#pg-print-target),.overlay,.detail-view,.ai-input-wrap,.ctx-panel,.success-moment,.update-banner,#confetti-wrap,.bulk-action-bar,.report-toolbar{display:none!important}
+  .report-view{position:static!important;transform:none!important;background:#fff!important;overflow:visible!important;height:auto!important}
+  .report-body{background:#fff!important;padding:16px!important;overflow:visible!important}
+  .rep-hdr,.rep-h2,.rep-title,.rep-metric-v,.rep-table td,.rep-nw,.rep-notice{color:#000!important}
+  .rep-eyebrow,.rep-sub,.rep-metric-l,.rep-table th,.rep-footer,.rep-note{color:#555!important}
+  .rep-metric,.rep-nw,.rep-notice,.rep-table th,.rep-table tfoot td{background:#f5f5f5!important;border-color:#ddd!important}
+  .rep-h2{border-bottom-color:#000!important}
+  .rep-table td,.rep-table th{border-bottom-color:#ddd!important}
+  .rep-section{page-break-inside:avoid}
+  .rep-hdr{page-break-after:avoid}
+  a{text-decoration:none;color:#000!important}
+}
 body.light .bnav{background:rgba(255,255,255,.92)}
 .nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;color:var(--t3);font-size:10px;font-weight:500;letter-spacing:.02em;border:none;background:none;transition:all .2s;padding:6px 2px;position:relative;border-radius:14px}
 .nb.on{color:var(--acc)}
@@ -1109,6 +1151,11 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
       <div class="card"><div class="ctitle"><div class="ctitle-l">Holdings cost base (CGT reference)</div></div><div id="tax-costbase" style="font-size:12px;color:var(--t2);line-height:1.8"></div></div>
     </div>
 
+    <!-- REPORTS (v2.7.5) -->
+    <div class="pg" id="pg-reports">
+      <div id="reports-content"></div>
+    </div>
+
     <!-- JOBS (v2.7.3) -->
     <div class="pg" id="pg-jobs">
       <div id="jobs-content"></div>
@@ -1268,6 +1315,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
     <button class="more-tile" id="more-budget" onclick="showPgFromMore('budget')"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Budget</button>
     <button class="more-tile" id="more-analytics" onclick="showPgFromMore('analytics')"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics</button>
     <button class="more-tile" id="more-jobs" onclick="showPgFromMore('jobs')"><svg viewBox="0 0 24 24"><path d="M20 7h-4V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM10 5h4v2h-4V5z"/></svg>Jobs</button>
+    <button class="more-tile" id="more-reports" onclick="showPgFromMore('reports')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>Reports</button>
     <button class="more-tile" id="more-kmart" onclick="showPgFromMore('kmart')"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Shifts</button>
     <button class="more-tile" id="more-payday" onclick="showPgFromMore('payday')"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="12" cy="14.5" r="1.5"/></svg>Pay day</button>
     <button class="more-tile" id="more-recurring" onclick="showPgFromMore('recurring')"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Recurring</button>
@@ -1590,9 +1638,28 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.4';
+const APP_VERSION='2.7.5';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.5',
+    date:'2026-07-14',
+    title:'Reports & exports — Monthly, Tax-year, Portfolio, CSVs',
+    sections:{
+      features:[
+        '📅 Monthly summary report — pick any month, get income, spending by category, notable transactions, savings goals progress, and net worth change on one page. Tap "Print / Save PDF" to archive it',
+        '🇦🇺 AU tax year report — full financial-year view (July–June). Employment income by job, dividend income by holding, estimated income tax + Medicare levy, and after-tax estimate. Print-ready for handing to your accountant',
+        '📊 Portfolio snapshot — point-in-time record: every holding with units, price, cost basis, current value, P&L $ and %, portfolio weight, estimated annual dividend. Great for financial-advisor conversations or record-keeping',
+        '💾 CSV exports — Transactions, Holdings, Dividends (all with the details your accountant would want), plus a full-state JSON backup for archiving',
+        '🖨 Print-friendly styling — all reports have a proper print stylesheet. Toolbar hides, black-on-white, page-break rules applied, so browser Save-as-PDF looks clean'
+      ],
+      improvements:[
+        'Reports pull from the same central data model as the rest of the app — numbers stay in sync automatically, no separate export data source to maintain',
+        'Reports page added to the More menu with dedicated tile'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'2.7.4',
     date:'2026-07-14',
@@ -4246,6 +4313,425 @@ function openAddJobModal(){
   openEditJobModal(id);
 }
 
+// ═══════════════════════════════════════════════════════════
+// v2.7.5 — REPORTS & EXPORTS
+// Native browser print → PDF; CSV file downloads.
+// All computations use the same central data model as the rest of the app,
+// so reports always reflect the current state (no separate data source).
+// ═══════════════════════════════════════════════════════════
+
+// ── Shared helpers ─────────────────────────────────────────
+function reportRange(startDate,endDate){
+  // Returns filtered arrays of txns and dividends within [startDate, endDate] inclusive
+  const inRange=(d)=>d&&d>=startDate&&d<=endDate;
+  const txns=(S.transactions||[]).filter(t=>inRange(t.date||''));
+  const divs=(S.dividendPayments||[]).filter(p=>inRange(p.date||''));
+  return{txns,divs};
+}
+function sumBy(arr,fn){return arr.reduce((a,x)=>a+(fn(x)||0),0);}
+function groupBy(arr,keyFn){
+  const g={};arr.forEach(x=>{const k=keyFn(x);(g[k]=g[k]||[]).push(x);});
+  return g;
+}
+
+// ── Report shell (opens print-friendly overlay) ───────────
+function openReport(title,html){
+  let el=document.getElementById('report-view');
+  if(!el){
+    el=document.createElement('div');el.id='report-view';el.className='report-view';
+    el.innerHTML=`<div class="report-toolbar"><button class="btn btn-ghost btn-sm" onclick="closeReport()">← Close</button><div class="report-title" id="report-title"></div><button class="btn btn-acc btn-sm" onclick="printReport()">🖨 Print / Save PDF</button></div><div class="report-body" id="report-body"></div>`;
+    document.body.appendChild(el);
+  }
+  document.getElementById('report-title').textContent=title;
+  document.getElementById('report-body').innerHTML=html;
+  el.classList.add('open');
+}
+function closeReport(){const el=document.getElementById('report-view');if(el)el.classList.remove('open');}
+function printReport(){window.print();}
+
+// ── CSV download ───────────────────────────────────────────
+function csvEscape(v){
+  if(v==null)return '';
+  const s=String(v);
+  if(/[",\n\r]/.test(s))return'"'+s.replace(/"/g,'""')+'"';
+  return s;
+}
+function downloadCSV(rows,filename){
+  const csv=rows.map(r=>r.map(csvEscape).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=filename;a.style.display='none';
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},100);
+  showToast('Downloaded '+filename);
+}
+
+// ═══ MONTHLY SUMMARY REPORT ═══════════════════════════════
+function buildMonthlyReport(ym){
+  ym=ym||lastCompleteMonth();
+  const start=ym+'-01';
+  const end=(()=>{
+    const [y,m]=ym.split('-').map(Number);
+    const last=new Date(y,m,0).getDate();
+    return `${ym}-${String(last).padStart(2,'0')}`;
+  })();
+  const{txns,divs}=reportRange(start,end);
+  const income=sumBy(txns.filter(t=>t.dir==='in'&&t.cat==='income'),t=>t.amt);
+  const spendOut=txns.filter(t=>t.dir==='out'&&t.cat!=='transfer'&&t.cat!=='investments');
+  const totalOut=sumBy(spendOut,t=>t.amt);
+  const invContrib=sumBy(txns.filter(t=>t.dir==='out'&&t.cat==='investments'),t=>t.amt);
+  const divReceived=sumBy(divs,p=>p.amount);
+  const cm=cmap();
+  const byCat=groupBy(spendOut,t=>t.cat);
+  const catRows=Object.entries(byCat).map(([id,ts])=>{
+    const c=cm[id]||{icon:'📌',label:id};
+    const tot=sumBy(ts,t=>t.amt);
+    const pct=totalOut>0?(tot/totalOut*100):0;
+    return{id,label:c.label,icon:c.icon,amt:tot,pct,count:ts.length};
+  }).sort((a,b)=>b.amt-a.amt);
+  // Notable transactions
+  const topOut=[...spendOut].sort((a,b)=>b.amt-a.amt).slice(0,5);
+  const topIn=[...txns.filter(t=>t.dir==='in'&&t.cat!=='transfer')].sort((a,b)=>b.amt-a.amt).slice(0,5);
+  // NW change over month
+  const nwStart=(S.nwHistory||[]).find(h=>h.date<=start);
+  const nwEnd=(S.nwHistory||[]).filter(h=>h.date<=end).slice(-1)[0];
+  const nwChange=(nwEnd&&nwStart)?(nwEnd.nw-nwStart.nw):null;
+  // Goal progress within the month
+  const goalRows=Object.entries(GCFG||{}).map(([k,g])=>{
+    const st=(S.goalState||{})[k];if(!st)return null;
+    const pct=g.target>0?Math.min(100,Math.round(st.saved/g.target*100)):0;
+    return{label:g.label,saved:st.saved,target:g.target,pct};
+  }).filter(Boolean);
+
+  const monthName=new Date(start+'T00:00:00').toLocaleDateString('en-AU',{month:'long',year:'numeric'});
+  const savingsRate=income>0?((income-totalOut)/income*100):0;
+  const html=`
+    <div class="rep-hdr">
+      <div class="rep-eyebrow">Monthly summary</div>
+      <div class="rep-title">${monthName}</div>
+      <div class="rep-sub">Generated ${fmtDate(today())}</div>
+    </div>
+
+    <div class="rep-metrics">
+      <div class="rep-metric"><div class="rep-metric-l">Income</div><div class="rep-metric-v" style="color:var(--acc)">${fmtDI(income)}</div></div>
+      <div class="rep-metric"><div class="rep-metric-l">Spending</div><div class="rep-metric-v" style="color:var(--r)">${fmtDI(totalOut)}</div></div>
+      <div class="rep-metric"><div class="rep-metric-l">Invested</div><div class="rep-metric-v" style="color:var(--b)">${fmtDI(invContrib)}</div></div>
+      <div class="rep-metric"><div class="rep-metric-l">Savings rate</div><div class="rep-metric-v">${savingsRate.toFixed(0)}%</div></div>
+    </div>
+
+    ${nwChange!=null?`<div class="rep-section">
+      <div class="rep-h2">Net worth change</div>
+      <div class="rep-nw"><span style="color:${nwChange>=0?'var(--acc)':'var(--r)'};font-size:22px;font-weight:700">${nwChange>=0?'+':''}${fmtD(nwChange)}</span> over the month</div>
+    </div>`:''}
+
+    <div class="rep-section">
+      <div class="rep-h2">Spending by category</div>
+      ${catRows.length?`<table class="rep-table">
+        <thead><tr><th>Category</th><th>Transactions</th><th>Share</th><th>Amount</th></tr></thead>
+        <tbody>${catRows.map(r=>`<tr>
+          <td>${r.icon} ${r.label}</td>
+          <td>${r.count}</td>
+          <td>${r.pct.toFixed(0)}%</td>
+          <td style="text-align:right;font-family:var(--mono)">${fmtD(r.amt)}</td>
+        </tr>`).join('')}</tbody>
+        <tfoot><tr><td colspan="3"><strong>Total</strong></td><td style="text-align:right;font-family:var(--mono)"><strong>${fmtD(totalOut)}</strong></td></tr></tfoot>
+      </table>`:'<div class="rep-empty">No spending recorded.</div>'}
+    </div>
+
+    ${divReceived>0?`<div class="rep-section">
+      <div class="rep-h2">Dividend income</div>
+      <table class="rep-table">
+        <thead><tr><th>Date</th><th>Ticker</th><th>Note</th><th>Amount</th></tr></thead>
+        <tbody>${divs.map(p=>`<tr>
+          <td>${fmtDate(p.date)}</td><td>${p.ticker}</td><td>${p.note||''}</td>
+          <td style="text-align:right;font-family:var(--mono);color:var(--acc)">+${fmtD(p.amount)}</td>
+        </tr>`).join('')}</tbody>
+        <tfoot><tr><td colspan="3"><strong>Received</strong></td><td style="text-align:right;font-family:var(--mono)"><strong>${fmtD(divReceived)}</strong></td></tr></tfoot>
+      </table>
+    </div>`:''}
+
+    ${topOut.length?`<div class="rep-section">
+      <div class="rep-h2">Notable expenses</div>
+      <table class="rep-table">
+        <thead><tr><th>Date</th><th>Payee</th><th>Category</th><th>Amount</th></tr></thead>
+        <tbody>${topOut.map(t=>{const c=cm[t.cat]||{label:t.cat};return`<tr>
+          <td>${fmtDate(t.date)}</td><td>${t.payee}</td><td>${c.label}</td>
+          <td style="text-align:right;font-family:var(--mono)">${fmtD(t.amt)}</td>
+        </tr>`;}).join('')}</tbody>
+      </table>
+    </div>`:''}
+
+    ${goalRows.length?`<div class="rep-section">
+      <div class="rep-h2">Savings goals</div>
+      <table class="rep-table">
+        <thead><tr><th>Goal</th><th>Progress</th><th>Saved</th><th>Target</th></tr></thead>
+        <tbody>${goalRows.map(g=>`<tr>
+          <td>${g.label}</td>
+          <td><div style="width:100px;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle"><div style="width:${g.pct}%;height:100%;background:var(--acc)"></div></div> ${g.pct}%</td>
+          <td style="font-family:var(--mono)">${fmtD(g.saved)}</td>
+          <td style="font-family:var(--mono)">${fmtD(g.target)}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`:''}
+
+    <div class="rep-footer">FinPlan · Generated from your data on ${fmtDate(today())} · This is not financial advice</div>
+  `;
+  openReport('Monthly · '+monthName,html);
+}
+
+function lastCompleteMonth(){
+  const d=new Date();d.setDate(1);d.setDate(0); // last day of previous month
+  return d.toISOString().slice(0,7);
+}
+
+// ═══ TAX YEAR REPORT (AU) ═════════════════════════════════
+// AU tax year: July 1 to June 30
+function currentAUTaxYear(){
+  const d=new Date();
+  const y=d.getFullYear();
+  return d.getMonth()>=6?y:y-1;  // month 6 = July (0-indexed)
+}
+function auTaxYearBounds(startYear){
+  return{start:startYear+'-07-01',end:(startYear+1)+'-06-30'};
+}
+
+function buildTaxYearReport(startYear){
+  startYear=startYear||currentAUTaxYear();
+  const{start,end}=auTaxYearBounds(startYear);
+  const{txns,divs}=reportRange(start,end);
+  const employmentIncome=sumBy(txns.filter(t=>t.dir==='in'&&t.cat==='income'),t=>t.amt);
+  const divIncome=sumBy(divs,p=>p.amount);
+  const interestIncome=sumBy(txns.filter(t=>t.dir==='in'&&(t.cat==='interest'||(t.payee||'').toLowerCase().includes('interest'))),t=>t.amt);
+  const totalTaxable=employmentIncome+divIncome+interestIncome;
+  const tax=(typeof calcIncomeTax==='function')?calcIncomeTax(totalTaxable):0;
+  const levy=(typeof calcMedicareLevy==='function')?calcMedicareLevy(totalTaxable):0;
+  const estRefund=totalTaxable-tax-levy;
+  const jobBreakdown=(S.jobs||[]).filter(j=>j.active).map(j=>{
+    const jTxns=txns.filter(t=>t.dir==='in'&&t.cat==='income'&&(j.keywords||[]).some(k=>k&&(t.payee||'').toLowerCase().includes(k)));
+    return{label:j.label,employer:j.employer,amount:sumBy(jTxns,t=>t.amt),count:jTxns.length};
+  }).filter(j=>j.amount>0);
+  const divByTicker=groupBy(divs,p=>p.ticker);
+
+  const html=`
+    <div class="rep-hdr">
+      <div class="rep-eyebrow">Australian tax year</div>
+      <div class="rep-title">${startYear}–${(startYear+1).toString().slice(2)} · FY${startYear+1}</div>
+      <div class="rep-sub">Period: ${fmtDate(start)} to ${fmtDate(end)} · Generated ${fmtDate(today())}</div>
+    </div>
+
+    <div class="rep-notice">
+      <strong>Not tax advice.</strong> These figures are estimates from your recorded transactions. Cross-reference with payslips, bank statements, and broker records before lodging. See an accountant for anything complex (CGT, deductions, offsets).
+    </div>
+
+    <div class="rep-metrics">
+      <div class="rep-metric"><div class="rep-metric-l">Employment</div><div class="rep-metric-v">${fmtDI(employmentIncome)}</div></div>
+      <div class="rep-metric"><div class="rep-metric-l">Dividends</div><div class="rep-metric-v">${fmtDI(divIncome)}</div></div>
+      <div class="rep-metric"><div class="rep-metric-l">Interest</div><div class="rep-metric-v">${fmtDI(interestIncome)}</div></div>
+      <div class="rep-metric"><div class="rep-metric-l">Total taxable</div><div class="rep-metric-v" style="color:var(--acc)">${fmtDI(totalTaxable)}</div></div>
+    </div>
+
+    <div class="rep-section">
+      <div class="rep-h2">Estimated tax owed</div>
+      <table class="rep-table">
+        <tr><td>Total taxable income</td><td style="text-align:right;font-family:var(--mono)">${fmtDI(totalTaxable)}</td></tr>
+        <tr><td>Income tax (${(typeof taxBracketLabel==='function'&&typeof currentTaxBracket==='function')?taxBracketLabel(currentTaxBracket(totalTaxable)):'AU brackets'})</td><td style="text-align:right;font-family:var(--mono);color:var(--r)">−${fmtDI(tax)}</td></tr>
+        <tr><td>Medicare levy (2%)</td><td style="text-align:right;font-family:var(--mono);color:var(--r)">−${fmtDI(levy)}</td></tr>
+        <tr style="border-top:2px solid var(--bdr)"><td><strong>Estimated after-tax</strong></td><td style="text-align:right;font-family:var(--mono)"><strong>${fmtDI(estRefund)}</strong></td></tr>
+      </table>
+    </div>
+
+    ${jobBreakdown.length?`<div class="rep-section">
+      <div class="rep-h2">Employment income by job</div>
+      <table class="rep-table">
+        <thead><tr><th>Job</th><th>Employer</th><th>Pays</th><th>Total</th></tr></thead>
+        <tbody>${jobBreakdown.map(j=>`<tr>
+          <td>${j.label}</td><td>${j.employer||''}</td><td>${j.count}</td>
+          <td style="text-align:right;font-family:var(--mono)">${fmtDI(j.amount)}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`:''}
+
+    ${divIncome>0?`<div class="rep-section">
+      <div class="rep-h2">Dividend income (per holding)</div>
+      <table class="rep-table">
+        <thead><tr><th>Ticker</th><th>Payments</th><th>Total received</th></tr></thead>
+        <tbody>${Object.entries(divByTicker).map(([tk,payments])=>`<tr>
+          <td>${tk}</td><td>${payments.length}</td>
+          <td style="text-align:right;font-family:var(--mono);color:var(--acc)">${fmtDI(sumBy(payments,p=>p.amount))}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+      <div class="rep-note">Franking credits are not tracked in the app — check your broker's statement for franking amounts (may increase your refund).</div>
+    </div>`:''}
+
+    <div class="rep-footer">FinPlan · AU tax year ${startYear}–${(startYear+1).toString().slice(2)} · This is not financial or tax advice</div>
+  `;
+  openReport('Tax year '+startYear+'-'+(startYear+1).toString().slice(2),html);
+}
+
+// ═══ PORTFOLIO SNAPSHOT REPORT ════════════════════════════
+function buildPortfolioSnapshotReport(){
+  const hs=(S.holdings||[]).filter(h=>h.units>0);
+  const total=portTotal();
+  const cost=portCostBasis();
+  const pnl=total-cost;
+  const pnlPct=cost>0?(pnl/cost*100):0;
+  const holdingRows=hs.map(h=>{
+    const val=holdingValue(h);
+    const c=holdingCost(h);
+    const p=val-c;
+    const pPct=c>0?(p/c*100):0;
+    const weight=total>0?(val/total*100):0;
+    const annDivH=(typeof projectAnnualDivForHolding==='function')?projectAnnualDivForHolding(h):0;
+    return{ticker:h.ticker,market:h.market||'—',units:h.units,lastPrice:h.lastPrice||h.livePrice||0,cost:c,value:val,pnl:p,pnlPct:pPct,weight,annDiv:annDivH};
+  }).sort((a,b)=>b.value-a.value);
+  const annDivTotal=sumBy(holdingRows,r=>r.annDiv);
+  const yieldPct=total>0?(annDivTotal/total*100):0;
+
+  const html=`
+    <div class="rep-hdr">
+      <div class="rep-eyebrow">Portfolio snapshot</div>
+      <div class="rep-title">${fmtD(total)}</div>
+      <div class="rep-sub">${hs.length} holdings · Generated ${fmtDate(today())}</div>
+    </div>
+
+    <div class="rep-metrics">
+      <div class="rep-metric"><div class="rep-metric-l">Total value</div><div class="rep-metric-v">${fmtDI(total)}</div></div>
+      <div class="rep-metric"><div class="rep-metric-l">Cost basis</div><div class="rep-metric-v">${fmtDI(cost)}</div></div>
+      <div class="rep-metric"><div class="rep-metric-l">Unrealised P&L</div><div class="rep-metric-v" style="color:${pnl>=0?'var(--acc)':'var(--r)'}">${pnl>=0?'+':''}${fmtDI(pnl)} (${pnl>=0?'+':''}${pnlPct.toFixed(1)}%)</div></div>
+      <div class="rep-metric"><div class="rep-metric-l">Est. annual dividend</div><div class="rep-metric-v" style="color:var(--acc)">${fmtDI(annDivTotal)} <span style="font-size:11px;color:var(--t3)">(${yieldPct.toFixed(2)}% yield)</span></div></div>
+    </div>
+
+    <div class="rep-section">
+      <div class="rep-h2">Holdings breakdown</div>
+      <table class="rep-table">
+        <thead><tr><th>Ticker</th><th>Mkt</th><th>Units</th><th>Price</th><th>Cost</th><th>Value</th><th>P&L</th><th>%</th></tr></thead>
+        <tbody>${holdingRows.map(r=>`<tr>
+          <td><strong>${r.ticker}</strong></td>
+          <td>${r.market}</td>
+          <td style="text-align:right;font-family:var(--mono)">${r.units.toLocaleString(undefined,{maximumFractionDigits:4})}</td>
+          <td style="text-align:right;font-family:var(--mono)">${r.lastPrice.toFixed(2)}</td>
+          <td style="text-align:right;font-family:var(--mono)">${fmtDI(r.cost)}</td>
+          <td style="text-align:right;font-family:var(--mono)">${fmtDI(r.value)}</td>
+          <td style="text-align:right;font-family:var(--mono);color:${r.pnl>=0?'var(--acc)':'var(--r)'}">${r.pnl>=0?'+':''}${fmtDI(r.pnl)}<br><span style="font-size:9px">${r.pnlPct>=0?'+':''}${r.pnlPct.toFixed(1)}%</span></td>
+          <td style="text-align:right;font-family:var(--mono)">${r.weight.toFixed(0)}%</td>
+        </tr>`).join('')}</tbody>
+        <tfoot><tr>
+          <td colspan="4"><strong>Total</strong></td>
+          <td style="text-align:right;font-family:var(--mono)"><strong>${fmtDI(cost)}</strong></td>
+          <td style="text-align:right;font-family:var(--mono)"><strong>${fmtDI(total)}</strong></td>
+          <td style="text-align:right;font-family:var(--mono);color:${pnl>=0?'var(--acc)':'var(--r)'}"><strong>${pnl>=0?'+':''}${fmtDI(pnl)}</strong></td>
+          <td></td>
+        </tr></tfoot>
+      </table>
+    </div>
+
+    <div class="rep-footer">FinPlan · Portfolio snapshot · Values reflect your last synced prices</div>
+  `;
+  openReport('Portfolio snapshot',html);
+}
+
+// ═══ CSV EXPORTS ══════════════════════════════════════════
+function exportTransactionsCSV(){
+  const rows=[['Date','Direction','Category','Payee','Amount','Account','Note','Original narrative']];
+  (S.transactions||[]).sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(t=>{
+    rows.push([t.date||'',t.dir||'',t.cat||'',t.payee||'',t.amt||0,t.acct||'',t.note||'',t.originalNarrative||'']);
+  });
+  downloadCSV(rows,`transactions-${today()}.csv`);
+}
+function exportHoldingsCSV(){
+  const rows=[['Ticker','Market','Sector','Units','Last price','Cost basis','Current value','P&L','P&L %','Weight %','Est. annual dividend']];
+  const total=portTotal();
+  (S.holdings||[]).filter(h=>h.units>0).forEach(h=>{
+    const val=holdingValue(h);
+    const c=holdingCost(h);
+    const p=val-c;
+    const pPct=c>0?(p/c*100):0;
+    const weight=total>0?(val/total*100):0;
+    const annD=(typeof projectAnnualDivForHolding==='function')?projectAnnualDivForHolding(h):0;
+    rows.push([h.ticker,h.market||'',h.sector||'',h.units,h.lastPrice||h.livePrice||0,c,val,p,pPct.toFixed(2),weight.toFixed(2),annD.toFixed(2)]);
+  });
+  downloadCSV(rows,`holdings-${today()}.csv`);
+}
+function exportDividendsCSV(){
+  const rows=[['Date','Ticker','Amount','Frequency','Units held then','Note','Source']];
+  [...(S.dividendPayments||[])].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(p=>{
+    rows.push([p.date||'',p.ticker,p.amount,p.frequency||'quarterly',p.units||'',p.note||'',p.source||'manual']);
+  });
+  downloadCSV(rows,`dividends-${today()}.csv`);
+}
+function exportFullBackupJSON(){
+  const backup={version:APP_VERSION,exportedAt:new Date().toISOString(),state:S};
+  const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`finplan-backup-${today()}.json`;a.style.display='none';
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},100);
+  showToast('Backup downloaded');
+}
+
+// ═══ REPORTS PAGE ═════════════════════════════════════════
+function buildReportsPage(){
+  const el=document.getElementById('reports-content');if(!el)return;
+  // Populate month picker
+  const monthOptions=[];
+  const now=new Date();
+  for(let i=0;i<12;i++){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    const ym=d.toISOString().slice(0,7);
+    const label=d.toLocaleDateString('en-AU',{month:'long',year:'numeric'});
+    monthOptions.push({ym,label});
+  }
+  // Tax year options — current + previous 3
+  const currentTY=currentAUTaxYear();
+  const tyOptions=[];
+  for(let i=0;i<4;i++){
+    const y=currentTY-i;
+    tyOptions.push({y,label:`${y}–${(y+1).toString().slice(2)} (FY${y+1})`});
+  }
+  el.innerHTML=`
+    <div class="hero">
+      <div class="hero-l">Reports & exports</div>
+      <div class="hero-v" style="font-size:24px">📄</div>
+      <div style="font-size:12px;color:var(--t2);margin-top:8px;line-height:1.55">Print-friendly summaries you can save as PDF for records, share with an accountant, or archive. Plus CSV exports for spreadsheet analysis.</div>
+    </div>
+
+    <div class="card">
+      <div class="ctitle"><div class="ctitle-l">📅 Monthly summary</div></div>
+      <div style="font-size:12px;color:var(--t2);line-height:1.55;margin-bottom:10px">Income, spending by category, notable transactions, savings goals, net worth change — for any month.</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <select class="inp" id="rep-month" style="margin:0;flex:1">${monthOptions.map(m=>`<option value="${m.ym}">${m.label}</option>`).join('')}</select>
+        <button class="btn btn-acc btn-sm" onclick="buildMonthlyReport(document.getElementById('rep-month').value)">Generate</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ctitle"><div class="ctitle-l">🇦🇺 Tax year report</div></div>
+      <div style="font-size:12px;color:var(--t2);line-height:1.55;margin-bottom:10px">Australian financial year (July 1 – June 30). Employment income, dividend income, estimated tax owed, ready to hand to your accountant or use as a starting point for your return.</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <select class="inp" id="rep-ty" style="margin:0;flex:1">${tyOptions.map(o=>`<option value="${o.y}">${o.label}</option>`).join('')}</select>
+        <button class="btn btn-acc btn-sm" onclick="buildTaxYearReport(parseInt(document.getElementById('rep-ty').value))">Generate</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ctitle"><div class="ctitle-l">📊 Portfolio snapshot</div></div>
+      <div style="font-size:12px;color:var(--t2);line-height:1.55;margin-bottom:10px">Current holdings, cost basis, unrealised P&L, dividend yield estimate. Point-in-time view — good for record-keeping or sharing with a financial advisor.</div>
+      <button class="btn btn-acc btn-sm btn-full" onclick="buildPortfolioSnapshotReport()">Generate snapshot</button>
+    </div>
+
+    <div class="card">
+      <div class="ctitle"><div class="ctitle-l">💾 CSV exports</div></div>
+      <div style="font-size:12px;color:var(--t2);line-height:1.55;margin-bottom:10px">Raw data downloads for spreadsheet analysis, tax prep, or handing to your accountant.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <button class="btn btn-ghost btn-sm" onclick="exportTransactionsCSV()">Transactions</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportHoldingsCSV()">Holdings</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportDividendsCSV()">Dividends</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportFullBackupJSON()">Full backup (JSON)</button>
+      </div>
+    </div>
+  `;
+}
+
 function launchApp(){
   document.getElementById('setup').style.display='none';
   const app=document.getElementById('app');app.style.display='flex';
@@ -4468,7 +4954,7 @@ function renderContextPanel(){
 // NAV
 // ═══════════════════════════════════════════════════════════
 let currentPg='dash';
-const MORE_PAGES=['budget','analytics','kmart','jobs','invest','timeline','settings','health','streaks','sinking','debts','subscriptions','dividends','tax','assistant','payday','scenario','glance','recurring','insights'];
+const MORE_PAGES=['budget','analytics','kmart','jobs','invest','timeline','settings','health','streaks','sinking','debts','subscriptions','dividends','tax','assistant','payday','scenario','glance','recurring','insights','reports'];
 function showPg(id,btn){
   document.querySelectorAll('.pg').forEach(p=>{p.classList.remove('on');p.style.display='';});
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
@@ -4501,6 +4987,7 @@ function showPg(id,btn){
   if(id==='dividends')buildDividendCalendar();
   if(id==='tax')buildTaxSummary();
   if(id==='jobs'&&typeof buildJobsPage==='function')buildJobsPage();
+  if(id==='reports'&&typeof buildReportsPage==='function')buildReportsPage();
   if(id==='assistant'){buildAssistantWelcome();scrollAssistantBottom();}
   if(id==='payday')buildPaydayPage();
   if(id==='scenario')buildScenarioPage();
@@ -4549,6 +5036,7 @@ function showPgFromMore(id){
   if(id==='dividends')buildDividendCalendar();
   if(id==='tax')buildTaxSummary();
   if(id==='jobs'&&typeof buildJobsPage==='function')buildJobsPage();
+  if(id==='reports'&&typeof buildReportsPage==='function')buildReportsPage();
   if(id==='assistant'){buildAssistantWelcome();scrollAssistantBottom();}
   if(id==='payday')buildPaydayPage();
   if(id==='scenario')buildScenarioPage();
