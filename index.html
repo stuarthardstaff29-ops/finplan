@@ -790,7 +790,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
     </div>
 
     <!-- AI ADVISOR -->
-    <div class="pg ai-pg" id="pg-ai" style="display:none;flex-direction:column;height:calc(100vh - calc(var(--hdr-h,56px) + var(--st)) - calc(var(--nav-h) + var(--sb) + 32px))">
+    <div class="pg ai-pg" id="pg-ai" style="display:none;flex-direction:column;height:calc(100vh - calc(var(--hdr-h,56px) + var(--st)) - calc(var(--nav-h) + var(--sb) + 44px))">
       <div class="ai-messages" id="ai-msgs"></div>
       <div class="ai-input-wrap">
         <div class="ai-qchips" id="ai-chips"></div>
@@ -1590,9 +1590,29 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.3';
+const APP_VERSION='2.7.4';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.4',
+    date:'2026-07-14',
+    title:'Connected app — job changes propagate + smarter nav',
+    sections:{
+      features:[
+        '📉 Floating nav now hides when you scroll down and reappears when you scroll up. On the AI Advisor page it auto-hides on entry so it never covers the chat box, even before you focus the input',
+        '🔗 Central income calc — monthIncome() now reads from your Jobs data (S.jobs) so any salary/weekly change flows straight to the Budget page, forecasts, payday planner, dashboard summaries and insights. No more stale numbers'
+      ],
+      improvements:[
+        'Editing a job now triggers a full downstream rebuild: budget, sliders, payday, dashboard widgets, timeline, and any open insights all refresh automatically',
+        'Editing a job also updates S.paydaySources keywords + label so incoming pay transactions get detected and labelled correctly',
+        'AI page reserves 44px bottom clearance (up from 32px) so the input has proper breathing room from the pill nav even before it auto-hides'
+      ],
+      fixes:[
+        'Fixed: changing full-time salary or Dominos weekly earnings on the Jobs page didn\'t update the Budget. The Budget was hard-coded to $4,069/mo + Kmart slider × 4.33. Now derives entirely from S.jobs',
+        'AI chat input on the Advisor page no longer sits behind the floating pill nav when you land there from Insights (auto-hide on entry)'
+      ]
+    }
+  },
   {
     v:'2.7.3',
     date:'2026-07-14',
@@ -2400,7 +2420,22 @@ function annDiv(){
 function totalContributed(){
   return (S.contributions||[]).filter(c=>c.status==='completed').reduce((a,c)=>a+(c.amount||0),0);
 }
-function monthIncome(){return 4069+(S.sliders.kmart*4.33);}
+function monthIncome(){
+  // v2.7.4: single source of truth — read from S.jobs (populated by ensureJobs in v2.7.3)
+  if(typeof ensureJobs==='function'){
+    ensureJobs();
+    let total=0;
+    (S.jobs||[]).forEach(j=>{
+      if(!j.active)return;
+      if(j.netMonthly>0){total+=j.netMonthly;return;}
+      if(j.grossAnnual>0){total+=Math.round(calcNetAnnual(j.grossAnnual)/12);return;}
+      if(j.grossWeekly>0){total+=Math.round(calcNetAnnual(j.grossWeekly*52)/12);}
+    });
+    if(total>0)return total;
+  }
+  // Legacy fallback for setup wizard / very old state
+  return 4069+((S.sliders?.kmart||0)*4.33);
+}
 function nowYM(){const n=new Date();return`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;}
 function ymLabel(ym){const[y,m]=ym.split('-');return new Date(+y,+m-1,1).toLocaleDateString('en-AU',{month:'short',year:'2-digit'});}
 function thisMonthTxns(){const ym=nowYM();return S.transactions.filter(t=>t.date&&t.date.startsWith(ym));}
@@ -3825,7 +3860,10 @@ function updateAiHeader(){
 
 // ── NAV AUTO-HIDE ──────────────────────────────────────────
 // Hides the floating pill nav when interacting with inputs (especially AI chat)
+// v2.7.4 also adds scroll-direction hiding: hide on scroll down, show on scroll up
 let _navHideTimer=null;
+let _lastScrollTop=0;
+let _scrollAccum=0;
 function setupNavAutoHide(){
   const inputSelector='input,textarea,select,[contenteditable="true"]';
   document.addEventListener('focusin',e=>{
@@ -3834,26 +3872,54 @@ function setupNavAutoHide(){
     hideNav();
   },true);
   document.addEventListener('focusout',e=>{
-    // Delay so switching between inputs doesn't cause flicker
     clearTimeout(_navHideTimer);
     _navHideTimer=setTimeout(()=>{
-      // Only re-show if no input is focused
       const active=document.activeElement;
       if(!active||!active.matches||!active.matches(inputSelector)){
         showNav();
       }
     },150);
   },true);
-  // Also react on visualViewport height changes (mobile keyboard opens)
   if(window.visualViewport){
     let lastHeight=window.visualViewport.height;
     window.visualViewport.addEventListener('resize',()=>{
       const nowH=window.visualViewport.height;
-      // If viewport shrunk significantly (>150px), assume keyboard
-      if(lastHeight-nowH>150){hideNav();}
-      else if(nowH-lastHeight>150){showNav();}
+      if(lastHeight-nowH>150)hideNav();
+      else if(nowH-lastHeight>150)showNav();
       lastHeight=nowH;
     });
+  }
+  // v2.7.4: scroll direction detection — hide on scroll down, show on scroll up
+  const scrl=document.getElementById('scrl');
+  if(scrl){
+    scrl.addEventListener('scroll',()=>{
+      const st=scrl.scrollTop;
+      // Always show at top of scroll
+      if(st<80){showNav();_lastScrollTop=st;_scrollAccum=0;return;}
+      const delta=st-_lastScrollTop;
+      _lastScrollTop=st;
+      // Accumulate scroll direction so tiny wiggles don't toggle
+      if(Math.sign(delta)===Math.sign(_scrollAccum)||_scrollAccum===0){
+        _scrollAccum+=delta;
+      }else{
+        _scrollAccum=delta;
+      }
+      if(_scrollAccum>30){hideNav();_scrollAccum=0;}
+      else if(_scrollAccum<-24){showNav();_scrollAccum=0;}
+    },{passive:true});
+  }
+  // Also listen for scroll on the AI messages container (it has its own overflow)
+  const aiMsgs=document.getElementById('ai-msgs');
+  if(aiMsgs){
+    let lastTop=0,accum=0;
+    aiMsgs.addEventListener('scroll',()=>{
+      const st=aiMsgs.scrollTop;
+      if(st<40){showNav();lastTop=st;accum=0;return;}
+      const delta=st-lastTop;lastTop=st;
+      if(Math.sign(delta)===Math.sign(accum)||accum===0)accum+=delta;else accum=delta;
+      if(accum>30){hideNav();accum=0;}
+      else if(accum<-24){showNav();accum=0;}
+    },{passive:true});
   }
 }
 function hideNav(){
@@ -4129,15 +4195,43 @@ function saveJobEdits(id){
   if(grossWeeklyEl){
     const v=parseFloat(grossWeeklyEl.value);
     if(!isNaN(v)&&v>0){updates.grossWeekly=v;updates.grossAnnual=v*52;updates.netMonthly=Math.round(calcNetAnnual(v*52)/12);}
-    // Also sync to sliders for backward compat with existing payday logic
+    // Sync to sliders for backward compat with existing payday logic
     if(!isNaN(v)&&v>0&&id==='dominos'){if(!S.sliders)S.sliders={};S.sliders.dominos=v;S.sliders.kmart=v;}
   }
   if(hourlyEl){const v=parseFloat(hourlyEl.value);if(!isNaN(v)&&v>0)updates.grossHourly=v;}
   if(hoursEl){const v=parseFloat(hoursEl.value);if(!isNaN(v)&&v>0)updates.hoursPerWeek=v;}
   Object.assign(j,updates);
+  // Also update S.paydaySources keywords + label so pay detection keeps working
+  const srcKey=(id==='dominos'||id==='kmart')?'kmart':id;
+  if(S.paydaySources&&S.paydaySources[srcKey]){
+    S.paydaySources[srcKey].label=j.label;
+    S.paydaySources[srcKey].keywords=(j.keywords||[]).slice();
+    // Always keep legacy match too so old imports still route correctly
+    if(id==='dominos'&&!S.paydaySources[srcKey].keywords.includes('kmart')){
+      S.paydaySources[srcKey].keywords.push('kmart');
+    }
+  }
   save();closeSheet();
   buildJobsPage();
-  showToast('Job updated');
+  // v2.7.4: propagate change everywhere it matters
+  propagateJobChange();
+  showToast('Job updated · budget & payday refreshed');
+}
+
+// Central propagation hook — call this whenever job data changes so all dependent views rebuild
+function propagateJobChange(){
+  // Budget page (income line comes from monthIncome() which reads S.jobs)
+  if(typeof upAll==='function')upAll();
+  // Sliders UI reflection (if budget page is currently rendered)
+  if(typeof syncSliderUI==='function')syncSliderUI();
+  // Payday page — pending income + suggested allocations depend on income totals
+  if(currentPg==='payday'&&typeof buildPaydayPage==='function')buildPaydayPage();
+  // Dashboard widgets — several show income summaries
+  if(currentPg==='dash'&&typeof buildDash==='function')buildDash();
+  // Timeline / forecast can depend on income
+  if(typeof buildStaticTimeline==='function')buildStaticTimeline();
+  // Any insight that references income
+  if(currentPg==='insights'&&typeof buildInsights==='function')buildInsights();
 }
 function deleteJob(id){
   if(!confirm('Delete this job? Historical pay data will remain in your transactions.'))return;
@@ -4397,7 +4491,8 @@ function showPg(id,btn){
   if(id==='analytics')buildAnalytics();
   if(id==='kmart')buildKmartPage();
   if(id==='settings'){buildThemeGrid();buildSettingsPage();buildCustomCatsList();}
-  if(id==='ai')scrollAiBottom();
+  if(id==='ai'){scrollAiBottom();if(typeof hideNav==='function')hideNav();}
+  else{if(typeof showNav==='function')showNav();}
   if(id==='health')buildHealthScore();
   if(id==='streaks')buildStreaksPage();
   if(id==='sinking')buildSinkingPage();
