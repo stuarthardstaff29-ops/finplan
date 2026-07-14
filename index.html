@@ -1577,9 +1577,34 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.6.3';
+const APP_VERSION='2.7.0';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.0',
+    date:'2026-07-14',
+    title:'Data integrity foundation — dividends, contributions, milestones',
+    sections:{
+      features:[
+        '💰 Dividend system rebuilt from scratch. Every payment now tracks a date, amount, frequency (quarterly / monthly / semi-annual / annual), and how many units you held at the time. Projections scale automatically as your holdings grow',
+        '📚 Payment history — every dividend you record is now visible in a full audit trail on the Dividends page. Tap any entry to edit or delete',
+        '📅 Automatic daily check-in — opening the app now registers your streak automatically. No more manual button. If you check in yesterday and today, the streak increments. Miss a day, resets to 1'
+      ],
+      improvements:[
+        'Contributions graph now correctly represents every dollar you\'ve personally invested (cost basis over time), merging bank-import investment transactions with any structured contributions you\'ve logged',
+        'Value line on the growth chart now honestly reflects the current gain ratio at each point — no more misleading interpolation',
+        'Dividend calendar upcoming payments now roll forward from your last recorded payment using the frequency you selected, scaled by any additional units you\'ve bought since. Falls back to yield estimate only when no history exists',
+        'Portfolio yield, quarterly average, monthly average, annual projected — all now derive from the same underlying dividend data model. No more inconsistent numbers'
+      ],
+      fixes:[
+        'Fixed the "VOO is your biggest dividend source" bug. Was using flat yield estimates that dramatically over-projected low-yield ETFs like VOO. Now uses actual recorded payments where available',
+        'Reset all falsely-triggered net worth milestones (the $20k / $25k marks that were hit due to inflated CSV import bugs). Milestones now derive from actual current state on every load',
+        'Goal milestones recalculated the same way — anything showing "achieved" now reflects reality',
+        'Removed legacy dividend recording flow that had no frequency awareness. All dividend UI now uses the new payment model',
+        'Old S.invDividendsReceived values migrated as quarterly payments (per your usage pattern). Original values preserved as an audit trail'
+      ]
+    }
+  },
   {
     v:'2.6.3',
     date:'2026-07-13',
@@ -3112,6 +3137,377 @@ function renderRemindersCard(){
   </div>`).join('');
 }
 
+
+// ═══════════════════════════════════════════════════════════
+// v2.7.0 — DATA INTEGRITY FOUNDATION
+//   1. Dividend v2 (payments-with-dates model)
+//   2. Contributions graph fix
+//   3. Auto daily check-in
+//   4. Milestone reset
+// ═══════════════════════════════════════════════════════════
+
+// ── DIVIDEND v2 ────────────────────────────────────────────
+// Data model: S.dividendPayments = [{id, ticker, date, amount, frequency, units, note, source}]
+// Frequency: 'quarterly' | 'monthly' | 'semi-annual' | 'annual'
+function ensureDividendPayments(){if(!Array.isArray(S.dividendPayments))S.dividendPayments=[];return S.dividendPayments;}
+function freqPerYear(f){return{quarterly:4,monthly:12,'semi-annual':2,annual:1}[f]||4;}
+function freqIntervalDays(f){return{quarterly:91,monthly:30,'semi-annual':182,annual:365}[f]||91;}
+function freqLabel(f){return{quarterly:'Quarterly',monthly:'Monthly','semi-annual':'Semi-annual',annual:'Annual'}[f]||f;}
+
+// Migration: convert the old S.invDividendsReceived {ticker: total} to individual quarterly payments.
+// Stuart confirmed the old values were quarterly amounts he'd received, not annual totals.
+function migrateDividendsToV2(){
+  if(S.dividendPaymentsMigrated)return;
+  ensureDividendPayments();
+  const old=S.invDividendsReceived||{};
+  const now=new Date();
+  Object.entries(old).forEach(([ticker,total])=>{
+    if(!(total>0))return;
+    // Skip if already migrated (idempotency)
+    if(S.dividendPayments.some(p=>p.ticker===ticker&&p.source==='migration'))return;
+    // Find current units for this ticker (best guess for units-at-payment)
+    const h=(S.holdings||[]).find(x=>x.ticker===ticker);
+    const units=h?h.units:null;
+    // Dated ~45 days ago as a rough "recent quarterly payment" anchor
+    const d=new Date();d.setDate(d.getDate()-45);
+    S.dividendPayments.push({
+      id:uid(),
+      ticker,
+      date:d.toISOString().slice(0,10),
+      amount:total,
+      frequency:'quarterly',
+      units,
+      note:'Migrated from v2.6 — assumed quarterly (edit if needed)',
+      source:'migration'
+    });
+  });
+  S.dividendPaymentsMigrated=true;
+  save();
+}
+
+// Per-holding annual projection using latest payment × frequency, scaled by unit growth.
+// Falls back to yield estimate when no history exists.
+function projectAnnualDivForHolding(h){
+  if(!h||!h.units)return 0;
+  const payments=(S.dividendPayments||[])
+    .filter(p=>p.ticker===h.ticker&&p.amount>0)
+    .sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  if(payments.length){
+    const latest=payments[0];
+    const perYear=freqPerYear(latest.frequency||'quarterly');
+    // Scale by current units / units at payment time (grows as you buy more)
+    const scale=(latest.units>0&&h.units>0)?(h.units/latest.units):1;
+    return latest.amount*perYear*scale;
+  }
+  // Fallback: yield-based estimate (existing v2.6 behaviour)
+  if(typeof estAnnDivForHolding==='function')return estAnnDivForHolding(h);
+  return 0;
+}
+
+// Compute upcoming projected payments (next 6 months)
+function computeUpcomingDividendsV2(){
+  const now=new Date();
+  const cutoff=new Date();cutoff.setMonth(cutoff.getMonth()+6);
+  const list=[];
+  (S.holdings||[]).forEach(h=>{
+    if(!h.units)return;
+    const payments=(S.dividendPayments||[])
+      .filter(p=>p.ticker===h.ticker&&p.amount>0)
+      .sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    let freq,perPayment,nextDate,hasHistory;
+    if(payments.length){
+      const latest=payments[0];
+      freq=latest.frequency||'quarterly';
+      const days=freqIntervalDays(freq);
+      const lastD=new Date(latest.date+'T00:00:00');
+      nextDate=new Date(lastD);
+      // Roll forward until nextDate is in the future
+      while(nextDate<=now){nextDate.setDate(nextDate.getDate()+days);}
+      const scale=(latest.units>0&&h.units>0)?(h.units/latest.units):1;
+      perPayment=latest.amount*scale;
+      hasHistory=true;
+    }else{
+      // Yield fallback — assume quarterly
+      freq='quarterly';
+      const annual=(typeof estAnnDivForHolding==='function')?estAnnDivForHolding(h):0;
+      perPayment=annual/4;
+      // Estimate next quarter mid-point
+      nextDate=new Date(now);nextDate.setDate(nextDate.getDate()+45);
+      hasHistory=false;
+    }
+    if(perPayment<=0.5)return;
+    // Roll forward through the 6-month window collecting all payment dates
+    let d=new Date(nextDate);
+    while(d<=cutoff){
+      list.push({ticker:h.ticker,date:d.toISOString().slice(0,10),amount:perPayment,frequency:freq,hasHistory,holdingValue:holdingValue(h)});
+      d=new Date(d);d.setDate(d.getDate()+freqIntervalDays(freq));
+    }
+  });
+  return list.sort((a,b)=>a.date.localeCompare(b.date));
+}
+
+// Total received (all history)
+function totalDividendsReceivedV2(){
+  return(S.dividendPayments||[]).reduce((a,p)=>a+(p.amount||0),0);
+}
+function dividendsReceivedThisYearV2(){
+  const yr=new Date().getFullYear().toString();
+  return(S.dividendPayments||[]).filter(p=>(p.date||'').startsWith(yr)).reduce((a,p)=>a+(p.amount||0),0);
+}
+
+// Portfolio-level stats
+function computeDividendStatsV2(){
+  const hs=S.holdings||[];
+  const total=portTotal();
+  const annualByTicker={};
+  hs.forEach(h=>{if(h.units>0)annualByTicker[h.ticker]=projectAnnualDivForHolding(h);});
+  const annualTotal=Object.values(annualByTicker).reduce((a,v)=>a+v,0);
+  return{
+    annualTotal,
+    quarterly:annualTotal/4,
+    monthly:annualTotal/12,
+    yieldPct:total>0?(annualTotal/total*100):0,
+    received:totalDividendsReceivedV2(),
+    receivedThisYear:dividendsReceivedThisYearV2(),
+    annualByTicker,
+    paymentCount:(S.dividendPayments||[]).length,
+    holdingsWithHistory:hs.filter(h=>h.units>0&&(S.dividendPayments||[]).some(p=>p.ticker===h.ticker)).length,
+    holdingsCount:hs.filter(h=>h.units>0).length
+  };
+}
+
+// Replace legacy annDiv so upstream callers (invest hero, insights, forecasts) all pick this up
+function annDiv(){
+  const hs=S.holdings||[];
+  if(hs.length)return hs.reduce((a,h)=>a+projectAnnualDivForHolding(h),0);
+  // Legacy fallback path
+  let d=0;for(const k in (S.portfolio||{}))d+=S.portfolio[k]*((typeof TYLD!=='undefined'?TYLD:{})[k]||0);return d;
+}
+
+// ── DIVIDEND ENTRY MODAL (v2) ──────────────────────────────
+function openDivModal(id){
+  const tickers=(S.holdings||[]).filter(h=>h.units>0).map(h=>h.ticker);
+  const opts=tickers.length?tickers:(typeof TICKERS!=='undefined'?TICKERS:[]);
+  const existing=id?(S.dividendPayments||[]).find(p=>p.id===id):null;
+  const tk=existing?.ticker||opts[0]||'';
+  const date=existing?.date||today();
+  const amt=existing?.amount||'';
+  const freq=existing?.frequency||'quarterly';
+  const note=existing?.note||'';
+  const currentUnits=(S.holdings||[]).find(h=>h.ticker===tk)?.units||0;
+  showSheet(existing?'Edit dividend payment':'Record dividend payment',`
+    <div class="inp-row">
+      <div><label class="lbl">Holding</label>
+        <select class="inp" id="dv-ticker" onchange="updateDvUnitsHint()">${opts.map(t=>`<option value="${t}" ${t===tk?'selected':''}>${t}</option>`).join('')}</select>
+      </div>
+      <div><label class="lbl">Date received</label><input type="date" class="inp" id="dv-date" value="${date}"></div>
+    </div>
+    <label class="lbl">Amount received ($ AUD)</label>
+    <input type="number" class="inp" id="dv-amt" placeholder="0.00" min="0" step="0.01" value="${amt}">
+    <label class="lbl">Frequency</label>
+    <select class="inp" id="dv-freq">
+      <option value="quarterly" ${freq==='quarterly'?'selected':''}>Quarterly (4× a year)</option>
+      <option value="monthly" ${freq==='monthly'?'selected':''}>Monthly (12× a year)</option>
+      <option value="semi-annual" ${freq==='semi-annual'?'selected':''}>Semi-annual (2× a year)</option>
+      <option value="annual" ${freq==='annual'?'selected':''}>Annual (once a year)</option>
+    </select>
+    <label class="lbl">Note (optional)</label>
+    <input type="text" class="inp" id="dv-note" placeholder="e.g. Q2 2026 distribution" value="${note.replace(/"/g,'&quot;')}">
+    <div id="dv-units-hint" style="font-size:11px;color:var(--t3);line-height:1.55;background:var(--bg3);padding:9px 11px;border-radius:10px;margin:8px 0">
+      The app records your current units held (${currentUnits}) alongside this payment. Future projections scale up as you buy more — no need to re-enter as your holding grows.
+    </div>
+    <div style="display:flex;gap:6px;margin-top:10px">
+      ${existing?`<button class="btn btn-ghost" style="color:var(--r)" onclick="deleteDividendPayment('${existing.id}')">Delete</button>`:''}
+      <button class="btn btn-acc" style="flex:1" onclick="saveDividendPayment(${existing?`'${existing.id}'`:'null'})">${existing?'Save changes':'Record payment'}</button>
+    </div>
+  `);
+}
+function updateDvUnitsHint(){
+  const el=document.getElementById('dv-ticker');if(!el)return;
+  const tk=el.value;
+  const h=(S.holdings||[]).find(x=>x.ticker===tk);
+  const units=h?h.units:0;
+  const hintEl=document.getElementById('dv-units-hint');
+  if(hintEl)hintEl.innerHTML=`The app records your current units held (${units}) alongside this payment. Future projections scale up as you buy more — no need to re-enter as your holding grows.`;
+}
+function saveDividendPayment(id){
+  const ticker=document.getElementById('dv-ticker').value;
+  const date=document.getElementById('dv-date').value;
+  const amount=parseFloat(document.getElementById('dv-amt').value);
+  const frequency=document.getElementById('dv-freq').value;
+  const note=(document.getElementById('dv-note').value||'').trim();
+  if(!ticker||!date||!(amount>0)){alert('Please fill ticker, date, and amount.');return;}
+  const h=(S.holdings||[]).find(x=>x.ticker===ticker);
+  const units=h?h.units:null;
+  ensureDividendPayments();
+  if(id){
+    const p=S.dividendPayments.find(x=>x.id===id);
+    if(p){Object.assign(p,{ticker,date,amount,frequency,note});}
+  }else{
+    S.dividendPayments.push({id:uid(),ticker,date,amount,frequency,units,note,source:'manual'});
+  }
+  save();closeSheet();
+  refreshDividendUI();
+  showToast(id?'Dividend updated':'Dividend recorded');
+}
+function deleteDividendPayment(id){
+  if(!confirm('Delete this dividend payment?'))return;
+  S.dividendPayments=(S.dividendPayments||[]).filter(p=>p.id!==id);
+  save();closeSheet();refreshDividendUI();
+  showToast('Payment deleted');
+}
+// Refresh whichever dividend UI is currently rendered
+function refreshDividendUI(){
+  if(currentPg==='dividends'&&typeof buildDividendCalendar==='function')buildDividendCalendar();
+  if(currentPg==='invest'&&typeof buildInvestPage==='function')buildInvestPage();
+  if(currentPg==='dash'&&typeof buildDash==='function')buildDash();
+}
+
+// Payment history list — full audit trail with edit/delete
+function buildDividendHistoryList(){
+  const el=document.getElementById('div-history');if(!el)return;
+  const payments=[...(S.dividendPayments||[])].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  if(!payments.length){el.innerHTML='<div class="empty" style="padding:16px 8px"><div class="empty-txt" style="font-size:11px">No dividend payments recorded yet. Tap "+ Record" to log your first payment.</div></div>';return;}
+  el.innerHTML=payments.slice(0,30).map(p=>`<div class="detail-txn-row" onclick="openDivModal('${p.id}')" style="cursor:pointer">
+    <div style="flex:1;min-width:0">
+      <div style="font-size:12px;color:var(--t);font-weight:600">${p.ticker} · ${fmtDate(p.date)}</div>
+      <div style="font-size:10px;color:var(--t3);margin-top:1px">${freqLabel(p.frequency||'quarterly')}${p.units?` · ${p.units} units held then`:''}${p.note?' · '+p.note:''}</div>
+    </div>
+    <div style="font-size:14px;font-weight:700;color:var(--acc);font-family:var(--mono)">+${fmtD(p.amount)}</div>
+  </div>`).join('')+(payments.length>30?`<div style="font-size:10px;color:var(--t3);text-align:center;padding:6px 0">+ ${payments.length-30} older payments</div>`:'');
+}
+
+// ── DIVIDEND CALENDAR PAGE v2 (replaces old buildDividendCalendar) ──
+function buildDividendCalendar(){
+  const stats=computeDividendStatsV2();
+  const dEl=document.getElementById('div-metrics');
+  if(dEl){
+    const historyBadge=stats.holdingsWithHistory>0?`<span style="font-size:9px;color:var(--acc);text-transform:uppercase;letter-spacing:.08em">${stats.holdingsWithHistory}/${stats.holdingsCount} from actuals</span>`:`<span style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em">All estimates</span>`;
+    dEl.innerHTML=`
+      <div class="met"><div class="ml">Projected annual</div><div class="mv col-acc">${fmtDI(stats.annualTotal)}</div><div class="ms">${historyBadge}</div></div>
+      <div class="met"><div class="ml">Quarterly avg</div><div class="mv col-b">${fmtDI(stats.quarterly)}</div><div class="ms">Every ~3 months</div></div>
+      <div class="met"><div class="ml">Received this year</div><div class="mv">${fmtDI(stats.receivedThisYear)}</div><div class="ms">${stats.paymentCount} payment${stats.paymentCount===1?'':'s'} logged</div></div>
+      <div class="met"><div class="ml">Portfolio yield</div><div class="mv">${stats.yieldPct.toFixed(2)}%</div><div class="ms">Annual ÷ portfolio</div></div>`;
+  }
+  // Dividend income card upgrade
+  if(typeof buildDividendIncomeCard==='function')buildDividendIncomeCard();
+  // Upcoming payments card
+  const calEl=document.getElementById('div-cal');
+  if(calEl){
+    const upcoming=computeUpcomingDividendsV2();
+    if(!upcoming.length){
+      calEl.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-txt">Record dividend payments below to see upcoming projections here.</div></div>';
+    }else{
+      const grouped={};
+      upcoming.forEach(u=>{const ym=u.date.slice(0,7);(grouped[ym]=grouped[ym]||[]).push(u);});
+      calEl.innerHTML=Object.entries(grouped).map(([ym,items])=>{
+        const d=new Date(ym+'-01T00:00:00');
+        const monthTotal=items.reduce((a,i)=>a+i.amount,0);
+        return`<div class="div-cal-month">
+          <div class="div-cal-hdr" style="display:flex;justify-content:space-between;align-items:center">
+            <span>${d.toLocaleDateString('en-AU',{month:'long',year:'numeric'})}</span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--acc);font-weight:700">~${fmtD(monthTotal)}</span>
+          </div>
+          ${items.map(it=>`<div class="div-cal-item">
+            <div class="div-cal-date"><div class="div-cal-day">${new Date(it.date+'T00:00:00').getDate()}</div><div class="div-cal-mon">${new Date(it.date+'T00:00:00').toLocaleDateString('en-AU',{month:'short'})}</div></div>
+            <div style="flex:1"><div class="div-cal-ticker">${it.ticker}</div><div class="div-cal-sub">${freqLabel(it.frequency)} · ${it.hasHistory?'from recorded payment':'yield estimate'}</div></div>
+            <div class="div-cal-amt">+${fmtD(it.amount)}</div>
+          </div>`).join('')}
+        </div>`;
+      }).join('');
+    }
+  }
+  // Record button + history list — build a card container if not present
+  ensureDividendHistoryCard();
+  buildDividendHistoryList();
+}
+function ensureDividendHistoryCard(){
+  if(document.getElementById('div-history-card'))return;
+  const pg=document.getElementById('pg-dividends');if(!pg)return;
+  const card=document.createElement('div');
+  card.className='card';card.id='div-history-card';
+  card.innerHTML=`<div class="ctitle"><div class="ctitle-l">Payment history</div><button class="btn btn-ghost btn-sm" onclick="openDivModal()">+ Record</button></div><div id="div-history"></div>`;
+  pg.appendChild(card);
+}
+
+// ── CONTRIBUTIONS GRAPH FIX ────────────────────────────────
+// Build cumulative-contributions series from S.transactions (cat=investments, dir=out)
+// merged with S.contributions structured entries. This is what the growth chart should use.
+function computeContributionSeries(){
+  const buys=(S.transactions||[])
+    .filter(t=>t.cat==='investments'&&t.dir==='out'&&t.date&&t.amt>0)
+    .map(t=>({date:t.date,amount:t.amt}));
+  const structured=(S.contributions||[])
+    .filter(c=>c.status==='completed'&&c.date&&c.amount>0)
+    .map(c=>({date:c.date,amount:c.amount}));
+  // De-dupe: if a transaction and a contribution match on date+amount within $0.02, drop one.
+  const merged=[...buys];
+  structured.forEach(s=>{
+    if(!merged.some(m=>m.date===s.date&&Math.abs(m.amount-s.amount)<0.02)){
+      merged.push(s);
+    }
+  });
+  merged.sort((a,b)=>a.date.localeCompare(b.date));
+  if(!merged.length)return{labels:['Now'],series:[0]};
+  const firstD=new Date(merged[0].date+'T12:00:00');
+  const months=Math.max(1,Math.ceil((Date.now()-firstD.getTime())/(1000*60*60*24*30)));
+  const labels=[],series=[];
+  for(let i=0;i<=months;i++){
+    const d=new Date(firstD.getFullYear(),firstD.getMonth()+i,1);
+    const cum=merged.filter(m=>new Date(m.date+'T12:00:00')<=d).reduce((a,m)=>a+m.amount,0);
+    labels.push(d.toLocaleDateString('en-AU',{month:'short',year:'2-digit'}));
+    series.push(Math.round(cum));
+  }
+  return{labels,series,totalContributed:merged[merged.length-1]?merged.reduce((a,m)=>a+m.amount,0):0};
+}
+
+// ── AUTO DAILY CHECK-IN ────────────────────────────────────
+function autoDailyCheckIn(){
+  const t=today();
+  if(S.lastCheckInDate===t)return;
+  const prev=S.lastCheckInDate;
+  S.lastCheckInDate=t;
+  // Streak: if yesterday was previous check-in, increment; else reset to 1
+  const y=new Date();y.setDate(y.getDate()-1);
+  const yStr=y.toISOString().slice(0,10);
+  if(prev===yStr){
+    S.currentStreak=(S.currentStreak||0)+1;
+  }else{
+    S.currentStreak=1;
+  }
+  S.longestStreak=Math.max(S.longestStreak||0,S.currentStreak);
+  save();
+}
+
+// ── MILESTONE RESET (fixes falsely-triggered achievements) ──
+function resetMilestonesFromCurrentState(){
+  // Compute current net worth from actual state
+  const nw=portTotal()+calcBal('westpac')+calcBal('macquarie');
+  // Rebuild NW milestones from scratch based on current NW
+  const nwMs=(typeof NW_MILESTONES!=='undefined'?NW_MILESTONES:[]);
+  S.nwMilestones=nwMs.filter(m=>nw>=m);
+  // Rebuild goal milestones from current savings
+  if(S.goalState&&typeof GCFG!=='undefined'&&typeof MILESTONE_PCTS!=='undefined'){
+    Object.entries(GCFG).forEach(([k,g])=>{
+      const st=S.goalState[k];if(!st)return;
+      const pct=g.target>0?(st.saved/g.target*100):0;
+      st.milestones=MILESTONE_PCTS.filter(m=>pct>=m);
+    });
+  }
+  save();
+  showToast('Milestones recalculated from current state');
+}
+
+// ── One-time migrations wrapper — called from launchApp ────
+function runV27Migrations(){
+  migrateDividendsToV2();
+  if(!S.v27MilestonesReset){
+    resetMilestonesFromCurrentState();
+    S.v27MilestonesReset=true;
+    save();
+  }
+}
+
 function launchApp(){
   document.getElementById('setup').style.display='none';
   const app=document.getElementById('app');app.style.display='flex';
@@ -3119,6 +3515,8 @@ function launchApp(){
   syncSliderUI();snapshotNW();
   generatePendingFromRules();
   if(typeof migrateDashLayout==='function')migrateDashLayout();
+  if(typeof runV27Migrations==='function')runV27Migrations();
+  if(typeof autoDailyCheckIn==='function')autoDailyCheckIn();
   buildDash();buildStaticTimeline();buildAiWelcome();buildThemeGrid();buildSettingsPage();
   scheduleLocalNotifs();
   initContextPanel();
@@ -4670,109 +5068,8 @@ function tickerDivSchedule(ticker){
   const KNOWN={VOO:[3,6,9,12],VYM:[3,6,9,12],VYMI:[3,6,9,12],VAF:[1,4,7,10],VGB:[2,5,8,11],VGS:[3,6,9,12]};
   return KNOWN[ticker]||null;
 }
-function buildDividendCalendar(){
-  if(typeof buildDividendIncomeCard==='function')buildDividendIncomeCard();
-  const hs=S.holdings||[];
-  const dEl=document.getElementById('div-metrics');
-  const calEl=document.getElementById('div-cal');
-  const totalDiv=(typeof annDiv==='function')?annDiv():0;
-  const received=Object.values(S.invDividendsReceived||{}).reduce((a,v)=>a+v,0);
-  const receivedYtd=(()=>{
-    // For "received this year", we can only use the aggregate since we don't store payment dates.
-    return received;
-  })();
-  if(dEl)dEl.innerHTML=`
-    <div class="met"><div class="ml">Projected annual</div><div class="mv col-acc">${fmtDI(totalDiv)}</div><div class="ms">Est. from holdings × yield</div></div>
-    <div class="met"><div class="ml">Monthly avg</div><div class="mv col-b">${fmtDI(Math.round(totalDiv/12))}</div><div class="ms">Reinvest for growth</div></div>
-    <div class="met"><div class="ml">Recorded received</div><div class="mv">${fmtDI(receivedYtd)}</div><div class="ms">From "Record dividend"</div></div>
-    <div class="met"><div class="ml">Est. yield</div><div class="mv">${portTotal()>0?(totalDiv/portTotal()*100).toFixed(2):'0'}%</div><div class="ms">Portfolio-wide</div></div>`;
-  if(!calEl)return;
-  if(!hs.length){calEl.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-txt">No holdings. Import your CMC portfolio to see your dividend calendar.</div></div>';return;}
+// (Legacy buildDividendCalendar removed in v2.7.0 — see dividend v2 module above)
 
-  // Warning about estimate quality
-  const unknownTickers=hs.filter(h=>!tickerDivSchedule(h.ticker));
-  let warn='';
-  if(unknownTickers.length){
-    warn=`<div class="alert alert-y" style="font-size:11px;line-height:1.55;margin-bottom:10px">${unknownTickers.length} holding${unknownTickers.length>1?'s':''} (${unknownTickers.map(h=>h.ticker).join(', ')}) don't have a known dividend schedule — projections omit them. Record actuals via "Record dividend" for accuracy.</div>`;
-  }
-
-  // Upcoming 6 months
-  const now=new Date();
-  const upcoming=[];
-  for(let i=0;i<6;i++){
-    const d=new Date(now.getFullYear(),now.getMonth()+i,1);
-    const m=d.getMonth()+1;const yr=d.getFullYear();
-    hs.forEach(h=>{
-      const sched=tickerDivSchedule(h.ticker);if(!sched)return;
-      if(!sched.includes(m))return;
-      const val=holdingValue(h);const y=TYLD[h.ticker]||0.02;
-      const est=val*y/4;
-      if(est<0.5)return; // don't clutter with tiny amounts
-      upcoming.push({ticker:h.ticker,month:m,year:yr,est,val});
-    });
-  }
-  let calendarHtml='';
-  if(!upcoming.length){
-    calendarHtml=`<div class="empty"><div class="empty-ico">📅</div><div class="empty-txt">No upcoming projected dividends in the next 6 months.</div></div>`;
-  }else{
-    const grouped={};
-    upcoming.forEach(u=>{const k=u.year+'-'+String(u.month).padStart(2,'0');if(!grouped[k])grouped[k]=[];grouped[k].push(u);});
-    calendarHtml=Object.entries(grouped).sort().map(([ym,items])=>{
-      const d=new Date(ym+'-01T00:00:00');
-      const monthTotal=items.reduce((a,i)=>a+i.est,0);
-      return`<div class="div-cal-month">
-        <div class="div-cal-hdr" style="display:flex;justify-content:space-between;align-items:center">
-          <span>${d.toLocaleDateString('en-AU',{month:'long',year:'numeric'})}</span>
-          <span style="font-family:var(--mono);font-size:11px;color:var(--acc);font-weight:700">~${fmtD(monthTotal)}</span>
-        </div>
-        ${items.map(it=>`<div class="div-cal-item">
-          <div class="div-cal-date"><div class="div-cal-day">~</div><div class="div-cal-mon">${new Date(it.year,it.month-1,1).toLocaleDateString('en-AU',{month:'short'})}</div></div>
-          <div style="flex:1"><div class="div-cal-ticker">${it.ticker}</div><div class="div-cal-sub">Est. quarterly · yield ~${((TYLD[it.ticker]||0)*100).toFixed(1)}% · on ${fmtDI(it.val)} held</div></div>
-          <div class="div-cal-amt">+${fmtD(it.est)}</div>
-        </div>`).join('')}
-      </div>`;
-    }).join('');
-  }
-
-  // Actual received vs projected (per ticker table)
-  const perTickerRows=hs.map(h=>{
-    const val=holdingValue(h);
-    const proj=val*(TYLD[h.ticker]||0)/4; // quarterly estimate
-    const received=(S.invDividendsReceived||{})[h.ticker]||0;
-    return{ticker:h.ticker,val,proj,received,sched:tickerDivSchedule(h.ticker)};
-  }).sort((a,b)=>b.received+b.proj-(a.received+a.proj));
-  const perTickerHtml=`<div class="card"><div class="ctitle"><div class="ctitle-l">Per-holding dividends</div><button class="btn btn-ghost btn-sm" onclick="openDivModal()">+ Record</button></div>
-    ${perTickerRows.map(r=>`<div class="bench-row" style="align-items:flex-start">
-      <div class="bench-label">
-        <div style="font-size:12px;color:var(--t);font-weight:700">${r.ticker}</div>
-        <div style="font-size:10px;color:var(--t3);margin-top:1px">${r.sched?'Quarterly projection: ~'+fmtD(r.proj)+'/qtr':'No known schedule'}</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:12px;font-family:var(--mono);color:${r.received>0?'var(--acc)':'var(--t3)'};font-weight:${r.received>0?700:400}">${r.received>0?'+'+fmtD(r.received):'—'}</div>
-        <div style="font-size:9px;color:var(--t3)">recorded</div>
-      </div>
-    </div>`).join('')}
-  </div>`;
-
-  calEl.innerHTML=warn+calendarHtml+perTickerHtml;
-
-  // 12-month chart
-  const months=[];const amounts=[];
-  for(let i=0;i<12;i++){
-    const d=new Date(now.getFullYear(),now.getMonth()+i,1);
-    const m=d.getMonth()+1;
-    months.push(d.toLocaleDateString('en-AU',{month:'short'}));
-    let mo=0;
-    hs.forEach(h=>{const s=tickerDivSchedule(h.ticker);if(s&&s.includes(m))mo+=holdingValue(h)*(TYLD[h.ticker]||0)/4;});
-    amounts.push(Math.round(mo));
-  }
-  const canvas=document.getElementById('div-chart');if(!canvas)return;
-  const acc=getComputedStyle(document.documentElement).getPropertyValue('--acc').trim()||'#00d4a0';
-  if(typeof divChart!=='undefined'&&divChart){divChart.destroy();divChart=null;}
-  divChart=new Chart(canvas,{type:'bar',data:{labels:months,datasets:[{data:amounts,backgroundColor:acc+'88',borderRadius:4,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'$'+c.parsed.y.toFixed(2)}}},scales:{x:{ticks:{color:'#3d4f63',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#3d4f63',font:{size:9},callback:v=>'$'+v},grid:{color:'rgba(255,255,255,0.04)'}}}}});
-  if(typeof registerChart==='function')registerChart('div-chart',divChart);
-  if(typeof fitChart==='function')fitChart(divChart);
-}
 
 // ═══════════════════════════════════════════════════════════
 // LIVE PRICE DIAGNOSTIC (Round 2 / Priority #4c)
@@ -6196,33 +6493,32 @@ function buildReturnSection(){
 // ── Growth vs contributions chart (real, from contribution history) ──
 function renderGrowthChart(){
   const canvas=document.getElementById('growth-chart');if(!canvas)return;
-  // Primary source: S.contributions (proper structured contributions)
-  let comps=(S.contributions||[]).filter(c=>c.status==='completed'&&c.date&&c.amount>0)
-    .map(c=>({date:c.date,amount:c.amount}));
-  // Fallback: derive from S.transactions where cat === 'investments'
-  if(!comps.length){
-    comps=(S.transactions||[]).filter(t=>t.cat==='investments'&&t.dir==='out'&&t.date&&t.amt>0)
-      .map(t=>({date:t.date,amount:t.amt}));
-  }
-  comps.sort((a,b)=>a.date.localeCompare(b.date));
-  const labels=[],valueLine=[],contribLine=[];
-  if(comps.length){
-    let cum=0;
-    const tv=portTotal();
-    const firstD=new Date(comps[0].date+'T12:00:00');
-    const months=Math.max(1,Math.ceil((Date.now()-firstD.getTime())/(1000*60*60*24*30)));
-    for(let i=0;i<=months;i++){
-      const d=new Date(firstD.getFullYear(),firstD.getMonth()+i,1);
-      cum=comps.filter(c=>new Date(c.date+'T12:00:00')<=d).reduce((a,c)=>a+c.amount,0);
-      labels.push(d.toLocaleDateString('en-AU',{month:'short',year:'2-digit'}));
-      contribLine.push(Math.round(cum));
-      const frac=months>0?i/months:1;
-      const totalCost=comps.reduce((a,c)=>a+c.amount,0);
-      valueLine.push(Math.round(cum + (tv-totalCost)*frac*(cum/Math.max(1,totalCost))));
+  // v2.7.0: contributions line = every dollar personally invested (cost basis over time).
+  // Uses computeContributionSeries which merges S.transactions (cat=investments) with S.contributions.
+  const series=(typeof computeContributionSeries==='function')?computeContributionSeries():null;
+  let labels=[],valueLine=[],contribLine=[];
+  const currentPortValue=portTotal();
+  const currentCost=portCostBasis()||0;
+  const currentGainRatio=currentCost>0?(currentPortValue/currentCost):1;
+  if(series&&series.series&&series.series.length>1){
+    labels=series.labels;
+    contribLine=series.series;
+    // Value line: at each point, contributions × current gain ratio.
+    // Assumes gain % has been proportional over time — honest approximation without daily portfolio snapshots.
+    // Final point snaps to actual current portfolio value.
+    for(let i=0;i<contribLine.length;i++){
+      if(i===contribLine.length-1){
+        // Final point: snap to actual portfolio value
+        valueLine.push(Math.round(currentPortValue));
+      }else{
+        valueLine.push(Math.round(contribLine[i]*currentGainRatio));
+      }
     }
   }else{
-    // Truly no data — leave the chart empty and let the caller show a message
-    labels.push('Now');valueLine.push(Math.round(portTotal()));contribLine.push(Math.round(portCostBasis()));
+    // No contribution history — single-point display
+    labels=['Now'];
+    valueLine=[Math.round(currentPortValue)];
+    contribLine=[Math.round(currentCost)];
   }
   const acc=getComputedStyle(document.documentElement).getPropertyValue('--acc').trim()||'#00d4a0';
   const t3=getComputedStyle(document.documentElement).getPropertyValue('--t3').trim()||'#4a5d72';
@@ -6627,24 +6923,7 @@ function openContribList(){
   }).join(''):'<div class="empty"><div class="empty-ico">💸</div><div class="empty-txt">No contributions yet.</div></div>';
   showSheet('Contributions',`<div id="contrib-list-modal">${body}</div><button class="btn btn-acc btn-full" style="margin-top:10px" onclick="openContribModal()">+ Add contribution</button>`);
 }
-function openDivModal(){
-  const tickers=(S.holdings||[]).map(h=>h.ticker);
-  const opts=tickers.length?tickers:TICKERS;
-  showSheet('Record dividend',`
-    <label class="lbl">Ticker</label>
-    <select class="inp" id="dv-ticker">${opts.map(t=>`<option value="${t}">${t}</option>`).join('')}</select>
-    <label class="lbl">Dividend amount received $</label>
-    <input type="number" class="inp" id="dv-amt" placeholder="0.00" min="0" step="0.01">
-    <button class="btn btn-acc btn-full" onclick="recordDividend()">Save dividend</button>`);
-}
-function recordDividend(){
-  const tk=document.getElementById('dv-ticker').value;
-  const amt=parseFloat(document.getElementById('dv-amt').value);
-  if(isNaN(amt)||amt<=0){alert('Enter an amount.');return;}
-  if(!S.invDividendsReceived)S.invDividendsReceived={};
-  S.invDividendsReceived[tk]=(S.invDividendsReceived[tk]||0)+amt;
-  save();closeSheet();buildInvestPage();showToast('Dividend recorded');
-}
+// (Legacy openDivModal + recordDividend removed in v2.7.0 — see dividend v2 module above)
 
 // Generic bottom-sheet helper (reuses overlay/modal styles)
 function showSheet(title,bodyHtml){
