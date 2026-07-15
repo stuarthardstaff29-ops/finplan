@@ -1638,9 +1638,36 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.5';
+const APP_VERSION='2.7.6';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.6',
+    date:'2026-07-14',
+    title:'Propagation audit — one central refresh, everywhere',
+    sections:{
+      features:[
+        'New central refresh function refreshAll() with a page builder registry covering all 24 pages. Every edit-modify-save flow now delegates to it, so changes flow to every dependent view automatically'
+      ],
+      improvements:[
+        'saveTxn / deleteTxn — creating or deleting a transaction now refreshes every currently-open page (analytics, insights, budget, invest, dividends, jobs, reports, everything) instead of just dash + txns',
+        'saveTransfer / deleteTransfer — same treatment',
+        'saveBalance — updating a bank starting balance now rebuilds every dependent view (previously only Settings rebuilt)',
+        'saveHolding / deleteHoldingFromModal / deleteHoldingFromDetail — holding changes now refresh dividends, reports, dashboard, allocation, risk lens automatically. No more stale numbers if you edit units on Invest and switch to Dividends',
+        'saveContribution — same story: contributions graph, invest page, reports all rebuild',
+        'addToGoal / resetGoal — goal changes now propagate to payday plan, timeline forecast, and any open view',
+        'saveRecurring / deleteRecurring — recurring bill changes propagate to pending balance widget + dashboard',
+        'saveDividendPayment / deleteDividendPayment — refreshDividendUI now also invokes central refresh so reports / tax / insights all reflect the new payment history',
+        'Always-visible surfaces (context panel, reminders card, notification dot) now update on every refresh — no more stale badges'
+      ],
+      fixes:[
+        'Fixed: editing a holding on the Invest page wouldn\'t update dividend projections on the Dividends page until you navigated away and back',
+        'Fixed: adding a transaction while on the Analytics page wouldn\'t update the analytics until you refreshed',
+        'Fixed: recording a dividend payment didn\'t update the tax year report if it was already open',
+        'Fixed: goal additions didn\'t refresh the payday plan\'s suggested allocations if the Payday page was already open'
+      ]
+    }
+  },
   {
     v:'2.7.5',
     date:'2026-07-14',
@@ -3527,6 +3554,8 @@ function refreshDividendUI(){
   if(currentPg==='dividends'&&typeof buildDividendCalendar==='function')buildDividendCalendar();
   if(currentPg==='invest'&&typeof buildInvestPage==='function')buildInvestPage();
   if(currentPg==='dash'&&typeof buildDash==='function')buildDash();
+  // v2.7.6: propagate to reports/insights/tax/etc via central refresh (no-op if page not open)
+  if(typeof refreshAll==='function')refreshAll({snapshotNW:false});
 }
 
 // Payment history list — full audit trail with edit/delete
@@ -4732,6 +4761,107 @@ function buildReportsPage(){
   `;
 }
 
+// ═══════════════════════════════════════════════════════════
+// v2.7.6 — PROPAGATION AUDIT / CENTRAL REFRESH
+// One source of truth for "refresh everything that depends on state".
+// All mutations call refreshAll() (aliased by refreshAfterChange for
+// backward compat with older call sites).
+// ═══════════════════════════════════════════════════════════
+
+// Registry of page builders — one entry per rebuildable page.
+// Keys match currentPg strings used elsewhere in the app.
+const PAGE_BUILDERS={
+  dash:()=>typeof buildDash==='function'&&buildDash(),
+  txns:()=>typeof buildTxnsPage==='function'&&buildTxnsPage(),
+  ai:()=>{}, // AI page rebuilds happen on message send, not here
+  recurring:()=>typeof buildRecurringPage==='function'&&buildRecurringPage(),
+  budget:()=>{if(typeof upAll==='function')upAll();if(typeof buildBudgetActual==='function')buildBudgetActual();if(typeof buildBudgetPerformance==='function')buildBudgetPerformance();},
+  analytics:()=>typeof buildAnalytics==='function'&&buildAnalytics(),
+  kmart:()=>typeof buildKmartPage==='function'&&buildKmartPage(),
+  jobs:()=>typeof buildJobsPage==='function'&&buildJobsPage(),
+  invest:()=>typeof buildInvestPage==='function'&&buildInvestPage(),
+  timeline:()=>typeof buildStaticTimeline==='function'&&buildStaticTimeline(),
+  settings:()=>typeof buildSettingsPage==='function'&&buildSettingsPage(),
+  health:()=>typeof buildHealthScore==='function'&&buildHealthScore(),
+  streaks:()=>typeof buildStreaksPage==='function'&&buildStreaksPage(),
+  sinking:()=>typeof buildSinkingPage==='function'&&buildSinkingPage(),
+  debts:()=>typeof buildDebtsPage==='function'&&buildDebtsPage(),
+  subscriptions:()=>typeof buildSubScan==='function'&&buildSubScan(),
+  dividends:()=>typeof buildDividendCalendar==='function'&&buildDividendCalendar(),
+  tax:()=>typeof buildTaxSummary==='function'&&buildTaxSummary(),
+  payday:()=>typeof buildPaydayPage==='function'&&buildPaydayPage(),
+  scenario:()=>typeof buildScenarioPage==='function'&&buildScenarioPage(),
+  glance:()=>typeof buildGlancePage==='function'&&buildGlancePage(),
+  insights:()=>typeof buildInsights==='function'&&buildInsights(),
+  reports:()=>typeof buildReportsPage==='function'&&buildReportsPage(),
+  goals:()=>typeof buildGoalsPage==='function'&&buildGoalsPage()
+};
+
+// Data-type → additional pages that should refresh even when not currently visible.
+// (Only makes sense for widgets/panels that overlay any page.)
+// We handle those via "always-visible surfaces" below.
+
+// Central refresh: rebuild the current page + always-visible surfaces + optional NW snapshot.
+// Options:
+//   sources: array of changed data types ['transactions', 'holdings', 'jobs', ...]
+//            reserved for future targeted rebuilds; ignored for now.
+//   snapshotNW: default true — take a fresh NW history point
+function refreshAll(opts){
+  opts=opts||{};
+  try{
+    if(opts.snapshotNW!==false&&typeof snapshotNW==='function')snapshotNW();
+    const builder=PAGE_BUILDERS[currentPg];
+    if(typeof builder==='function'){
+      try{builder();}catch(e){console.warn('[refreshAll] '+currentPg+':',e);}
+    }
+    // Always-visible surfaces: context panel + reminders + notif dot
+    if(typeof renderContextPanel==='function'){try{renderContextPanel();}catch(_){}}
+    if(typeof renderRemindersCard==='function'){try{renderRemindersCard();}catch(_){}}
+    if(typeof updateNotifBadge==='function'){try{updateNotifBadge();}catch(_){}}
+  }catch(e){console.warn('[refreshAll] fatal:',e);}
+}
+
+// Preserve old alias — many existing sites call this.
+// Redefined here so it delegates to the new central refresh.
+function refreshAfterChange(){refreshAll();}
+
+// Data-change helper: mutation sites can be explicit about WHAT changed.
+// Used mostly for readability — the actual work happens in refreshAll.
+function dataChanged(...sources){refreshAll({sources});}
+
+// ── Explicit propagation for cross-data-type dependencies ──
+// Some mutations affect multiple systems and need explicit hand-offs beyond
+// just rebuilding the current page. Kept as small dedicated helpers so it's
+// obvious what depends on what.
+
+// When TRANSACTIONS change: also recompute pending balance, notification dot
+// (Already handled by refreshAll)
+
+// When HOLDINGS change: portfolio value, cost basis, dividend projections,
+// contributions graph, risk lens, watchlist prices, allocation targets all
+// recompute automatically inside buildInvestPage. If viewing Reports, the
+// portfolio snapshot re-reads on next open.
+function onHoldingsChanged(){
+  // Optionally push a NW snapshot immediately so goals see the new portfolio value
+  if(typeof snapshotNW==='function')snapshotNW();
+  refreshAll();
+}
+
+// When JOBS change: monthIncome() (v2.7.4) is the central compute so every
+// consumer already picks up the new value. We just need to rebuild dependents.
+// propagateJobChange (v2.7.4) is the specific hook; refreshAll now covers it.
+
+// When GOALS change: milestones, payday plan, dashboard rings all rebuild.
+function onGoalsChanged(){
+  if(typeof snapshotNW==='function')snapshotNW();
+  refreshAll();
+}
+
+// When DIVIDEND PAYMENTS change: projections, calendar, income card, reports.
+function onDividendsChanged(){
+  refreshAll();
+}
+
 function launchApp(){
   document.getElementById('setup').style.display='none';
   const app=document.getElementById('app');app.style.display='flex';
@@ -5127,10 +5257,7 @@ function saveTxn(){
     // Track manual logging activity (not an edit, not an import)
     if(typeof markManualTxnLogged==='function')markManualTxnLogged();
   }
-  closeModal('txn-modal');snapshotNW();save();
-  if(currentPg==='txns')buildTxnsPage();
-  if(currentPg==='dash')buildDash();
-  if(currentPg==='analytics')buildAnalytics();
+  closeModal('txn-modal');save();refreshAll({snapshotNW:true});
   // Feature 1: Offer to learn from corrections on imported transactions
   if(oldTxn&&typeof offerToLearnRule==='function'){
     setTimeout(()=>offerToLearnRule(oldTxn,newTxn),200);
@@ -5146,20 +5273,18 @@ function saveTransfer(){
   if(!amount||amount<=0){alert('Enter a transfer amount.');return;}
   if(!S.transfers)S.transfers=[];
   S.transfers.unshift({id:uid(),kind:'transfer',fromAcct:from,toAcct:to,amount,date,note});
-  closeModal('txn-modal');snapshotNW();save();
+  closeModal('txn-modal');save();refreshAll({snapshotNW:true});
   showToast('Transfer recorded: '+fmtD(amount));
-  if(currentPg==='txns')buildTxnsPage();
-  if(currentPg==='dash')buildDash();
 }
-function deleteTransfer(id){if(!confirm('Delete this transfer?'))return;S.transfers=(S.transfers||[]).filter(t=>t.id!==id);snapshotNW();save();if(currentPg==='txns')buildTxnsPage();if(currentPg==='dash')buildDash();}
-function deleteTxn(id){if(!confirm('Delete?'))return;S.transactions=S.transactions.filter(t=>t.id!==id);save();if(currentPg==='txns')buildTxnsPage();if(currentPg==='dash')buildDash();}
+function deleteTransfer(id){if(!confirm('Delete this transfer?'))return;S.transfers=(S.transfers||[]).filter(t=>t.id!==id);save();refreshAll({snapshotNW:true});}
+function deleteTxn(id){if(!confirm('Delete?'))return;S.transactions=S.transactions.filter(t=>t.id!==id);save();refreshAll({snapshotNW:true});}
 
 // ═══════════════════════════════════════════════════════════
 // RECURRING
 // ═══════════════════════════════════════════════════════════
 function openRecModal(){document.getElementById('rec-cat').innerHTML=allCats().filter(c=>c.id!=='income'&&c.id!=='transfer').map(c=>`<option value="${c.id}">${c.icon} ${c.label}</option>`).join('');openModal('rec-modal');}
-function saveRecurring(){const name=document.getElementById('rec-name').value.trim();const amt=parseFloat(document.getElementById('rec-amt').value);const day=parseInt(document.getElementById('rec-day').value);if(!name||!amt||!day){alert('Fill all fields.');return;}S.recurring.push({id:uid(),name,amt,day,cat:document.getElementById('rec-cat').value,acct:document.getElementById('rec-acct').value});closeModal('rec-modal');save();if(currentPg==='txns')buildTxnsPage();}
-function deleteRecurring(id){S.recurring=S.recurring.filter(r=>r.id!==id);save();if(currentPg==='txns')buildTxnsPage();}
+function saveRecurring(){const name=document.getElementById('rec-name').value.trim();const amt=parseFloat(document.getElementById('rec-amt').value);const day=parseInt(document.getElementById('rec-day').value);if(!name||!amt||!day){alert('Fill all fields.');return;}S.recurring.push({id:uid(),name,amt,day,cat:document.getElementById('rec-cat').value,acct:document.getElementById('rec-acct').value});closeModal('rec-modal');save();refreshAll();}
+function deleteRecurring(id){S.recurring=S.recurring.filter(r=>r.id!==id);save();refreshAll();}
 
 // ═══════════════════════════════════════════════════════════
 // BALANCE MODAL
@@ -5211,7 +5336,7 @@ function saveBalance(){
     const delta=input-currentBal;
     S.acctBalances[acct]=Math.round((oldStart+delta)*100)/100;
   }
-  closeModal('bal-modal');snapshotNW();save();buildSettingsPage();
+  closeModal('bal-modal');save();refreshAll({snapshotNW:true});
   if(currentPg==='txns')buildAcctHero();
   if(currentPg==='dash')buildDash();
   showToast(`${acct==='westpac'?'Westpac':'Macquarie'} balance set to ${fmtD(input)}`);
@@ -5572,13 +5697,7 @@ function confirmAllPending(acct){
   snapshotNW();save();refreshAfterChange();
   showToast(items.length+' transactions confirmed');
 }
-function refreshAfterChange(){
-  if(currentPg==='dash')buildDash();
-  if(currentPg==='txns')buildTxnsPage();
-  if(currentPg==='recurring')buildRecurringPage();
-  if(currentPg==='budget')buildBudgetActual();
-  if(typeof renderContextPanel==='function')renderContextPanel();
-}
+// (Legacy refreshAfterChange removed in v2.7.6 — replaced by central refreshAll above)
 
 // ── Pending balance widget (current vs after) ────────────────
 function buildPendingWidget(containerId,acct){
@@ -6652,9 +6771,9 @@ function addToGoal(k){
   el.value='';
   const newPct=pct(S.goalState[k].saved,GCFG[k].target);
   checkMilestone(k,prevPct,newPct);
-  save();buildGoalsPage();if(currentPg==='dash')buildDash();
+  save();refreshAll({snapshotNW:true});
 }
-function resetGoal(k){if(!confirm('Reset?'))return;S.goalState[k].saved=GCFG[k].start;S.goalState[k].log=[];S.goalState[k].milestones=[];save();buildGoalsPage();}
+function resetGoal(k){if(!confirm('Reset?'))return;S.goalState[k].saved=GCFG[k].start;S.goalState[k].log=[];S.goalState[k].milestones=[];save();refreshAll({snapshotNW:true});}
 function buildGoalsTotals(){
   const ts=Object.values(S.goalState).reduce((a,g)=>a+g.saved,0);
   const tt=Object.values(GCFG).reduce((a,g)=>a+g.target,0);
@@ -7200,8 +7319,7 @@ function saveHoldingNotes(hId){
 function deleteHoldingFromDetail(hId){
   if(!confirm('Delete this holding? Purchase transactions in Transactions are not affected.'))return;
   S.holdings=(S.holdings||[]).filter(h=>h.id!==hId);
-  save();snapshotNW();closeDetail();
-  if(currentPg==='invest')buildInvestPage();
+  save();closeDetail();refreshAll({snapshotNW:true});
   showToast('Holding deleted');
 }
 function estAnnDivForHolding(h){
@@ -8026,13 +8144,13 @@ function saveHolding(){
   }else{
     S.holdings.push({id:uid(),...rec,livePrice:null,liveUpdated:null});
   }
-  closeModal('holding-modal');snapshotNW();save();buildInvestPage();if(currentPg==='dash')buildDash();showToast('Holding saved');
+  closeModal('holding-modal');save();refreshAll({snapshotNW:true});showToast('Holding saved');
 }
 function deleteHoldingFromModal(){
   if(!editingHoldingId)return;
   if(!confirm('Delete this holding?'))return;
   S.holdings=(S.holdings||[]).filter(h=>h.id!==editingHoldingId);
-  closeModal('holding-modal');snapshotNW();save();buildInvestPage();if(currentPg==='dash')buildDash();
+  closeModal('holding-modal');save();refreshAll({snapshotNW:true});
 }
 
 // Wipe all investment records — used to fix corrupted historical data.
@@ -8148,9 +8266,8 @@ function saveContribution(){
   if(applyToHolding&&status==='completed'&&record.units&&record.price&&!editingContribId){
     applied=applyContributionToHolding(record);
   }
-  closeModal('contrib-modal');save();snapshotNW();
+  closeModal('contrib-modal');save();refreshAll({snapshotNW:true});
   if(document.getElementById('contrib-list-modal'))openContribList();
-  buildInvestPage();
   showToast(applied?`Saved · ${units} units added to ${ticker}`:'Contribution saved');
 }
 // Adds units to the matching holding and recomputes the weighted-average cost basis.
