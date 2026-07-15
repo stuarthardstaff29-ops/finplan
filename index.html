@@ -1638,9 +1638,32 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.6';
+const APP_VERSION='2.7.7';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.7',
+    date:'2026-07-14',
+    title:'Goal intelligence layer',
+    sections:{
+      features:[
+        '🎯 Every goal now shows a verdict pill at a glance: Ahead of pace · On track · Behind pace · No recent contributions · Complete',
+        'Goal cards on the Goals page display the monthly amount required to hit deadline alongside your actual current pace, colour-coded so you can see instantly whether you\'re keeping up',
+        'Goal detail view has a new "Goal intelligence" card with: full verdict banner, time remaining, monthly required, your current pace (last 90 days or all-time), projected completion date, and how many weeks early or late that lands vs the deadline',
+        'What-if scenarios — see what adding $25, $50, or $100/mo extra would do to your completion date. Concrete numbers rather than guessing',
+        'When you\'re behind pace, the app calculates exactly how much extra per month you\'d need to add to catch up — no more mental math'
+      ],
+      improvements:[
+        'Deadline parsing now handles the "Nov 2026" / "Jan 2028" format properly (was silently producing NaN in the previous suggestion logic)',
+        'Pace calculation uses the last 90 days when you have 2+ contributions in that window, falls back to all-time otherwise. Reduces noise from single one-off deposits',
+        'Contribution history now merges payday distributions with manual goal adds — so pace reflects everything you\'ve actually put in, regardless of how',
+        'New goal additions store a precise timestamp (`ts` field) so pace tracking sharpens as you use the app'
+      ],
+      fixes:[
+        'Fixed silent "$NaN/month needed" bug when deadline was a display string like "Nov 2026" instead of an ISO date'
+      ]
+    }
+  },
   {
     v:'2.7.6',
     date:'2026-07-14',
@@ -2984,12 +3007,12 @@ function openGoalDetail(goalKey){
       <div class="detail-metric"><div class="detail-metric-l">Contributions</div><div class="detail-metric-v">${contribs.length}</div></div>
     </div>
 
-    <div class="detail-card detail-card-accent">
+    ${typeof buildGoalIntelligenceCard==='function'?buildGoalIntelligenceCard(goalKey):`<div class="detail-card detail-card-accent">
       <div class="detail-card-title">Pace analysis</div>
       <div class="detail-card-body">${paceMsg}</div>
       ${suggestedMsg?`<div class="detail-card-body" style="margin-top:6px;color:var(--y)">${suggestedMsg}</div>`:''}
-      ${cumulative.length>1?sparklineSvg(cumulative,{width:280,height:60,color:g.col||'var(--acc)'}):''}
-    </div>
+    </div>`}
+    ${cumulative.length>1?`<div class="detail-card"><div class="detail-card-title">Cumulative progress</div>${sparklineSvg(cumulative,{width:280,height:60,color:g.col||'var(--acc)'})}</div>`:''}
 
     ${contribs.length?`<div class="detail-card">
       <div class="detail-card-title" style="margin-bottom:8px">Recent contributions</div>
@@ -4860,6 +4883,241 @@ function onGoalsChanged(){
 // When DIVIDEND PAYMENTS change: projections, calendar, income card, reports.
 function onDividendsChanged(){
   refreshAll();
+}
+
+// ═══════════════════════════════════════════════════════════
+// v2.7.7 — GOAL INTELLIGENCE LAYER
+// Computes health, pace, projections, and what-if scenarios for each goal.
+// All views (goals page cards, detail view, dashboard) read from computeGoalHealth().
+// ═══════════════════════════════════════════════════════════
+
+// Parse deadline strings like "Nov 2026", "Jan 2028" into Date at end-of-month
+function parseGoalDeadline(due){
+  if(!due)return null;
+  const monthNames={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+  const m=(''+due).match(/([A-Za-z]{3,})\s+(\d{4})/);
+  if(m){
+    const mo=monthNames[m[1].toLowerCase().slice(0,3)];
+    const yr=parseInt(m[2]);
+    if(mo!=null&&yr)return new Date(yr,mo+1,0); // last day of the target month
+  }
+  // Try ISO like "2026-11"
+  const iso=(''+due).match(/(\d{4})-(\d{2})/);
+  if(iso)return new Date(parseInt(iso[1]),parseInt(iso[2]),0);
+  const d=new Date(due);
+  return isNaN(d.getTime())?null:d;
+}
+
+// Central compute — every goal-related view reads from this
+function computeGoalHealth(goalKey){
+  const cfg=GCFG[goalKey];
+  const state=(S.goalState||{})[goalKey];
+  if(!cfg||!state)return null;
+  const now=new Date();
+  const saved=state.saved||0;
+  const target=cfg.target||0;
+  const remaining=Math.max(0,target-saved);
+  const pct=target>0?Math.min(100,saved/target*100):0;
+  const deadline=parseGoalDeadline(cfg.due);
+  let daysRemaining=null,monthsRemaining=null;
+  if(deadline){
+    const msRemaining=deadline.getTime()-now.getTime();
+    daysRemaining=Math.ceil(msRemaining/(1000*60*60*24));
+    monthsRemaining=daysRemaining/30.44;
+  }
+  const monthlyRequired=(monthsRemaining&&monthsRemaining>0&&remaining>0)
+    ?remaining/monthsRemaining
+    :(remaining>0?null:0);
+  // Contribution history — merge paydayDistributed allocations + manual log entries
+  const contribs=[];
+  Object.values(S.paydayDistributed||{}).forEach(d=>{
+    (d.allocations||[]).forEach(a=>{
+      if(a.type==='goal'&&a.ref===goalKey&&a.amount>0){
+        const date=d.txnDate||d.date;
+        if(date)contribs.push({date,amount:a.amount,source:'payday'});
+      }
+    });
+  });
+  (state.log||[]).forEach(e=>{
+    if(e.ts){
+      contribs.push({date:new Date(e.ts).toISOString().slice(0,10),amount:e.amount||0,source:'manual'});
+    }else if(e.date){
+      // Best-effort parse of legacy "13 Jul 25" format
+      const d=new Date(e.date);
+      if(!isNaN(d.getTime())){
+        contribs.push({date:d.toISOString().slice(0,10),amount:e.amount||0,source:'manual'});
+      }
+    }
+  });
+  contribs.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  // Recent pace (last 90 days = 3 months)
+  const cutoff=new Date();cutoff.setDate(cutoff.getDate()-90);
+  const cutoffStr=cutoff.toISOString().slice(0,10);
+  const recent=contribs.filter(c=>c.date>=cutoffStr);
+  const monthlyPaceRecent=recent.reduce((a,c)=>a+c.amount,0)/3;
+  // All-time pace
+  let monthlyPaceAllTime=0;
+  if(contribs.length>=1){
+    const first=new Date(contribs[0].date+'T00:00:00');
+    const monthsElapsed=Math.max(1,(now-first)/(1000*60*60*24*30.44));
+    const totalContributed=contribs.reduce((a,c)=>a+c.amount,0);
+    monthlyPaceAllTime=totalContributed/monthsElapsed;
+  }
+  const monthlyPace=recent.length>=2?monthlyPaceRecent:monthlyPaceAllTime;
+  // Verdict
+  let verdict,verdictLabel,verdictColor,verdictIcon;
+  if(remaining<=0){
+    verdict='complete';verdictLabel='Complete!';verdictColor='var(--acc)';verdictIcon='🎯';
+  }else if(monthlyRequired==null){
+    verdict='no-deadline';verdictLabel='No deadline set';verdictColor='var(--t3)';verdictIcon='';
+  }else if(monthlyPace<=0){
+    verdict='stalled';verdictLabel='No recent contributions';verdictColor='var(--r)';verdictIcon='⚠';
+  }else if(monthlyPace>=monthlyRequired*1.15){
+    verdict='ahead';verdictLabel='Ahead of pace';verdictColor='var(--acc)';verdictIcon='↑';
+  }else if(monthlyPace>=monthlyRequired*0.85){
+    verdict='on-track';verdictLabel='On track';verdictColor='var(--acc)';verdictIcon='✓';
+  }else{
+    verdict='behind';verdictLabel='Behind pace';verdictColor='var(--y)';verdictIcon='↓';
+  }
+  // Projected completion
+  let projectedDate=null,projectedDelta=null;
+  if(monthlyPace>0&&remaining>0){
+    const monthsToComplete=remaining/monthlyPace;
+    projectedDate=new Date(now.getTime()+monthsToComplete*30.44*24*60*60*1000);
+    if(deadline){
+      const diffMs=deadline.getTime()-projectedDate.getTime();
+      const diffDays=Math.round(diffMs/(1000*60*60*24));
+      projectedDelta={
+        days:Math.abs(diffDays),
+        weeks:Math.round(Math.abs(diffDays)/7),
+        months:Math.round(Math.abs(diffDays)/30.44*10)/10,
+        early:diffMs>0
+      };
+    }
+  }
+  // What-if scenarios
+  const scenarios=[];
+  if(monthsRemaining&&monthsRemaining>0&&remaining>0){
+    [25,50,100].forEach(extra=>{
+      const newPace=Math.max(0,monthlyPace)+extra;
+      if(newPace<=0)return;
+      const monthsToComplete=remaining/newPace;
+      const projected=new Date(now.getTime()+monthsToComplete*30.44*24*60*60*1000);
+      const diffMs=deadline?deadline.getTime()-projected.getTime():0;
+      scenarios.push({
+        extra,
+        projectedDate:projected,
+        daysEarly:Math.round(diffMs/(1000*60*60*24)),
+        hitsDeadline:diffMs>=0
+      });
+    });
+  }
+  // Suggested extra needed if behind
+  let suggestedExtra=null;
+  if(monthlyRequired!=null&&monthlyPace<monthlyRequired&&remaining>0){
+    suggestedExtra=Math.ceil(monthlyRequired-monthlyPace);
+  }
+  return{
+    goalKey,cfg,state,saved,target,remaining,pct,
+    deadline,daysRemaining,monthsRemaining,
+    monthlyRequired,monthlyPace,monthlyPaceRecent,monthlyPaceAllTime,
+    recentCount:recent.length,totalContribCount:contribs.length,
+    verdict,verdictLabel,verdictColor,verdictIcon,
+    projectedDate,projectedDelta,
+    scenarios,suggestedExtra
+  };
+}
+
+// Small verdict pill for goals-page cards
+function goalVerdictPill(goalKey){
+  const h=computeGoalHealth(goalKey);
+  if(!h)return '';
+  const bg=h.verdict==='ahead'||h.verdict==='on-track'||h.verdict==='complete'?'var(--accd)'
+    :h.verdict==='behind'?'var(--yd)'
+    :h.verdict==='stalled'?'var(--rd)'
+    :'var(--bg3)';
+  return`<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;background:${bg};color:${h.verdictColor};font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em">${h.verdictIcon||''} ${h.verdictLabel}</span>`;
+}
+
+// Formatted time-remaining string ("5 months 12 days", "3 weeks")
+function fmtTimeRemaining(days){
+  if(days==null)return '';
+  if(days<0)return `${Math.abs(days)} days overdue`;
+  if(days===0)return 'due today';
+  if(days<14)return `${days} day${days===1?'':'s'}`;
+  if(days<60)return `${Math.round(days/7)} week${Math.round(days/7)===1?'':'s'}`;
+  const months=Math.floor(days/30.44);
+  const rem=Math.round(days-months*30.44);
+  return`${months} month${months===1?'':'s'}${rem>7?` ${Math.round(rem/7)}w`:''}`;
+}
+
+// Full intelligence card for the goal detail view
+function buildGoalIntelligenceCard(goalKey){
+  const h=computeGoalHealth(goalKey);
+  if(!h)return '';
+  const timeStr=h.daysRemaining!=null?fmtTimeRemaining(h.daysRemaining):'no deadline';
+  const paceLabel=h.recentCount>=2?'last 90 days':(h.totalContribCount>0?'all-time':'no data yet');
+  // Main verdict banner
+  const banner=`<div style="background:var(--bg3);border:1px solid ${h.verdictColor==='var(--acc)'?'var(--acc)':h.verdictColor==='var(--y)'?'var(--y)':h.verdictColor==='var(--r)'?'var(--r)':'var(--bdr)'};border-radius:14px;padding:14px 16px;margin-bottom:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px">
+      <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.12em;font-weight:600">Verdict</div>
+      ${goalVerdictPill(goalKey)}
+    </div>
+    ${h.verdict==='ahead'?`<div style="font-size:13px;color:var(--t);line-height:1.5">You\'re contributing <strong style="color:var(--acc)">${fmtD(h.monthlyPace)}/mo</strong> vs the <strong>${fmtD(h.monthlyRequired)}/mo</strong> needed to hit deadline. Keep it up.</div>`
+    :h.verdict==='on-track'?`<div style="font-size:13px;color:var(--t);line-height:1.5">Your pace of <strong style="color:var(--acc)">${fmtD(h.monthlyPace)}/mo</strong> matches the <strong>${fmtD(h.monthlyRequired)}/mo</strong> needed. Stay consistent.</div>`
+    :h.verdict==='behind'?`<div style="font-size:13px;color:var(--t);line-height:1.5">You\'re saving <strong style="color:var(--y)">${fmtD(h.monthlyPace)}/mo</strong> but need <strong>${fmtD(h.monthlyRequired)}/mo</strong>. Add <strong style="color:var(--acc)">${fmtD(h.suggestedExtra||0)}/mo</strong> to get back on pace.</div>`
+    :h.verdict==='stalled'?`<div style="font-size:13px;color:var(--t);line-height:1.5">No contributions to this goal in the last 90 days. You\'d need <strong>${fmtD(h.monthlyRequired)}/mo</strong> from here on to hit deadline.</div>`
+    :h.verdict==='complete'?`<div style="font-size:13px;color:var(--t);line-height:1.5">Goal reached. Consider raising the target or moving on to the next.</div>`
+    :`<div style="font-size:13px;color:var(--t);line-height:1.5">No deadline set — pace shown is <strong>${fmtD(h.monthlyPace)}/mo</strong>.</div>`}
+  </div>`;
+  // Metrics strip
+  const metrics=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+    <div class="met" style="padding:10px"><div class="ml">Time left</div><div class="mv" style="font-size:16px">${timeStr}</div></div>
+    <div class="met" style="padding:10px"><div class="ml">Required</div><div class="mv" style="font-size:16px">${h.monthlyRequired!=null?fmtD(h.monthlyRequired):'—'}</div><div class="ms">per month</div></div>
+    <div class="met" style="padding:10px"><div class="ml">Your pace</div><div class="mv" style="font-size:16px;color:${h.monthlyPace>0?'var(--acc)':'var(--t3)'}">${fmtD(h.monthlyPace)}</div><div class="ms">${paceLabel}</div></div>
+  </div>`;
+  // Projection + delta
+  let projection='';
+  if(h.projectedDate){
+    const projectedStr=h.projectedDate.toLocaleDateString('en-AU',{month:'short',year:'numeric'});
+    const deltaStr=h.projectedDelta?
+      (h.projectedDelta.early
+        ?`<span style="color:var(--acc)">${h.projectedDelta.weeks} week${h.projectedDelta.weeks===1?'':'s'} early</span>`
+        :`<span style="color:var(--y)">${h.projectedDelta.weeks} week${h.projectedDelta.weeks===1?'':'s'} late</span>`)
+      :'';
+    projection=`<div style="background:var(--bg3);border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:12px;color:var(--t2);line-height:1.6">
+      <strong style="color:var(--t)">At current pace</strong> you\'ll finish around <strong style="color:var(--acc)">${projectedStr}</strong>${deltaStr?' — '+deltaStr:''}${h.cfg.due?` (deadline ${h.cfg.due})`:''}.
+    </div>`;
+  }
+  // What-if scenarios
+  let scenarios='';
+  if(h.scenarios.length){
+    scenarios=`<div style="margin-bottom:12px">
+      <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;font-weight:600;margin-bottom:6px">What if you added…</div>
+      ${h.scenarios.map(s=>{
+        const projStr=s.projectedDate.toLocaleDateString('en-AU',{month:'short',year:'numeric'});
+        const outcome=h.deadline
+          ?(s.hitsDeadline
+            ?`<span style="color:var(--acc)">${Math.abs(s.daysEarly)} days early</span>`
+            :`<span style="color:var(--y)">${Math.abs(s.daysEarly)} days late</span>`)
+          :`finish ${projStr}`;
+        return`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg3);border-radius:10px;margin-bottom:4px;font-size:12px">
+          <span style="color:var(--t)"><strong style="color:var(--acc)">+${fmtD(s.extra)}/mo</strong></span>
+          <span style="color:var(--t2)">${outcome}</span>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+  // Data confidence note
+  const confidence=h.totalContribCount===0
+    ?'<div style="font-size:10px;color:var(--t3);line-height:1.5;font-style:italic">No contribution history yet. Distribute a payday or use the deposit field below to start tracking pace.</div>'
+    :h.recentCount<2
+      ?`<div style="font-size:10px;color:var(--t3);line-height:1.5;font-style:italic">Pace based on all-time (${h.totalContribCount} contributions). Will sharpen as you build the last 90 days.</div>`
+      :`<div style="font-size:10px;color:var(--t3);line-height:1.5;font-style:italic">Pace based on ${h.recentCount} contributions in the last 90 days.</div>`;
+  return`<div class="card" style="margin-top:6px">
+    <div class="ctitle"><div class="ctitle-l">🎯 Goal intelligence</div></div>
+    ${banner}${metrics}${projection}${scenarios}${confidence}
+  </div>`;
 }
 
 function launchApp(){
@@ -6758,7 +7016,7 @@ function buildGoalsPage(){
     const st=S.goalState[k],p=pct(st.saved,g.target);
     if(i>0)html+='<hr class="dvdr">';
     const log=st.log.slice(-4).reverse().map(e=>`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:10px;border-bottom:1px solid var(--bdr)"><span style="color:var(--t3)">${e.date}</span><span style="color:var(--acc)">+${fmtD(e.amount)}</span></div>`).join('');
-    html+=`<div class="prog"><div class="p-lr"><span class="p-n" onclick="openGoalDetail('${k}')" style="cursor:pointer;text-decoration:underline;text-decoration-color:var(--bdr);text-underline-offset:3px">${g.label}</span><span class="p-v">${fmtD(st.saved)} / ${fmtD(g.target)}</span></div><div class="p-track" onclick="openGoalDetail('${k}')" style="cursor:pointer"><div class="p-fill" style="width:${p}%;background:${g.col}"></div></div><div class="p-sub">${p}%${g.due?' · due '+g.due:''} · ${g.tip}</div><div style="display:flex;gap:6px;margin-top:8px"><input type="number" id="gi-${k}" class="inp" placeholder="Add $" style="margin:0;flex:1" min="0" step="10"><button class="btn btn-acc btn-sm" onclick="addToGoal('${k}')">Add</button><button class="btn btn-ghost btn-sm" onclick="openGoalDetail('${k}')">Details</button></div>${log?`<div style="margin-top:5px">${log}</div>`:''}</div>`;
+    html+=`<div class="prog"><div class="p-lr"><span class="p-n" onclick="openGoalDetail('${k}')" style="cursor:pointer;text-decoration:underline;text-decoration-color:var(--bdr);text-underline-offset:3px">${g.label}</span><span class="p-v">${fmtD(st.saved)} / ${fmtD(g.target)}</span></div><div class="p-track" onclick="openGoalDetail('${k}')" style="cursor:pointer"><div class="p-fill" style="width:${p}%;background:${g.col}"></div></div><div class="p-sub">${p}%${g.due?' · due '+g.due:''} · ${g.tip}</div>${typeof goalVerdictPill==='function'?`<div style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">${goalVerdictPill(k)}${(()=>{const gh=computeGoalHealth(k);if(!gh||gh.monthlyRequired==null||gh.remaining<=0)return '';return `<span style="font-size:10px;color:var(--t3)">Need <strong style="color:var(--t2)">${fmtD(gh.monthlyRequired)}/mo</strong>${gh.monthlyPace>0?` · at <strong style="color:${gh.monthlyPace>=gh.monthlyRequired?'var(--acc)':'var(--y)'}">${fmtD(gh.monthlyPace)}/mo</strong>`:''}</span>`;})()}</div>`:''}<div style="display:flex;gap:6px;margin-top:8px"><input type="number" id="gi-${k}" class="inp" placeholder="Add $" style="margin:0;flex:1" min="0" step="10"><button class="btn btn-acc btn-sm" onclick="addToGoal('${k}')">Add</button><button class="btn btn-ghost btn-sm" onclick="openGoalDetail('${k}')">Details</button></div>${log?`<div style="margin-top:5px">${log}</div>`:''}</div>`;
   });
   document.getElementById('goal-items').innerHTML=html;
   buildGoalsTotals();
@@ -6767,7 +7025,7 @@ function addToGoal(k){
   const el=document.getElementById('gi-'+k);const v=parseFloat(el.value);if(!v||v<=0)return;
   const prevPct=pct(S.goalState[k].saved,GCFG[k].target);
   S.goalState[k].saved+=v;
-  S.goalState[k].log.push({amount:v,date:new Date().toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'2-digit'})});
+  S.goalState[k].log.push({amount:v,date:new Date().toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'2-digit'}),ts:Date.now()});
   el.value='';
   const newPct=pct(S.goalState[k].saved,GCFG[k].target);
   checkMilestone(k,prevPct,newPct);
