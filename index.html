@@ -1638,9 +1638,34 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.7';
+const APP_VERSION='2.7.8';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.8',
+    date:'2026-07-14',
+    title:'Dashboard synthesis — the briefing that pulls it together',
+    sections:{
+      features:[
+        '📋 Today briefing rewritten as a proper synthesis. Pulls together goal health, upcoming dividends, next paycheck ETA, portfolio verdict, spending status, and urgent alerts — into one prioritised list at the top of the dashboard',
+        'At-a-glance strip shows net worth, invested amount (with % gain vs cost), and liquid cash on one line',
+        'Next paycheck ETA calculated from your actual pay history — looks at the interval between your last two pays and projects the next one',
+        'Next dividend expected — surfaces the soonest projected payment within the next 45 days, using the v2.7.0 payment-based projections (falls back to yield estimate if no history)',
+        'Portfolio verdict — surfaces a positive item when you\'re up 3%+ vs cost, or a warning when down 5%+',
+        'Goal insights use the v2.7.7 intelligence layer directly — behind-pace goals show exactly how much extra per month you\'d need',
+        'Complete goals get a celebration line with a suggestion to raise the target'
+      ],
+      improvements:[
+        'Priority scoring is now four-tone (urgent red · warning amber · upcoming blue · positive green) with matching left border on each item',
+        'Shows up to 6 items (was 4), with a "+N more" note when there\'s additional lower-priority news',
+        'Each item is tappable and jumps to the relevant page for action',
+        'Uses central compute functions (computeGoalHealth, computeUpcomingDividendsV2, monthIncome, etc.) so briefing lines never drift from what the rest of the app shows'
+      ],
+      fixes:[
+        'Removed the legacy goalPace() shortcut (superseded by computeGoalHealth in v2.7.7)'
+      ]
+    }
+  },
   {
     v:'2.7.7',
     date:'2026-07-14',
@@ -5120,6 +5145,223 @@ function buildGoalIntelligenceCard(goalKey){
   </div>`;
 }
 
+// ═══════════════════════════════════════════════════════════
+// v2.7.8 — DASHBOARD SYNTHESIS (Today briefing v2)
+// One source of truth for "how am I doing right now?"
+// Pulls together goal health, upcoming dividends, next paycheck,
+// portfolio verdict, spending status, and urgent alerts.
+// ═══════════════════════════════════════════════════════════
+
+// Estimate next paycheck arrival from job pay history
+function estimateNextPaycheck(){
+  if(!Array.isArray(S.jobs))return null;
+  if(typeof recentPaysForJob!=='function')return null;
+  const now=new Date();
+  const candidates=[];
+  S.jobs.filter(j=>j.active).forEach(j=>{
+    const recent=recentPaysForJob(j.id,4);
+    if(!recent.length)return;
+    // Use the most recent pay to project the next one
+    const lastDate=new Date(recent[0].date+'T00:00:00');
+    // Calculate typical interval from history if we have 2+ pays
+    let intervalDays;
+    if(recent.length>=2){
+      const prev=new Date(recent[1].date+'T00:00:00');
+      intervalDays=Math.round((lastDate-prev)/(1000*60*60*24));
+      // Sanity check — fall back to configured frequency if interval is odd
+      if(intervalDays<3||intervalDays>60){
+        intervalDays=j.payFrequency==='weekly'?7:j.payFrequency==='fortnightly'?14:j.payFrequency==='monthly'?30:14;
+      }
+    }else{
+      intervalDays=j.payFrequency==='weekly'?7:j.payFrequency==='fortnightly'?14:j.payFrequency==='monthly'?30:14;
+    }
+    const nextDate=new Date(lastDate.getTime()+intervalDays*24*60*60*1000);
+    const daysAway=Math.ceil((nextDate-now)/(1000*60*60*24));
+    candidates.push({label:j.label,daysAway,amount:recent[0].amt,intervalDays,jobId:j.id});
+  });
+  candidates.sort((a,b)=>a.daysAway-b.daysAway);
+  return candidates.find(c=>c.daysAway>=0)||null;
+}
+
+// Central compute: all briefing items with priority scoring.
+// Priority scale: 0=urgent red, 1-2=warning amber, 3=upcoming blue, 4-6=positive green
+function computeBriefingItems(){
+  const items=[];
+  const now=new Date();
+  const todayStr=today();
+
+  // ── URGENT (0) ─────────────────────────────────────────
+  // Bills due today or overdue
+  const duePend=(S.pendingTxns||[]).filter(p=>p.dueDate&&p.dueDate<=todayStr);
+  if(duePend.length){
+    const tot=duePend.reduce((a,p)=>a+(p.dir==='in'?0:p.amount),0);
+    items.push({pri:0,tone:'alert',icon:'⏰',text:`${duePend.length} bill${duePend.length>1?'s':''} due today · ${fmtD(tot)}`,action:"showPgFromMore('recurring')"});
+  }
+  // Account can't cover pending debits
+  ['westpac','macquarie'].forEach(a=>{
+    const bal=calcBal(a);
+    const pendOut=(S.pendingTxns||[]).filter(p=>p.acct===a).reduce((s,p)=>s+(p.dir==='in'?-p.amount:p.amount),0);
+    if(pendOut>0&&bal<pendOut){
+      items.push({pri:0,tone:'alert',icon:'⚠',text:`${a==='westpac'?'Westpac':'Macquarie'} short by ${fmtD(pendOut-bal)} for pending debits`,action:"showPg('txns',document.querySelectorAll('.nb')[1])"});
+    }
+  });
+
+  // ── WARNING (1-2) ──────────────────────────────────────
+  // Over weekly variable spend budget
+  const ws=weekSpend(),wb=S.sliders?.spend||0;
+  if(wb>0){
+    if(ws>wb){
+      items.push({pri:1,tone:'warning',icon:'📉',text:`Over weekly budget by ${fmtD(ws-wb)} (${fmtD(ws)} of ${fmtD(wb)})`,action:"showPgFromMore('analytics')"});
+    }else if(ws>wb*0.85){
+      items.push({pri:2,tone:'warning',icon:'📊',text:`${fmtD(wb-ws)} of weekly budget left`,action:"showPgFromMore('analytics')"});
+    }
+  }
+  // Undistributed pay
+  ['fulltime','kmart'].forEach(src=>{
+    if(typeof pendingIncome!=='function')return;
+    const inc=pendingIncome(src);
+    if(inc.length){
+      const tot=inc.reduce((a,t)=>a+t.amt,0);
+      const label=S.paydaySources?.[src]?.label||src;
+      items.push({pri:2,tone:'warning',icon:'💰',text:`${fmtD(tot)} from ${label} awaiting distribution`,action:"showPgFromMore('payday')"});
+    }
+  });
+  // Behind-pace goals (using v2.7.7 intelligence)
+  if(typeof computeGoalHealth==='function'){
+    Object.keys(GCFG).forEach(k=>{
+      const h=computeGoalHealth(k);if(!h)return;
+      if(h.verdict==='behind'&&h.suggestedExtra){
+        items.push({pri:2,tone:'warning',icon:'🎯',text:`${h.cfg.label} behind pace · add ${fmtD(h.suggestedExtra)}/mo to catch up`,action:`openGoalDetail('${k}')`});
+      }else if(h.verdict==='stalled'&&h.remaining>0&&h.daysRemaining!=null&&h.daysRemaining>0){
+        items.push({pri:2,tone:'warning',icon:'🎯',text:`${h.cfg.label} stalled · nothing added in 90 days`,action:`openGoalDetail('${k}')`});
+      }
+    });
+  }
+
+  // ── UPCOMING (3) ───────────────────────────────────────
+  // Next paycheck ETA
+  const nextPay=estimateNextPaycheck();
+  if(nextPay&&nextPay.daysAway>=0&&nextPay.daysAway<=10){
+    const when=nextPay.daysAway===0?'today':nextPay.daysAway===1?'tomorrow':`in ${nextPay.daysAway} days`;
+    items.push({pri:3,tone:'info',icon:'💼',text:`${nextPay.label} paycheck ${when}${nextPay.amount?` · ~${fmtD(nextPay.amount)}`:''}`,action:"showPgFromMore('jobs')"});
+  }
+  // Next dividend expected
+  if(typeof computeUpcomingDividendsV2==='function'){
+    const upcoming=computeUpcomingDividendsV2();
+    const soon=upcoming.filter(u=>{
+      const daysAway=Math.ceil((new Date(u.date+'T12:00:00')-now)/(1000*60*60*24));
+      return daysAway>0&&daysAway<=45;
+    });
+    if(soon.length){
+      const next=soon[0];
+      const daysAway=Math.ceil((new Date(next.date+'T12:00:00')-now)/(1000*60*60*24));
+      const when=daysAway<=7?`${daysAway} day${daysAway===1?'':'s'}`:`${Math.round(daysAway/7)} weeks`;
+      items.push({pri:3,tone:'info',icon:'💎',text:`${next.ticker} dividend in ${when} · ~${fmtD(next.amount)}${next.hasHistory?'':' (est.)'}`,action:"showPgFromMore('dividends')"});
+    }
+  }
+
+  // ── POSITIVE (4-6) ─────────────────────────────────────
+  // Strong savings rate this month
+  const incM=(typeof monthIncome==='function')?monthIncome():0;
+  const spentM=(typeof monthSpend==='function')?monthSpend():0;
+  const sr=incM>0?Math.round((incM-spentM)/incM*100):0;
+  if(sr>=40&&incM>0){
+    items.push({pri:4,tone:'ok',icon:'✅',text:`Strong savings rate this month: ${sr}%`,action:null});
+  }
+  // Portfolio positive verdict
+  const total=(typeof portTotal==='function')?portTotal():0;
+  const cost=(typeof portCostBasis==='function')?portCostBasis():0;
+  if(cost>0&&total>cost){
+    const gainPct=(total-cost)/cost*100;
+    if(gainPct>=3){
+      items.push({pri:5,tone:'ok',icon:'📈',text:`Portfolio up ${gainPct.toFixed(1)}% vs cost (+${fmtD(total-cost)})`,action:"showPgFromMore('invest')"});
+    }
+  }else if(cost>0&&total<cost*0.95){
+    const lossPct=(cost-total)/cost*100;
+    items.push({pri:3,tone:'warning',icon:'📉',text:`Portfolio down ${lossPct.toFixed(1)}% vs cost (${fmtD(total-cost)})`,action:"showPgFromMore('invest')"});
+  }
+  // Near a net worth milestone
+  const nw=(typeof portTotal==='function'&&typeof calcBal==='function')?(portTotal()+calcBal('westpac')+calcBal('macquarie')):0;
+  const NWMS=typeof NW_MILESTONES!=='undefined'?NW_MILESTONES:[];
+  const nextMs=NWMS.find(m=>nw<m);
+  if(nextMs&&(nextMs-nw)<nextMs*0.05){
+    items.push({pri:4,tone:'ok',icon:'🏆',text:`${fmtDI(nextMs)} net worth milestone · only ${fmtD(nextMs-nw)} to go`,action:null});
+  }
+  // Ahead-of-pace goal
+  if(typeof computeGoalHealth==='function'){
+    Object.keys(GCFG).forEach(k=>{
+      const h=computeGoalHealth(k);
+      if(h&&h.verdict==='ahead'){
+        items.push({pri:6,tone:'ok',icon:'⭐',text:`${h.cfg.label} ahead of pace`,action:`openGoalDetail('${k}')`});
+      }
+    });
+  }
+  // Complete goals worth celebrating
+  if(typeof computeGoalHealth==='function'){
+    Object.keys(GCFG).forEach(k=>{
+      const h=computeGoalHealth(k);
+      if(h&&h.verdict==='complete'&&h.saved>=h.target){
+        items.push({pri:6,tone:'ok',icon:'🎉',text:`${h.cfg.label} reached · consider raising the target`,action:`openGoalDetail('${k}')`});
+      }
+    });
+  }
+
+  items.sort((a,b)=>a.pri-b.pri);
+  return items;
+}
+
+// ── The rewritten briefing widget ──────────────────────────
+function buildDashBriefing(){
+  const el=document.getElementById('dash-briefing');if(!el)return;
+  const items=computeBriefingItems();
+
+  // "At a glance" line at the top
+  const total=(typeof portTotal==='function')?portTotal():0;
+  const wp=(typeof calcBal==='function')?calcBal('westpac'):0;
+  const mq=(typeof calcBal==='function')?calcBal('macquarie'):0;
+  const nw=total+wp+mq;
+  const cost=(typeof portCostBasis==='function')?portCostBasis():0;
+  const gainPct=cost>0?((total-cost)/cost*100):0;
+  const glance=`<div style="display:flex;gap:12px;padding:9px 12px;background:var(--bg3);border-radius:10px;margin-bottom:10px;font-size:11px;color:var(--t2);flex-wrap:wrap;line-height:1.5">
+    <span><strong style="color:var(--t)">${fmtDI(nw)}</strong> net worth</span>
+    <span style="color:var(--t3)">·</span>
+    <span><strong style="color:var(--t)">${fmtDI(total)}</strong> invested${cost>0?` <span style="color:${gainPct>=0?'var(--acc)':'var(--r)'}">(${gainPct>=0?'+':''}${gainPct.toFixed(1)}%)</span>`:''}</span>
+    <span style="color:var(--t3)">·</span>
+    <span><strong style="color:var(--t)">${fmtDI(wp+mq)}</strong> liquid</span>
+  </div>`;
+
+  if(!items.length){
+    el.innerHTML=`<div class="card" style="border-color:var(--accd2);background:linear-gradient(180deg,var(--bg2),rgba(0,229,153,.03))">
+      <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 2"/></svg>Today</div><span style="font-size:10px;color:var(--t3)">${new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'short'})}</span></div>
+      ${glance}
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 4px"><div style="font-size:22px">✨</div><div><div style="font-size:13px;font-weight:700;color:var(--t)">All on track</div><div style="font-size:11px;color:var(--t3)">Nothing needs your attention right now.</div></div></div>
+    </div>`;
+    return;
+  }
+
+  // Take up to 6 items, but always at least 1 positive if there's room and one exists
+  const urgent=items.filter(i=>i.pri<=2);
+  const positive=items.filter(i=>i.pri>=4);
+  const upcoming=items.filter(i=>i.pri===3);
+  // Prioritise: all urgent, then upcoming, then top positive — cap at 6
+  let top=[...urgent,...upcoming,...positive].slice(0,6);
+  if(!top.length)top=items.slice(0,6);
+
+  const priBorder=p=>p<=1?'var(--r)':p<=2?'var(--y)':p===3?'var(--b)':'var(--acc)';
+  el.innerHTML=`<div class="card" style="border-color:var(--bdr2)">
+    <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 2"/></svg>Today</div><span style="font-size:10px;color:var(--t3)">${new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'short'})}</span></div>
+    ${glance}
+    <div style="display:flex;flex-direction:column;gap:6px">
+    ${top.map(it=>`<div onclick="${it.action||''}" style="display:flex;align-items:flex-start;gap:10px;padding:9px 11px;background:var(--bg3);border-radius:9px;border-left:3px solid ${priBorder(it.pri)};${it.action?'cursor:pointer':''}">
+      <div style="font-size:15px;line-height:1.2;flex-shrink:0">${it.icon}</div>
+      <div style="font-size:12px;color:var(--t);line-height:1.45;flex:1">${it.text}</div>
+      ${it.action?'<div style="color:var(--t3);font-size:14px;flex-shrink:0">›</div>':''}
+    </div>`).join('')}
+    </div>
+    ${items.length>top.length?`<div style="text-align:center;margin-top:8px;font-size:10px;color:var(--t3)">+${items.length-top.length} more insight${items.length-top.length===1?'':'s'} — priorities shown</div>`:''}
+  </div>`;
+}
+
 function launchApp(){
   document.getElementById('setup').style.display='none';
   const app=document.getElementById('app');app.style.display='flex';
@@ -6188,110 +6430,8 @@ function validateAndRestore(jsonStr){
 // SMART DASHBOARD — "Today" briefing (v1.2.0)
 // Scores items by urgency and surfaces the top few.
 // ═══════════════════════════════════════════════════════════
-function buildDashBriefing(){
-  const el=document.getElementById('dash-briefing');if(!el)return;
-  const items=[];
-  // ── URGENT (red) ──
-  // Pending bills due today or overdue
-  const pend=S.pendingTxns||[];
-  const todayStr=today();
-  const duePend=pend.filter(p=>p.dueDate&&p.dueDate<=todayStr);
-  if(duePend.length){
-    const tot=duePend.reduce((a,p)=>a+(p.dir==='in'?0:p.amount),0);
-    items.push({pri:0,icon:'📌',text:`${duePend.length} pending bill${duePend.length>1?'s':''} due (${fmtD(tot)}) — confirm once paid`,action:"showPgFromMore('recurring')"});
-  }
-  // Account can't cover its pending debits
-  ['westpac','macquarie'].forEach(a=>{
-    const bal=calcBal(a);const pendOut=pend.filter(p=>p.acct===a).reduce((s,p)=>s+(p.dir==='in'?-p.amount:p.amount),0);
-    if(pendOut>0&&bal<pendOut){
-      items.push({pri:0,icon:'⚠️',text:`${a==='westpac'?'Westpac':'Macquarie'} may not cover pending debits (${fmtD(bal)} vs ${fmtD(pendOut)})`,action:"showPg('txns',document.querySelectorAll('.nb')[1])"});
-    }
-  });
-  // Over variable budget this week
-  const ws=weekSpend(),wb=S.sliders.spend;
-  if(ws>wb){
-    items.push({pri:1,icon:'🔴',text:`Over weekly spending budget by ${fmtD(ws-wb)} (${fmtD(ws)} of ${fmtD(wb)})`,action:"showPgFromMore('analytics')"});
-  }else if(ws>wb*0.85){
-    items.push({pri:2,icon:'🟡',text:`Close to weekly budget — ${fmtD(wb-ws)} left of ${fmtD(wb)}`,action:"showPgFromMore('analytics')"});
-  }
-  // ── ATTENTION (amber) ──
-  // Undistributed pay sitting in the queue
-  ['fulltime','kmart'].forEach(src=>{
-    if(typeof pendingIncome!=='function')return;
-    const inc=pendingIncome(src);
-    if(inc.length){
-      const tot=inc.reduce((a,t)=>a+t.amt,0);
-      const label=S.paydaySources?.[src]?.label||src;
-      items.push({pri:2,icon:'💰',text:`${fmtD(tot)} from ${label} awaiting distribution`,action:"showPgFromMore('payday')"});
-    }
-  });
-  // Goal pace — behind schedule
-  Object.entries(GCFG).forEach(([k,g])=>{
-    const st=S.goalState[k];if(!st)return;
-    const pace=goalPace(k,g,st);
-    if(pace&&pace.status==='behind'){
-      items.push({pri:2,icon:'🎯',text:`${g.label} is behind pace — needs ${fmtD(pace.neededPerMonth)}/mo to hit ${g.due||'target'}`,action:null});
-    }
-  });
-  // ── POSITIVE (green) ──
-  const inc=monthIncome(),spent=monthSpend(),sr=inc>0?Math.round((inc-spent)/inc*100):0;
-  if(sr>=40){items.push({pri:5,icon:'🟢',text:`Strong savings rate this month: ${sr}%`,action:null});}
-  // Near a net worth milestone
-  const nw=portTotal()+calcBal('westpac')+calcBal('macquarie');
-  const nextMs=(typeof NW_MILESTONES!=='undefined'?NW_MILESTONES:[]).find(m=>nw<m);
-  if(nextMs&&(nextMs-nw)<nextMs*0.05){
-    items.push({pri:4,icon:'🏆',text:`Almost at ${fmtDI(nextMs)} net worth — only ${fmtD(nextMs-nw)} to go!`,action:"showPgFromMore('debts')"});
-  }
-  // On-track goal (show one positive if room)
-  Object.entries(GCFG).forEach(([k,g])=>{
-    const st=S.goalState[k];if(!st)return;
-    const pace=goalPace(k,g,st);
-    if(pace&&pace.status==='ahead'){
-      items.push({pri:5,icon:'✅',text:`${g.label} is ahead of schedule`,action:null});
-    }
-  });
+// (Legacy buildDashBriefing + goalPace removed in v2.7.8 — see synthesis module above)
 
-  // Sort by priority, take top 4
-  items.sort((a,b)=>a.pri-b.pri);
-  const top=items.slice(0,4);
-  if(!top.length){
-    el.innerHTML=`<div class="card" style="border-color:var(--accd2);background:linear-gradient(180deg,var(--bg2),rgba(0,229,153,.03))">
-      <div style="display:flex;align-items:center;gap:10px"><div style="font-size:22px">✨</div><div><div style="font-size:13px;font-weight:700;color:var(--t)">All on track</div><div style="font-size:11px;color:var(--t3)">Nothing needs your attention right now.</div></div></div>
-    </div>`;
-    return;
-  }
-  const priColor=p=>p<=1?'var(--r)':p<=3?'var(--y)':'var(--acc)';
-  el.innerHTML=`<div class="card" style="border-color:var(--bdr2)">
-    <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 2"/></svg>Today</div><span style="font-size:10px;color:var(--t3)">${new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'short'})}</span></div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-    ${top.map(it=>`<div onclick="${it.action||''}" style="display:flex;align-items:flex-start;gap:10px;padding:9px 11px;background:var(--bg3);border-radius:9px;border-left:3px solid ${priColor(it.pri)};${it.action?'cursor:pointer':''}">
-      <div style="font-size:15px;line-height:1.2">${it.icon}</div>
-      <div style="font-size:12px;color:var(--t);line-height:1.45;flex:1">${it.text}</div>
-      ${it.action?'<div style="color:var(--t3);font-size:14px">›</div>':''}
-    </div>`).join('')}
-    </div>
-  </div>`;
-}
-// Goal pace calculator — is this goal on track for its deadline?
-function goalPace(key,g,st){
-  const due=GOAL_DEADLINES[key];
-  if(!due)return null;
-  const now=new Date();
-  const monthsLeft=Math.max(0,(due-now)/(1000*60*60*24*30.44));
-  const remaining=g.target-st.saved;
-  if(remaining<=0)return{status:'ahead',neededPerMonth:0};
-  if(monthsLeft<0.5)return{status:'behind',neededPerMonth:remaining};
-  const neededPerMonth=remaining/monthsLeft;
-  // Estimate current monthly contribution rate from goal log (last 90 days)
-  const log=st.log||[];
-  const cutoff=new Date(now.getTime()-90*24*60*60*1000);
-  const recent=log.filter(l=>{try{return new Date(l.date+'T12:00:00')>=cutoff;}catch{return false;}});
-  const recentTotal=recent.reduce((a,l)=>a+(l.amt||0),0);
-  const monthlyRate=recent.length?recentTotal/3:0; // ~3 months
-  if(monthlyRate>=neededPerMonth*0.95)return{status:'ahead',neededPerMonth};
-  if(monthlyRate>=neededPerMonth*0.6)return{status:'ontrack',neededPerMonth};
-  return{status:'behind',neededPerMonth};
-}
 const GOAL_DEADLINES={
   emergency:null,
   holiday:new Date(2026,10,1),
