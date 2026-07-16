@@ -713,6 +713,19 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .hld-right{text-align:right;flex-shrink:0}
 .hld-val{font-size:14px;font-weight:700;font-family:var(--mono)}
 .hld-gain{font-size:11px;font-family:var(--mono);margin-top:2px}
+/* v2.7.10 — V4 glass card holdings */
+.hld-card{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad);margin-bottom:8px;cursor:pointer;transition:border-color var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out);position:relative}
+.hld-card:hover{border-color:var(--bdr-acc2)}
+.hld-card:active{transform:scale(.99)}
+.hld-tk-circle{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;font-weight:700;letter-spacing:-.2px;border:0.5px solid rgba(255,255,255,.08)}
+.hld-card-main{flex:1;min-width:0}
+.hld-card-name{font-size:13px;font-weight:700;color:var(--t);line-height:1.2;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.hld-card-full{font-size:10px;font-weight:400;color:var(--t3)}
+.hld-card-meta{font-size:11px;color:var(--t2);margin-top:3px;font-variant-numeric:tabular-nums}
+.hld-card-weight{font-size:9px;color:var(--t3);margin-top:2px}
+.hld-card-right{text-align:right;flex-shrink:0}
+.hld-card-val{font-size:15px;font-weight:700;color:var(--t);font-variant-numeric:tabular-nums;letter-spacing:-.2px}
+.hld-card-gain{font-size:10px;margin-top:3px;font-weight:500}
 /* ── ATO TAX ── */
 .tax-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--bdr);font-size:12px}.tax-row:last-child{border:none}
 .tax-label{color:var(--t2);flex:1}.tax-val{font-family:var(--mono);font-weight:700;color:var(--t);text-align:right}
@@ -959,6 +972,24 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
     <div class="pg" id="pg-invest">
       <!-- Portfolio value hero -->
       <div class="hero" id="inv-hero"></div>
+
+      <!-- v2.7.10: Interactive portfolio trend -->
+      <div class="card" style="padding:16px 14px 12px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;padding:0 4px">
+          <div>
+            <div style="font-size:10px;color:var(--t3);letter-spacing:.16em;font-weight:600;text-transform:uppercase">TREND</div>
+            <div id="inv-trend-val" style="font-size:24px;font-weight:700;color:var(--t);letter-spacing:-.8px;margin-top:4px;font-variant-numeric:tabular-nums">—</div>
+            <div id="inv-trend-sub" style="font-size:11px;color:var(--t2);margin-top:2px">Last 6 months</div>
+          </div>
+          <div style="display:flex;background:rgba(255,255,255,.03);border-radius:12px;padding:2px;gap:2px;flex-shrink:0">
+            <button class="inv-trend-tab inv-trend-tab-active" data-mode="value" onclick="switchInvTrendMode('value')" style="background:var(--accd);color:var(--acc);border:none;border-radius:10px;padding:5px 10px;font-size:10px;font-weight:600;cursor:pointer;font-family:var(--sans)">Value</button>
+            <button class="inv-trend-tab" data-mode="contrib" onclick="switchInvTrendMode('contrib')" style="background:transparent;color:var(--t2);border:none;border-radius:10px;padding:5px 10px;font-size:10px;font-weight:500;cursor:pointer;font-family:var(--sans)">Contributions</button>
+          </div>
+        </div>
+        <div style="position:relative;height:170px;touch-action:pan-y">
+          <canvas id="inv-trend-canvas" style="width:100%;height:100%;display:block;cursor:crosshair"></canvas>
+        </div>
+      </div>
 
       <!-- Sync / import bar -->
       <div class="card">
@@ -1685,9 +1716,32 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.9';
+const APP_VERSION='2.7.10';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.10',
+    date:'2026-07-14',
+    title:'Investments page redesign + trends chart fix',
+    sections:{
+      features:[
+        '📈 Investments page rebuilt in the V4 design language. Bigger hero with cost basis + estimated dividends stacked on the right, gain % as a colored pill under the main value',
+        'Holdings now render as glass panel cards — ticker circle badge (mint for US, amber for ASX, teal for others), holding name + full description, units/avg cost line, weight, and gain in a right column',
+        'New interactive Portfolio Trend chart at the top of the invest page — same drag-to-interpolate mechanic as the dashboard trends chart, but toggleable between Value (area) and Contributions (cumulative money-in area)',
+        'Portfolio value trend shows the reconstructed historical value walking back from current value minus contributions since'
+      ],
+      improvements:[
+        'Hero uses tabular-nums for all currency amounts so digits align',
+        'Estimated dividends now uses the v2.7.0 payment-based projector (`projectAnnualDivForHolding`) instead of yield-only estimates. Includes yield % under the amount',
+        'FX tag simplified to "FX 0.653" (drops the "1 USD =" prefix when space is tight)',
+        'Holdings cards have a subtle scale animation on tap (0.99) for tactile feedback'
+      ],
+      fixes:[
+        '🐛 **Dashboard trends chart no longer shows a flat line.** Previous logic fell back to current NW for every month when `nwHistory` was sparse. Now it reconstructs historical NW from your transaction ledger + contribution series: walks back from current values by subtracting inflows and contributions since each month. Shows the real growth curve using data the app already has',
+        'Income mode of the trends chart now correctly sums transactions with `t.amt` field (was reading non-existent `.amount`)'
+      ]
+    }
+  },
   {
     v:'2.7.9',
     date:'2026-07-14',
@@ -5698,48 +5752,51 @@ function computeTrendsData(mode){
   const now=new Date();
   const months=[];
   for(let i=6;i>=0;i--){
-    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    const d=new Date(now.getFullYear(),now.getMonth()-i+1,0); // last day of month
     months.push({
       key:d.toISOString().slice(0,7),
       label:d.toLocaleDateString('en-AU',{month:'short'}),
+      endDate:d.toISOString().slice(0,10),
       date:d
     });
   }
   if(mode==='nw'){
-    // Pick the last nwHistory entry per month, else fall back to first available
-    const hist=(S.nwHistory||[]).slice();
+    // Walk back from CURRENT values by subtracting net inflows since each month end.
+    // For invested: subtract contributions since (cost basis) — this underestimates market
+    // gains but is far more truthful than a flat line, and matches what "cash accumulated" means.
+    const currentWp=(typeof calcBal==='function')?calcBal('westpac'):0;
+    const currentMq=(typeof calcBal==='function')?calcBal('macquarie'):0;
+    const currentInvested=(typeof portTotal==='function')?portTotal():0;
+    const txns=S.transactions||[];
+    const contribSeries=(typeof computeContributionSeries==='function')?computeContributionSeries():[];
     const data=months.map(m=>{
-      const inMonth=hist.filter(h=>h.date&&h.date.startsWith(m.key));
-      let v=null;
-      if(inMonth.length){v=inMonth[inMonth.length-1].nw;}
-      else{
-        // Use closest prior entry
-        const prior=hist.filter(h=>h.date&&h.date<m.key+'-32');
-        if(prior.length)v=prior[prior.length-1].nw;
-      }
-      return{d:m.label,v:v||0,ts:m.date};
+      // Net cash flow that happened AFTER month end (positive = inflow)
+      let wpDelta=0,mqDelta=0;
+      txns.forEach(t=>{
+        if(!t.date||t.date<=m.endDate)return;
+        const amt=t.dir==='in'?(t.amt||0):-(t.amt||0);
+        if(t.acct==='westpac')wpDelta+=amt;
+        else if(t.acct==='macquarie')mqDelta+=amt;
+      });
+      // Contributions that happened AFTER month end
+      let contribAfter=0;
+      contribSeries.forEach(c=>{
+        if(c.date&&c.date>m.endDate)contribAfter+=(c.amount||0);
+      });
+      // Historical values = current - what came in since
+      const wpBal=currentWp-wpDelta;
+      const mqBal=currentMq-mqDelta;
+      const invested=Math.max(0,currentInvested-contribAfter);
+      return{d:m.label,v:wpBal+mqBal+invested,ts:m.date};
     });
-    // Fill leading zeros with the first non-zero forward
-    let firstNonZero=data.findIndex(x=>x.v>0);
-    if(firstNonZero>0){for(let i=0;i<firstNonZero;i++)data[i].v=data[firstNonZero].v;}
-    if(firstNonZero===-1){
-      // No history — show flat current NW
-      const nw=(typeof portTotal==='function')?portTotal()+calcBal('westpac')+calcBal('macquarie'):0;
-      data.forEach(x=>x.v=nw);
-    }
     return data;
   }
-  // Income: sum monthly income transactions
+  // Income: sum monthly income transactions (t.dir === 'in')
   const data=months.map(m=>{
     const monthTxns=(S.transactions||[]).filter(t=>t.dir==='in'&&t.date&&t.date.startsWith(m.key));
-    const total=monthTxns.reduce((a,t)=>a+(t.amount||0),0);
+    const total=monthTxns.reduce((a,t)=>a+(t.amt||0),0);
     return{d:m.label,v:total,ts:m.date};
   });
-  // If no data, fall back to synthetic from monthIncome()
-  if(data.every(x=>x.v===0)&&typeof monthIncome==='function'){
-    const mi=monthIncome();
-    data.forEach(x=>x.v=mi);
-  }
   return data;
 }
 
@@ -5784,6 +5841,87 @@ function switchTrendsMode(mode){
     t.style.fontWeight=active?'600':'500';
   });
   mountTrendsChart(mode);
+}
+
+// ═══════════════════════════════════════════════════════════
+// v2.7.10 — INVESTMENTS TREND CHART (value vs contributions)
+// ═══════════════════════════════════════════════════════════
+let _invTrendMode='value';
+
+function computeInvTrendData(mode){
+  const now=new Date();
+  const months=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth()-i+1,0);
+    months.push({
+      key:d.toISOString().slice(0,7),
+      label:d.toLocaleDateString('en-AU',{month:'short'}),
+      endDate:d.toISOString().slice(0,10),
+      date:d
+    });
+  }
+  const contribSeries=(typeof computeContributionSeries==='function')?computeContributionSeries():[];
+  if(mode==='contrib'){
+    // Cumulative contributions up to each month end
+    return months.map(m=>{
+      let total=0;
+      contribSeries.forEach(c=>{
+        if(c.date&&c.date<=m.endDate)total+=(c.amount||0);
+      });
+      return{d:m.label,v:total,ts:m.date};
+    });
+  }
+  // Portfolio value reconstructed = current value - contributions since (cost basis approximation)
+  const currentValue=(typeof portTotal==='function')?portTotal():0;
+  return months.map(m=>{
+    let contribAfter=0;
+    contribSeries.forEach(c=>{
+      if(c.date&&c.date>m.endDate)contribAfter+=(c.amount||0);
+    });
+    return{d:m.label,v:Math.max(0,currentValue-contribAfter),ts:m.date};
+  });
+}
+
+function mountInvTrendChart(mode){
+  _invTrendMode=mode||'value';
+  const canvas=document.getElementById('inv-trend-canvas');
+  if(!canvas)return;
+  destroyInteractiveChart(canvas);
+  const data=computeInvTrendData(_invTrendMode);
+  const valEl=document.getElementById('inv-trend-val');
+  const subEl=document.getElementById('inv-trend-sub');
+  const last=data[data.length-1]||{v:0};
+  const first=data[0]||{v:0};
+  const change=last.v-first.v;
+  const defaultLabel=_invTrendMode==='value'
+    ?(change>=0?`+${fmtD(change)} · 6-mo change`:`${fmtD(change)} · 6-mo change`)
+    :`Money in over 6 months`;
+  const setDefault=()=>{
+    if(valEl)valEl.textContent=fmtD(Math.round(last.v));
+    if(subEl){subEl.textContent=defaultLabel;subEl.style.color=change>=0?'var(--acc)':'var(--r)';}
+  };
+  setDefault();
+  mountInteractiveChart(canvas,{
+    data,
+    mode:'area',
+    onScrub(v,label){
+      if(valEl)valEl.textContent=fmtD(Math.round(v));
+      if(subEl){subEl.textContent=label+' · live';subEl.style.color='var(--t2)';}
+    },
+    onScrubEnd(){setDefault();}
+  });
+}
+
+function switchInvTrendMode(mode){
+  _invTrendMode=mode;
+  document.querySelectorAll('.inv-trend-tab').forEach(t=>{
+    const active=t.dataset.mode===mode;
+    t.classList.toggle('inv-trend-tab-active',active);
+    t.style.background=active?'var(--accd)':'transparent';
+    t.style.color=active?'var(--acc)':'var(--t2)';
+    t.style.fontWeight=active?'600':'500';
+  });
+  mountInvTrendChart(mode);
 }
 
 
@@ -8579,6 +8717,7 @@ function addPurchaseForTicker(ticker){
 
 function buildInvestPage(){
   buildInvHero();
+  setTimeout(()=>mountInvTrendChart('value'),16);
   if(typeof buildRiskCard==='function')buildRiskCard();
   if(typeof buildContributionCard==='function')buildContributionCard();
   buildHoldingsList();
@@ -8602,34 +8741,53 @@ function buildInvHero(){
   const hs=S.holdings||[];
   const hasMigrated=hs.some(h=>h.dataSource==='migration');
   const hasUS=hs.some(h=>h.market==='US');
+  // Annual dividend projection using the v2.7.0 payment-based projector
+  let annualDiv=0;
+  if(typeof projectAnnualDivForHolding==='function'){
+    hs.forEach(h=>{annualDiv+=projectAnnualDivForHolding(h)||0;});
+  }else if(typeof annDiv==='function'){
+    annualDiv=annDiv();
+  }
+  const yieldPct=val>0?(annualDiv/val*100):0;
   // Price freshness
   const p=(typeof latestPriceUpdate==='function')?latestPriceUpdate():{latest:null,stale:0,total:0};
   let freshTag='';
   if(p.total>0){
     if(p.stale===p.total){
-      freshTag=`<span class="tag tr" style="font-size:8px">Prices may be stale · tap Sync manually</span>`;
+      freshTag=`<span class="tag tr" style="font-size:8px">Prices may be stale · tap Sync</span>`;
     }else if(p.stale>0){
-      freshTag=`<span class="tag ty" style="font-size:8px">${p.stale} of ${p.total} prices stale</span>`;
+      freshTag=`<span class="tag ty" style="font-size:8px">${p.stale} of ${p.total} stale</span>`;
     }else if(p.latest){
       freshTag=`<span class="tag tg" style="font-size:8px">Prices fresh · ${timeAgo(p.latest)}</span>`;
     }
   }
   el.innerHTML=`
-    <div class="hero-l">Portfolio value <span style="font-size:9px;opacity:.7">AUD</span></div>
-    <div class="hero-v">${fmtD(val)}</div>
-    <div style="display:flex;align-items:baseline;gap:12px;margin-top:8px;position:relative;z-index:1">
-      <div style="font-size:20px;font-weight:800;font-family:var(--mono);color:${up?'var(--acc)':'var(--r)'}">${up?'+':''}${fmtD(pnl)}</div>
-      <div style="font-size:14px;font-weight:700;font-family:var(--mono);color:${up?'var(--acc)':'var(--r)'}">${up?'+':''}${pnlPct.toFixed(2)}%</div>
-    </div>
-    <div style="display:flex;gap:8px;margin-top:4px;font-size:11px;color:var(--t2);position:relative;z-index:1;flex-wrap:wrap">
-      <span>Invested ${fmtD(cost)}</span>
-      ${hasUS?'<span>· FX 1 USD = '+fxUsdAud().toFixed(3)+' AUD</span>':''}
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;position:relative;z-index:1">
+      <div style="flex:1;min-width:0">
+        <div class="hero-l">Portfolio value <span style="font-size:9px;opacity:.7">AUD</span></div>
+        <div class="hero-v">${fmtD(val)}</div>
+        ${hasMigrated?'':`<div style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:4px 10px;background:${up?'var(--accd)':'var(--rd)'};border-radius:11px">
+          <span style="font-size:11px;font-weight:700;color:${up?'var(--acc)':'var(--r)'};font-variant-numeric:tabular-nums">${up?'+':''}${pnlPct.toFixed(2)}%</span>
+          <span style="font-size:10px;color:var(--t2)">vs cost</span>
+        </div>`}
+      </div>
+      <div style="text-align:right;display:flex;flex-direction:column;gap:12px;padding-top:2px">
+        <div>
+          <div style="font-size:9px;color:var(--t3);letter-spacing:.1em;font-weight:600;text-transform:uppercase">Cost basis</div>
+          <div style="font-size:15px;font-weight:700;color:var(--t);margin-top:2px;font-variant-numeric:tabular-nums">${fmtD(cost)}</div>
+        </div>
+        <div>
+          <div style="font-size:9px;color:var(--t3);letter-spacing:.1em;font-weight:600;text-transform:uppercase">Est. dividends</div>
+          <div style="font-size:15px;font-weight:700;color:var(--b);margin-top:2px;font-variant-numeric:tabular-nums">${fmtD(annualDiv)}<span style="font-size:10px;font-weight:400;color:var(--t3)"> /yr</span></div>
+          ${yieldPct>0?`<div style="font-size:9px;color:var(--t3);margin-top:1px">${yieldPct.toFixed(2)}% yield</div>`:''}
+        </div>
+      </div>
     </div>
     <div class="tag-row">
       <span class="tag tg">${activeHoldings().length} holdings</span>
-      <span class="tag ty">+${fmtDI(annDiv())}/yr est. income</span>
+      ${hasUS?`<span class="tag" style="background:var(--bg3);color:var(--t2)">FX ${fxUsdAud().toFixed(3)}</span>`:''}
       ${freshTag}
-      ${hasMigrated?'<span class="tag tr" style="font-size:8px">estimated — re-import CSV for accuracy</span>':''}
+      ${hasMigrated?'<span class="tag tr" style="font-size:8px">estimated — re-import CSV</span>':''}
     </div>`;
 }
 
@@ -8657,24 +8815,28 @@ function buildHoldingsList(){
     const val=holdingValue(h),cost=holdingCost(h),pnl=holdingPnl(h),pnlPct=holdingPnlPct(h);
     const up=pnl>=0;
     const weight=total>0?Math.round(val/total*100):0;
-    const mkTag=h.market==='ASX'?'<span class="tag ty" style="font-size:8px">ASX</span>':h.market==='US'?'<span class="tag tb" style="font-size:8px">US</span>':'';
     const isMigrated=h.dataSource==='migration';
-    const unitsLabel=h.units!=null?(+h.units).toLocaleString(undefined,{maximumFractionDigits:4})+' units':'—';
-    const priceLabel=h.lastPrice!=null?`@ ${(+h.lastPrice).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:3})} ${h.priceCcy||''}`:'';
+    const unitsLabel=h.units!=null?(+h.units).toLocaleString(undefined,{maximumFractionDigits:4}):'—';
+    const avgCost=h.units>0?(cost/h.units).toFixed(2):null;
+    // Ticker circle color by market
+    const tkColor=h.market==='ASX'?'var(--y)':h.market==='US'?'var(--acc)':'var(--b)';
+    const tkBg=h.market==='ASX'?'rgba(240,160,48,.15)':h.market==='US'?'rgba(0,229,153,.15)':'rgba(90,170,144,.16)';
     let gainDisplay;
     if(isMigrated){
       gainDisplay='<span style="font-size:10px;color:var(--t3)">re-import for P/L</span>';
     }else{
-      gainDisplay=`<span class="${up?'col-acc':'col-r'}">${up?'+':''}${fmtD(pnl)} · ${up?'+':''}${pnlPct.toFixed(2)}%</span>`;
+      gainDisplay=`<span style="color:${up?'var(--acc)':'var(--r)'};font-variant-numeric:tabular-nums">${up?'+':''}${fmtD(pnl)} · ${up?'+':''}${pnlPct.toFixed(1)}%</span>`;
     }
-    return`<div class="hld-row" onclick="openHoldingDetail('${h.id}')" style="cursor:pointer">
-      <div class="hld-main">
-        <div class="hld-tk">${h.ticker} ${mkTag}</div>
-        <div class="hld-sub">${unitsLabel}${priceLabel?' '+priceLabel:''} · ${weight}%</div>
+    return`<div class="hld-card" onclick="openHoldingDetail('${h.id}')">
+      <div class="hld-tk-circle" style="background:${tkBg};color:${tkColor}">${h.ticker.slice(0,4)}</div>
+      <div class="hld-card-main">
+        <div class="hld-card-name">${h.ticker}${h.name?`<span class="hld-card-full">${h.name}</span>`:''}</div>
+        <div class="hld-card-meta">${unitsLabel} units${avgCost?` · ${avgCost} avg`:''}</div>
+        <div class="hld-card-weight">${weight}% of portfolio</div>
       </div>
-      <div class="hld-right">
-        <div class="hld-val">${fmtD(val)}</div>
-        <div class="hld-gain" style="font-size:10px">${gainDisplay}</div>
+      <div class="hld-card-right">
+        <div class="hld-card-val">${fmtD(val)}</div>
+        <div class="hld-card-gain">${gainDisplay}</div>
       </div>
     </div>`;
   }).join('');
