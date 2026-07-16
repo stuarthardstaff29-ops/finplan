@@ -14,17 +14,29 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 :root{
+  /* v2.7.9 — V4 design system tokens */
   --acc:#00e599;--acc2:#00c98a;--acc-glow:#00e599;
   --accd:rgba(0,229,153,.10);--accd2:rgba(0,229,153,.22);--accd3:rgba(0,229,153,.35);
-  --bg:#000000;--bg-grad:#000000;
-  --bg2:#0d0f12;--bg3:#14171c;--bg4:#1a1e25;--bg5:#242932;--bg6:#2d333f;
-  --t:#f2f5f8;--t2:#8b95a4;--t3:#525c6b;--t4:#2c333d;
-  --b:#5cb1ff;--bd:rgba(92,177,255,.10);--bd2:rgba(92,177,255,.22);
-  --y:#f5b13c;--yd:rgba(245,177,60,.10);--yd2:rgba(245,177,60,.22);
-  --r:#ff6b6b;--rd:rgba(255,107,107,.10);--rd2:rgba(255,107,107,.22);
-  --p:#b58aff;--pd:rgba(181,138,255,.10);
-  --o:#ff8c5c;--od:rgba(255,140,92,.10);
-  --bdr:rgba(255,255,255,.05);--bdr2:rgba(255,255,255,.10);--bdr3:rgba(255,255,255,.18);
+  /* Base — dark green-tinted near-black */
+  --bg:#0a120e;--bg-grad:#0a120e;
+  --bg2:#0d1310;--bg3:#101815;--bg4:#141c18;--bg5:#1a231e;--bg6:#232d27;
+  /* Text — warm cream on dark */
+  --t:#f0f4f0;--t2:#7a9a8a;--t3:#5a8a6a;--t4:#3a5a4a;
+  /* Semantic — softer, warmer than before */
+  --b:#5aaa90;--bd:rgba(90,170,144,.10);--bd2:rgba(90,170,144,.22);
+  --y:#f0a030;--yd:rgba(240,160,48,.10);--yd2:rgba(240,160,48,.22);
+  --r:#e56a5a;--rd:rgba(229,106,90,.10);--rd2:rgba(229,106,90,.22);
+  --p:#a090f0;--pd:rgba(160,144,240,.10);
+  --o:#f0a060;--od:rgba(240,160,96,.10);
+  /* Borders — hairline with mint tint on cards */
+  --bdr:rgba(255,255,255,.05);--bdr2:rgba(255,255,255,.09);--bdr3:rgba(255,255,255,.16);
+  --bdr-acc:rgba(0,229,153,.08);--bdr-acc2:rgba(0,229,153,.15);
+  /* Glass surface treatment */
+  --glass:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015));
+  --glass-strong:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+  --glow-mint:radial-gradient(circle at 20% 30%,rgba(0,229,153,.06) 0%,transparent 65%);
+  --glow-info:radial-gradient(circle at 20% 30%,rgba(90,170,144,.06) 0%,transparent 65%);
+  --glow-warn:radial-gradient(circle at 20% 30%,rgba(240,160,48,.06) 0%,transparent 65%);
   --rad-xs:8px;--rad-sm:12px;--rad:18px;--rad-lg:22px;--rad-xl:28px;--rad-2xl:32px;
   --mono:'JetBrains Mono','IBM Plex Mono',monospace;
   --sans:'Inter',system-ui,-apple-system,sans-serif;
@@ -34,16 +46,22 @@
   --sh-sm:0 1px 2px rgba(0,0,0,.35);
   --sh-md:0 4px 20px rgba(0,0,0,.45);
   --sh-lg:0 12px 40px rgba(0,0,0,.55);
-  --sh-glow:0 0 30px rgba(0,229,153,.28);
+  --sh-glow:0 0 30px rgba(0,229,153,.22);
+  /* Motion tokens */
+  --ease-out:cubic-bezier(.32,.72,0,1);
+  --dur-fast:150ms;--dur-base:250ms;--dur-slow:400ms;
 }
 body.light{
-  --bg:#f7f8fb;--bg-grad:#f7f8fb;
-  --bg2:#ffffff;--bg3:#f5f7fa;--bg4:#edf0f4;--bg5:#e0e5ec;--bg6:#cdd5e0;
-  --t:#0d1b2a;--t2:#475569;--t3:#94a3b8;--t4:#cbd5e1;
-  --bdr:rgba(15,23,42,.06);--bdr2:rgba(15,23,42,.12);--bdr3:rgba(15,23,42,.20);
-  --sh-sm:0 1px 3px rgba(15,23,42,.08);
-  --sh-md:0 4px 12px rgba(15,23,42,.10);
-  --sh-lg:0 12px 32px rgba(15,23,42,.14);
+  --bg:#f4f7f4;--bg-grad:#f4f7f4;
+  --bg2:#ffffff;--bg3:#f0f4f0;--bg4:#e8ede8;--bg5:#dde4de;--bg6:#c8d0c8;
+  --t:#0a120e;--t2:#4a6a5a;--t3:#7a9a8a;--t4:#c8d4c8;
+  --bdr:rgba(10,18,14,.06);--bdr2:rgba(10,18,14,.12);--bdr3:rgba(10,18,14,.20);
+  --bdr-acc:rgba(0,201,138,.16);--bdr-acc2:rgba(0,201,138,.28);
+  --glass:linear-gradient(180deg,rgba(255,255,255,.6),rgba(255,255,255,.3));
+  --glass-strong:linear-gradient(180deg,rgba(255,255,255,.8),rgba(255,255,255,.5));
+  --sh-sm:0 1px 3px rgba(10,18,14,.08);
+  --sh-md:0 4px 12px rgba(10,18,14,.10);
+  --sh-lg:0 12px 32px rgba(10,18,14,.14);
 }
 html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--t);font-family:var(--sans);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 body{display:flex;flex-direction:column;position:fixed;width:100%;height:100%;background:var(--bg-grad)}
@@ -383,19 +401,24 @@ body.ctx-showing .fab{bottom:calc(var(--nav-h) + var(--sb) + 130px);transition:b
 .ai-pg{padding:0}
 
 /* CARDS */
-.card{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--rad);padding:18px;margin-bottom:14px;transition:border-color .2s,transform .2s,box-shadow .2s;box-shadow:var(--sh-sm)}
-.card:hover{border-color:var(--bdr2);box-shadow:var(--sh-md)}
-.card.acc-b{border-color:var(--accd2);background:linear-gradient(180deg,var(--bg2) 0%,rgba(0,229,153,.02) 100%)}
+.card{background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad-lg);padding:18px;margin-bottom:14px;transition:border-color var(--dur-base) var(--ease-out),transform var(--dur-fast) var(--ease-out);position:relative;overflow:hidden}
+.card:hover{border-color:var(--bdr-acc2)}
+.card.acc-b{border-color:var(--bdr-acc2);background:var(--glass-strong)}
+/* Glass hero card with radial mint glow */
+.card.hero{border-color:var(--bdr-acc2);padding:20px;position:relative}
+.card.hero::before{content:'';position:absolute;inset:0;background:var(--glow-mint);pointer-events:none;border-radius:inherit;animation:heroGlow 6s ease-in-out infinite}
+.card.hero>*{position:relative;z-index:1}
+@keyframes heroGlow{0%,100%{opacity:.7}50%{opacity:1}}
 .ctitle{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.14em;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
 .ctitle-l{display:flex;align-items:center;gap:8px}
 .ctitle svg{width:14px;height:14px;stroke:var(--acc);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
 /* METRICS */
 .mg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-.met{background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--rad);padding:14px;transition:transform .15s,border-color .2s}
-.met:hover{border-color:var(--bdr2);transform:translateY(-1px)}
-.ml{font-size:10px;color:var(--t3);margin-bottom:6px;font-weight:500;letter-spacing:.06em;text-transform:uppercase}
-.mv{font-size:22px;font-weight:700;color:var(--t);line-height:1;letter-spacing:-.5px}
+.met{background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad);padding:14px;transition:transform var(--dur-fast) var(--ease-out),border-color var(--dur-base) var(--ease-out)}
+.met:hover{border-color:var(--bdr-acc2);transform:translateY(-1px)}
+.ml{font-size:10px;color:var(--t3);margin-bottom:6px;font-weight:600;letter-spacing:.10em;text-transform:uppercase}
+.mv{font-size:22px;font-weight:700;color:var(--t);line-height:1.05;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
 .ms{font-size:10px;color:var(--t3);margin-top:4px;font-weight:500}
 .col-acc{color:var(--acc)}.col-b{color:var(--b)}.col-y{color:var(--y)}.col-r{color:var(--r)}.col-p{color:var(--p)}.col-o{color:var(--o)}
 
@@ -404,12 +427,36 @@ body.ctx-showing .fab{bottom:calc(var(--nav-h) + var(--sb) + 130px);transition:b
 .tg{background:var(--accd);color:var(--acc)}.tb{background:var(--bd);color:var(--b)}.ty{background:var(--yd);color:var(--y)}.tr{background:var(--rd);color:var(--r)}.tp{background:var(--pd);color:var(--p)}
 
 /* HERO */
-.hero{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--rad-lg);padding:24px 20px;margin-bottom:14px;position:relative;overflow:hidden;box-shadow:var(--sh-sm)}
-.hero::after{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,var(--accd2) 0%,transparent 70%);pointer-events:none}
-.hero-l{font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.14em;margin-bottom:8px;font-weight:600;position:relative;z-index:1}
-.hero-v{font-size:42px;font-weight:700;color:var(--t);letter-spacing:-1.5px;line-height:1;position:relative;z-index:1}
+.hero{background:var(--glass);border:0.5px solid var(--bdr-acc2);border-radius:var(--rad-lg);padding:20px;margin-bottom:14px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:var(--glow-mint);pointer-events:none;border-radius:inherit;animation:heroGlow 6s ease-in-out infinite}
+.hero::after{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(0,229,153,.10) 0%,transparent 70%);pointer-events:none;animation:heroGlow2 8s ease-in-out infinite}
+@keyframes heroGlow2{0%,100%{opacity:.5;transform:translate(0,0)}50%{opacity:.9;transform:translate(-10px,4px)}}
+.hero-l{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.16em;margin-bottom:6px;font-weight:600;position:relative;z-index:1}
+.hero-v{font-size:40px;font-weight:700;color:var(--t);letter-spacing:-1.8px;line-height:1.05;position:relative;z-index:1;font-variant-numeric:tabular-nums}
 .hero-s{font-size:12px;color:var(--t2);margin-top:8px;position:relative;z-index:1;font-weight:500}
 .tag-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px;position:relative;z-index:1}
+
+/* v2.7.9 — TODAY BRIEFING (icon-badge with connecting timeline) */
+.brief-card{background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad-lg);padding:18px 18px 16px;margin-bottom:14px;position:relative;overflow:hidden}
+.brief-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.brief-title{font-size:14px;font-weight:700;color:var(--acc);letter-spacing:-.2px}
+.brief-date{font-size:10px;color:var(--t3);font-weight:500}
+.brief-list{display:flex;flex-direction:column;gap:2px}
+.brief-row{display:flex;gap:12px;padding:6px 0 2px;transition:opacity var(--dur-fast) var(--ease-out)}
+.brief-row-tap{cursor:pointer}
+.brief-row-tap:active{opacity:.6}
+.brief-badge-col{display:flex;flex-direction:column;align-items:center;flex-shrink:0;padding-top:2px}
+.brief-badge{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform var(--dur-fast) var(--ease-out)}
+.brief-row-tap:active .brief-badge{transform:scale(.94)}
+.brief-badge-alert{background:rgba(229,106,90,.14);color:var(--r);border:0.5px solid rgba(229,106,90,.30)}
+.brief-badge-warn{background:rgba(240,160,48,.14);color:var(--y);border:0.5px solid rgba(240,160,48,.30)}
+.brief-badge-info{background:rgba(90,170,144,.14);color:var(--b);border:0.5px solid rgba(90,170,144,.30)}
+.brief-badge-ok{background:rgba(0,229,153,.12);color:var(--acc);border:0.5px solid rgba(0,229,153,.28)}
+.brief-connector{width:1px;flex:1;min-height:14px;background:linear-gradient(180deg,var(--bdr) 0%,transparent 100%);border-left:1px dashed var(--bdr2);margin-top:4px;margin-bottom:2px;opacity:.6}
+.brief-text-col{flex:1;min-width:0;padding-top:3px}
+.brief-headline{font-size:13px;font-weight:600;color:var(--t);line-height:1.35}
+.brief-sub{font-size:11px;color:var(--t2);line-height:1.4;margin-top:2px}
+.brief-more{text-align:center;margin-top:10px;font-size:10px;color:var(--t3);font-weight:500;letter-spacing:.05em}
 
 /* INPUTS */
 .inp{width:100%;background:var(--bg3);border:1px solid var(--bdr2);border-radius:var(--rad-sm);color:var(--t);font-size:14px;padding:11px 13px;font-family:var(--mono);outline:none;-webkit-appearance:none;margin-bottom:10px;transition:all .18s}
@@ -1638,9 +1685,34 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.8';
+const APP_VERSION='2.7.9';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.9',
+    date:'2026-07-14',
+    title:'V4 design system foundation',
+    sections:{
+      features:[
+        '🎨 New design language rolling out across the app — dark green-tinted base (#0a120e), soft cream text (#f0f4f0), refined mint (#00e599) and warm amber (#f0a030) accents. First step of a broader redesign approved from the V4 concept',
+        'Glass panel treatment on all cards — subtle gradient fill with 0.5px hairline mint-tinted borders, larger radius (22px), no shadows. Feels more premium and modern',
+        'Hero cards (net worth, portfolio, etc.) now have an ambient radial mint glow that gently breathes on a 6-8s cycle. The app feels alive without being distracting',
+        '📊 Interactive trends chart on the dashboard — drag your finger across it to see the interpolated value at any point. Vertical guide, glowing dot, live updating value. Toggle between Net worth (area) and Income (bars)',
+        'Reusable interactive chart engine (`mountInteractiveChart`) — will be applied to every chart across the app in coming versions. Same drag interaction everywhere',
+        'Today briefing rebuilt with icon-badge rows and connecting timeline. Each briefing item has a coloured circular icon (alert triangle, dollar bill, dividend chart, savings bars, portfolio trend) that encodes its category at a glance',
+        'Net worth hero now shows a stacked stat column on the right: invested $ with % gain, liquid $, above/below the main number'
+      ],
+      improvements:[
+        'Typography refined — hero numbers now use `font-variant-numeric: tabular-nums` so digits align perfectly. Letter-spacing tightened to -1.8px on display numbers',
+        'Metric cards (`.met`) upgraded to match glass treatment',
+        'Motion tokens defined (`--dur-fast: 150ms`, `--dur-base: 250ms`, `--ease-out: cubic-bezier(.32,.72,0,1)`) so every animation uses consistent timing',
+        'Semantic color updates — `--r` softened from bright red to warmer #e56a5a, `--y` shifted from #f5b13c to #f0a030, `--b` from blue to teal-ish (#5aaa90) to fit the green-tinted palette',
+        'Border tokens now include `--bdr-acc` for mint-tinted hairlines on cards',
+        'Trends chart added to the default dashboard layout — sits between net worth and briefing'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'2.7.8',
     date:'2026-07-14',
@@ -5314,53 +5386,406 @@ function computeBriefingItems(){
 function buildDashBriefing(){
   const el=document.getElementById('dash-briefing');if(!el)return;
   const items=computeBriefingItems();
-
-  // "At a glance" line at the top
-  const total=(typeof portTotal==='function')?portTotal():0;
-  const wp=(typeof calcBal==='function')?calcBal('westpac'):0;
-  const mq=(typeof calcBal==='function')?calcBal('macquarie'):0;
-  const nw=total+wp+mq;
-  const cost=(typeof portCostBasis==='function')?portCostBasis():0;
-  const gainPct=cost>0?((total-cost)/cost*100):0;
-  const glance=`<div style="display:flex;gap:12px;padding:9px 12px;background:var(--bg3);border-radius:10px;margin-bottom:10px;font-size:11px;color:var(--t2);flex-wrap:wrap;line-height:1.5">
-    <span><strong style="color:var(--t)">${fmtDI(nw)}</strong> net worth</span>
-    <span style="color:var(--t3)">·</span>
-    <span><strong style="color:var(--t)">${fmtDI(total)}</strong> invested${cost>0?` <span style="color:${gainPct>=0?'var(--acc)':'var(--r)'}">(${gainPct>=0?'+':''}${gainPct.toFixed(1)}%)</span>`:''}</span>
-    <span style="color:var(--t3)">·</span>
-    <span><strong style="color:var(--t)">${fmtDI(wp+mq)}</strong> liquid</span>
-  </div>`;
-
+  const dateStr=new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'short'});
   if(!items.length){
-    el.innerHTML=`<div class="card" style="border-color:var(--accd2);background:linear-gradient(180deg,var(--bg2),rgba(0,229,153,.03))">
-      <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 2"/></svg>Today</div><span style="font-size:10px;color:var(--t3)">${new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'short'})}</span></div>
-      ${glance}
-      <div style="display:flex;align-items:center;gap:10px;padding:8px 4px"><div style="font-size:22px">✨</div><div><div style="font-size:13px;font-weight:700;color:var(--t)">All on track</div><div style="font-size:11px;color:var(--t3)">Nothing needs your attention right now.</div></div></div>
+    el.innerHTML=`<div class="brief-card">
+      <div class="brief-title-row">
+        <div class="brief-title">Today</div>
+        <div class="brief-date">${dateStr}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 4px 4px">
+        <div class="brief-badge brief-badge-ok"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div><div style="font-size:13px;font-weight:600;color:var(--t)">All on track</div><div style="font-size:11px;color:var(--t3);margin-top:2px">Nothing needs your attention right now.</div></div>
+      </div>
     </div>`;
     return;
   }
-
-  // Take up to 6 items, but always at least 1 positive if there's room and one exists
   const urgent=items.filter(i=>i.pri<=2);
   const positive=items.filter(i=>i.pri>=4);
   const upcoming=items.filter(i=>i.pri===3);
-  // Prioritise: all urgent, then upcoming, then top positive — cap at 6
   let top=[...urgent,...upcoming,...positive].slice(0,6);
   if(!top.length)top=items.slice(0,6);
-
-  const priBorder=p=>p<=1?'var(--r)':p<=2?'var(--y)':p===3?'var(--b)':'var(--acc)';
-  el.innerHTML=`<div class="card" style="border-color:var(--bdr2)">
-    <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 2"/></svg>Today</div><span style="font-size:10px;color:var(--t3)">${new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'short'})}</span></div>
-    ${glance}
-    <div style="display:flex;flex-direction:column;gap:6px">
-    ${top.map(it=>`<div onclick="${it.action||''}" style="display:flex;align-items:flex-start;gap:10px;padding:9px 11px;background:var(--bg3);border-radius:9px;border-left:3px solid ${priBorder(it.pri)};${it.action?'cursor:pointer':''}">
-      <div style="font-size:15px;line-height:1.2;flex-shrink:0">${it.icon}</div>
-      <div style="font-size:12px;color:var(--t);line-height:1.45;flex:1">${it.text}</div>
-      ${it.action?'<div style="color:var(--t3);font-size:14px;flex-shrink:0">›</div>':''}
-    </div>`).join('')}
+  function iconFor(it){
+    if(it.tone==='alert'||it.tone==='warning')return`<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+    if(it.tone==='info'){
+      if(/paycheck|payday|\bpay\b/i.test(it.text))return`<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>`;
+      if(/dividend/i.test(it.text))return`<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`;
+      return`<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
+    }
+    if(/savings rate/i.test(it.text))return`<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>`;
+    if(/portfolio/i.test(it.text))return`<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 6 13.5 14.5 8.5 9.5 2 16"/><polyline points="16 6 22 6 22 12"/></svg>`;
+    return`<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+  }
+  function toneClass(t){return t==='alert'?'brief-badge-alert':t==='warning'?'brief-badge-warn':t==='info'?'brief-badge-info':'brief-badge-ok';}
+  const rows=top.map((it,idx)=>{
+    const isLast=idx===top.length-1;
+    let headline=it.text,sub='';
+    const parts=it.text.split(' · ');
+    if(parts.length>=2){headline=parts[0];sub=parts.slice(1).join(' · ');}
+    else{
+      const dashParts=it.text.split(' — ');
+      if(dashParts.length>=2){headline=dashParts[0];sub=dashParts.slice(1).join(' — ');}
+    }
+    return`<div class="brief-row${it.action?' brief-row-tap':''}" ${it.action?`onclick="${it.action}"`:''}>
+      <div class="brief-badge-col">
+        <div class="brief-badge ${toneClass(it.tone)}">${iconFor(it)}</div>
+        ${!isLast?'<div class="brief-connector"></div>':''}
+      </div>
+      <div class="brief-text-col">
+        <div class="brief-headline">${headline}</div>
+        ${sub?`<div class="brief-sub">${sub}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+  el.innerHTML=`<div class="brief-card">
+    <div class="brief-title-row">
+      <div class="brief-title">Today</div>
+      <div class="brief-date">${dateStr}</div>
     </div>
-    ${items.length>top.length?`<div style="text-align:center;margin-top:8px;font-size:10px;color:var(--t3)">+${items.length-top.length} more insight${items.length-top.length===1?'':'s'} — priorities shown</div>`:''}
+    <div class="brief-list">${rows}</div>
+    ${items.length>top.length?`<div class="brief-more">+${items.length-top.length} more insight${items.length-top.length===1?'':'s'}</div>`:''}
   </div>`;
 }
+
+// ═══════════════════════════════════════════════════════════
+// v2.7.9 — INTERACTIVE DRAG CHART
+// Reusable canvas chart with continuous drag interpolation.
+// Usage: mountInteractiveChart(canvasEl, {data, onScrub, colors, mode})
+//   data: [{d: 'label', v: number, ts?: date}]
+//   onScrub(value, label, index): fired continuously as user drags
+//   mode: 'area' (default) or 'bar'
+//   colors: {stroke, fill, dot} — defaults to mint
+// Registers with the app's chart registry so refreshAll() keeps it in sync.
+// ═══════════════════════════════════════════════════════════
+
+const _chartInstances = new WeakMap();
+
+function mountInteractiveChart(canvas, opts) {
+  if (!canvas) return null;
+  const cfg = {
+    mode: 'area',
+    colors: {
+      stroke: getComputedStyle(document.documentElement).getPropertyValue('--acc').trim() || '#00e599',
+      fill: 'rgba(0,229,153,0.14)',
+      dot: getComputedStyle(document.documentElement).getPropertyValue('--acc').trim() || '#00e599',
+      guide: 'rgba(0,229,153,0.35)',
+      label: getComputedStyle(document.documentElement).getPropertyValue('--t3').trim() || '#5a8a6a',
+      barDim: 'rgba(0,229,153,0.30)',
+      barCurrent: '#00e599',
+      background: '#0a120e'
+    },
+    padTop: 16,
+    padBottom: 26,
+    padLeft: 12,
+    padRight: 12,
+    showLabels: true,
+    ...opts
+  };
+  const ctx = canvas.getContext('2d');
+  let hoverX = null;
+  let data = cfg.data || [];
+  let onScrub = cfg.onScrub || function(){};
+  let onScrubEnd = cfg.onScrubEnd || function(){};
+
+  function computePoints(rect) {
+    if (!data.length) return [];
+    const minV = Math.min(...data.map(d => d.v));
+    const maxV = Math.max(...data.map(d => d.v));
+    const rng = Math.max(1, maxV - minV);
+    const w = rect.width - cfg.padLeft - cfg.padRight;
+    const h = rect.height - cfg.padTop - cfg.padBottom;
+    return data.map((d, i) => ({
+      x: cfg.padLeft + (i / Math.max(1, data.length - 1)) * w,
+      y: cfg.padTop + h * (1 - (d.v - minV) / rng),
+      v: d.v,
+      d: d.d,
+      i: i
+    }));
+  }
+
+  function draw() {
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+    const dpr = window.devicePixelRatio || 1;
+    if (canvas.width !== Math.round(rect.width * dpr) || canvas.height !== Math.round(rect.height * dpr)) {
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+    }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, rect.width, rect.height);
+
+    const pts = computePoints(rect);
+    if (!pts.length) return;
+
+    if (cfg.mode === 'bar') {
+      drawBars(pts, rect);
+    } else {
+      drawArea(pts, rect);
+    }
+
+    if (cfg.showLabels) drawXLabels(pts, rect);
+
+    if (hoverX !== null) drawHover(pts, rect);
+  }
+
+  function drawArea(pts, rect) {
+    // Gradient fill
+    const grd = ctx.createLinearGradient(0, 0, 0, rect.height);
+    grd.addColorStop(0, cfg.colors.fill);
+    grd.addColorStop(1, cfg.colors.fill.replace(/[\d.]+\)$/, '0)'));
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, rect.height - cfg.padBottom);
+    ctx.lineTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) {
+      const mx = (pts[i-1].x + pts[i].x) / 2;
+      ctx.bezierCurveTo(mx, pts[i-1].y, mx, pts[i].y, pts[i].x, pts[i].y);
+    }
+    ctx.lineTo(pts[pts.length-1].x, rect.height - cfg.padBottom);
+    ctx.closePath();
+    ctx.fillStyle = grd;
+    ctx.fill();
+    // Line
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) {
+      const mx = (pts[i-1].x + pts[i].x) / 2;
+      ctx.bezierCurveTo(mx, pts[i-1].y, mx, pts[i].y, pts[i].x, pts[i].y);
+    }
+    ctx.strokeStyle = cfg.colors.stroke;
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+  }
+
+  function drawBars(pts, rect) {
+    if (!pts.length) return;
+    const barW = Math.max(6, Math.min(24, (rect.width - cfg.padLeft - cfg.padRight) / pts.length * 0.6));
+    const baseY = rect.height - cfg.padBottom;
+    pts.forEach((p, i) => {
+      const isHovered = hoverX !== null && Math.abs(p.x - hoverX) < (rect.width - cfg.padLeft - cfg.padRight) / pts.length / 2;
+      ctx.fillStyle = isHovered ? cfg.colors.barCurrent : cfg.colors.barDim;
+      const h = Math.max(2, baseY - p.y);
+      roundedRect(ctx, p.x - barW/2, p.y, barW, h, 3);
+      ctx.fill();
+    });
+  }
+
+  function drawXLabels(pts, rect) {
+    ctx.fillStyle = cfg.colors.label;
+    ctx.font = '500 10px -apple-system,system-ui,sans-serif';
+    ctx.textAlign = 'center';
+    const maxLabels = 7;
+    const step = Math.max(1, Math.ceil(pts.length / maxLabels));
+    pts.forEach((p, i) => {
+      if (i % step === 0 || i === pts.length - 1) {
+        ctx.fillText(p.d, p.x, rect.height - 8);
+      }
+    });
+  }
+
+  function drawHover(pts, rect) {
+    const first = pts[0], last = pts[pts.length - 1];
+    const cx = Math.max(first.x, Math.min(last.x, hoverX));
+    let hy = first.y, val = first.v, label = first.d, idx = 0;
+    for (let i = 0; i < pts.length - 1; i++) {
+      if (cx >= pts[i].x && cx <= pts[i+1].x) {
+        const t = (cx - pts[i].x) / (pts[i+1].x - pts[i].x);
+        const et = t * t * (3 - 2 * t);
+        hy = pts[i].y + (pts[i+1].y - pts[i].y) * et;
+        val = pts[i].v + (pts[i+1].v - pts[i].v) * t;
+        label = t < 0.5 ? pts[i].d : pts[i+1].d;
+        idx = t < 0.5 ? i : i + 1;
+        break;
+      }
+    }
+    // Vertical dashed guide
+    ctx.beginPath();
+    ctx.setLineDash([2, 4]);
+    ctx.moveTo(cx, cfg.padTop);
+    ctx.lineTo(cx, rect.height - cfg.padBottom);
+    ctx.strokeStyle = cfg.colors.guide;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.setLineDash([]);
+    if (cfg.mode !== 'bar') {
+      // Outer glow dot
+      ctx.beginPath();
+      ctx.arc(cx, hy, 14, 0, Math.PI * 2);
+      ctx.fillStyle = cfg.colors.fill;
+      ctx.fill();
+      // Inner dot with ring
+      ctx.beginPath();
+      ctx.arc(cx, hy, 5.5, 0, Math.PI * 2);
+      ctx.fillStyle = cfg.colors.dot;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cx, hy, 5.5, 0, Math.PI * 2);
+      ctx.strokeStyle = cfg.colors.background;
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+    }
+    onScrub(val, label, idx);
+  }
+
+  function roundedRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function getX(e) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? (e.touches[0] ? e.touches[0].clientX : hoverX + rect.left) : e.clientX;
+    return clientX - rect.left;
+  }
+
+  let dragging = false;
+  const onDown = (e) => { dragging = true; hoverX = getX(e); draw(); };
+  const onMove = (e) => { if (e.type === 'mousemove' || dragging) { hoverX = getX(e); draw(); } };
+  const onUp = () => { dragging = false; };
+  const onLeave = () => { hoverX = null; dragging = false; draw(); onScrubEnd(); };
+  const onTouchStart = (e) => { e.preventDefault(); dragging = true; hoverX = getX(e); draw(); };
+  const onTouchMove = (e) => { e.preventDefault(); hoverX = getX(e); draw(); };
+  const onTouchEnd = () => { dragging = false; hoverX = null; draw(); onScrubEnd(); };
+
+  canvas.addEventListener('mousedown', onDown);
+  canvas.addEventListener('mousemove', onMove);
+  canvas.addEventListener('mouseup', onUp);
+  canvas.addEventListener('mouseleave', onLeave);
+  canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+  canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+  canvas.addEventListener('touchend', onTouchEnd);
+
+  const instance = {
+    draw,
+    setData(newData) { data = newData; hoverX = null; draw(); },
+    destroy() {
+      canvas.removeEventListener('mousedown', onDown);
+      canvas.removeEventListener('mousemove', onMove);
+      canvas.removeEventListener('mouseup', onUp);
+      canvas.removeEventListener('mouseleave', onLeave);
+      canvas.removeEventListener('touchstart', onTouchStart);
+      canvas.removeEventListener('touchmove', onTouchMove);
+      canvas.removeEventListener('touchend', onTouchEnd);
+      _chartInstances.delete(canvas);
+    }
+  };
+  _chartInstances.set(canvas, instance);
+  draw();
+  // Redraw on resize
+  const ro = new ResizeObserver(() => draw());
+  ro.observe(canvas);
+  return instance;
+}
+
+// Cleanup helper — call before rebuilding a page that contained interactive charts
+function destroyInteractiveChart(canvas) {
+  const inst = _chartInstances.get(canvas);
+  if (inst) inst.destroy();
+}
+
+// ═══════════════════════════════════════════════════════════
+// v2.7.9 — DASHBOARD TRENDS CHART (net worth + income)
+// ═══════════════════════════════════════════════════════════
+let _trendsMode='nw';
+
+function computeTrendsData(mode){
+  const now=new Date();
+  const months=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    months.push({
+      key:d.toISOString().slice(0,7),
+      label:d.toLocaleDateString('en-AU',{month:'short'}),
+      date:d
+    });
+  }
+  if(mode==='nw'){
+    // Pick the last nwHistory entry per month, else fall back to first available
+    const hist=(S.nwHistory||[]).slice();
+    const data=months.map(m=>{
+      const inMonth=hist.filter(h=>h.date&&h.date.startsWith(m.key));
+      let v=null;
+      if(inMonth.length){v=inMonth[inMonth.length-1].nw;}
+      else{
+        // Use closest prior entry
+        const prior=hist.filter(h=>h.date&&h.date<m.key+'-32');
+        if(prior.length)v=prior[prior.length-1].nw;
+      }
+      return{d:m.label,v:v||0,ts:m.date};
+    });
+    // Fill leading zeros with the first non-zero forward
+    let firstNonZero=data.findIndex(x=>x.v>0);
+    if(firstNonZero>0){for(let i=0;i<firstNonZero;i++)data[i].v=data[firstNonZero].v;}
+    if(firstNonZero===-1){
+      // No history — show flat current NW
+      const nw=(typeof portTotal==='function')?portTotal()+calcBal('westpac')+calcBal('macquarie'):0;
+      data.forEach(x=>x.v=nw);
+    }
+    return data;
+  }
+  // Income: sum monthly income transactions
+  const data=months.map(m=>{
+    const monthTxns=(S.transactions||[]).filter(t=>t.dir==='in'&&t.date&&t.date.startsWith(m.key));
+    const total=monthTxns.reduce((a,t)=>a+(t.amount||0),0);
+    return{d:m.label,v:total,ts:m.date};
+  });
+  // If no data, fall back to synthetic from monthIncome()
+  if(data.every(x=>x.v===0)&&typeof monthIncome==='function'){
+    const mi=monthIncome();
+    data.forEach(x=>x.v=mi);
+  }
+  return data;
+}
+
+function mountTrendsChart(mode){
+  _trendsMode=mode||'nw';
+  const canvas=document.getElementById('trends-canvas');
+  if(!canvas)return;
+  destroyInteractiveChart(canvas);
+  const data=computeTrendsData(_trendsMode);
+  const valEl=document.getElementById('trends-val');
+  const subEl=document.getElementById('trends-sub');
+  const last=data[data.length-1]||{v:0};
+  const first=data[0]||{v:0};
+  const total=data.reduce((a,x)=>a+x.v,0);
+  const avg=data.length?total/data.length:0;
+  const change=last.v-first.v;
+  const defaultLabel=_trendsMode==='nw'?`+${fmtD(Math.max(0,change))} · 7-mo change`:`${fmtD(Math.round(avg))} avg/mo`;
+  const setDefault=()=>{
+    if(valEl)valEl.textContent=fmtD(Math.round(last.v));
+    if(subEl){subEl.textContent=defaultLabel;subEl.style.color=change>=0?'var(--acc)':'var(--r)';}
+  };
+  setDefault();
+  mountInteractiveChart(canvas,{
+    data,
+    mode:_trendsMode==='inc'?'bar':'area',
+    onScrub(v,label){
+      if(valEl)valEl.textContent=fmtD(Math.round(v));
+      if(subEl){subEl.textContent=label+' · live';subEl.style.color='var(--t2)';}
+    },
+    onScrubEnd(){setDefault();}
+  });
+}
+
+function switchTrendsMode(mode){
+  _trendsMode=mode;
+  // Update toggle visual
+  document.querySelectorAll('.trends-tab').forEach(t=>{
+    const active=t.dataset.mode===mode;
+    t.classList.toggle('trends-tab-active',active);
+    t.style.background=active?'var(--accd)':'transparent';
+    t.style.color=active?'var(--acc)':'var(--t2)';
+    t.style.fontWeight=active?'600':'500';
+  });
+  mountTrendsChart(mode);
+}
+
 
 function launchApp(){
   document.getElementById('setup').style.display='none';
@@ -6872,10 +7297,28 @@ const DASH_WIDGETS={
     render(){
       const pt=portTotal(),wp=calcBal('westpac'),mq=calcBal('macquarie'),nw=pt+wp+mq;
       const pnl=portPnl(),pnlPct=portPnlPct();
-      const sub=pt>0
-        ?`<span style="color:${pnl>=0?'var(--acc)':'var(--r)'}">${pnl>=0?'+':''}${fmtD(pnl)} · ${pnl>=0?'+':''}${pnlPct.toFixed(2)}% portfolio</span>`
-        :`Westpac ${fmtD(wp)} · Macquarie ${fmtD(mq)}`;
-      return`<div class="hero"><div class="hero-l">Net worth</div><div class="hero-v">${fmtD(nw)}</div><div class="hero-s">${sub}</div></div>`;
+      const nwHist=S.nwHistory||[];
+      let monthDelta=null;
+      if(nwHist.length>=2){
+        const today=nwHist[nwHist.length-1];
+        const monthAgoStr=(()=>{const d=new Date();d.setDate(d.getDate()-30);return d.toISOString().slice(0,10);})();
+        const monthAgo=nwHist.find(h=>h.date>=monthAgoStr)||nwHist[0];
+        monthDelta=today.nw-monthAgo.nw;
+      }
+      const liquid=wp+mq;
+      const investedLine=pt>0?`<div style="font-size:16px;font-weight:700;color:var(--acc);line-height:1.1;font-variant-numeric:tabular-nums">${fmtD(pt)}</div><div style="font-size:9px;color:var(--t3);margin-top:2px">invested${pnlPct?` <span style="color:${pnl>=0?'var(--acc)':'var(--r)'}">${pnl>=0?'+':''}${pnlPct.toFixed(1)}%</span>`:''}</div>`:'';
+      const liquidLine=`<div style="font-size:16px;font-weight:700;color:var(--t);line-height:1.1;font-variant-numeric:tabular-nums">${fmtD(liquid)}</div><div style="font-size:9px;color:var(--t3);margin-top:2px">liquid</div>`;
+      return`<div class="hero" style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px">
+        <div style="flex:1;min-width:0">
+          <div class="hero-l">Net worth</div>
+          <div class="hero-v">${fmtD(nw)}</div>
+          ${monthDelta!=null?`<div class="hero-s" style="color:${monthDelta>=0?'var(--acc)':'var(--r)'}">${monthDelta>=0?'↗ +':'↘ '}${fmtD(Math.abs(monthDelta))} <span style="color:var(--t2)">this month</span></div>`:'<div class="hero-s">Building history</div>'}
+        </div>
+        <div style="text-align:right;display:flex;flex-direction:column;gap:14px;position:relative;z-index:1;padding-top:2px">
+          ${investedLine}
+          ${liquidLine}
+        </div>
+      </div>`;
     }
   },
   briefing:{
@@ -6883,6 +7326,29 @@ const DASH_WIDGETS={
     canHalfWidth:false,defaultOn:true,alwaysOn:false,
     render(){return`<div id="dash-briefing-w"></div>`;},
     post(){const orig=document.getElementById('dash-briefing');if(orig)orig.remove();const w=document.getElementById('dash-briefing-w');if(w){w.id='dash-briefing';buildDashBriefing();}}
+  },
+  trends:{
+    id:'trends',label:'Trends chart',sub:'Interactive net worth · income',
+    canHalfWidth:false,defaultOn:true,alwaysOn:false,
+    render(){
+      return`<div class="card" style="padding:16px 14px 12px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;padding:0 4px">
+          <div>
+            <div style="font-size:10px;color:var(--t3);letter-spacing:.16em;font-weight:600;text-transform:uppercase">TRENDS</div>
+            <div id="trends-val" style="font-size:24px;font-weight:700;color:var(--t);letter-spacing:-.8px;margin-top:4px;font-variant-numeric:tabular-nums">—</div>
+            <div id="trends-sub" style="font-size:11px;color:var(--t2);margin-top:2px">Last 7 months</div>
+          </div>
+          <div id="trends-toggle" style="display:flex;background:rgba(255,255,255,.03);border-radius:12px;padding:2px;gap:2px;flex-shrink:0">
+            <button class="trends-tab trends-tab-active" data-mode="nw" onclick="switchTrendsMode('nw')" style="background:var(--accd);color:var(--acc);border:none;border-radius:10px;padding:5px 10px;font-size:10px;font-weight:600;cursor:pointer;font-family:var(--sans)">Net worth</button>
+            <button class="trends-tab" data-mode="inc" onclick="switchTrendsMode('inc')" style="background:transparent;color:var(--t2);border:none;border-radius:10px;padding:5px 10px;font-size:10px;font-weight:500;cursor:pointer;font-family:var(--sans)">Income</button>
+          </div>
+        </div>
+        <div style="position:relative;height:180px;touch-action:pan-y">
+          <canvas id="trends-canvas" style="width:100%;height:100%;display:block;cursor:crosshair"></canvas>
+        </div>
+      </div>`;
+    },
+    post(){setTimeout(()=>mountTrendsChart('nw'),16);}
   },
   reminders:{
     id:'reminders',label:'Reminders',sub:'Gaps and things to catch up on',
@@ -7010,6 +7476,7 @@ const DASH_WIDGETS={
 // Each entry: {id, size:'full'|'half'}
 const DEFAULT_DASH_LAYOUT=[
   {id:'netWorth',size:'full'},
+  {id:'trends',size:'full'},
   {id:'reminders',size:'full'},
   {id:'briefing',size:'full'}
 ];
