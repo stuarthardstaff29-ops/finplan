@@ -260,6 +260,9 @@ body.light .hdr{background:rgba(255,255,255,.8)}
 .hdr-logo em{color:var(--t3);font-style:normal;font-weight:600;font-size:14px;letter-spacing:0}
 .hdr-actions{display:flex;align-items:center;gap:6px}
 .hdr-btn{background:none;border:none;cursor:pointer;color:var(--t2);display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;transition:all .18s}
+.hdr-version{background:rgba(0,229,153,.06);border:0.5px solid rgba(0,229,153,.15);color:var(--acc);cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.03em;padding:5px 8px;border-radius:8px;font-family:var(--sans,system-ui);font-variant-numeric:tabular-nums;transition:all .18s;margin-right:2px}
+.hdr-version:hover{background:rgba(0,229,153,.14);border-color:rgba(0,229,153,.30)}
+.hdr-version:active{transform:scale(.95)}
 .hdr-btn:hover{color:var(--acc);background:var(--accd)}
 .hdr-btn:active{transform:scale(.92);background:var(--bg4)}
 .hdr-btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -839,6 +842,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
     <div class="hdr-logo">fin<em>plan</em></div>
     <div class="hdr-actions">
       <div class="hdr-dot"></div>
+      <button id="hdr-version" class="hdr-version" onclick="forceRefreshApp()" title="Version — tap to force refresh"></button>
       <button class="hdr-btn" onclick="exportCSV()" title="Export CSV">
         <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       </button>
@@ -6112,6 +6116,9 @@ function launchApp(){
   document.getElementById('setup').style.display='none';
   const app=document.getElementById('app');app.style.display='flex';
   applyTheme(S.themeIdx||0);applyMode(S.mode||'dark');applyUiPrefs();
+  // Populate version indicator in header
+  const vEl=document.getElementById('hdr-version');
+  if(vEl)vEl.textContent='v'+APP_VERSION;
   syncSliderUI();snapshotNW();
   generatePendingFromRules();
   if(typeof migrateDashLayout==='function')migrateDashLayout();
@@ -11929,11 +11936,27 @@ setTimeout(()=>{
   setTimeout(()=>{sp.style.display='none';if(!S.setupDone){showSetup();}else{launchApp();}},500);
 },2500);
 if('serviceWorker'in navigator){
-  navigator.serviceWorker.register('./sw.js').then(reg=>{
+  // updateViaCache:'none' — bypass browser's HTTP cache for the SW file itself.
+  // Without this, browsers cache sw.js for up to 24h and never see version bumps.
+  // Cache-busting query string forces a fresh fetch of the SW every load.
+  navigator.serviceWorker.register('./sw.js?v='+APP_VERSION,{updateViaCache:'none'}).then(reg=>{
+    // Aggressively check for updates on every load
+    reg.update().catch(()=>{});
+    // Also check for updates when the tab regains focus (user comes back to it)
+    let lastUpdateCheck=Date.now();
+    window.addEventListener('focus',()=>{
+      if(Date.now()-lastUpdateCheck>30000){
+        lastUpdateCheck=Date.now();
+        reg.update().catch(()=>{});
+      }
+    });
     reg.addEventListener('updatefound',()=>{
       const nw=reg.installing;if(!nw)return;
       nw.addEventListener('statechange',()=>{
-        if(nw.state==='activated'&&navigator.serviceWorker.controller){
+        if(nw.state==='installed'&&navigator.serviceWorker.controller){
+          // A new SW is installed and waiting — show a visible update banner
+          showUpdateBanner();
+        }else if(nw.state==='activated'&&navigator.serviceWorker.controller){
           if(!sessionStorage.getItem('finplan-reloaded-for-sw')){
             sessionStorage.setItem('finplan-reloaded-for-sw','1');
             location.reload();
@@ -11941,7 +11964,6 @@ if('serviceWorker'in navigator){
         }
       });
     });
-    reg.update().catch(()=>{});
   }).catch(()=>{});
   navigator.serviceWorker.addEventListener('controllerchange',()=>{
     if(!sessionStorage.getItem('finplan-reloaded-for-sw')){
@@ -11950,6 +11972,30 @@ if('serviceWorker'in navigator){
     }
   });
   setTimeout(()=>{sessionStorage.removeItem('finplan-reloaded-for-sw');},3000);
+}
+
+// Persistent update banner — shows when a new SW is waiting to activate
+function showUpdateBanner(){
+  if(document.getElementById('update-banner'))return;
+  const banner=document.createElement('div');
+  banner.id='update-banner';
+  banner.style.cssText='position:fixed;top:calc(var(--st) + 8px);left:8px;right:8px;background:linear-gradient(180deg,rgba(0,229,153,.22),rgba(0,229,153,.12));border:0.5px solid rgba(0,229,153,.5);border-radius:14px;padding:12px 14px;z-index:10000;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.5);animation:updateBannerIn .3s var(--ease-out,ease-out) both';
+  banner.innerHTML='<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:var(--acc)">Update ready</div><div style="font-size:10px;color:var(--t2);margin-top:2px">A new version has been installed</div></div><button onclick="applyUpdateNow()" style="background:var(--acc);color:#0a120e;border:none;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Reload</button>';
+  document.body.appendChild(banner);
+  const style=document.createElement('style');
+  style.textContent='@keyframes updateBannerIn{from{transform:translateY(-16px);opacity:0}to{transform:translateY(0);opacity:1}}';
+  document.head.appendChild(style);
+}
+function applyUpdateNow(){
+  sessionStorage.removeItem('finplan-reloaded-for-sw');
+  if('serviceWorker'in navigator){
+    navigator.serviceWorker.getRegistrations().then(regs=>{
+      regs.forEach(r=>{if(r.waiting)r.waiting.postMessage('SKIP_WAITING');});
+      setTimeout(()=>location.reload(),120);
+    });
+  }else{
+    location.reload();
+  }
 }
 </script>
 </body>
