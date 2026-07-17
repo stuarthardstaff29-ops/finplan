@@ -1732,9 +1732,25 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.13';
+const APP_VERSION='2.7.14';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.14',
+    date:'2026-07-17',
+    title:'THE blank-chart crash — found and fixed',
+    sections:{
+      features:[],
+      improvements:[
+        'Added a defensive array guard so the trend charts can never crash on a bad data shape again'
+      ],
+      fixes:[
+        '🐛 **Root cause of the blank charts: a runtime crash.** `Uncaught TypeError: contribSeries.forEach is not a function`. The trend chart code called `computeContributionSeries()` and looped over the result with `.forEach()` — but that function returns an OBJECT (`{labels, series, ...}` shaped for the legacy growth chart), not an array. The moment the chart tried to build its data, it threw and aborted before drawing anything. That is why both the dashboard and investments charts were blank on every version since the trend feature was added',
+        'Added a dedicated `computeContributionEntries()` that returns the raw `[{date, amount}]` array the trend charts actually need, leaving the legacy `computeContributionSeries()` untouched for the growth-vs-contributions chart that depends on its object shape',
+        'Both trend charts now guard the result with `Array.isArray()` so a wrong shape can never crash them again — worst case they show an empty state, never a crash'
+      ]
+    }
+  },
   {
     v:'2.7.13',
     date:'2026-07-17',
@@ -3939,6 +3955,26 @@ function ensureDividendHistoryCard(){
 // ── CONTRIBUTIONS GRAPH FIX ────────────────────────────────
 // Build cumulative-contributions series from S.transactions (cat=investments, dir=out)
 // merged with S.contributions structured entries. This is what the growth chart should use.
+// Returns the RAW merged contribution entries as an array of {date, amount}.
+// (computeContributionSeries returns a monthly-bucketed {labels,series} object for
+// the legacy growth chart — different shape. Chart trend code needs the raw list.)
+function computeContributionEntries(){
+  const buys=(S.transactions||[])
+    .filter(t=>t.cat==='investments'&&t.dir==='out'&&t.date&&t.amt>0)
+    .map(t=>({date:t.date,amount:t.amt}));
+  const structured=(S.contributions||[])
+    .filter(c=>c.status==='completed'&&c.date&&c.amount>0)
+    .map(c=>({date:c.date,amount:c.amount}));
+  const merged=[...buys];
+  structured.forEach(s=>{
+    if(!merged.some(m=>m.date===s.date&&Math.abs(m.amount-s.amount)<0.02)){
+      merged.push(s);
+    }
+  });
+  merged.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  return merged;
+}
+
 function computeContributionSeries(){
   const buys=(S.transactions||[])
     .filter(t=>t.cat==='investments'&&t.dir==='out'&&t.date&&t.amt>0)
@@ -5947,7 +5983,8 @@ function computeTrendsData(mode){
     const initialMq=(S.acctBalances||{}).macquarie||0;
     const txns=S.transactions||[];
     const transfers=S.transfers||[];
-    const contribSeries=(typeof computeContributionSeries==='function')?computeContributionSeries():[];
+    let contribSeries=(typeof computeContributionEntries==='function')?computeContributionEntries():[];
+    if(!Array.isArray(contribSeries))contribSeries=[];
     const currentInvested=(typeof portTotal==='function')?portTotal():0;
     return months.map(m=>{
       // Forward sum all account activity up to cutoff
@@ -6068,7 +6105,8 @@ function computeInvTrendData(mode){
       isCurrent
     });
   }
-  const contribSeries=(typeof computeContributionSeries==='function')?computeContributionSeries():[];
+  let contribSeries=(typeof computeContributionEntries==='function')?computeContributionEntries():[];
+  if(!Array.isArray(contribSeries))contribSeries=[];
   const currentValue=(typeof portTotal==='function')?portTotal():0;
   const currentCost=(typeof portCostBasis==='function')?portCostBasis():0;
 
