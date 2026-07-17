@@ -690,6 +690,77 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .div-cal-mon{font-size:9px;color:var(--t3);font-family:var(--mono)}
 .div-cal-ticker{font-size:12px;font-weight:700;color:var(--t)}.div-cal-sub{font-size:10px;color:var(--t3);margin-top:1px}
 .div-cal-amt{font-size:12px;font-weight:700;color:var(--acc);font-family:var(--mono)}
+/* v2.7.15 — V4 dividend page */
+.div-upcoming-card{display:flex;align-items:center;gap:12px;padding:14px;background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad);margin-bottom:8px;cursor:pointer;transition:border-color var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out)}
+.div-upcoming-card:hover{border-color:var(--bdr-acc2)}
+.div-upcoming-card:active{transform:scale(.99)}
+.div-upcoming-card.est{border-color:rgba(90,170,144,.12)}
+.div-badge{width:46px;height:46px;border-radius:12px;background:rgba(0,229,153,.10);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;border:0.5px solid rgba(0,229,153,.20)}
+.div-badge.est{background:rgba(90,170,144,.10);border-color:rgba(90,170,144,.20)}
+.div-badge-day{font-size:18px;font-weight:700;color:var(--acc);line-height:1;font-variant-numeric:tabular-nums}
+.div-badge.est .div-badge-day{color:var(--b)}
+.div-badge-mon{font-size:8px;color:var(--acc);letter-spacing:.06em;font-weight:600;margin-top:2px;text-transform:uppercase}
+.div-badge.est .div-badge-mon{color:var(--b)}
+.div-up-main{flex:1;min-width:0}
+.div-up-ticker{font-size:13px;font-weight:600;color:var(--t)}
+.div-up-sub{font-size:11px;color:var(--t2);margin-top:2px;line-height:1.4}
+.div-up-when{font-size:10px;color:var(--acc);margin-top:2px;font-weight:500}
+.div-upcoming-card.est .div-up-when{color:var(--t3)}
+.div-up-right{text-align:right;flex-shrink:0}
+.div-up-amt{font-size:17px;font-weight:700;color:var(--acc);font-variant-numeric:tabular-nums;letter-spacing:-.3px}
+.div-upcoming-card.est .div-up-amt{color:var(--t)}
+.div-up-est-tag{font-size:9px;color:var(--t3);margin-top:2px}
+.div-history-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad);margin-bottom:8px;cursor:pointer;transition:border-color var(--dur-fast) var(--ease-out)}
+.div-history-card:hover{border-color:var(--bdr-acc2)}
+.div-history-main{flex:1;min-width:0}
+.div-history-title{font-size:12px;font-weight:600;color:var(--t)}
+.div-history-sub{font-size:10px;color:var(--t2);margin-top:2px}
+.div-history-amt{font-size:16px;font-weight:700;color:var(--acc);font-variant-numeric:tabular-nums;letter-spacing:-.2px;flex-shrink:0}
+.div-import-cta{display:flex;align-items:center;gap:12px;padding:14px;background:rgba(0,229,153,.04);border:0.5px dashed rgba(0,229,153,.25);border-radius:var(--rad);cursor:pointer;transition:background var(--dur-fast) var(--ease-out),border-color var(--dur-fast) var(--ease-out)}
+.div-import-cta:hover{background:rgba(0,229,153,.08);border-color:rgba(0,229,153,.4)}
+.div-import-cta:active{transform:scale(.99)}
+.div-import-icon{width:26px;height:26px;border-radius:50%;background:rgba(0,229,153,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.div-import-main{flex:1;min-width:0}
+.div-import-title{font-size:12px;font-weight:500;color:var(--t);line-height:1.35}
+.div-import-sub{font-size:10px;color:var(--t2);margin-top:2px}
+/* v2.7.16 — V4 BUDGET PAGE */
+.bud-week-card{background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad-lg);padding:18px;margin-bottom:12px}
+.bud-week-label{font-size:10px;color:var(--t3);letter-spacing:.14em;font-weight:600;text-transform:uppercase;margin-bottom:12px}
+.bud-week-segments{display:flex;gap:5px;margin-bottom:16px}
+.bud-week-seg{flex:1;height:10px;border-radius:5px;background:rgba(255,255,255,.06);position:relative;overflow:hidden}
+.bud-week-seg-fill{position:absolute;left:0;top:0;bottom:0;background:var(--acc);border-radius:5px;transition:width var(--dur-slow) var(--ease-out)}
+.bud-week-seg-fill.partial{background:rgba(0,229,153,.5)}
+.bud-week-stats{display:flex;justify-content:space-between;gap:14px}
+.bud-week-stat-l{font-size:10px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;font-weight:600;margin-bottom:4px}
+.bud-week-stat-v{font-size:20px;font-weight:700;color:var(--t);letter-spacing:-.5px;font-variant-numeric:tabular-nums;line-height:1}
+.bud-week-stat-s{font-size:10px;margin-top:4px;font-weight:500}
+.bud-cat-card{display:flex;align-items:center;gap:12px;padding:14px;background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad);margin-bottom:8px;cursor:pointer;transition:border-color var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out)}
+.bud-cat-card:hover{border-color:var(--bdr-acc2)}
+.bud-cat-card:active{transform:scale(.99)}
+.bud-cat-card.over{border-color:rgba(240,160,48,.30);background:linear-gradient(180deg,rgba(240,160,48,.03),rgba(255,255,255,.015))}
+.bud-cat-card.warn{border-color:rgba(240,160,48,.18)}
+.bud-cat-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;background:rgba(255,255,255,.04);border:0.5px solid rgba(255,255,255,.08)}
+.bud-cat-card.over .bud-cat-icon{background:rgba(240,160,48,.14);border-color:rgba(240,160,48,.28)}
+.bud-cat-main{flex:1;min-width:0}
+.bud-cat-name{font-size:13px;font-weight:600;color:var(--t);line-height:1.2}
+.bud-cat-meta{font-size:10px;color:var(--t2);margin-top:2px}
+.bud-cat-card.over .bud-cat-meta{color:var(--y)}
+.bud-cat-track{margin-top:8px;height:3px;background:rgba(255,255,255,.06);border-radius:1.5px;overflow:hidden}
+.bud-cat-fill{height:100%;background:var(--acc);border-radius:1.5px;transition:width var(--dur-slow) var(--ease-out)}
+.bud-cat-fill.over{background:var(--y)}
+.bud-cat-fill.warn{background:var(--y)}
+.bud-cat-fill.fixed{background:var(--t2)}
+.bud-cat-right{text-align:right;flex-shrink:0}
+.bud-cat-amt{font-size:15px;font-weight:700;color:var(--t);font-variant-numeric:tabular-nums;letter-spacing:-.2px}
+.bud-cat-card.over .bud-cat-amt{color:var(--y)}
+.bud-cat-limit{font-size:10px;color:var(--t3);margin-top:2px}
+.bud-cat-more{background:rgba(255,255,255,.02);border:0.5px solid rgba(255,255,255,.06);border-radius:var(--rad);padding:14px;text-align:center;font-size:11px;color:var(--t2);cursor:pointer;transition:border-color var(--dur-fast) var(--ease-out)}
+.bud-cat-more:hover{border-color:var(--bdr2);color:var(--t)}
+.bud-insight-card{display:flex;align-items:flex-start;gap:12px;padding:14px;background:rgba(0,229,153,.05);border:0.5px solid rgba(0,229,153,.18);border-radius:var(--rad)}
+.bud-insight-icon{width:30px;height:30px;border-radius:50%;background:rgba(0,229,153,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--acc)}
+.bud-insight-body{flex:1;min-width:0}
+.bud-insight-title{font-size:12px;font-weight:600;color:var(--t);line-height:1.4}
+.bud-insight-sub{font-size:11px;color:var(--t2);margin-top:3px;line-height:1.5}
 /* ── RETURN / BENCHMARK ── */
 .ret-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
 .ret-met{background:var(--bg3);border-radius:var(--rad-sm);padding:10px;text-align:center}
@@ -1154,18 +1225,42 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 
     <!-- BUDGET -->
     <div class="pg" id="pg-budget">
-      <div class="card"><div class="ctitle"><div class="ctitle-l">Income</div></div><div class="sl-grp"><div class="sl-lr"><span class="sl-l">Dominos weekly earnings</span><span class="sl-v" id="out-kmart">$110</span></div><input type="range" min="0" max="400" step="5" value="110" id="sl-kmart" oninput="upAll()"></div></div>
-      <div class="card"><div class="ctitle"><div class="ctitle-l">Fixed</div></div><div class="sl-grp"><div class="sl-lr"><span class="sl-l">Rent / month</span><span class="sl-v" id="out-rent">$400</span></div><input type="range" min="0" max="800" step="50" value="400" id="sl-rent" oninput="upAll()"></div></div>
-      <div class="card"><div class="ctitle"><div class="ctitle-l">Spending</div></div><div class="sl-grp"><div class="sl-lr"><span class="sl-l">Personal spend / week</span><span class="sl-v" id="out-spend">$600</span></div><input type="range" min="0" max="1500" step="10" value="600" id="sl-spend" oninput="upAll()"></div></div>
-      <div class="card"><div class="ctitle"><div class="ctitle-l">Savings & investing</div></div>
-        <div class="sl-grp"><div class="sl-lr"><span class="sl-l">Goal savings / month</span><span class="sl-v" id="out-goals">$1,674</span></div><input type="range" min="0" max="3000" step="50" value="1674" id="sl-goals" oninput="upAll()"></div>
-        <hr class="dvdr">
-        <div class="sl-grp"><div class="sl-lr"><span class="sl-l" style="color:var(--acc)">★ Monthly investments</span><span class="sl-v col-acc" id="out-invest">$400</span></div><input type="range" min="0" max="4000" step="50" value="400" id="sl-invest" oninput="upAll()"></div>
+      <!-- Hero: take-home income + savings-rate ring -->
+      <div class="hero" id="bud-hero"></div>
+
+      <!-- Week X of Y progress card -->
+      <div id="bud-week"></div>
+
+      <!-- Categories -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:0 4px;margin:16px 0 8px">
+        <div style="font-size:10px;color:var(--t3);letter-spacing:.16em;font-weight:600;text-transform:uppercase">Categories</div>
+        <button class="btn btn-ghost btn-sm" onclick="openCategoryLimitsModal()" style="font-size:11px;color:var(--acc);padding:3px 8px">Set limits ›</button>
       </div>
-      <div class="mg" id="bud-metrics"></div>
-      <div class="card"><div class="ctitle"><div class="ctitle-l">Allocation</div></div><div id="bud-alloc"></div></div>
-      <div id="bud-alert"></div>
-      <div class="card"><div class="ctitle"><div class="ctitle-l">Actual vs budget</div></div><div id="bud-actual"></div></div>
+      <div id="bud-categories"></div>
+
+      <!-- Insight card at bottom -->
+      <div id="bud-insight" style="margin-top:14px"></div>
+
+      <!-- Show detailed planner (extras) -->
+      <button class="btn btn-ghost btn-full" id="bud-extras-toggle" onclick="toggleBudExtras()" style="margin:14px 0 6px;color:var(--t2);border:0.5px dashed var(--bdr2);background:transparent">
+        <span id="bud-extras-toggle-label">Show budget planner</span>
+        <span id="bud-extras-toggle-chevron" style="margin-left:6px;display:inline-block;transition:transform var(--dur-base) var(--ease-out)">▾</span>
+      </button>
+
+      <div id="bud-extras" style="display:none">
+        <div class="card"><div class="ctitle"><div class="ctitle-l">Income</div></div><div class="sl-grp"><div class="sl-lr"><span class="sl-l">Dominos weekly earnings</span><span class="sl-v" id="out-kmart">$110</span></div><input type="range" min="0" max="400" step="5" value="110" id="sl-kmart" oninput="upAll()"></div></div>
+        <div class="card"><div class="ctitle"><div class="ctitle-l">Fixed</div></div><div class="sl-grp"><div class="sl-lr"><span class="sl-l">Rent / month</span><span class="sl-v" id="out-rent">$400</span></div><input type="range" min="0" max="800" step="50" value="400" id="sl-rent" oninput="upAll()"></div></div>
+        <div class="card"><div class="ctitle"><div class="ctitle-l">Spending</div></div><div class="sl-grp"><div class="sl-lr"><span class="sl-l">Personal spend / week</span><span class="sl-v" id="out-spend">$600</span></div><input type="range" min="0" max="1500" step="10" value="600" id="sl-spend" oninput="upAll()"></div></div>
+        <div class="card"><div class="ctitle"><div class="ctitle-l">Savings & investing</div></div>
+          <div class="sl-grp"><div class="sl-lr"><span class="sl-l">Goal savings / month</span><span class="sl-v" id="out-goals">$1,674</span></div><input type="range" min="0" max="3000" step="50" value="1674" id="sl-goals" oninput="upAll()"></div>
+          <hr class="dvdr">
+          <div class="sl-grp"><div class="sl-lr"><span class="sl-l" style="color:var(--acc)">★ Monthly investments</span><span class="sl-v col-acc" id="out-invest">$400</span></div><input type="range" min="0" max="4000" step="50" value="400" id="sl-invest" oninput="upAll()"></div>
+        </div>
+        <div class="mg" id="bud-metrics"></div>
+        <div class="card"><div class="ctitle"><div class="ctitle-l">Allocation</div></div><div id="bud-alloc"></div></div>
+        <div id="bud-alert"></div>
+        <div class="card"><div class="ctitle"><div class="ctitle-l">Actual vs budget</div></div><div id="bud-actual"></div></div>
+      </div>
     </div>
 
     <!-- TIMELINE -->
@@ -1229,12 +1324,56 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
       <div class="card"><div class="ctitle"><div class="ctitle-l">Monthly recurring total</div></div><div id="sub-total" style="font-size:13px;color:var(--t2)"></div></div>
     </div>
 
-    <!-- DIVIDEND CALENDAR -->
+    <!-- DIVIDEND CALENDAR (v2.7.15 — V4 concept rebuild) -->
     <div class="pg" id="pg-dividends">
-      <div class="mg" id="div-metrics"></div>
-      <div id="div-income-card"></div>
-      <div class="card"><div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Upcoming payments</div></div><div id="div-cal"></div></div>
-      <div class="card"><div class="ctitle"><div class="ctitle-l">12-month projected income</div></div><div class="chart-wrap"><canvas id="div-chart" role="img" aria-label="Dividend income by month"></canvas></div></div>
+      <!-- Hero -->
+      <div class="hero" id="div-hero"></div>
+
+      <!-- Interactive 12-month projection chart -->
+      <div class="card" style="padding:16px 14px 12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:0 4px">
+          <div>
+            <div style="font-size:10px;color:var(--t3);letter-spacing:.16em;font-weight:600;text-transform:uppercase">12-MONTH PROJECTED</div>
+            <div id="div-chart-val" style="font-size:22px;font-weight:700;color:var(--t);letter-spacing:-.6px;margin-top:4px;font-variant-numeric:tabular-nums">—</div>
+            <div id="div-chart-sub" style="font-size:11px;color:var(--t2);margin-top:2px">Next 12 months</div>
+          </div>
+        </div>
+        <div style="position:relative;height:150px;touch-action:pan-y">
+          <canvas id="div-trend-canvas" style="width:100%;height:100%;display:block;cursor:crosshair"></canvas>
+        </div>
+      </div>
+
+      <!-- Upcoming payments — date-badge blocks -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:0 4px;margin:16px 0 8px">
+        <div style="font-size:10px;color:var(--t3);letter-spacing:.16em;font-weight:600;text-transform:uppercase">Upcoming</div>
+        <button class="btn btn-ghost btn-sm" onclick="openDivModal()" style="font-size:11px;color:var(--acc);padding:3px 8px">+ Record</button>
+      </div>
+      <div id="div-upcoming"></div>
+
+      <!-- History -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:0 4px;margin:16px 0 8px">
+        <div style="font-size:10px;color:var(--t3);letter-spacing:.16em;font-weight:600;text-transform:uppercase">History</div>
+        <div id="div-history-count" style="font-size:10px;color:var(--acc);font-weight:500"></div>
+      </div>
+      <div id="div-history"></div>
+
+      <!-- Screenshot import CTA -->
+      <div id="div-import-cta" style="margin-top:14px"></div>
+
+      <!-- Show more insights (mirrors invest page pattern) -->
+      <button class="btn btn-ghost btn-full" id="div-extras-toggle" onclick="toggleDivExtras()" style="margin:14px 0 6px;color:var(--t2);border:0.5px dashed var(--bdr2);background:transparent">
+        <span id="div-extras-toggle-label">Show detailed metrics</span>
+        <span id="div-extras-toggle-chevron" style="margin-left:6px;display:inline-block;transition:transform var(--dur-base) var(--ease-out)">▾</span>
+      </button>
+
+      <div id="div-extras" style="display:none">
+        <div class="mg" id="div-metrics"></div>
+        <div id="div-income-card"></div>
+        <div class="card" style="margin-top:8px">
+          <div class="ctitle"><div class="ctitle-l">Legacy 12-month bar chart</div></div>
+          <div class="chart-wrap"><canvas id="div-chart" role="img" aria-label="Dividend income by month"></canvas></div>
+        </div>
+      </div>
     </div>
 
     <!-- ATO TAX SUMMARY -->
@@ -1732,9 +1871,52 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.14';
+const APP_VERSION='2.7.16';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.16',
+    date:'2026-07-17',
+    title:'Budget page rebuilt to the V4 concept',
+    sections:{
+      features:[
+        '📊 Budget page rebuilt to match the V4 concept. Default view: take-home income hero + savings-rate ring, "Week X of Y" progress card, category glass rows, and a suggestion card at the bottom',
+        'Hero shows your monthly take-home income (from Jobs) with a circular savings-rate ring on the right (colored mint, filled proportional to income minus spend). Job income breakdown underneath (e.g. "$4,190 full-time · $470 Domino\'s")',
+        '"Week X of Y" card breaks the month into 4-5 progress segments. Past weeks fill solid mint, current week shows a partial fill, future weeks stay empty. Bottom stats: Spent so far + pace verdict on the left, Left this month + budget on the right',
+        'Categories render as glass panel cards with icon badges, transaction counts, progress bars, spent amount, and cap. Over-cap categories get an amber-tinted border and amber accent — visible at a glance',
+        'Set caps for any category via the new "Set limits ›" flow. Monthly per-category limits stored in `S.categoryLimits`',
+        'Bottom insight card generates an actionable suggestion. When you\'re over a variable cap, it suggests concrete skips ("Skip food & dining 2 times · Save ~$45 by month-end") and connects it to any behind-pace goal ("would help fund Holiday fund"). When you\'re on track, it suggests a small cutback that could help a goal',
+        'Top 4 categories shown; "Show more categories" collapses the rest'
+      ],
+      improvements:[
+        'The whole budget slider planner (Income, Fixed, Spending, Savings & Investing, Metrics, Allocation, Actual vs budget) moved into a "Show budget planner" toggle so the primary view stays calm and focused',
+        'Category limits are respected across the app — a category over its cap will also flag in the dashboard briefing',
+        'Categories sort with over-cap items first, then by spend descending'
+      ],
+      fixes:[]
+    }
+  },
+  {
+    v:'2.7.15',
+    date:'2026-07-17',
+    title:'Dividends page rebuilt to the V4 concept',
+    sections:{
+      features:[
+        '💎 Dividends page rebuilt to match the V4 concept exactly. Default view: projected-annual hero + interactive 12-month chart + upcoming payments + history + screenshot import — nothing else',
+        'Hero shows the projected annual with an "actuals badge" (X of Y holdings from real recorded payments vs pure estimates). Right column stacks Quarterly avg (teal) and Received this year with yield %',
+        'Interactive 12-month bar chart uses the same drag engine as everywhere else. Hover any bar to see that month\'s projected amount, snaps discretely to each month. Total shows in the header when idle',
+        'Upcoming payments now render as date-badge cards — 46×46 rounded squares with day + month, colour-coded (mint for actuals, teal for yield estimates). Each card shows ticker, frequency + source, "in ~X weeks" timing, and amount',
+        'History as glass cards with ticker, date, frequency, units held then, and the amount received',
+        'Screenshot import prompt as a dashed CTA card at the bottom — "Import CMC dividend summary · Upload a screenshot · AI extracts payments"',
+        '"Show detailed metrics" toggle at the bottom reveals the legacy 4-metric grid, dividend income card, and Chart.js legacy bar chart — for anyone who wants the deeper view. State persists across sessions'
+      ],
+      improvements:[
+        'New `computeMonthlyDivProjection()` helper shared between the interactive chart and the legacy bar chart, so both always show the same numbers',
+        'Date badges style-differentiate actual vs estimated payments at a glance — no need to read the sub-label'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'2.7.14',
     date:'2026-07-17',
@@ -3837,8 +4019,245 @@ function buildDividendHistoryList(){
   </div>`).join('')+(payments.length>30?`<div style="font-size:10px;color:var(--t3);text-align:center;padding:6px 0">+ ${payments.length-30} older payments</div>`:'');
 }
 
-// ── DIVIDEND CALENDAR PAGE v2 (replaces old buildDividendCalendar) ──
+// ── DIVIDEND CALENDAR PAGE (v2.7.15 — V4 concept rebuild) ──
 function buildDividendCalendar(){
+  buildDividendHero();
+  requestAnimationFrame(()=>requestAnimationFrame(()=>mountDivTrendChart()));
+  buildDividendUpcoming();
+  buildDividendHistoryV4();
+  buildDividendImportCTA();
+  // Extras (behind toggle)
+  const el=document.getElementById('div-extras');
+  const lbl=document.getElementById('div-extras-toggle-label');
+  const chev=document.getElementById('div-extras-toggle-chevron');
+  if(el){
+    if(S.divExtrasOpen){
+      el.style.display='block';
+      if(lbl)lbl.textContent='Hide detailed metrics';
+      if(chev)chev.style.transform='rotate(180deg)';
+      buildDividendMetrics();
+      if(typeof buildDividendIncomeCard==='function')buildDividendIncomeCard();
+      renderDividendChart();
+    }else{
+      el.style.display='none';
+    }
+  }
+}
+
+function buildDividendHero(){
+  const el=document.getElementById('div-hero');if(!el)return;
+  const stats=computeDividendStatsV2();
+  const historyBadge=stats.holdingsWithHistory>0
+    ?`<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;background:var(--accd);border-radius:10px;font-size:10px;color:var(--acc);font-weight:600;margin-top:10px">${stats.holdingsWithHistory} of ${stats.holdingsCount} · actuals</span>`
+    :`<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;background:var(--bg3);border-radius:10px;font-size:10px;color:var(--t3);font-weight:600;margin-top:10px">All estimates · log a payment</span>`;
+  el.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;position:relative;z-index:1">
+      <div style="flex:1;min-width:0">
+        <div class="hero-l">Projected annual</div>
+        <div class="hero-v">${fmtD(stats.annualTotal)}</div>
+        ${historyBadge}
+      </div>
+      <div style="text-align:right;display:flex;flex-direction:column;gap:12px;padding-top:2px">
+        <div>
+          <div style="font-size:9px;color:var(--t3);letter-spacing:.1em;font-weight:600;text-transform:uppercase">Quarterly avg</div>
+          <div style="font-size:15px;font-weight:700;color:var(--b);margin-top:2px;font-variant-numeric:tabular-nums">${fmtD(stats.quarterly)}</div>
+        </div>
+        <div>
+          <div style="font-size:9px;color:var(--t3);letter-spacing:.1em;font-weight:600;text-transform:uppercase">Received ${new Date().getFullYear()}</div>
+          <div style="font-size:15px;font-weight:700;color:var(--t);margin-top:2px;font-variant-numeric:tabular-nums">${fmtD(stats.receivedThisYear)}</div>
+          <div style="font-size:9px;color:var(--t3);margin-top:1px">${stats.yieldPct.toFixed(2)}% yield</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// Compute 12 months of projected dividend amounts by ticker (shared with chart + calendar)
+function computeMonthlyDivProjection(){
+  const now=new Date();
+  const monthlyTotals=[];
+  const monthLabels=[];
+  for(let i=0;i<12;i++){
+    const d=new Date(now.getFullYear(),now.getMonth()+i,1);
+    monthLabels.push(d.toLocaleDateString('en-AU',{month:'short'}));
+    monthlyTotals.push(0);
+  }
+  (S.holdings||[]).forEach(h=>{
+    if(!h.units)return;
+    const payments=(S.dividendPayments||[])
+      .filter(p=>p.ticker===h.ticker&&p.amount>0)
+      .sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    let freq='quarterly',perPayment=0,nextDate;
+    if(payments.length){
+      const latest=payments[0];
+      freq=latest.frequency||'quarterly';
+      const days=freqIntervalDays(freq);
+      nextDate=new Date(latest.date+'T00:00:00');
+      while(nextDate<=now){nextDate.setDate(nextDate.getDate()+days);}
+      const scale=(latest.units>0&&h.units>0)?(h.units/latest.units):1;
+      perPayment=latest.amount*scale;
+    }else{
+      const annual=(typeof estAnnDivForHolding==='function')?estAnnDivForHolding(h):0;
+      if(annual<=0)return;
+      perPayment=annual/freqPerYear(freq);
+      nextDate=new Date(now);nextDate.setDate(nextDate.getDate()+45);
+    }
+    if(perPayment<0.5)return;
+    const days=freqIntervalDays(freq);
+    let d=new Date(nextDate);
+    const endD=new Date(now.getFullYear(),now.getMonth()+12,1);
+    while(d<endD){
+      const bucketIdx=(d.getFullYear()-now.getFullYear())*12+d.getMonth()-now.getMonth();
+      if(bucketIdx>=0&&bucketIdx<12)monthlyTotals[bucketIdx]+=perPayment;
+      d=new Date(d);d.setDate(d.getDate()+days);
+    }
+  });
+  return{labels:monthLabels,totals:monthlyTotals};
+}
+
+// Interactive 12-month bar chart on dividends page (using the interactive engine)
+function mountDivTrendChart(){
+  const canvas=document.getElementById('div-trend-canvas');
+  if(!canvas){requestAnimationFrame(()=>{
+    if(document.getElementById('div-trend-canvas'))mountDivTrendChart();
+  });return;}
+  destroyInteractiveChart(canvas);
+  const proj=computeMonthlyDivProjection();
+  const data=proj.labels.map((l,i)=>({d:l,v:Math.round(proj.totals[i]*100)/100}));
+  const total=data.reduce((a,x)=>a+x.v,0);
+  const valEl=document.getElementById('div-chart-val');
+  const subEl=document.getElementById('div-chart-sub');
+  if(valEl)valEl.textContent='≈ '+fmtD(total);
+  if(subEl){subEl.textContent='Next 12 months';subEl.style.color='var(--t2)';}
+  const nonZero=data.filter(x=>x.v>0);
+  if(!nonZero.length){
+    if(subEl){subEl.textContent='No projected payments';subEl.style.color='var(--t3)';}
+    return;
+  }
+  mountInteractiveChart(canvas,{
+    data,
+    mode:'bar',
+    colors:{
+      barDim:'rgba(90,170,144,0.35)',
+      barCurrent:getComputedStyle(document.documentElement).getPropertyValue('--b').trim()||'#5aaa90',
+      guide:'rgba(90,170,144,0.35)'
+    },
+    onScrub(v,label){
+      if(valEl)valEl.textContent=fmtD(v);
+      if(subEl){subEl.textContent=label+' · projected';subEl.style.color='var(--t2)';}
+    },
+    onScrubEnd(){
+      if(valEl)valEl.textContent='≈ '+fmtD(total);
+      if(subEl){subEl.textContent='Next 12 months';subEl.style.color='var(--t2)';}
+    }
+  });
+}
+
+// V4 upcoming payments — date-badge cards
+function buildDividendUpcoming(){
+  const el=document.getElementById('div-upcoming');if(!el)return;
+  const upcoming=computeUpcomingDividendsV2();
+  if(!upcoming.length){
+    el.innerHTML=`<div class="empty" style="padding:20px"><div class="empty-ico">📅</div><div class="empty-txt" style="font-size:11px">No upcoming payments yet. Record a payment or ensure your holdings are set up.</div></div>`;
+    return;
+  }
+  const now=new Date();
+  el.innerHTML=upcoming.slice(0,6).map(it=>{
+    const d=new Date(it.date+'T00:00:00');
+    const daysAway=Math.ceil((d-now)/(1000*60*60*24));
+    const day=d.getDate();
+    const mon=d.toLocaleDateString('en-AU',{month:'short'}).toUpperCase();
+    const whenLabel=daysAway<=0?'today':daysAway===1?'tomorrow':daysAway<=7?`in ${daysAway} days`:daysAway<=45?`in ~${Math.round(daysAway/7)} week${Math.round(daysAway/7)===1?'':'s'}`:`in ~${Math.round(daysAway/30)} months`;
+    const isEst=!it.hasHistory;
+    return`<div class="div-upcoming-card${isEst?' est':''}" onclick="showPgFromMore('dividends')">
+      <div class="div-badge${isEst?' est':''}">
+        <div class="div-badge-day">${day}</div>
+        <div class="div-badge-mon">${mon}</div>
+      </div>
+      <div class="div-up-main">
+        <div class="div-up-ticker">${it.ticker}</div>
+        <div class="div-up-sub">${freqLabel(it.frequency)} · ${isEst?'yield estimate':'from recorded payment'}</div>
+        <div class="div-up-when">${whenLabel}</div>
+      </div>
+      <div class="div-up-right">
+        <div class="div-up-amt">${isEst?'~':'+'}${fmtD(it.amount)}</div>
+        ${isEst?'<div class="div-up-est-tag">est.</div>':''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// V4 history — glass cards
+function buildDividendHistoryV4(){
+  const el=document.getElementById('div-history');if(!el)return;
+  const countEl=document.getElementById('div-history-count');
+  const payments=[...(S.dividendPayments||[])].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  if(countEl)countEl.textContent=payments.length?`${payments.length} payment${payments.length===1?'':'s'}`:'';
+  if(!payments.length){
+    el.innerHTML='<div class="empty" style="padding:20px"><div class="empty-ico">💎</div><div class="empty-txt" style="font-size:11px">No payments recorded yet. Import from CMC or record manually.</div></div>';
+    return;
+  }
+  el.innerHTML=payments.slice(0,10).map(p=>{
+    const d=new Date((p.date||'')+'T00:00:00');
+    const dateStr=isNaN(d.getTime())?p.date:d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
+    return`<div class="div-history-card" onclick="openDivModal('${p.id}')">
+      <div class="div-history-main">
+        <div class="div-history-title">${p.ticker} · ${dateStr}</div>
+        <div class="div-history-sub">${freqLabel(p.frequency||'quarterly')}${p.units?` · ${p.units} units held then`:''}${p.note?' · '+p.note:''}</div>
+      </div>
+      <div class="div-history-amt">+${fmtD(p.amount)}</div>
+    </div>`;
+  }).join('')+(payments.length>10?`<div style="text-align:center;font-size:10px;color:var(--t3);padding:6px 0">+ ${payments.length-10} older payments</div>`:'');
+}
+
+// Screenshot / CSV import CTA
+function buildDividendImportCTA(){
+  const el=document.getElementById('div-import-cta');if(!el)return;
+  el.innerHTML=`<div class="div-import-cta" onclick="openImportModal('screenshot')">
+    <div class="div-import-icon">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--acc)"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>
+    </div>
+    <div class="div-import-main">
+      <div class="div-import-title">Import CMC dividend summary</div>
+      <div class="div-import-sub">Upload a screenshot · AI extracts payments</div>
+    </div>
+    <div style="color:var(--t3);font-size:14px">›</div>
+  </div>`;
+}
+
+// Extras — legacy metrics for detailed view
+function buildDividendMetrics(){
+  const stats=computeDividendStatsV2();
+  const dEl=document.getElementById('div-metrics');
+  if(dEl){
+    const historyBadge=stats.holdingsWithHistory>0?`<span style="font-size:9px;color:var(--acc);text-transform:uppercase;letter-spacing:.08em">${stats.holdingsWithHistory}/${stats.holdingsCount} from actuals</span>`:`<span style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em">All estimates</span>`;
+    dEl.innerHTML=`
+      <div class="met"><div class="ml">Projected annual</div><div class="mv col-acc">${fmtDI(stats.annualTotal)}</div><div class="ms">${historyBadge}</div></div>
+      <div class="met"><div class="ml">Quarterly avg</div><div class="mv col-b">${fmtDI(stats.quarterly)}</div><div class="ms">Every ~3 months</div></div>
+      <div class="met"><div class="ml">Received this year</div><div class="mv">${fmtDI(stats.receivedThisYear)}</div><div class="ms">${stats.paymentCount} payment${stats.paymentCount===1?'':'s'} logged</div></div>
+      <div class="met"><div class="ml">Portfolio yield</div><div class="mv">${stats.yieldPct.toFixed(2)}%</div><div class="ms">Annual ÷ portfolio</div></div>`;
+  }
+}
+
+function toggleDivExtras(){
+  const el=document.getElementById('div-extras');
+  const lbl=document.getElementById('div-extras-toggle-label');
+  const chev=document.getElementById('div-extras-toggle-chevron');
+  if(!el)return;
+  const open=el.style.display!=='none';
+  el.style.display=open?'none':'block';
+  if(lbl)lbl.textContent=open?'Show detailed metrics':'Hide detailed metrics';
+  if(chev)chev.style.transform=open?'rotate(0deg)':'rotate(180deg)';
+  S.divExtrasOpen=!open;
+  save();
+  if(!open){
+    buildDividendMetrics();
+    if(typeof buildDividendIncomeCard==='function')buildDividendIncomeCard();
+    renderDividendChart();
+  }
+}
+
+// ── LEGACY buildDividendCalendar body follows for reference only ──
+function _legacyBuildDividendCalendar(){
   const stats=computeDividendStatsV2();
   const dEl=document.getElementById('div-metrics');
   if(dEl){
@@ -3973,6 +4392,370 @@ function computeContributionEntries(){
   });
   merged.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   return merged;
+}
+
+// ═══════════════════════════════════════════════════════════
+// v2.7.16 — V4 BUDGET PAGE
+// ═══════════════════════════════════════════════════════════
+
+// Compute category-level spending for the current month
+function computeCategorySpending(){
+  const spent={};
+  thisMonthTxns().filter(t=>t.dir==='out'&&t.cat!=='transfer'&&t.cat!=='investments').forEach(t=>{
+    spent[t.cat]=(spent[t.cat]||0)+(t.amt||0);
+  });
+  const counts={};
+  thisMonthTxns().filter(t=>t.dir==='out'&&t.cat!=='transfer'&&t.cat!=='investments').forEach(t=>{
+    counts[t.cat]=(counts[t.cat]||0)+1;
+  });
+  return{spent,counts};
+}
+
+// Get user-defined limit for a category (S.categoryLimits map)
+function getCategoryLimit(catId){
+  return(S.categoryLimits||{})[catId]||null;
+}
+
+function computeBudgetSummary(){
+  const income=(typeof monthIncome==='function')?monthIncome():0;
+  const spent=(typeof monthSpend==='function')?monthSpend():0;
+  const varSpend=(typeof monthVariableSpend==='function')?monthVariableSpend():0;
+  const savingsRate=income>0?Math.max(0,Math.min(100,Math.round((income-spent)/income*100))):0;
+  // Monthly variable budget from slider
+  const weekSpendBudget=(S.sliders&&S.sliders.spend)||0;
+  const monthlyVarBudget=weekSpendBudget*4.33;
+  const monthlyLeft=Math.max(0,monthlyVarBudget-varSpend);
+  return{income,spent,varSpend,savingsRate,monthlyVarBudget,monthlyLeft};
+}
+
+function computeWeekProgress(){
+  const now=new Date();
+  const year=now.getFullYear(),month=now.getMonth();
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  const dayOfMonth=now.getDate();
+  const weeks=Math.ceil(daysInMonth/7);
+  const currentWeek=Math.min(weeks,Math.ceil(dayOfMonth/7));
+  // How far into the current week we are (0-1)
+  const daysIntoWeek=((dayOfMonth-1)%7)+1;
+  const weekProgress=Math.min(1,daysIntoWeek/7);
+  return{currentWeek,weeks,dayOfMonth,daysInMonth,weekProgress};
+}
+
+function buildBudgetHero(){
+  const el=document.getElementById('bud-hero');if(!el)return;
+  const s=computeBudgetSummary();
+  // Job income breakdown
+  const jobs=(S.jobs||[]).filter(j=>j.active);
+  let breakdown='';
+  if(jobs.length){
+    const parts=jobs.slice(0,3).map(j=>{
+      const monthly=j.payFrequency==='monthly'?(j.netMonthly||0):j.payFrequency==='weekly'?(j.netWeekly||0)*4.33:j.payFrequency==='fortnightly'?(j.netFortnightly||0)*2.17:0;
+      return`${fmtDI(monthly)} ${j.label||''}`;
+    });
+    breakdown=parts.join(' · ');
+  }
+  // Savings-rate ring (SVG)
+  const ringRadius=32;
+  const ringCirc=2*Math.PI*ringRadius;
+  const dashOffset=ringCirc*(1-s.savingsRate/100);
+  el.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;position:relative;z-index:1">
+      <div style="flex:1;min-width:0">
+        <div class="hero-l">Take-home income</div>
+        <div class="hero-v">${fmtD(s.income)}</div>
+        ${breakdown?`<div style="font-size:11px;color:var(--t2);margin-top:8px;line-height:1.5">${breakdown}</div>`:''}
+      </div>
+      <div style="position:relative;width:78px;height:78px;flex-shrink:0">
+        <svg width="78" height="78" viewBox="0 0 78 78" style="transform:rotate(-90deg)">
+          <circle cx="39" cy="39" r="${ringRadius}" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="8"/>
+          <circle cx="39" cy="39" r="${ringRadius}" fill="none" stroke="var(--acc)" stroke-width="8" stroke-linecap="round" stroke-dasharray="${ringCirc}" stroke-dashoffset="${dashOffset}" style="transition:stroke-dashoffset var(--dur-slow) var(--ease-out)"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--acc)">
+          <div style="font-size:16px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums">${s.savingsRate}%</div>
+          <div style="font-size:8px;color:var(--t3);margin-top:2px">saved</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function buildBudgetWeek(){
+  const el=document.getElementById('bud-week');if(!el)return;
+  const wp=computeWeekProgress();
+  const s=computeBudgetSummary();
+  const weekSpendBudget=(S.sliders&&S.sliders.spend)||0;
+  const weeklyVar=(typeof weekVariableSpend==='function')?weekVariableSpend():0;
+  const leftThisWeek=Math.max(0,weekSpendBudget-weeklyVar);
+  // Compute per-week ideal budget (rough): monthlyVarBudget / weeks
+  const perWeekBudget=wp.weeks>0?s.monthlyVarBudget/wp.weeks:0;
+  // Build segment bars: past weeks show full, current shows partial, future empty
+  const segments=[];
+  for(let i=1;i<=wp.weeks;i++){
+    if(i<wp.currentWeek)segments.push({fill:100,cls:''});
+    else if(i===wp.currentWeek)segments.push({fill:Math.round(wp.weekProgress*100),cls:'partial'});
+    else segments.push({fill:0,cls:''});
+  }
+  // On pace = current variable spend / monthly budget vs week progress
+  const idealSpentByNow=s.monthlyVarBudget*(wp.currentWeek-1+wp.weekProgress)/wp.weeks;
+  let paceLabel,paceColor;
+  if(!weekSpendBudget){paceLabel='';paceColor='var(--t3)';}
+  else if(s.varSpend>idealSpentByNow*1.10){paceLabel='Over pace';paceColor='var(--y)';}
+  else if(s.varSpend>idealSpentByNow*0.9){paceLabel='On pace';paceColor='var(--acc)';}
+  else{paceLabel='Under pace';paceColor='var(--acc)';}
+  const paceExtra=weekSpendBudget?`${paceLabel}${leftThisWeek>0?` · ${fmtDI(leftThisWeek)} left this week`:' · budget spent this week'}`:'Set a weekly spending target';
+  el.innerHTML=`<div class="bud-week-card">
+    <div class="bud-week-label">Week ${wp.currentWeek} of ${wp.weeks}</div>
+    <div class="bud-week-segments">
+      ${segments.map(s=>`<div class="bud-week-seg"><div class="bud-week-seg-fill ${s.cls}" style="width:${s.fill}%"></div></div>`).join('')}
+    </div>
+    <div class="bud-week-stats">
+      <div>
+        <div class="bud-week-stat-l">Spent so far</div>
+        <div class="bud-week-stat-v">${fmtDI(s.varSpend)}</div>
+        <div class="bud-week-stat-s" style="color:${paceColor}">${paceExtra}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="bud-week-stat-l">Left this month</div>
+        <div class="bud-week-stat-v" style="color:var(--acc)">${fmtDI(s.monthlyLeft)}</div>
+        <div class="bud-week-stat-s" style="color:var(--t3)">of ${fmtDI(s.monthlyVarBudget)} budget</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function buildBudgetCategories(){
+  const el=document.getElementById('bud-categories');if(!el)return;
+  const{spent,counts}=computeCategorySpending();
+  const cats=cmap();
+  // Get all cats that have activity this month + all cats with limits set
+  const activeCatIds=new Set([...Object.keys(spent),...Object.keys(S.categoryLimits||{})]);
+  const rows=[];
+  activeCatIds.forEach(catId=>{
+    const cat=cats[catId];if(!cat)return;
+    const spentAmt=spent[catId]||0;
+    const limit=getCategoryLimit(catId);
+    const txnCount=counts[catId]||0;
+    const isFixed=cat.type==='fixed';
+    rows.push({catId,cat,spent:spentAmt,limit,txnCount,isFixed});
+  });
+  // Sort: over-cap first, then by spent desc
+  rows.sort((a,b)=>{
+    const aOver=a.limit&&a.spent>a.limit;
+    const bOver=b.limit&&b.spent>b.limit;
+    if(aOver&&!bOver)return-1;
+    if(!aOver&&bOver)return 1;
+    return b.spent-a.spent;
+  });
+  if(!rows.length){
+    el.innerHTML='<div class="empty" style="padding:20px"><div class="empty-ico">📊</div><div class="empty-txt" style="font-size:11px">No spending this month yet. Log a transaction to start tracking categories.</div></div>';
+    return;
+  }
+  // Top 4 shown, rest collapsed
+  const topRows=rows.slice(0,4);
+  const remaining=rows.slice(4);
+  const remainingTotal=remaining.reduce((a,r)=>a+r.spent,0);
+  const html=topRows.map(r=>{
+    const{cat,spent,limit,txnCount,isFixed,catId}=r;
+    const pct=limit?Math.min(100,Math.round(spent/limit*100)):0;
+    const isOver=limit&&spent>limit;
+    const isWarn=limit&&spent>limit*0.85&&!isOver;
+    const cls=isOver?'over':isWarn?'warn':'';
+    const fillCls=isFixed?'fixed':isOver?'over':isWarn?'warn':'';
+    let subline;
+    if(isOver)subline=`Over cap · reduce next week`;
+    else if(isFixed&&limit)subline=`${txnCount} transaction${txnCount===1?'':'s'} · fixed`;
+    else if(isFixed)subline=`${txnCount} transaction${txnCount===1?'':'s'} · fixed`;
+    else if(txnCount>0)subline=`${txnCount} transaction${txnCount===1?'':'s'}${limit&&spent>0?` · ${fmtD(spent/txnCount)} avg`:''}`;
+    else subline='No spending';
+    const limitText=limit?`of ${fmtDI(limit)}`:(isFixed?'fixed':'no limit set');
+    const fillWidth=limit?pct:(isFixed&&spent>0?100:0);
+    return`<div class="bud-cat-card ${cls}" onclick="openCategoryDetail('${catId}')">
+      <div class="bud-cat-icon">${cat.icon||'📌'}</div>
+      <div class="bud-cat-main">
+        <div class="bud-cat-name">${cat.label}</div>
+        <div class="bud-cat-meta">${subline}</div>
+        <div class="bud-cat-track"><div class="bud-cat-fill ${fillCls}" style="width:${fillWidth}%"></div></div>
+      </div>
+      <div class="bud-cat-right">
+        <div class="bud-cat-amt">${fmtDI(spent)}</div>
+        <div class="bud-cat-limit">${limitText}</div>
+      </div>
+    </div>`;
+  }).join('');
+  const moreLine=remaining.length?`<div class="bud-cat-more" onclick="expandBudCats()">Show ${remaining.length} more categor${remaining.length===1?'y':'ies'} · ${fmtDI(remainingTotal)}</div>`:'';
+  el.innerHTML=html+moreLine;
+  // Stash remaining for the expand handler
+  el._remaining=remaining;
+}
+
+function expandBudCats(){
+  const el=document.getElementById('bud-categories');if(!el||!el._remaining)return;
+  const remaining=el._remaining;
+  const cats=cmap();
+  const rowsHtml=remaining.map(r=>{
+    const{cat,spent,limit,txnCount,isFixed,catId}=r;
+    const pct=limit?Math.min(100,Math.round(spent/limit*100)):0;
+    const isOver=limit&&spent>limit;
+    const isWarn=limit&&spent>limit*0.85&&!isOver;
+    const cls=isOver?'over':isWarn?'warn':'';
+    const fillCls=isFixed?'fixed':isOver?'over':isWarn?'warn':'';
+    let subline=isFixed?`${txnCount} · fixed`:txnCount>0?`${txnCount} transaction${txnCount===1?'':'s'}`:'No spending';
+    const limitText=limit?`of ${fmtDI(limit)}`:(isFixed?'fixed':'no limit');
+    const fillWidth=limit?pct:(isFixed&&spent>0?100:0);
+    return`<div class="bud-cat-card ${cls}" onclick="openCategoryDetail('${catId}')">
+      <div class="bud-cat-icon">${cat.icon||'📌'}</div>
+      <div class="bud-cat-main">
+        <div class="bud-cat-name">${cat.label}</div>
+        <div class="bud-cat-meta">${subline}</div>
+        <div class="bud-cat-track"><div class="bud-cat-fill ${fillCls}" style="width:${fillWidth}%"></div></div>
+      </div>
+      <div class="bud-cat-right">
+        <div class="bud-cat-amt">${fmtDI(spent)}</div>
+        <div class="bud-cat-limit">${limitText}</div>
+      </div>
+    </div>`;
+  }).join('');
+  // Replace the more line with the expanded rows
+  const moreEl=el.querySelector('.bud-cat-more');
+  if(moreEl)moreEl.outerHTML=rowsHtml;
+}
+
+function buildBudgetInsight(){
+  const el=document.getElementById('bud-insight');if(!el)return;
+  const{spent}=computeCategorySpending();
+  // Find biggest over-cap variable category
+  const cats=cmap();
+  let biggestOver=null;
+  Object.keys(spent).forEach(catId=>{
+    const cat=cats[catId];if(!cat||cat.type==='fixed')return;
+    const limit=getCategoryLimit(catId);
+    if(limit&&spent[catId]>limit){
+      const overshoot=spent[catId]-limit;
+      if(!biggestOver||overshoot>biggestOver.overshoot){
+        biggestOver={catId,cat,spent:spent[catId],limit,overshoot,avgTxn:0};
+      }
+    }
+  });
+  if(!biggestOver){
+    // Positive insight instead: which goal would benefit from a small cutback
+    const goalsBehind=Object.keys(GCFG||{}).filter(k=>{
+      if(typeof computeGoalHealth!=='function')return false;
+      const h=computeGoalHealth(k);
+      return h&&h.verdict==='behind';
+    });
+    if(goalsBehind.length){
+      const g=GCFG[goalsBehind[0]];
+      el.innerHTML=`<div class="bud-insight-card">
+        <div class="bud-insight-icon"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+        <div class="bud-insight-body">
+          <div class="bud-insight-title">You're not over any category cap</div>
+          <div class="bud-insight-sub">Even a small $30/mo cutback from Food or Entertainment could help catch up on <strong style="color:var(--acc)">${g.label}</strong>.</div>
+        </div>
+      </div>`;
+    }else{
+      el.innerHTML='';
+    }
+    return;
+  }
+  // Compute average transaction size in that category
+  const monthTxns=thisMonthTxns().filter(t=>t.cat===biggestOver.catId);
+  const avgTxn=monthTxns.length?biggestOver.spent/monthTxns.length:20;
+  const skipCount=Math.min(4,Math.max(1,Math.ceil(biggestOver.overshoot/avgTxn)));
+  const savings=Math.round(skipCount*avgTxn);
+  // Suggest which goal it could fund
+  let goalSuggestion='';
+  if(typeof computeGoalHealth==='function'){
+    const behindGoals=Object.keys(GCFG||{}).map(k=>({k,h:computeGoalHealth(k)})).filter(x=>x.h&&x.h.verdict==='behind');
+    if(behindGoals.length){
+      goalSuggestion=` · would help fund <strong style="color:var(--acc)">${GCFG[behindGoals[0].k].label}</strong>`;
+    }
+  }
+  el.innerHTML=`<div class="bud-insight-card">
+    <div class="bud-insight-icon"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg></div>
+    <div class="bud-insight-body">
+      <div class="bud-insight-title">Skip ${biggestOver.cat.label.toLowerCase()} ${skipCount} time${skipCount===1?'':'s'}</div>
+      <div class="bud-insight-sub">Save ~${fmtDI(savings)} by month-end${goalSuggestion}</div>
+    </div>
+  </div>`;
+}
+
+function toggleBudExtras(){
+  const el=document.getElementById('bud-extras');
+  const lbl=document.getElementById('bud-extras-toggle-label');
+  const chev=document.getElementById('bud-extras-toggle-chevron');
+  if(!el)return;
+  const open=el.style.display!=='none';
+  el.style.display=open?'none':'block';
+  if(lbl)lbl.textContent=open?'Show budget planner':'Hide budget planner';
+  if(chev)chev.style.transform=open?'rotate(0deg)':'rotate(180deg)';
+  S.budExtrasOpen=!open;
+  save();
+  if(!open){
+    upAll();
+    if(typeof buildBudgetActual==='function')buildBudgetActual();
+  }
+}
+
+// Render everything on the budget page
+function buildBudgetPageV4(){
+  buildBudgetHero();
+  buildBudgetWeek();
+  buildBudgetCategories();
+  buildBudgetInsight();
+  const el=document.getElementById('bud-extras');
+  const lbl=document.getElementById('bud-extras-toggle-label');
+  const chev=document.getElementById('bud-extras-toggle-chevron');
+  if(el){
+    if(S.budExtrasOpen){
+      el.style.display='block';
+      if(lbl)lbl.textContent='Hide budget planner';
+      if(chev)chev.style.transform='rotate(180deg)';
+      upAll();
+      if(typeof buildBudgetActual==='function')buildBudgetActual();
+    }else{
+      el.style.display='none';
+    }
+  }
+}
+
+// Category limits modal — set/edit spending caps
+function openCategoryLimitsModal(){
+  const cats=DEFAULT_CATS.filter(c=>c.type!=='income'&&c.type!=='transfer');
+  const limits=S.categoryLimits||{};
+  const rows=cats.map(c=>`<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--bdr)">
+    <div style="font-size:18px;width:28px;text-align:center">${c.icon}</div>
+    <div style="flex:1;font-size:12px;color:var(--t)">${c.label}</div>
+    <div style="display:flex;align-items:center;gap:4px">
+      <span style="font-size:11px;color:var(--t3)">$</span>
+      <input type="number" data-cat="${c.id}" value="${limits[c.id]||''}" placeholder="—" style="width:70px;background:var(--bg3);border:0.5px solid var(--bdr);border-radius:8px;padding:6px 8px;color:var(--t);font-size:12px;font-variant-numeric:tabular-nums;text-align:right">
+      <span style="font-size:10px;color:var(--t3);margin-left:2px">/mo</span>
+    </div>
+  </div>`).join('');
+  const html=`<div class="modal-hdr">
+    <div class="modal-title">Category limits</div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+  </div>
+  <div style="font-size:11px;color:var(--t2);margin-bottom:12px;line-height:1.55">Set monthly spending caps for any category. Leave blank for no cap. When you go over, that category and the "Today" briefing will flag it.</div>
+  <div id="cat-limits-rows">${rows}</div>
+  <div style="display:flex;gap:8px;margin-top:14px">
+    <button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-acc btn-sm" style="flex:1" onclick="saveCategoryLimits()">Save limits</button>
+  </div>`;
+  openModal(html);
+}
+
+function saveCategoryLimits(){
+  const inputs=document.querySelectorAll('#cat-limits-rows input[data-cat]');
+  S.categoryLimits=S.categoryLimits||{};
+  inputs.forEach(inp=>{
+    const catId=inp.getAttribute('data-cat');
+    const v=parseFloat(inp.value);
+    if(v>0)S.categoryLimits[catId]=v;
+    else delete S.categoryLimits[catId];
+  });
+  save();
+  closeModal();
+  if(typeof refreshAll==='function')refreshAll({page:'budget'});
+  else buildBudgetPageV4();
 }
 
 function computeContributionSeries(){
@@ -5060,7 +5843,7 @@ const PAGE_BUILDERS={
   txns:()=>typeof buildTxnsPage==='function'&&buildTxnsPage(),
   ai:()=>{}, // AI page rebuilds happen on message send, not here
   recurring:()=>typeof buildRecurringPage==='function'&&buildRecurringPage(),
-  budget:()=>{if(typeof upAll==='function')upAll();if(typeof buildBudgetActual==='function')buildBudgetActual();if(typeof buildBudgetPerformance==='function')buildBudgetPerformance();},
+  budget:()=>{if(typeof upAll==='function')upAll();if(typeof buildBudgetPageV4==='function')buildBudgetPageV4();if(typeof buildBudgetPerformance==='function')buildBudgetPerformance();},
   analytics:()=>typeof buildAnalytics==='function'&&buildAnalytics(),
   kmart:()=>typeof buildKmartPage==='function'&&buildKmartPage(),
   jobs:()=>typeof buildJobsPage==='function'&&buildJobsPage(),
@@ -6509,7 +7292,7 @@ function showPg(id,btn){
   if(id==='goals')buildGoalsPage();
   if(id==='invest')buildInvestPage();
   if(id==='timeline')buildTimeline();
-  if(id==='budget'){upAll();buildBudgetActual();}
+  if(id==='budget'){upAll();buildBudgetPageV4();}
   if(id==='analytics')buildAnalytics();
   if(id==='kmart')buildKmartPage();
   if(id==='settings'){buildThemeGrid();buildSettingsPage();buildCustomCatsList();}
@@ -6560,7 +7343,7 @@ function showPgFromMore(id){
   if(typeof renderContextPanel==='function')renderContextPanel();
   if(id==='invest')buildInvestPage();
   if(id==='timeline')buildTimeline();
-  if(id==='budget'){upAll();buildBudgetActual();}
+  if(id==='budget'){upAll();buildBudgetPageV4();}
   if(id==='analytics')buildAnalytics();
   if(id==='kmart')buildKmartPage();
   if(id==='settings'){buildThemeGrid();buildSettingsPage();buildCustomCatsList();}
