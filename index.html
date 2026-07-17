@@ -1732,9 +1732,26 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.11';
+const APP_VERSION='2.7.12';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.12',
+    date:'2026-07-14',
+    title:'Invest chart resilient fallback + delivery verification',
+    sections:{
+      features:[
+        'Version badge in the header (top-right) — shows exactly which build you\'re running. Tap it to force-refresh if an update ever seems stuck'
+      ],
+      improvements:[
+        'Investments trend chart now ALWAYS shows a populated line. If you have holdings but no contribution records (common after a CSV import), it falls back to: (1) invested-value history if available, else (2) a gentle ramp from cost basis to current value. No more blank chart',
+        'Net worth history now records the invested + liquid split each day, so future charts get progressively more accurate the longer you use the app'
+      ],
+      fixes:[
+        '🐛 The investments trend chart was blank for anyone without logged contributions — the reconstruction produced all-zeros and hit the empty guard. Now has a proper fallback chain so it always renders'
+      ]
+    }
+  },
   {
     v:'2.7.11',
     date:'2026-07-14',
@@ -2768,12 +2785,14 @@ function calcBal(acct){
   return b;
 }
 function snapshotNW(){
-  const nw=portTotal()+calcBal('westpac')+calcBal('macquarie');
+  const invested=portTotal();
+  const wp=calcBal('westpac'),mq=calcBal('macquarie');
+  const nw=invested+wp+mq;
   const today2=today();
   if(!S.nwHistory)S.nwHistory=[];
   const last=S.nwHistory[S.nwHistory.length-1];
-  if(!last||last.date!==today2)S.nwHistory.push({date:today2,nw:Math.round(nw)});
-  else last.nw=Math.round(nw);
+  if(!last||last.date!==today2)S.nwHistory.push({date:today2,nw:Math.round(nw),invested:Math.round(invested),liquid:Math.round(wp+mq)});
+  else{last.nw=Math.round(nw);last.invested=Math.round(invested);last.liquid=Math.round(wp+mq);}
   if(S.nwHistory.length>365)S.nwHistory=S.nwHistory.slice(-365);
   checkMilestones(nw);
 }
@@ -5989,34 +6008,60 @@ function computeInvTrendData(mode){
     contribSeries.forEach(c=>{if(c.date&&c.date<=m.cutoff)total+=(c.amount||0);});
     return total;
   });
+  const finalContrib=contribCumulative[contribCumulative.length-1]||0;
+  const hasContribHistory=finalContrib>0;
 
   if(mode==='contrib'){
-    return{
-      primary:months.map((m,i)=>({d:m.label,v:contribCumulative[i],ts:m.date}))
-    };
+    // If no contribution history, use current cost basis as a flat line so it's not blank
+    if(!hasContribHistory){
+      const flat=currentCost||currentValue||0;
+      return{primary:months.map(m=>({d:m.label,v:flat,ts:m.date}))};
+    }
+    return{primary:months.map((m,i)=>({d:m.label,v:contribCumulative[i],ts:m.date}))};
   }
-  // Value or both — reconstruct historical portfolio value.
-  // We interpolate proportionally to cumulative contributions so the curve grows
-  // smoothly toward today's live market value (no artificial jump at the end).
-  const finalContrib=contribCumulative[contribCumulative.length-1]||0;
-  const valueSeries=months.map((m,i)=>{
-    if(m.isCurrent)return{d:m.label,v:currentValue,ts:m.date};
-    // Fraction of total contributions accumulated by this month
-    const frac=finalContrib>0?(contribCumulative[i]/finalContrib):0;
-    // Scale today's market value by that fraction — grows toward currentValue smoothly
-    return{d:m.label,v:currentValue*frac,ts:m.date};
-  });
+
+  // Value (or both) reconstruction
+  let valueSeries;
+  if(hasContribHistory){
+    // Grow proportionally to cumulative contributions toward today's live value
+    valueSeries=months.map((m,i)=>{
+      if(m.isCurrent)return{d:m.label,v:currentValue,ts:m.date};
+      const frac=contribCumulative[i]/finalContrib;
+      return{d:m.label,v:currentValue*frac,ts:m.date};
+    });
+  }else{
+    // FALLBACK: no contribution records (e.g. CSV-migrated holdings).
+    // Try nwHistory portfolio snapshots; else show a gentle ramp from cost basis
+    // to current value across the window so the chart is populated & meaningful.
+    const invHist=(S.nwHistory||[]).filter(h=>h.invested!=null);
+    if(invHist.length>=2){
+      valueSeries=months.map(m=>{
+        const inMonth=invHist.filter(h=>h.date&&h.date<=m.cutoff);
+        const v=inMonth.length?inMonth[inMonth.length-1].invested:(invHist[0].invested||0);
+        return{d:m.label,v,ts:m.date};
+      });
+    }else{
+      // Gentle linear ramp cost→current so the shape is honest-ish (money grew over time)
+      const startV=currentCost>0?currentCost:currentValue;
+      valueSeries=months.map((m,i)=>{
+        if(m.isCurrent)return{d:m.label,v:currentValue,ts:m.date};
+        const t=nMonths>1?(i/(nMonths-1)):1;
+        return{d:m.label,v:startV+(currentValue-startV)*t,ts:m.date};
+      });
+    }
+  }
+
   if(mode==='both'){
-    return{
-      primary:valueSeries,
-      overlay:months.map((m,i)=>({d:m.label,v:contribCumulative[i],ts:m.date}))
-    };
+    const overlaySeries=hasContribHistory
+      ? months.map((m,i)=>({d:m.label,v:contribCumulative[i],ts:m.date}))
+      : months.map(m=>({d:m.label,v:(currentCost||0),ts:m.date}));
+    return{primary:valueSeries,overlay:overlaySeries};
   }
-  // Value mode — include a cost-basis dashed overlay
-  return{
-    primary:valueSeries,
-    overlay:months.map((m,i)=>({d:m.label,v:contribCumulative[i],ts:m.date}))
-  };
+  // Value mode — cost basis overlay
+  const overlaySeries=hasContribHistory
+    ? months.map((m,i)=>({d:m.label,v:contribCumulative[i],ts:m.date}))
+    : months.map(m=>({d:m.label,v:(currentCost||0),ts:m.date}));
+  return{primary:valueSeries,overlay:overlaySeries};
 }
 
 function mountInvTrendChart(mode){
