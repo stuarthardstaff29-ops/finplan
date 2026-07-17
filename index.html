@@ -1732,9 +1732,27 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.12';
+const APP_VERSION='2.7.13';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.13',
+    date:'2026-07-17',
+    title:'Root-cause fix — charts were rendering with an invisible line',
+    sections:{
+      features:[],
+      improvements:[
+        'Bar charts (Income mode) now use their own correct interaction model — hovering/dragging snaps to the nearest month bar instead of interpolating a continuous value. Area charts (Net worth, portfolio value) keep smooth interpolation. Each graph type now has its own independent interaction behaviour',
+        'Flat data series (all values equal) now render through the vertical middle of the chart instead of being pinned to the top edge where the line was invisible',
+        'Canvas measurement has fallbacks (clientWidth/offsetWidth/parent width) and a longer retry window, so charts reliably draw even when mounted while their page is transitioning into view'
+      ],
+      fixes:[
+        '🐛 **THE root cause of every blank chart — found by rendering to actual pixels and inspecting them.** When a chart was mounted with a custom `colors` option (the investments trend chart passes `colors:{overlay:...}` for its cost-basis line), the options spread REPLACED the entire colors object, wiping out `stroke`, `fill`, and `dot`. The line then drew with `strokeStyle = undefined` — completely invisible. Fixed by deep-merging caller colors over the defaults so custom colors extend rather than replace. This is why the investments graph showed nothing despite having valid data',
+        '🐛 Dashboard Net Worth graph now renders — combination of the flat-line-centering fix and the more robust canvas measurement',
+        '🐛 Income graph no longer inherits the Net Worth line-graph interaction — bar mode has its own discrete snap-to-bar behaviour'
+      ]
+    }
+  },
   {
     v:'2.7.12',
     date:'2026-07-14',
@@ -5573,24 +5591,29 @@ const _chartInstances = new WeakMap();
 
 function mountInteractiveChart(canvas, opts) {
   if (!canvas) return null;
+  const _accent = (getComputedStyle(document.documentElement).getPropertyValue('--acc').trim() || '#00e599');
+  const _label = (getComputedStyle(document.documentElement).getPropertyValue('--t3').trim() || '#5a8a6a');
+  const defaultColors = {
+    stroke: _accent,
+    fill: 'rgba(0,229,153,0.14)',
+    dot: _accent,
+    guide: 'rgba(0,229,153,0.35)',
+    label: _label,
+    barDim: 'rgba(0,229,153,0.30)',
+    barCurrent: _accent,
+    overlay: 'rgba(200,216,196,0.5)',
+    background: '#0a120e'
+  };
   const cfg = {
     mode: 'area',
-    colors: {
-      stroke: getComputedStyle(document.documentElement).getPropertyValue('--acc').trim() || '#00e599',
-      fill: 'rgba(0,229,153,0.14)',
-      dot: getComputedStyle(document.documentElement).getPropertyValue('--acc').trim() || '#00e599',
-      guide: 'rgba(0,229,153,0.35)',
-      label: getComputedStyle(document.documentElement).getPropertyValue('--t3').trim() || '#5a8a6a',
-      barDim: 'rgba(0,229,153,0.30)',
-      barCurrent: '#00e599',
-      background: '#0a120e'
-    },
     padTop: 16,
     padBottom: 26,
     padLeft: 12,
     padRight: 12,
     showLabels: true,
-    ...opts
+    ...opts,
+    // Deep-merge colors so a caller passing colors:{overlay:...} doesn't wipe defaults
+    colors: Object.assign({}, defaultColors, (opts && opts.colors) || {})
   };
   const ctx = canvas.getContext('2d');
   let hoverX = null;
@@ -5600,22 +5623,42 @@ function mountInteractiveChart(canvas, opts) {
 
   function computePoints(rect) {
     if (!data.length) return [];
-    const minV = Math.min(...data.map(d => d.v));
-    const maxV = Math.max(...data.map(d => d.v));
+    const vals = data.map(d => (typeof d.v === 'number' && isFinite(d.v)) ? d.v : 0);
+    let minV = Math.min(...vals);
+    let maxV = Math.max(...vals);
+    // If the series is flat (all equal), create an artificial range so the line
+    // renders through the vertical middle instead of pinned to the top edge (invisible).
+    if (maxV - minV < 0.0001) {
+      const pad = Math.max(1, Math.abs(maxV) * 0.1);
+      minV -= pad;
+      maxV += pad;
+    }
     const rng = Math.max(1, maxV - minV);
     const w = rect.width - cfg.padLeft - cfg.padRight;
     const h = rect.height - cfg.padTop - cfg.padBottom;
-    return data.map((d, i) => ({
-      x: cfg.padLeft + (i / Math.max(1, data.length - 1)) * w,
-      y: cfg.padTop + h * (1 - (d.v - minV) / rng),
-      v: d.v,
-      d: d.d,
-      i: i
-    }));
+    return data.map((d, i) => {
+      const v = (typeof d.v === 'number' && isFinite(d.v)) ? d.v : 0;
+      return {
+        x: cfg.padLeft + (i / Math.max(1, data.length - 1)) * w,
+        y: cfg.padTop + h * (1 - (v - minV) / rng),
+        v: v,
+        d: d.d,
+        i: i
+      };
+    });
+  }
+
+  function measure() {
+    const rect = canvas.getBoundingClientRect();
+    let w = rect.width, h = rect.height;
+    // Fallbacks when getBoundingClientRect reports 0 but layout exists
+    if (!w) w = canvas.clientWidth || canvas.offsetWidth || (canvas.parentElement ? canvas.parentElement.clientWidth : 0);
+    if (!h) h = canvas.clientHeight || canvas.offsetHeight || (canvas.parentElement ? canvas.parentElement.clientHeight : 0);
+    return { width: w, height: h };
   }
 
   function draw() {
-    const rect = canvas.getBoundingClientRect();
+    const rect = measure();
     if (rect.width === 0 || rect.height === 0) return;
     const dpr = window.devicePixelRatio || 1;
     if (canvas.width !== Math.round(rect.width * dpr) || canvas.height !== Math.round(rect.height * dpr)) {
@@ -5728,6 +5771,35 @@ function mountInteractiveChart(canvas, opts) {
   function drawHover(pts, rect) {
     const first = pts[0], last = pts[pts.length - 1];
     const cx = Math.max(first.x, Math.min(last.x, hoverX));
+
+    if (cfg.mode === 'bar') {
+      // BAR MODE — snap to the nearest bar (discrete). No interpolation.
+      let nearest = 0, nearestDist = Infinity;
+      pts.forEach((p, i) => {
+        const dist = Math.abs(p.x - cx);
+        if (dist < nearestDist) { nearestDist = dist; nearest = i; }
+      });
+      const p = pts[nearest];
+      // Vertical guide centered on the bar
+      ctx.beginPath();
+      ctx.setLineDash([2, 4]);
+      ctx.moveTo(p.x, cfg.padTop);
+      ctx.lineTo(p.x, rect.height - cfg.padBottom);
+      ctx.strokeStyle = cfg.colors.guide;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // Redraw this bar highlighted
+      const barW = Math.max(6, Math.min(24, (rect.width - cfg.padLeft - cfg.padRight) / pts.length * 0.6));
+      const baseY = rect.height - cfg.padBottom;
+      ctx.fillStyle = cfg.colors.barCurrent;
+      roundedRect(ctx, p.x - barW/2, p.y, barW, Math.max(2, baseY - p.y), 3);
+      ctx.fill();
+      onScrub(p.v, p.d, nearest);
+      return;
+    }
+
+    // AREA MODE — continuous interpolation between points
     let hy = first.y, val = first.v, label = first.d, idx = 0;
     for (let i = 0; i < pts.length - 1; i++) {
       if (cx >= pts[i].x && cx <= pts[i+1].x) {
@@ -5749,23 +5821,21 @@ function mountInteractiveChart(canvas, opts) {
     ctx.lineWidth = 1;
     ctx.stroke();
     ctx.setLineDash([]);
-    if (cfg.mode !== 'bar') {
-      // Outer glow dot
-      ctx.beginPath();
-      ctx.arc(cx, hy, 14, 0, Math.PI * 2);
-      ctx.fillStyle = cfg.colors.fill;
-      ctx.fill();
-      // Inner dot with ring
-      ctx.beginPath();
-      ctx.arc(cx, hy, 5.5, 0, Math.PI * 2);
-      ctx.fillStyle = cfg.colors.dot;
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(cx, hy, 5.5, 0, Math.PI * 2);
-      ctx.strokeStyle = cfg.colors.background;
-      ctx.lineWidth = 2.5;
-      ctx.stroke();
-    }
+    // Outer glow dot
+    ctx.beginPath();
+    ctx.arc(cx, hy, 14, 0, Math.PI * 2);
+    ctx.fillStyle = cfg.colors.fill;
+    ctx.fill();
+    // Inner dot with ring
+    ctx.beginPath();
+    ctx.arc(cx, hy, 5.5, 0, Math.PI * 2);
+    ctx.fillStyle = cfg.colors.dot;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx, hy, 5.5, 0, Math.PI * 2);
+    ctx.strokeStyle = cfg.colors.background;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
     onScrub(val, label, idx);
   }
 
@@ -5823,12 +5893,12 @@ function mountInteractiveChart(canvas, opts) {
   // 0×0 bounding rect. We retry on animation frames until the canvas is visible.
   let _retries = 0;
   function drawWhenReady() {
-    const rect = canvas.getBoundingClientRect();
+    const rect = measure();
     if (rect.width > 0 && rect.height > 0) {
       draw();
       return;
     }
-    if (_retries++ < 120) { // ~2s of frames max
+    if (_retries++ < 180) { // ~3s of frames max
       requestAnimationFrame(drawWhenReady);
     }
   }
