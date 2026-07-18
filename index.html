@@ -254,7 +254,8 @@ body.compact .mg{gap:7px}
 
 /* APP SHELL */
 #app{display:none;flex-direction:column;height:100%}
-.hdr{background:rgba(0,0,0,.7);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid var(--bdr);padding:14px 18px;padding-top:calc(14px + var(--st));display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:relative;z-index:50}
+.hdr{background:rgba(0,0,0,.7);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-bottom:0.5px solid var(--bdr);padding:14px 18px;padding-top:calc(14px + var(--st));display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:relative;z-index:50;transition:transform var(--dur-base) var(--ease-out),margin-top var(--dur-base) var(--ease-out)}
+body.hdr-hidden .hdr{transform:translateY(-100%);margin-bottom:calc(-1 * (var(--hdr-h) + var(--st)))}
 body.light .hdr{background:rgba(255,255,255,.8)}
 .hdr-logo{font-size:19px;font-weight:800;color:var(--acc);letter-spacing:-1px;font-family:var(--display);display:flex;align-items:baseline;gap:1px}
 .hdr-logo em{color:var(--t3);font-style:normal;font-weight:600;font-size:14px;letter-spacing:0}
@@ -272,15 +273,21 @@ body.light .hdr{background:rgba(255,255,255,.8)}
 .scrl{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--nav-h) + var(--sb) + 28px);scrollbar-width:none}
 .scrl::-webkit-scrollbar{display:none}
 
-/* BOTTOM NAV */
-.bnav{position:fixed;bottom:calc(14px + var(--sb));left:14px;right:14px;background:rgba(13,15,18,.92);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border:1px solid var(--bdr2);border-radius:22px;display:flex;padding:8px 6px;z-index:100;height:var(--nav-h);box-shadow:0 8px 32px rgba(0,0,0,.5);transition:transform .22s cubic-bezier(.4,0,.2,1),opacity .22s}
-.bnav.hidden{transform:translateY(calc(100% + 40px));opacity:0;pointer-events:none}
+/* BOTTOM NAV — see v2.7.20 rewrite below */
 .fab.nav-hidden{transform:translateY(calc(var(--nav-h) + 40px));opacity:.5;pointer-events:none;transition:transform .22s cubic-bezier(.4,0,.2,1),opacity .22s}
-.conv-row{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg3);border:1px solid var(--bdr);border-radius:12px;margin-bottom:6px;transition:background .15s}
-.conv-row.active{border-color:var(--acc);background:var(--accd)}
-.conv-row:hover{background:var(--bg4)}
-.conv-title{font-size:13px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.conv-sub{font-size:10px;color:var(--t3);margin-top:2px}
+.conv-section-label{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.12em;font-weight:600;margin-bottom:8px;padding:0 4px}
+.conv-row{display:flex;align-items:flex-start;gap:8px;padding:14px;background:var(--glass);border:0.5px solid var(--bdr);border-radius:14px;margin-bottom:8px;transition:border-color var(--dur-fast) var(--ease-out),background var(--dur-fast) var(--ease-out);cursor:pointer}
+.conv-row:hover{border-color:var(--bdr2);background:rgba(255,255,255,.03)}
+.conv-row.active{border-color:rgba(0,229,153,.35);background:rgba(0,229,153,.06)}
+.conv-row.active .conv-title{color:var(--acc)}
+.conv-title{font-size:13px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;line-height:1.3}
+.conv-preview{font-size:11px;color:var(--t2);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
+.conv-sub{font-size:10px;color:var(--t3);line-height:1.3}
+.conv-actions{display:flex;flex-direction:column;gap:4px;flex-shrink:0}
+.conv-icon-btn{background:rgba(255,255,255,.04);border:none;border-radius:8px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:var(--t2);cursor:pointer;transition:background var(--dur-fast) var(--ease-out)}
+.conv-icon-btn:hover{background:rgba(255,255,255,.10);color:var(--t)}
+.conv-icon-btn.danger:hover{background:rgba(229,106,90,.14);color:var(--r)}
+.conv-icon-btn:active{transform:scale(.92)}
 
 /* ═══════════ REPORTS (v2.7.5) ═══════════ */
 .report-view{position:fixed;inset:0;background:var(--bg);z-index:500;transform:translateY(100%);transition:transform .3s cubic-bezier(.2,0,.2,1);display:flex;flex-direction:column;overflow:hidden}
@@ -323,12 +330,15 @@ body.light .hdr{background:rgba(255,255,255,.8)}
   .rep-hdr{page-break-after:avoid}
   a{text-decoration:none;color:#000!important}
 }
+/* v2.7.20 — Floating nav pill, concept-matching: compact, centered, floating */
+.bnav{position:fixed;bottom:calc(18px + var(--sb));left:50%;transform:translateX(-50%);background:rgba(13,15,18,.88);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border:0.5px solid rgba(255,255,255,.08);border-radius:26px;display:flex;padding:6px 8px;z-index:100;height:var(--nav-h);box-shadow:0 12px 40px rgba(0,0,0,.55),0 2px 10px rgba(0,0,0,.4);gap:4px;transition:transform var(--dur-base) var(--ease-out),opacity var(--dur-base) var(--ease-out);width:auto;max-width:calc(100% - 32px)}
+.bnav.hidden{transform:translateX(-50%) translateY(calc(100% + var(--sb) + 32px));opacity:0;pointer-events:none}
 body.light .bnav{background:rgba(255,255,255,.92)}
 /* v2.7.19 — icon-only nav with active pill */
-.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:var(--t3);border:none;background:none;transition:color var(--dur-fast) var(--ease-out);padding:8px 4px;position:relative;border-radius:14px;font-size:0;line-height:0;-webkit-tap-highlight-color:transparent}
+.nb{width:52px;height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:var(--t3);border:none;background:none;transition:color var(--dur-fast) var(--ease-out);padding:0;position:relative;border-radius:14px;font-size:0;line-height:0;-webkit-tap-highlight-color:transparent}
 .nb-label{display:none}
 .nb.on{color:var(--acc)}
-.nb.on::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:32px;background:rgba(0,229,153,.12);border-radius:12px;z-index:-1;transition:opacity var(--dur-fast) var(--ease-out)}
+.nb.on::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:42px;height:32px;background:rgba(0,229,153,.14);border-radius:12px;z-index:-1;transition:opacity var(--dur-fast) var(--ease-out)}
 .nb svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:transform var(--dur-fast) var(--ease-out);position:relative;z-index:1}
 .nb:active svg{transform:scale(.9)}
 .nb.on svg{transform:scale(1.08)}
@@ -404,11 +414,12 @@ body.ctx-showing .fab{bottom:calc(var(--nav-h) + var(--sb) + 130px);transition:b
 .pg.on>*:nth-child(6){animation-delay:.22s}
 @keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .ai-pg{padding:0}
-/* v2.7.19 — AI page uses fixed positioning so the input dock actually sits at the bottom */
+/* v2.7.20 — AI page uses fixed positioning; leaves room at the bottom for the floating nav pill */
 .ai-pg.on{
   position:fixed;
   top:calc(var(--hdr-h,60px) + var(--st));
-  left:0;right:0;bottom:0;
+  left:0;right:0;
+  bottom:calc(var(--nav-h) + var(--sb) + 26px);
   display:flex!important;
   flex-direction:column;
   background:var(--bg);
@@ -1983,9 +1994,32 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.19';
+const APP_VERSION='2.7.20';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.20',
+    date:'2026-07-17',
+    title:'Floating nav concept, AI back button, immersive header, cohesive conversations',
+    sections:{
+      features:[
+        '🎯 Floating tab selector redesigned to match the concept. Now a centered floating pill (not full-width edge-to-edge), auto-widens to fit the icons, subtle mint pill behind the active icon, a softer border and shadow. Feels lighter and more premium — behaves the same way on every screen',
+        '⬅ **Back button in the AI Advisor header.** Top-left icon-button returns to the Dashboard directly. No more feeling trapped inside a conversation',
+        '📱 Header now auto-hides on scroll down, returns on scroll up. The nav bar behaves the same way. Combined, this gives the app a fuller-screen, more immersive feel — content takes the full display when you\'re reading, chrome slides in when you need it',
+        '💬 Conversation list redesigned to match the design system. Current conversation shown at the top under a "Current" label, older ones under "Earlier conversations". Rows are glass panel cards with title, preview of the last message, and message count / age. Rename and delete icons are compact icon-buttons on the right'
+      ],
+      improvements:[
+        'Nav bar height reduced from 74px to 60px last version; now the pill sits 18px above the safe area with a proper drop shadow for depth',
+        'AI Advisor no longer hides the nav bar — it stays accessible so you can jump to any other page. Combined with the back button in the header, there are now multiple obvious ways to leave a conversation',
+        'AI page fixed-position layout accounts for the floating nav — the input dock sits above it with room to breathe',
+        'Header transition uses `margin-bottom: calc(-1 * hdr-h)` when hidden, which pulls the content up into the freed space — smoother transition, no dead area at the top'
+      ],
+      fixes:[
+        '🐛 AI Advisor navigation trap fixed. Previously the nav auto-hid on the AI page and the ai-msgs scroll listener would keep it hidden. Removed both — the nav is now consistently visible on the AI page and there\'s a back button in the header as backup',
+        '🐛 Conversation list layout — the "Earlier Conversations" section now sits flush with the sheet, no floating gap. Uses the same design tokens as every other card in the app'
+      ]
+    }
+  },
   {
     v:'2.7.19',
     date:'2026-07-17',
@@ -5213,23 +5247,36 @@ async function autoTitleConversation(id){
 function openConversationList(){
   ensureAiConversations();
   const convs=[...S.aiConversations].sort((a,b)=>b.updatedAt-a.updatedAt);
-  const rows=convs.map(c=>{
+  const active=convs.filter(c=>c.id===S.aiActiveConversationId);
+  const others=convs.filter(c=>c.id!==S.aiActiveConversationId);
+  const renderRow=(c)=>{
     const isActive=c.id===S.aiActiveConversationId;
-    const preview=c.messages.length?c.messages[c.messages.length-1].content.slice(0,60):'No messages yet';
-    return`<div class="conv-row ${isActive?'active':''}">
-      <div style="flex:1;min-width:0;cursor:pointer" onclick="switchConversation('${c.id}')">
-        <div class="conv-title">${isActive?'▸ ':''}${c.title}</div>
+    const lastMsg=c.messages.length?c.messages[c.messages.length-1]:null;
+    const preview=lastMsg?lastMsg.content.slice(0,72).replace(/\s+/g,' '):'No messages yet';
+    return`<div class="conv-row ${isActive?'active':''}" onclick="switchConversation('${c.id}');closeModal();">
+      <div style="flex:1;min-width:0">
+        <div class="conv-title">${escapeHtml(c.title)}</div>
+        <div class="conv-preview">${escapeHtml(preview)}${lastMsg&&lastMsg.content.length>72?'…':''}</div>
         <div class="conv-sub">${c.messages.length} msg${c.messages.length===1?'':'s'} · ${timeAgo(c.updatedAt)}</div>
       </div>
-      <button class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:10px" onclick="renameConversation('${c.id}')" title="Rename">✎</button>
-      <button class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:10px;color:var(--r)" onclick="deleteConversation('${c.id}')" title="Delete">✕</button>
+      <div class="conv-actions" onclick="event.stopPropagation()">
+        <button class="conv-icon-btn" onclick="renameConversation('${c.id}')" title="Rename" aria-label="Rename">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        </button>
+        <button class="conv-icon-btn danger" onclick="deleteConversation('${c.id}')" title="Delete" aria-label="Delete">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+        </button>
+      </div>
     </div>`;
-  }).join('');
+  };
+  const activeHtml=active.length?renderRow(active[0]):'';
+  const othersHtml=others.map(renderRow).join('');
   showSheet('Conversations',`
-    <button class="btn btn-acc btn-full" style="margin-bottom:12px" onclick="startNewConversation()">+ New chat</button>
-    <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">${convs.length} of ${AI_CONV_CAP} slots</div>
-    ${rows||'<div class="empty" style="padding:16px"><div class="empty-txt" style="font-size:11px">No conversations yet. Start one!</div></div>'}
-    <div style="font-size:10px;color:var(--t3);line-height:1.55;margin-top:12px">Oldest conversations are auto-deleted when you reach ${AI_CONV_CAP} — the ones you\'re actively using stay put.</div>
+    <button class="btn btn-acc btn-full" style="margin-bottom:20px" onclick="startNewConversation();closeModal();">+ New chat</button>
+    ${active.length?`<div class="conv-section-label">Current</div>${activeHtml}`:''}
+    ${others.length?`<div class="conv-section-label" style="margin-top:${active.length?'18px':'0'}">Earlier conversations</div>${othersHtml}`:''}
+    ${!convs.length?'<div class="empty" style="padding:20px"><div class="empty-ico">💬</div><div class="empty-txt">No conversations yet — start one!</div></div>':''}
+    <div style="font-size:10px;color:var(--t3);line-height:1.6;margin-top:18px;padding:0 4px">${convs.length} of ${AI_CONV_CAP} slots · oldest are auto-deleted when the cap is reached</div>
   `);
 }
 
@@ -5272,12 +5319,13 @@ function setupNavAutoHide(){
     });
   }
   // v2.7.4: scroll direction detection — hide on scroll down, show on scroll up
+  // v2.7.20: also toggles the top header for a fuller-screen feel
   const scrl=document.getElementById('scrl');
   if(scrl){
     scrl.addEventListener('scroll',()=>{
       const st=scrl.scrollTop;
       // Always show at top of scroll
-      if(st<80){showNav();_lastScrollTop=st;_scrollAccum=0;return;}
+      if(st<80){showNav();showHdr();_lastScrollTop=st;_scrollAccum=0;return;}
       const delta=st-_lastScrollTop;
       _lastScrollTop=st;
       // Accumulate scroll direction so tiny wiggles don't toggle
@@ -5286,23 +5334,12 @@ function setupNavAutoHide(){
       }else{
         _scrollAccum=delta;
       }
-      if(_scrollAccum>30){hideNav();_scrollAccum=0;}
-      else if(_scrollAccum<-24){showNav();_scrollAccum=0;}
+      if(_scrollAccum>30){hideNav();hideHdr();_scrollAccum=0;}
+      else if(_scrollAccum<-24){showNav();showHdr();_scrollAccum=0;}
     },{passive:true});
   }
-  // Also listen for scroll on the AI messages container (it has its own overflow)
-  const aiMsgs=document.getElementById('ai-msgs');
-  if(aiMsgs){
-    let lastTop=0,accum=0;
-    aiMsgs.addEventListener('scroll',()=>{
-      const st=aiMsgs.scrollTop;
-      if(st<40){showNav();lastTop=st;accum=0;return;}
-      const delta=st-lastTop;lastTop=st;
-      if(Math.sign(delta)===Math.sign(accum)||accum===0)accum+=delta;else accum=delta;
-      if(accum>30){hideNav();accum=0;}
-      else if(accum<-24){showNav();accum=0;}
-    },{passive:true});
-  }
+  // v2.7.20: on the AI page, the nav stays visible so the user isn't trapped.
+  // No scroll listener on ai-msgs. Back button in the AI header provides the escape.
 }
 function hideNav(){
   const nav=document.querySelector('.bnav');if(nav)nav.classList.add('hidden');
@@ -5312,6 +5349,9 @@ function showNav(){
   const nav=document.querySelector('.bnav');if(nav)nav.classList.remove('hidden');
   const fab=document.querySelector('.fab');if(fab)fab.classList.remove('nav-hidden');
 }
+// v2.7.20 — header auto-hide on scroll for a fuller-screen feel
+function hideHdr(){document.body.classList.add('hdr-hidden');}
+function showHdr(){document.body.classList.remove('hdr-hidden');}
 
 
 // ═══════════════════════════════════════════════════════════
@@ -7514,8 +7554,7 @@ function showPg(id,btn){
   if(id==='analytics')buildAnalytics();
   if(id==='kmart')buildKmartPage();
   if(id==='settings'){buildThemeGrid();buildSettingsPage();buildCustomCatsList();}
-  if(id==='ai'){scrollAiBottom();if(typeof hideNav==='function')hideNav();}
-  else{if(typeof showNav==='function')showNav();}
+  if(id==='ai'){scrollAiBottom();}
   if(id==='health')buildHealthScore();
   if(id==='streaks')buildStreaksPage();
   if(id==='sinking')buildSinkingPage();
@@ -9193,10 +9232,13 @@ function buildAiWelcome(){
   const msgs=document.getElementById('ai-msgs');
   const chips=document.getElementById('ai-chips');
   const hasKey=S.groqApiKey&&S.groqApiKey.startsWith('gsk_');
-  // v2.7.17 — V4 conversation header
+  // v2.7.20 — V4 conversation header with back button
   const msgCount=messages.length;
   const subtitle=msgCount?`${msgCount} message${msgCount===1?'':'s'} · ${new Date(activeConv?.updatedAt||Date.now()).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}`:'New conversation';
   const headerHtml=hasKey&&activeConv?`<div class="ai-conv-header">
+    <button class="ai-conv-icon-btn" onclick="showPg('dash',document.querySelector('.nb[data-pg=&quot;dash&quot;]'))" title="Back to Dashboard" aria-label="Back to Dashboard">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
     <button class="ai-conv-icon-btn" onclick="openConversationList()" title="Conversations" aria-label="Conversations">
       <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
     </button>
