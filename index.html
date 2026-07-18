@@ -1655,11 +1655,18 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
   </div>
 
   <nav class="bnav">
-    <button class="nb on" data-pg="dash" onclick="showPg('dash',this)"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dash</button>
-    <button class="nb" data-pg="txns" onclick="showPg('txns',this)"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Accounts</button>
-    <button class="nb" data-pg="goals" onclick="showPg('goals',this)"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Goals</button>
-    <button class="nb" data-pg="ai" onclick="showPg('ai',this)"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Advisor</button>
-    <button class="nb" id="more-btn" onclick="toggleMore()"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>More</button>
+    <button class="nb on" data-pg="dash" onclick="showPg('dash',this)" aria-label="Dashboard">
+      <svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg>Dash
+    </button>
+    <button class="nb" data-pg="goals" onclick="showPg('goals',this)" aria-label="Goals">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>Goals
+    </button>
+    <button class="nb" data-pg="invest" onclick="showPg('invest',this)" aria-label="Investments">
+      <svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><polyline points="14 7 21 7 21 14"/></svg>Invest
+    </button>
+    <button class="nb" id="more-btn" onclick="toggleMore()" aria-label="More">
+      <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>More
+    </button>
   </nav>
 </div>
 
@@ -1668,6 +1675,8 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 <div class="more-sheet" id="more-sheet">
   <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.09em;font-weight:700;margin-bottom:10px">More</div>
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+    <button class="more-tile" id="more-txns" onclick="showPgFromMore('txns')"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Accounts</button>
+    <button class="more-tile" id="more-ai" onclick="showPgFromMore('ai')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Advisor</button>
     <button class="more-tile" id="more-budget" onclick="showPgFromMore('budget')"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Budget</button>
     <button class="more-tile" id="more-analytics" onclick="showPgFromMore('analytics')"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics</button>
     <button class="more-tile" id="more-jobs" onclick="showPgFromMore('jobs')"><svg viewBox="0 0 24 24"><path d="M20 7h-4V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM10 5h4v2h-4V5z"/></svg>Jobs</button>
@@ -1677,7 +1686,6 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
     <button class="more-tile" id="more-recurring" onclick="showPgFromMore('recurring')"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Recurring</button>
     <button class="more-tile" id="more-scenario" onclick="showPgFromMore('scenario')"><svg viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0H5a2 2 0 0 1-2-2v-4m6 6h10a2 2 0 0 0 2-2v-4"/></svg>What-if</button>
     <button class="more-tile" id="more-insights" onclick="showPgFromMore('insights')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Insights</button>
-    <button class="more-tile" id="more-invest" onclick="showPgFromMore('invest')"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Invest</button>
     <button class="more-tile" id="more-health" onclick="showPgFromMore('health')"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Health</button>
     <button class="more-tile" id="more-streaks" onclick="showPgFromMore('streaks')"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Streaks</button>
     <button class="more-tile" id="more-sinking" onclick="showPgFromMore('sinking')"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Sinking</button>
@@ -1994,9 +2002,28 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.20';
+const APP_VERSION='2.7.21';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.21',
+    date:'2026-07-17',
+    title:'Nav icons match concept, scroll-hide fixed, AI back button always visible',
+    sections:{
+      features:[
+        '🎯 Bottom nav icons redesigned to match the concept exactly. **Home** (house outline), **Goals** (concentric bullseye with center dot), **Invest** (curved trending line chart), **More** (three dots). Reduced from 5 tabs to 4 as in the concept. Accounts and Advisor now live at the top of the More sheet — still one tap away',
+        '📱 Immersive full-screen when scrolling. Header and nav both slide out on scroll down, slide in on scroll up. Threshold lowered to 20px so the intent is picked up faster'
+      ],
+      improvements:[
+        'Scroll-hide is now bulletproof — listener attaches to both the internal scroll container (`#scrl`) and the window itself, so no scroll surface can miss it. Small direction wiggles are filtered out with a running accumulator',
+        'AI Advisor **back button in the header is now always visible** — even when there\'s no active conversation, and even when the API key isn\'t set up. There is always a way back to the Dashboard from the AI page'
+      ],
+      fixes:[
+        '🐛 Nav bar wasn\'t hiding on scroll — root cause: the accumulator threshold was too high (30px) for the slower momentum scrolls the app was actually seeing. Lowered to 20/16 and attached the listener to multiple sources so it can\'t miss any scroll surface',
+        '🐛 AI header + back button previously only rendered when `activeConv` existed. If you opened AI with no conversations yet, you saw the welcome screen with no way back. Fixed — header renders whenever the API key is configured, and even the no-key setup screen now has a back button'
+      ]
+    }
+  },
   {
     v:'2.7.20',
     date:'2026-07-17',
@@ -5320,24 +5347,31 @@ function setupNavAutoHide(){
   }
   // v2.7.4: scroll direction detection — hide on scroll down, show on scroll up
   // v2.7.20: also toggles the top header for a fuller-screen feel
-  const scrl=document.getElementById('scrl');
-  if(scrl){
-    scrl.addEventListener('scroll',()=>{
-      const st=scrl.scrollTop;
+  // v2.7.21: attach to multiple scroll containers to handle edge cases
+  function attachScrollHide(el){
+    if(!el)return;
+    let lastTop=el.scrollTop||0;
+    let accum=0;
+    el.addEventListener('scroll',()=>{
+      const st=(el===window||el===document||el===document.documentElement)?(window.pageYOffset||document.documentElement.scrollTop):el.scrollTop;
       // Always show at top of scroll
-      if(st<80){showNav();showHdr();_lastScrollTop=st;_scrollAccum=0;return;}
-      const delta=st-_lastScrollTop;
-      _lastScrollTop=st;
+      if(st<60){showNav();showHdr();lastTop=st;accum=0;return;}
+      const delta=st-lastTop;
+      lastTop=st;
+      if(Math.abs(delta)<1)return;
       // Accumulate scroll direction so tiny wiggles don't toggle
-      if(Math.sign(delta)===Math.sign(_scrollAccum)||_scrollAccum===0){
-        _scrollAccum+=delta;
+      if(Math.sign(delta)===Math.sign(accum)||accum===0){
+        accum+=delta;
       }else{
-        _scrollAccum=delta;
+        accum=delta;
       }
-      if(_scrollAccum>30){hideNav();hideHdr();_scrollAccum=0;}
-      else if(_scrollAccum<-24){showNav();showHdr();_scrollAccum=0;}
+      if(accum>20){hideNav();hideHdr();accum=0;}
+      else if(accum<-16){showNav();showHdr();accum=0;}
     },{passive:true});
   }
+  attachScrollHide(document.getElementById('scrl'));
+  attachScrollHide(window);
+  _lastScrollTop=0;_scrollAccum=0;
   // v2.7.20: on the AI page, the nav stays visible so the user isn't trapped.
   // No scroll listener on ai-msgs. Back button in the AI header provides the escape.
 }
@@ -9232,10 +9266,12 @@ function buildAiWelcome(){
   const msgs=document.getElementById('ai-msgs');
   const chips=document.getElementById('ai-chips');
   const hasKey=S.groqApiKey&&S.groqApiKey.startsWith('gsk_');
-  // v2.7.20 — V4 conversation header with back button
+  // v2.7.21 — header is ALWAYS shown when there's an API key configured, so the
+  // user always has a Back button and a way to open conversations / start a new one.
   const msgCount=messages.length;
-  const subtitle=msgCount?`${msgCount} message${msgCount===1?'':'s'} · ${new Date(activeConv?.updatedAt||Date.now()).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}`:'New conversation';
-  const headerHtml=hasKey&&activeConv?`<div class="ai-conv-header">
+  const subtitle=activeConv&&msgCount?`${msgCount} message${msgCount===1?'':'s'} · ${new Date(activeConv.updatedAt||Date.now()).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}`:'New conversation';
+  const titleText=activeConv?activeConv.title:'Advisor';
+  const headerHtml=hasKey?`<div class="ai-conv-header">
     <button class="ai-conv-icon-btn" onclick="showPg('dash',document.querySelector('.nb[data-pg=&quot;dash&quot;]'))" title="Back to Dashboard" aria-label="Back to Dashboard">
       <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
@@ -9243,15 +9279,24 @@ function buildAiWelcome(){
       <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
     </button>
     <div class="ai-conv-title">
-      <div class="ai-conv-title-main">${escapeHtml(activeConv.title||'Untitled')}</div>
+      <div class="ai-conv-title-main">${escapeHtml(titleText)}</div>
       <div class="ai-conv-title-sub">${subtitle}</div>
     </div>
     <button class="ai-conv-icon-btn acc" onclick="startNewConversation()" title="New conversation" aria-label="New conversation">
       <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     </button>
   </div>`:'';
+  const setupHeaderHtml=!hasKey?`<div class="ai-conv-header">
+    <button class="ai-conv-icon-btn" onclick="showPg('dash',document.querySelector('.nb[data-pg=&quot;dash&quot;]'))" title="Back to Dashboard" aria-label="Back to Dashboard">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="ai-conv-title">
+      <div class="ai-conv-title-main">Advisor</div>
+      <div class="ai-conv-title-sub">Setup required</div>
+    </div>
+  </div>`:'';
   if(!messages.length){
-    msgs.innerHTML=headerHtml+`<div class="ai-welcome">
+    msgs.innerHTML=(headerHtml||setupHeaderHtml)+`<div class="ai-welcome">
       <div class="ai-welcome-ico">${hasKey?'✦':'⚙'}</div>
       <div class="ai-welcome-title">${hasKey?'Advisor':'Setup required'}</div>
       <div class="ai-welcome-sub">${hasKey
