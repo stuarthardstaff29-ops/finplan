@@ -1,5 +1,5 @@
 // v2.7.11 — network-first for HTML, immediate cache purge on version bump
-const CACHE='finplan-v2-7-17';
+const CACHE='finplan-v2-7-18';
 const ASSETS=['./manifest.json'];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));

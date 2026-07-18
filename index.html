@@ -460,41 +460,63 @@ body.ctx-showing .fab{bottom:calc(var(--nav-h) + var(--sb) + 130px);transition:b
 .brief-sub{font-size:11px;color:var(--t2);line-height:1.4;margin-top:2px}
 .brief-more{text-align:center;margin-top:10px;font-size:10px;color:var(--t3);font-weight:500;letter-spacing:.05em}
 
-/* INPUTS */
-.inp{width:100%;background:var(--bg3);border:1px solid var(--bdr2);border-radius:var(--rad-sm);color:var(--t);font-size:14px;padding:11px 13px;font-family:var(--mono);outline:none;-webkit-appearance:none;margin-bottom:10px;transition:all .18s}
-.inp:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--accd)}
+/* INPUTS — v2.7.18 V4 polish */
+.inp{width:100%;background:rgba(255,255,255,.03);border:0.5px solid var(--bdr2);border-radius:12px;color:var(--t);font-size:14px;padding:12px 14px;font-family:var(--mono);outline:none;-webkit-appearance:none;margin-bottom:10px;transition:border-color var(--dur-fast) var(--ease-out),background var(--dur-fast) var(--ease-out),box-shadow var(--dur-fast) var(--ease-out)}
+.inp:hover:not(:focus){border-color:var(--bdr3,rgba(255,255,255,.14))}
+.inp:focus{border-color:var(--acc);background:rgba(0,229,153,.04);box-shadow:0 0 0 3px rgba(0,229,153,.10)}
 .inp::placeholder{color:var(--t3)}
-select.inp{cursor:pointer}
-.lbl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;font-weight:600}
-.inp-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-.btn{padding:12px 20px;border-radius:14px;border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:var(--sans);transition:all .18s;letter-spacing:-.1px;position:relative;overflow:hidden}
-.btn:active{transform:scale(.96)}
-.btn-acc{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#001a13;box-shadow:0 2px 12px var(--accd2)}
-.btn-acc:hover{box-shadow:0 4px 16px var(--accd3)}
-.btn-ghost{background:var(--bg4);color:var(--t2);border:1px solid var(--bdr)}
-.btn-ghost:hover{background:var(--bg5);color:var(--t)}
-.btn-r{background:var(--rd);color:var(--r);border:1px solid var(--rd2)}
-.btn-r:hover{background:var(--rd2)}
-.btn-sm{padding:8px 14px;font-size:12px;border-radius:10px}
+.inp:disabled{opacity:.5;cursor:not-allowed}
+.inp.error{border-color:var(--r);background:rgba(229,106,90,.05)}
+.inp.error:focus{box-shadow:0 0 0 3px rgba(229,106,90,.15)}
+.inp-hint{font-size:10px;color:var(--t3);margin-top:-6px;margin-bottom:10px;padding:0 2px}
+.inp-hint.error{color:var(--r)}
+select.inp{cursor:pointer;font-family:var(--sans);background-image:linear-gradient(45deg,transparent 50%,var(--t3) 50%),linear-gradient(135deg,var(--t3) 50%,transparent 50%);background-position:calc(100% - 18px) 18px,calc(100% - 13px) 18px;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:34px}
+.lbl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.10em;margin-bottom:6px;font-weight:600}
+.inp-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/* BUTTONS — v2.7.18 V4 polish */
+.btn{padding:12px 20px;border-radius:14px;border:0.5px solid transparent;cursor:pointer;font-size:13px;font-weight:600;font-family:var(--sans);transition:transform var(--dur-fast) var(--ease-out),background var(--dur-fast) var(--ease-out),border-color var(--dur-fast) var(--ease-out),box-shadow var(--dur-fast) var(--ease-out);letter-spacing:-.1px;position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:6px;line-height:1;min-height:44px}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn:disabled:active{transform:none}
+.btn-acc{background:var(--acc);color:#0a120e}
+.btn-acc:hover:not(:disabled){background:#00f3a3;transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,229,153,.25)}
+.btn-acc:active{background:var(--acc);transform:scale(.97)}
+.btn-ghost{background:rgba(255,255,255,.04);color:var(--t2);border:0.5px solid var(--bdr2)}
+.btn-ghost:hover:not(:disabled){background:rgba(255,255,255,.07);color:var(--t);border-color:var(--bdr3,rgba(255,255,255,.14))}
+.btn-r{background:rgba(229,106,90,.10);color:var(--r);border:0.5px solid rgba(229,106,90,.30)}
+.btn-r:hover:not(:disabled){background:rgba(229,106,90,.16)}
+.btn-outline{background:transparent;color:var(--acc);border:0.5px solid rgba(0,229,153,.30)}
+.btn-outline:hover:not(:disabled){background:rgba(0,229,153,.06);border-color:rgba(0,229,153,.50)}
+.btn-sm{padding:9px 14px;font-size:12px;border-radius:11px;min-height:36px}
+.btn-xs{padding:6px 10px;font-size:11px;border-radius:9px;min-height:28px}
 .btn-full{width:100%}
+/* Loading spinner inside buttons */
+.btn-loading{pointer-events:none;color:transparent!important}
+.btn-loading::after{content:'';position:absolute;top:50%;left:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border:1.5px solid currentColor;border-right-color:transparent;border-radius:50%;color:var(--acc);animation:btnSpin .7s linear infinite}
+.btn-acc.btn-loading::after{color:#0a120e}
+@keyframes btnSpin{to{transform:rotate(360deg)}}
 
 /* SLIDERS */
 .sl-grp{margin-bottom:13px}
 .sl-lr{display:flex;justify-content:space-between;margin-bottom:6px}
 .sl-l{font-size:12px;color:var(--t2);font-weight:500;font-family:var(--sans)}
 .sl-v{font-size:12px;font-weight:700;color:var(--t)}
-input[type=range]{width:100%;height:5px;-webkit-appearance:none;background:var(--bg5);border-radius:3px;outline:none;cursor:pointer}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--acc);border:3px solid var(--bg);box-shadow:0 2px 8px var(--accd3),0 0 0 1px var(--accd2);transition:transform .15s}
+input[type=range]{width:100%;height:5px;-webkit-appearance:none;background:rgba(255,255,255,.06);border-radius:3px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--acc);border:3px solid var(--bg);box-shadow:0 2px 8px rgba(0,229,153,.35),0 0 0 1px rgba(0,229,153,.25);transition:transform .15s}
 input[type=range]::-webkit-slider-thumb:active{transform:scale(1.2)}
-input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--acc);border:3px solid var(--bg);box-shadow:0 2px 8px var(--accd3)}
+input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--acc);border:3px solid var(--bg);box-shadow:0 2px 8px rgba(0,229,153,.35)}
 
-/* MODAL */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+/* MODAL — v2.7.18 V4 polish */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.68);z-index:500;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity var(--dur-base) var(--ease-out);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 .overlay.open{opacity:1;pointer-events:all}
-.modal{background:var(--bg2);border-radius:var(--rad-xl) var(--rad-xl) 0 0;padding:20px 16px;padding-bottom:calc(20px + var(--sb));width:100%;max-height:92vh;overflow-y:auto;transform:translateY(30px);transition:transform .32s cubic-bezier(.2,0,.2,1);border-top:1px solid var(--bdr2);box-shadow:0 -8px 32px rgba(0,0,0,.4)}
+.modal{background:linear-gradient(180deg,#0f1a15,#0a120e);border-radius:22px 22px 0 0;padding:22px 18px 18px;padding-bottom:calc(22px + var(--sb));width:100%;max-height:92vh;overflow-y:auto;transform:translateY(30px);transition:transform .34s cubic-bezier(.2,0,.2,1);border-top:0.5px solid var(--bdr-acc);box-shadow:0 -8px 32px rgba(0,0,0,.5)}
 .overlay.open .modal{transform:translateY(0)}
-.modal-handle{width:34px;height:4px;background:var(--bg5);border-radius:2px;margin:0 auto 16px}
-.modal-title{font-size:16px;font-weight:800;color:var(--t);font-family:var(--sans);margin-bottom:14px}
+.modal-handle{width:36px;height:4px;background:rgba(255,255,255,.10);border-radius:2px;margin:0 auto 18px}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:10px}
+.modal-title{font-size:16px;font-weight:700;color:var(--t);font-family:var(--sans);letter-spacing:-.3px}
+.modal-close{background:rgba(255,255,255,.04);border:none;color:var(--t2);cursor:pointer;font-size:16px;width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background var(--dur-fast) var(--ease-out)}
+.modal-close:hover{background:rgba(255,255,255,.08);color:var(--t)}
+.modal-close:active{transform:scale(.94)}
 
 /* TOGGLE */
 .tog{display:flex;background:var(--bg3);border-radius:var(--rad);padding:4px;margin-bottom:12px;gap:2px;border:1px solid var(--bdr)}
@@ -663,7 +685,33 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 
 /* MISC */
 .dvdr{border:none;border-top:1px solid var(--bdr);margin:11px 0}
-.empty{text-align:center;padding:24px 16px;color:var(--t3)}.empty-ico{font-size:30px;margin-bottom:7px}.empty-txt{font-size:12px}
+.empty{text-align:center;padding:32px 20px;color:var(--t3)}
+.empty-ico{width:56px;height:56px;margin:0 auto 12px;border-radius:50%;background:rgba(255,255,255,.03);border:0.5px solid var(--bdr2);display:flex;align-items:center;justify-content:center;font-size:24px}
+.empty-txt{font-size:12px;color:var(--t2);line-height:1.6;max-width:280px;margin:0 auto}
+.empty-cta{margin-top:14px;display:inline-flex}
+/* v2.7.18 — SKELETON LOADING */
+@keyframes skelPulse{0%,100%{opacity:.55}50%{opacity:.9}}
+@keyframes skelShimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.skel{background:linear-gradient(90deg,rgba(255,255,255,.03) 0%,rgba(255,255,255,.06) 50%,rgba(255,255,255,.03) 100%);background-size:200% 100%;animation:skelShimmer 1.6s ease-in-out infinite;border-radius:6px;display:block}
+.skel-line{height:12px;margin-bottom:8px}
+.skel-line.sm{height:10px}
+.skel-line.lg{height:16px}
+.skel-line.xl{height:24px}
+.skel-line.w-30{width:30%}
+.skel-line.w-50{width:50%}
+.skel-line.w-70{width:70%}
+.skel-line.w-90{width:90%}
+.skel-block{height:60px;border-radius:12px;margin-bottom:8px}
+.skel-block.tall{height:120px}
+.skel-block.hero{height:140px;border-radius:22px}
+.skel-block.chart{height:170px;border-radius:12px}
+.skel-avatar{width:40px;height:40px;border-radius:50%;flex-shrink:0}
+.skel-avatar.sm{width:26px;height:26px}
+.skel-avatar.lg{width:60px;height:60px}
+.skel-row{display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,.02);border:0.5px solid rgba(255,255,255,.04);border-radius:14px;margin-bottom:8px}
+.skel-row-main{flex:1;min-width:0}
+.skel-row-main .skel-line{margin-bottom:6px}
+.skel-row-main .skel-line:last-child{margin-bottom:0}
 @keyframes fadein{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 .fadein{animation:fadein .2s ease}
 @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-20px) scale(.9)}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
@@ -1911,9 +1959,29 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.17';
+const APP_VERSION='2.7.18';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.18',
+    date:'2026-07-17',
+    title:'Component polish — buttons, forms, modals, empty states, skeleton loading',
+    sections:{
+      features:[
+        '💾 Skeleton loading system. New `showSkeleton(elementId, preset)` helper renders shimmer placeholders while data is being computed or fetched. Presets available: `hero`, `chart`, `card`, `row`, `rowList(n)`, `bullets(n)`. Any page can now show a proper loading state instead of a blank space or freeze',
+        'Button loading spinner. New `setBtnLoading(button, true)` swaps the button label for an animated spinner and disables it, then restores on completion. Wired into AI send and portfolio price sync — no more "wait, did I tap that?" moments',
+        'Empty states redesigned. The icon in every empty section now renders as a soft circular badge with a hairline border (56×56, centered), the copy is wider and more legible, and there\'s room for an optional CTA button below'
+      ],
+      improvements:[
+        'Buttons refreshed to the V4 language. Solid mint accent (no more gradient), subtle hover lift (`translateY(-1px)`) with a mint shadow, hairline outline variant for tertiary actions, and a compact `btn-xs` size for inline actions. All buttons now guarantee a 44px minimum touch target on mobile',
+        'Text inputs get a proper V4 treatment. Transparent-mint background on focus, 3px mint focus ring, hover state for hint-of-interactivity, error state (red border + tint) via a `.error` class, and an `.inp-hint` line for helper text or validation messages',
+        'Select fields get a custom chevron drawn with pure CSS — no more browser-default arrow. Fonts consistent with other inputs',
+        'Modals reworked. Backdrop uses `backdrop-filter: blur(4px)` so the app behind the sheet gently blurs. Sheet has a hairline mint-tinted top border and a proper close button (32×32, tap-friendly, in the header rather than the modal body). Gradient background subtly darker at the bottom',
+        'Sliders get a mint glow ring on the thumb, tightened to match the concept aesthetic'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'2.7.17',
     date:'2026-07-17',
@@ -2952,6 +3020,51 @@ function fmtDI(n){return'$'+Math.round(Math.abs(n)).toLocaleString();}
 function pct(s,t){return t===0?0:Math.min(100,Math.round(s/t*100));}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function today(){return new Date().toISOString().slice(0,10);}
+
+// v2.7.18 — SKELETON LOADING helpers
+// Renders a skeleton preset into an element by name, so any page can show a loading state
+// while its real data is being computed or fetched.
+const SKELETON_TEMPLATES={
+  hero:`<div class="skel skel-block hero"></div>`,
+  chart:`<div class="skel skel-block chart"></div>`,
+  card:`<div style="padding:16px;background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:22px;margin-bottom:12px">
+    <div class="skel skel-line lg w-50"></div>
+    <div class="skel skel-line w-90"></div>
+    <div class="skel skel-line w-70"></div>
+  </div>`,
+  row:`<div class="skel-row">
+    <div class="skel skel-avatar"></div>
+    <div class="skel-row-main">
+      <div class="skel skel-line w-50"></div>
+      <div class="skel skel-line sm w-30"></div>
+    </div>
+  </div>`,
+  rowList:n=>Array(n||3).fill(SKELETON_TEMPLATES.row).join(''),
+  bullets:n=>`<div style="padding:0 4px">${Array(n||4).fill('<div class="skel skel-line w-90"></div>').join('')}</div>`
+};
+
+function showSkeleton(elOrId,preset='card',count){
+  const el=typeof elOrId==='string'?document.getElementById(elOrId):elOrId;
+  if(!el)return;
+  const template=SKELETON_TEMPLATES[preset];
+  if(typeof template==='function')el.innerHTML=template(count);
+  else el.innerHTML=template||SKELETON_TEMPLATES.card;
+}
+
+// Button loading state — swaps to a spinner and disables. Returns a cleanup function.
+function setBtnLoading(btnOrId,loading=true){
+  const btn=typeof btnOrId==='string'?document.getElementById(btnOrId):btnOrId;
+  if(!btn)return()=>{};
+  if(loading){
+    btn.classList.add('btn-loading');
+    btn.disabled=true;
+    return()=>{btn.classList.remove('btn-loading');btn.disabled=false;};
+  }else{
+    btn.classList.remove('btn-loading');
+    btn.disabled=false;
+    return()=>{};
+  }
+}
 function fmtDate(ds){if(!ds)return'';return new Date(ds+'T12:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short'});}
 // ── Holdings model helpers (v3) ──────────────────────────────
 // A holding's current value = units * lastPrice (falls back to stored currentValue).
@@ -9173,7 +9286,7 @@ async function sendAiMsg(){
   }
 
   inp.value='';inp.style.height='auto';
-  document.getElementById('ai-send-btn').disabled=true;
+  setBtnLoading('ai-send-btn',true);
   // v2.7.1: save to active conversation
   const _activeConv=(typeof getActiveConversation==='function')?getActiveConversation():null;
   if(_activeConv){
@@ -9289,7 +9402,7 @@ Reply conversationally but precisely. Use **bold** for key dollar figures. Keep 
       appendMsg('ai','⚠️ **Error:** '+e.message+'. Please try again.');
     }
   }
-  document.getElementById('ai-send-btn').disabled=false;
+  setBtnLoading('ai-send-btn',false);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -11745,7 +11858,9 @@ async function refreshPrices(){
     return;
   }
   const hs=S.holdings||[];if(!hs.length){showToast('No holdings to price');return;}
-  const btn=document.getElementById('refresh-prices-btn');if(btn){btn.disabled=true;btn.textContent='↻ …';}
+  const btn=document.getElementById('refresh-prices-btn');
+  const btnLabel=btn?btn.textContent:'';
+  if(btn)setBtnLoading(btn,true);
   // FREE PLAN endpoint: end-of-day historical prices (light) — returns date + price array.
   // We take the most recent record. NOT real-time, but reliable and free.
   const BASE='https://financialmodelingprep.com/stable';
@@ -11798,7 +11913,7 @@ async function refreshPrices(){
     }
   }catch(err){
     alert('Unexpected error during price refresh:\n\n'+(err.message||err));
-  }finally{if(btn){btn.disabled=false;btn.textContent='↻ Refresh prices';}}
+  }finally{if(btn){setBtnLoading(btn,false);btn.textContent=btnLabel||'↻ Sync';}}
 }
 
 // Fetch AUDUSD end-of-day from FMP historical-price-eod/light (free tier).
