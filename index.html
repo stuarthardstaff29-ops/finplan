@@ -414,12 +414,15 @@ body.ctx-showing .fab{bottom:calc(var(--nav-h) + var(--sb) + 130px);transition:b
 .pg.on>*:nth-child(6){animation-delay:.22s}
 @keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .ai-pg{padding:0}
-/* v2.7.20 — AI page uses fixed positioning; leaves room at the bottom for the floating nav pill */
+/* v2.7.23 — AI page fixed-positioned to the VIEWPORT.
+   CRITICAL: .pg.on applies an animation with transform:translateY, and ANY transform
+   on an element makes its position:fixed relative to that element instead of the
+   viewport. We must override animation:none here or the fixed layout collapses. */
 .ai-pg.on{
   position:fixed;
   top:calc(var(--hdr-h,60px) + var(--st));
   left:0;right:0;
-  bottom:calc(var(--nav-h) + var(--sb) + 26px);
+  bottom:0;
   display:flex!important;
   flex-direction:column;
   background:var(--bg);
@@ -427,7 +430,11 @@ body.ctx-showing .fab{bottom:calc(var(--nav-h) + var(--sb) + 130px);transition:b
   height:auto;
   overflow:hidden;
   padding:0!important;
+  animation:none!important;
+  transform:none!important;
 }
+/* Children of the AI page must NOT get the staggered cardIn transform either */
+.ai-pg.on>*{animation:none!important;transform:none!important}
 /* CARDS */
 .card{background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad-lg);padding:20px;margin-bottom:18px;transition:border-color var(--dur-base) var(--ease-out),transform var(--dur-fast) var(--ease-out);position:relative;overflow:hidden}
 .card:hover{border-color:var(--bdr-acc2)}
@@ -618,10 +625,11 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .ph-b{font-size:11px;color:var(--t2);line-height:1.5}
 
 /* AI */
-.ai-messages{flex:1;min-height:0;overflow-y:auto;padding:16px 14px 22px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+#ai-header-slot{flex-shrink:0}
+.ai-conv-header{background:var(--bg);padding:12px 14px;display:flex;align-items:center;gap:10px;border-bottom:0.5px solid var(--bdr)}
+.ai-messages{flex:1;min-height:0;overflow-y:auto;padding:14px 14px 22px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .ai-messages::-webkit-scrollbar{display:none}
-/* v2.7.17 — V4 conversation header */
-.ai-conv-header{position:sticky;top:0;background:var(--bg);padding:12px 12px 10px;display:flex;align-items:center;gap:10px;z-index:5;border-bottom:0.5px solid var(--bdr);margin-bottom:6px}
+/* v2.7.20 — V4 conversation header lives in #ai-header-slot (rule defined above) */
 .ai-conv-icon-btn{background:rgba(255,255,255,.04);border:none;border-radius:10px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;color:var(--t2);cursor:pointer;transition:background var(--dur-fast) var(--ease-out)}
 .ai-conv-icon-btn:hover{background:rgba(255,255,255,.08);color:var(--t)}
 .ai-conv-icon-btn:active{transform:scale(.95)}
@@ -632,6 +640,9 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .ai-conv-title-main{font-size:14px;font-weight:600;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2}
 .ai-conv-title-sub{font-size:10px;color:var(--t3);margin-top:2px}
 /* Input dock */
+/* On the AI page, hide the floating nav pill so the input dock owns the bottom.
+   The back button in the AI header is the escape route (always visible). */
+body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb) + 32px));opacity:0;pointer-events:none}
 .ai-input-wrap{background:var(--bg);padding:10px 12px;padding-bottom:calc(10px + var(--sb));flex-shrink:0}
 .ai-qchips{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;padding-bottom:3px;scrollbar-width:none}.ai-qchips::-webkit-scrollbar{display:none}
 .ai-qchip{flex-shrink:0;padding:7px 13px;border-radius:20px;border:0.5px solid var(--bdr2);background:rgba(255,255,255,.04);color:var(--t2);font-size:11px;cursor:pointer;white-space:nowrap;font-family:var(--sans);font-weight:500;transition:all var(--dur-fast) var(--ease-out)}
@@ -1091,6 +1102,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 
     <!-- AI ADVISOR -->
     <div class="pg ai-pg" id="pg-ai" style="display:none">
+      <div id="ai-header-slot"></div>
       <div class="ai-messages" id="ai-msgs"></div>
       <div class="ai-input-wrap">
         <div class="ai-qchips" id="ai-chips"></div>
@@ -2002,9 +2014,27 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.22';
+const APP_VERSION='2.7.23';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.23',
+    date:'2026-07-17',
+    title:'AI page layout fixed at the root, scroll-hide rebuilt',
+    sections:{
+      features:[],
+      improvements:[
+        'Scroll-to-hide rebuilt with a single global capture-phase listener that catches scrolling on ANY element — dashboard, AI messages, detail views. More reliable on mobile where the scrolling element changes per page',
+        'AI conversation header is now a solid bar pinned to the top of the AI page, outside the scroll area. Nothing sits above it, no gap, and it never scrolls away — it\'s a permanent part of the page',
+        'Floating nav pill is hidden on the AI page so the input dock owns the bottom of the screen. The back button in the header is the escape route (always visible)'
+      ],
+      fixes:[
+        '🐛 **AI input dock not at the bottom — root cause found.** The `.pg.on` page-entry animation applies a `transform`, and any transform on an element makes its `position:fixed` resolve relative to that element instead of the viewport. So the AI page\'s fixed layout was collapsing. Fixed by forcing `animation:none` and `transform:none` on the AI page and its children — now the fixed layout resolves against the real viewport and the input dock sits at the very bottom',
+        '🐛 **Conversation header floating with a gap above it** — it was `position:sticky` inside the scrolling messages area, which has top padding, creating the gap. Moved the header into its own fixed slot above the scroll area so it\'s flush to the top with nothing above it',
+        '🐛 Nav bar not hiding on scroll — the per-container listeners weren\'t reliably catching mobile scroll. Replaced with one document-level capture-phase listener that catches every scroll surface'
+      ]
+    }
+  },
   {
     v:'2.7.22',
     date:'2026-07-17',
@@ -5363,34 +5393,42 @@ function setupNavAutoHide(){
     });
   }
   // v2.7.4: scroll direction detection — hide on scroll down, show on scroll up
-  // v2.7.20: also toggles the top header for a fuller-screen feel
-  // v2.7.21: attach to multiple scroll containers to handle edge cases
-  function attachScrollHide(el){
-    if(!el)return;
-    let lastTop=el.scrollTop||0;
-    let accum=0;
-    el.addEventListener('scroll',()=>{
-      const st=(el===window||el===document||el===document.documentElement)?(window.pageYOffset||document.documentElement.scrollTop):el.scrollTop;
-      // Always show at top of scroll
-      if(st<60){showNav();showHdr();lastTop=st;accum=0;return;}
-      const delta=st-lastTop;
-      lastTop=st;
+  // v2.7.23: single global capture-phase listener catches scroll on ANY element
+  // (dashboard #scrl, AI msgs, detail views, etc). More reliable on mobile PWAs
+  // where the scrolling element varies by page.
+  let _shLastTop=0;
+  let _shAccum=0;
+  let _shTicking=false;
+  function onAnyScroll(e){
+    const el=e.target;
+    // Determine scrollTop of whatever scrolled
+    let st=0;
+    if(el===document||el===window||el===document.documentElement||el===document.body){
+      st=window.pageYOffset||document.documentElement.scrollTop||document.body.scrollTop||0;
+    }else if(el&&typeof el.scrollTop==='number'){
+      st=el.scrollTop;
+    }else{
+      return;
+    }
+    if(_shTicking)return;
+    _shTicking=true;
+    requestAnimationFrame(()=>{
+      _shTicking=false;
+      if(st<50){showNav();showHdr();_shLastTop=st;_shAccum=0;return;}
+      const delta=st-_shLastTop;
+      _shLastTop=st;
       if(Math.abs(delta)<1)return;
-      // Accumulate scroll direction so tiny wiggles don't toggle
-      if(Math.sign(delta)===Math.sign(accum)||accum===0){
-        accum+=delta;
-      }else{
-        accum=delta;
-      }
-      if(accum>20){hideNav();hideHdr();accum=0;}
-      else if(accum<-16){showNav();showHdr();accum=0;}
-    },{passive:true});
+      if(Math.sign(delta)===Math.sign(_shAccum)||_shAccum===0)_shAccum+=delta;
+      else _shAccum=delta;
+      if(_shAccum>18){hideNav();hideHdr();_shAccum=0;}
+      else if(_shAccum<-14){showNav();showHdr();_shAccum=0;}
+    });
   }
-  attachScrollHide(document.getElementById('scrl'));
-  attachScrollHide(window);
+  // Capture phase = true so we catch scroll events from any descendant that scrolls
+  document.addEventListener('scroll',onAnyScroll,{capture:true,passive:true});
   _lastScrollTop=0;_scrollAccum=0;
   // v2.7.20: on the AI page, the nav stays visible so the user isn't trapped.
-  // No scroll listener on ai-msgs. Back button in the AI header provides the escape.
+  // The back button + persistent nav provide the escape.
 }
 function hideNav(){
   const nav=document.querySelector('.bnav');if(nav)nav.classList.add('hidden');
@@ -7592,6 +7630,10 @@ function showPg(id,btn){
   if(btn)btn.classList.add('on');
   document.getElementById('scrl').scrollTop=0;
   currentPg=id;
+  // v2.7.23: mark AI page so we can hide the floating nav pill (input dock owns the bottom).
+  document.body.classList.toggle('on-ai-page',id==='ai');
+  // Leaving any page always restores header + nav visibility
+  showHdr();showNav();
   // Floating Add Transaction button — only on the Transactions page
   document.body.classList.toggle('fab-visible',id==='txns');
   // Refresh values in context panel; do NOT auto-show it on page change
@@ -9312,8 +9354,12 @@ function buildAiWelcome(){
       <div class="ai-conv-title-sub">Setup required</div>
     </div>
   </div>`:'';
+  // v2.7.23: header goes in its own fixed slot ABOVE the scroll area, so it's a
+  // solid bar with nothing above it (no gap, doesn't scroll away)
+  const headerSlot=document.getElementById('ai-header-slot');
+  if(headerSlot)headerSlot.innerHTML=headerHtml||setupHeaderHtml;
   if(!messages.length){
-    msgs.innerHTML=(headerHtml||setupHeaderHtml)+`<div class="ai-welcome">
+    msgs.innerHTML=`<div class="ai-welcome">
       <div class="ai-welcome-ico">${hasKey?'✦':'⚙'}</div>
       <div class="ai-welcome-title">${hasKey?'Advisor':'Setup required'}</div>
       <div class="ai-welcome-sub">${hasKey
@@ -9323,7 +9369,7 @@ function buildAiWelcome(){
       ${!hasKey?'<div style="margin-top:14px"><button class="btn btn-acc btn-full" onclick="showPgFromMore(\'settings\')">Go to Settings → Enter key</button></div>':''}
     </div>`;
   }else{
-    msgs.innerHTML=headerHtml;
+    msgs.innerHTML='';
     messages.forEach((m,i)=>appendMsg(m.role,m.content,false,i===messages.length-1&&m.role==='ai'));
     scrollAiBottom();
   }
