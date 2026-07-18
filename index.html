@@ -2002,9 +2002,26 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.21';
+const APP_VERSION='2.7.22';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.22',
+    date:'2026-07-17',
+    title:'Bulletproof update mechanism — no more stuck phones',
+    sections:{
+      features:[],
+      improvements:[
+        'Service worker now `skipWaiting()`s on install and `clients.claim()`s on activate — the new SW takes over ALL open tabs and PWA windows immediately, rather than waiting for a banner click that never happens',
+        'On activate, the SW broadcasts a `SW_ACTIVATED` message to every open client — belt-and-braces trigger for a reload so the new HTML is fetched fresh from the network',
+        'Client polls for SW updates every 60 seconds while the app is open, and immediately on `focus` and `visibilitychange` (with a 15s throttle). Phones that don\'t fire focus events reliably now still get updates within a minute',
+        'manifest.json is now also network-first — PWA name/icon changes propagate to installed home-screen apps'
+      ],
+      fixes:[
+        '🐛 **Phone PWA stuck on old version** — the old SW did not `skipWaiting()`, so a new SW would install but sit dormant behind the old one until the update banner was tapped. Phones don\'t always get a chance to show that banner. Fixed by having the SW take control immediately + push a reload signal to all open windows'
+      ]
+    }
+  },
   {
     v:'2.7.21',
     date:'2026-07-17',
@@ -13347,17 +13364,23 @@ if('serviceWorker'in navigator){
     reg.update().catch(()=>{});
     // Also check for updates when the tab regains focus (user comes back to it)
     let lastUpdateCheck=Date.now();
-    window.addEventListener('focus',()=>{
-      if(Date.now()-lastUpdateCheck>30000){
+    const doCheck=()=>{
+      if(Date.now()-lastUpdateCheck>15000){
         lastUpdateCheck=Date.now();
         reg.update().catch(()=>{});
       }
-    });
+    };
+    window.addEventListener('focus',doCheck);
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)doCheck();});
+    // Poll for updates every 60 seconds regardless — belt and braces for phones
+    // that don't fire focus/visibility events when the PWA is left open
+    setInterval(()=>reg.update().catch(()=>{}),60000);
     reg.addEventListener('updatefound',()=>{
       const nw=reg.installing;if(!nw)return;
       nw.addEventListener('statechange',()=>{
         if(nw.state==='installed'&&navigator.serviceWorker.controller){
-          // A new SW is installed and waiting — show a visible update banner
+          // A new SW is installed — because sw.js now skipWaiting()s, it will activate
+          // immediately, but as a fallback show the banner in case anything blocks it
           showUpdateBanner();
         }else if(nw.state==='activated'&&navigator.serviceWorker.controller){
           if(!sessionStorage.getItem('finplan-reloaded-for-sw')){
@@ -13368,13 +13391,26 @@ if('serviceWorker'in navigator){
       });
     });
   }).catch(()=>{});
+  // controllerchange fires when a new SW takes control — reload to get fresh HTML
   navigator.serviceWorker.addEventListener('controllerchange',()=>{
     if(!sessionStorage.getItem('finplan-reloaded-for-sw')){
       sessionStorage.setItem('finplan-reloaded-for-sw','1');
       location.reload();
     }
   });
-  setTimeout(()=>{sessionStorage.removeItem('finplan-reloaded-for-sw');},3000);
+  // Also listen for SW_ACTIVATED message the new SW posts on activate — belt and braces
+  navigator.serviceWorker.addEventListener('message',e=>{
+    if(e.data&&e.data.type==='SW_ACTIVATED'){
+      if(!sessionStorage.getItem('finplan-reloaded-for-sw-msg')){
+        sessionStorage.setItem('finplan-reloaded-for-sw-msg','1');
+        setTimeout(()=>location.reload(),80);
+      }
+    }
+  });
+  setTimeout(()=>{
+    sessionStorage.removeItem('finplan-reloaded-for-sw');
+    sessionStorage.removeItem('finplan-reloaded-for-sw-msg');
+  },3500);
 }
 
 // Persistent update banner — shows when a new SW is waiting to activate
