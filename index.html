@@ -402,7 +402,6 @@ body.ctx-showing .fab{bottom:calc(var(--nav-h) + var(--sb) + 130px);transition:b
 .pg.on>*:nth-child(6){animation-delay:.22s}
 @keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .ai-pg{padding:0}
-
 /* CARDS */
 .card{background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad-lg);padding:18px;margin-bottom:14px;transition:border-color var(--dur-base) var(--ease-out),transform var(--dur-fast) var(--ease-out);position:relative;overflow:hidden}
 .card:hover{border-color:var(--bdr-acc2)}
@@ -571,35 +570,76 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .ph-b{font-size:11px;color:var(--t2);line-height:1.5}
 
 /* AI */
-.ai-messages{flex:1;overflow-y:auto;padding:13px;scrollbar-width:none;-webkit-overflow-scrolling:touch}.ai-messages::-webkit-scrollbar{display:none}
-.ai-input-wrap{background:var(--bg2);border-top:1px solid var(--bdr);padding:9px 13px;padding-bottom:calc(9px + var(--sb));flex-shrink:0}
+.ai-messages{flex:1;overflow-y:auto;padding:14px 12px 20px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.ai-messages::-webkit-scrollbar{display:none}
+/* v2.7.17 — V4 conversation header */
+.ai-conv-header{position:sticky;top:0;background:var(--bg);padding:12px 12px 10px;display:flex;align-items:center;gap:10px;z-index:5;border-bottom:0.5px solid var(--bdr);margin-bottom:6px}
+.ai-conv-icon-btn{background:rgba(255,255,255,.04);border:none;border-radius:10px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;color:var(--t2);cursor:pointer;transition:background var(--dur-fast) var(--ease-out)}
+.ai-conv-icon-btn:hover{background:rgba(255,255,255,.08);color:var(--t)}
+.ai-conv-icon-btn:active{transform:scale(.95)}
+.ai-conv-icon-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ai-conv-icon-btn.acc{background:rgba(0,229,153,.12);color:var(--acc);border:0.5px solid rgba(0,229,153,.28)}
+.ai-conv-icon-btn.acc:hover{background:rgba(0,229,153,.20)}
+.ai-conv-title{flex:1;min-width:0}
+.ai-conv-title-main{font-size:14px;font-weight:600;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2}
+.ai-conv-title-sub{font-size:10px;color:var(--t3);margin-top:2px}
+/* Input dock */
+.ai-input-wrap{background:var(--bg);padding:10px 12px;padding-bottom:calc(10px + var(--sb));flex-shrink:0}
 .ai-qchips{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;padding-bottom:3px;scrollbar-width:none}.ai-qchips::-webkit-scrollbar{display:none}
-.ai-qchip{flex-shrink:0;padding:7px 13px;border-radius:20px;border:1px solid var(--bdr2);background:var(--bg3);color:var(--t2);font-size:11px;cursor:pointer;white-space:nowrap;font-family:var(--sans);font-weight:500;transition:all .18s}
+.ai-qchip{flex-shrink:0;padding:7px 13px;border-radius:20px;border:0.5px solid var(--bdr2);background:rgba(255,255,255,.04);color:var(--t2);font-size:11px;cursor:pointer;white-space:nowrap;font-family:var(--sans);font-weight:500;transition:all var(--dur-fast) var(--ease-out)}
 .ai-qchip:hover{background:var(--accd);border-color:var(--accd3);color:var(--acc)}
-.ai-send-row{display:flex;gap:7px;align-items:flex-end}
-.ai-ta{flex:1;background:var(--bg3);border:1px solid var(--bdr2);border-radius:var(--rad);color:var(--t);font-size:13px;padding:11px 13px;font-family:var(--sans);outline:none;resize:none;max-height:96px;-webkit-appearance:none;transition:all .18s;line-height:1.55}
-.ai-ta:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--accd)}.ai-ta::placeholder{color:var(--t3)}
-.ai-send{width:42px;height:42px;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:var(--rad);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 12px var(--accd2);transition:all .18s}
-.ai-send:hover:not(:disabled){box-shadow:0 4px 16px var(--accd3)}
+.ai-send-row{display:flex;gap:8px;align-items:flex-end;background:rgba(255,255,255,.04);border:0.5px solid var(--bdr-acc);border-radius:26px;padding:6px 6px 6px 16px;transition:border-color var(--dur-fast) var(--ease-out)}
+.ai-send-row:focus-within{border-color:var(--bdr-acc2)}
+.ai-ta{flex:1;background:transparent;border:none;color:var(--t);font-size:13px;padding:9px 0;font-family:var(--sans);outline:none;resize:none;max-height:96px;-webkit-appearance:none;line-height:1.55}
+.ai-ta::placeholder{color:var(--t3)}
+.ai-send{width:38px;height:38px;background:var(--acc);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all var(--dur-fast) var(--ease-out)}
+.ai-send:hover:not(:disabled){transform:scale(1.06)}
 .ai-send:active{transform:scale(.94)}
 .ai-send:disabled{opacity:.4;cursor:not-allowed}
-.ai-send svg{width:16px;height:16px;stroke:#000;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-.msg{margin-bottom:12px;display:flex;flex-direction:column;animation:mIn .2s ease}
-@keyframes mIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
-.msg.user{align-items:flex-end}.msg.ai{align-items:flex-start}
-.msg-bubble{max-width:88%;padding:11px 14px;border-radius:18px;font-size:13px;line-height:1.6;font-family:var(--sans);font-weight:400}
-.msg.user .msg-bubble{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#001a13;border-bottom-right-radius:6px;box-shadow:0 2px 12px var(--accd2);font-weight:500}
-.msg.ai .msg-bubble{background:var(--bg3);color:var(--t);border-bottom-left-radius:6px;border:1px solid var(--bdr)}
-.msg-time{font-size:8px;color:var(--t3);margin-top:2px;padding:0 3px}
-.ai-typing{display:flex;align-items:center;gap:4px;padding:10px 13px;background:var(--bg3);border-radius:14px;border-bottom-left-radius:3px;border:1px solid var(--bdr);width:fit-content}
-.ai-dot{width:5px;height:5px;border-radius:50%;background:var(--acc);animation:adot 1.2s ease-in-out infinite}
-.ai-dot:nth-child(2){animation-delay:.15s}.ai-dot:nth-child(3){animation-delay:.3s}
-@keyframes adot{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}
-.ai-welcome{text-align:center;padding:28px 18px}
-.ai-welcome-ico{font-size:48px;margin-bottom:14px;display:inline-flex;width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--accd2),var(--bd2));align-items:center;justify-content:center;box-shadow:0 0 32px var(--accd2)}
+.ai-send svg{width:15px;height:15px;stroke:#0a120e;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+/* Message rows */
+.msg{margin:14px 0;display:flex;flex-direction:column;animation:mIn .28s var(--ease-out) both}
+@keyframes mIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{align-items:flex-end}
+.msg.ai{align-items:flex-start}
+/* User bubble — right-aligned mint tint */
+.msg.user .msg-bubble{background:rgba(0,229,153,.14);color:var(--t);border-radius:20px;border-bottom-right-radius:6px;padding:11px 16px;font-size:13px;line-height:1.55;font-family:var(--sans);max-width:82%;font-weight:400;border:0.5px solid rgba(0,229,153,.20)}
+/* AI response with identity row */
+.ai-identity-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.ai-identity-dot{width:26px;height:26px;border-radius:50%;background:rgba(0,229,153,.14);border:0.5px solid rgba(0,229,153,.30);display:flex;align-items:center;justify-content:center;color:var(--acc);font-size:13px;font-weight:700;flex-shrink:0}
+.ai-identity-label{font-size:10px;color:var(--t3);letter-spacing:.04em;font-weight:500}
+.msg.ai .msg-bubble{background:var(--glass);color:var(--t);border-radius:18px;border-bottom-left-radius:6px;padding:14px 16px;font-size:13px;line-height:1.6;font-family:var(--sans);max-width:calc(100% - 8px);margin-left:34px;border:0.5px solid var(--bdr)}
+.msg.ai .msg-bubble strong{color:var(--t);font-weight:700}
+.msg.ai .msg-bubble em{color:var(--acc);font-style:normal;font-weight:600}
+.msg-time{font-size:9px;color:var(--t3);margin-top:4px;padding:0 8px}
+.msg.ai .msg-time{margin-left:34px}
+/* Inline mini-widget rendered inside AI response */
+.ai-mini-widget{margin-top:12px;background:rgba(0,229,153,.05);border:0.5px solid rgba(0,229,153,.20);border-radius:12px;padding:12px 14px}
+.ai-mini-widget-title{font-size:9px;color:var(--acc);letter-spacing:.10em;font-weight:700;text-transform:uppercase;margin-bottom:8px}
+.ai-mini-widget-row{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;font-size:12px}
+.ai-mini-widget-row-label{color:var(--t2)}
+.ai-mini-widget-row-value{color:var(--acc);font-weight:600;font-variant-numeric:tabular-nums}
+.ai-mini-widget-divider{height:0.5px;background:rgba(0,229,153,.15);margin:6px 0}
+.ai-mini-widget-total{display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;font-size:12px;font-weight:700}
+.ai-mini-widget-total-label{color:var(--t)}
+.ai-mini-widget-total-value{color:var(--acc);font-weight:700;font-variant-numeric:tabular-nums}
+/* Follow-up chips block */
+.ai-followup-block{margin:12px 0 4px 34px;display:flex;flex-direction:column;gap:6px}
+.ai-followup-label{font-size:9px;color:var(--t3);letter-spacing:.14em;font-weight:600;text-transform:uppercase;margin-bottom:2px;padding-left:2px}
+.ai-followup-chip{background:rgba(255,255,255,.04);border:0.5px solid var(--bdr2);border-radius:16px;padding:8px 14px;font-size:11.5px;color:var(--t);cursor:pointer;font-family:var(--sans);text-align:left;transition:all var(--dur-fast) var(--ease-out);align-self:flex-start;max-width:100%}
+.ai-followup-chip:hover{background:rgba(0,229,153,.08);border-color:rgba(0,229,153,.28);color:var(--acc)}
+.ai-followup-chip:active{transform:scale(.98)}
+/* Thinking indicator */
+.ai-typing{display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--glass);border-radius:18px;border-bottom-left-radius:6px;border:0.5px solid var(--bdr);width:fit-content;margin-left:34px;animation:mIn .2s var(--ease-out) both}
+.ai-typing-dots{display:flex;gap:4px}
+.ai-dot{width:4px;height:4px;border-radius:50%;background:var(--b);animation:adot 1.4s ease-in-out infinite}
+.ai-dot:nth-child(2){animation-delay:.18s}.ai-dot:nth-child(3){animation-delay:.36s}
+.ai-typing-label{font-size:10px;color:var(--t3);font-weight:500}
+@keyframes adot{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-3px);opacity:1}}
+.ai-welcome{text-align:center;padding:36px 22px 20px}
+.ai-welcome-ico{margin-bottom:16px;display:inline-flex;width:66px;height:66px;border-radius:50%;background:rgba(0,229,153,.14);border:0.5px solid rgba(0,229,153,.30);align-items:center;justify-content:center;color:var(--acc);font-size:24px;font-weight:700}
 .ai-welcome-title{font-size:18px;font-weight:700;color:var(--t);font-family:var(--display);margin-bottom:9px;letter-spacing:-.4px}
 .ai-welcome-sub{font-size:13px;color:var(--t2);line-height:1.65;font-family:var(--sans)}
-.ai-welcome-sub{font-size:12px;color:var(--t2);line-height:1.6}
 
 /* DONUTS */
 .donut-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:4px}
@@ -1871,9 +1911,29 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.16';
+const APP_VERSION='2.7.17';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.17',
+    date:'2026-07-17',
+    title:'AI Advisor redesigned to the V4 concept',
+    sections:{
+      features:[
+        '✦ AI Advisor page rebuilt to match the V4 concept. New conversation header with icon-buttons (hamburger for conversation drawer, mint + for new chat), the current title, and a sub-line with the message count and date',
+        'User bubbles are right-aligned mint tint. AI responses now have a ✦ Advisor identity row above the bubble — a mint circle with an asterisk mark and a small "Advisor" label. Bubbles use the glass panel treatment with a subtle bottom-left corner shape',
+        'Inline mini-widgets. When Claude returns a fenced ```widget{...}``` JSON block, it renders inline in the response as a compact card with row labels, values, and an optional total. Perfect for math breakdowns, comparisons, and structured summaries',
+        'Contextual follow-up chips appear under each new AI response. Rules-based topic detection surfaces 1-3 relevant next questions (goals → what-if scenarios; dividends → break down by ticker; portfolio → allocation vs target; budget → over-budget categories; and a sensible fallback set)',
+        '"thinking" pill — soft glass indicator with a labeled "thinking" tag and 3 animated dots, replacing the previous unlabeled dots. Matches the concept visual exactly',
+        'Input dock redesigned as a rounded 26px pill with a mint circle send button (arrow icon in dark). Focus lights up the outer border in mint. No more heavy gradient send button'
+      ],
+      improvements:[
+        'AI messages now escape user content properly before rendering — no more HTML injection risk from user text',
+        'User bubbles show pure text (no markdown parsing) since the user wrote it; only AI responses get **bold** / *emphasis* / mini-widget formatting'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'2.7.16',
     date:'2026-07-17',
@@ -8957,6 +9017,16 @@ function showToast(msg){
 // ═══════════════════════════════════════════════════════════
 // AI ADVISOR
 // ═══════════════════════════════════════════════════════════
+// Escape HTML for safe insertion into innerHTML
+function escapeHtml(s){
+  return String(s==null?'':s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
 function buildAiWelcome(){
   // v2.7.1: use active conversation instead of flat S.aiHistory
   if(typeof ensureAiConversations==='function')ensureAiConversations();
@@ -8965,25 +9035,34 @@ function buildAiWelcome(){
   const msgs=document.getElementById('ai-msgs');
   const chips=document.getElementById('ai-chips');
   const hasKey=S.groqApiKey&&S.groqApiKey.startsWith('gsk_');
-  // Show header with conversation title + list button
-  const headerHtml=hasKey&&activeConv?`<div id="ai-conv-header" style="position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--bdr);padding:8px 12px;display:flex;align-items:center;gap:8px;z-index:5">
-    <button class="btn btn-ghost btn-sm" onclick="openConversationList()" title="Conversations" style="padding:4px 8px">☰</button>
-    <div id="ai-header-title" style="flex:1;font-size:13px;font-weight:600;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${activeConv.title}</div>
-    <button class="btn btn-ghost btn-sm" onclick="startNewConversation()" title="New chat" style="padding:4px 8px">+</button>
+  // v2.7.17 — V4 conversation header
+  const msgCount=messages.length;
+  const subtitle=msgCount?`${msgCount} message${msgCount===1?'':'s'} · ${new Date(activeConv?.updatedAt||Date.now()).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}`:'New conversation';
+  const headerHtml=hasKey&&activeConv?`<div class="ai-conv-header">
+    <button class="ai-conv-icon-btn" onclick="openConversationList()" title="Conversations" aria-label="Conversations">
+      <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+    </button>
+    <div class="ai-conv-title">
+      <div class="ai-conv-title-main">${escapeHtml(activeConv.title||'Untitled')}</div>
+      <div class="ai-conv-title-sub">${subtitle}</div>
+    </div>
+    <button class="ai-conv-icon-btn acc" onclick="startNewConversation()" title="New conversation" aria-label="New conversation">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
   </div>`:'';
   if(!messages.length){
     msgs.innerHTML=headerHtml+`<div class="ai-welcome">
-      <div class="ai-welcome-ico">${hasKey?'🧠':'⚙️'}</div>
-      <div class="ai-welcome-title">${hasKey?'AI Financial Advisor':'Setup required'}</div>
+      <div class="ai-welcome-ico">${hasKey?'✦':'⚙'}</div>
+      <div class="ai-welcome-title">${hasKey?'Advisor':'Setup required'}</div>
       <div class="ai-welcome-sub">${hasKey
-        ?'I can see all your transactions, goals, investments, and budget. Ask me anything — from specific spending advice to full portfolio analysis.'
-        :'To activate the AI Advisor, you need a free Groq API key.<br><br><strong style="color:var(--acc)">Steps:</strong><br>1. Go to <strong>console.groq.com</strong> and sign up free<br>2. Create an API key (starts with gsk_)<br>3. Go to <strong>More → Settings → AI Advisor</strong><br>4. Paste your key and tap Save<br><br>Takes about 2 minutes — no credit card needed.'
+        ?'I can see all your transactions, goals, investments, and budget. Ask me anything — from a specific spending decision to a full portfolio review.'
+        :'To activate the Advisor, you need a free Groq API key.<br><br><strong style="color:var(--acc)">Steps:</strong><br>1. Go to <strong>console.groq.com</strong> and sign up free<br>2. Create an API key (starts with gsk_)<br>3. Go to <strong>More → Settings → AI Advisor</strong><br>4. Paste your key and tap Save<br><br>Takes about 2 minutes — no credit card needed.'
       }</div>
       ${!hasKey?'<div style="margin-top:14px"><button class="btn btn-acc btn-full" onclick="showPgFromMore(\'settings\')">Go to Settings → Enter key</button></div>':''}
     </div>`;
   }else{
     msgs.innerHTML=headerHtml;
-    messages.forEach(m=>appendMsg(m.role,m.content,false));
+    messages.forEach((m,i)=>appendMsg(m.role,m.content,false,i===messages.length-1&&m.role==='ai'));
     scrollAiBottom();
   }
   chips.innerHTML=hasKey?AI_QUICK.map(q=>`<button class="ai-qchip" onclick="askQuick('${q.replace(/'/g,"\\'")}')"> ${q}</button>`).join(''):'';
@@ -8992,12 +9071,90 @@ function rebuildAiHistory(){
   // Legacy path — now just delegates
   buildAiWelcome();
 }
-function appendMsg(role,content,scroll=true){
+
+// Parse an inline mini-widget from a fenced ```widget{...}``` block in AI content.
+// Returns {before, widget:{title,rows,total}, after} or null if no widget present.
+function parseAiMiniWidget(content){
+  const m=content.match(/```widget\s*(\{[\s\S]*?\})\s*```/);
+  if(!m)return null;
+  try{
+    const spec=JSON.parse(m[1]);
+    if(!spec||!Array.isArray(spec.rows))return null;
+    return{
+      before:content.slice(0,m.index).trim(),
+      widget:spec,
+      after:content.slice(m.index+m[0].length).trim()
+    };
+  }catch(_){return null;}
+}
+
+function renderAiMiniWidget(spec){
+  const rows=spec.rows.map(r=>`<div class="ai-mini-widget-row"><span class="ai-mini-widget-row-label">${escapeHtml(r.label||'')}</span><span class="ai-mini-widget-row-value">${escapeHtml(String(r.value||''))}</span></div>`).join('');
+  const totalHtml=spec.total?`<div class="ai-mini-widget-divider"></div><div class="ai-mini-widget-total"><span class="ai-mini-widget-total-label">${escapeHtml(spec.total.label||'Total')}</span><span class="ai-mini-widget-total-value">${escapeHtml(String(spec.total.value||''))}</span></div>`:'';
+  return`<div class="ai-mini-widget">${spec.title?`<div class="ai-mini-widget-title">${escapeHtml(spec.title)}</div>`:''}${rows}${totalHtml}</div>`;
+}
+
+// Format an AI message body with markdown-lite + optional inline mini-widget
+function formatAiBody(content){
+  const parsed=parseAiMiniWidget(content);
+  const inline=t=>escapeHtml(t).replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>');
+  if(parsed){
+    return[
+      parsed.before?inline(parsed.before):'',
+      renderAiMiniWidget(parsed.widget),
+      parsed.after?'<div style="margin-top:10px">'+inline(parsed.after)+'</div>':''
+    ].join('');
+  }
+  return inline(content);
+}
+
+// Suggest 2-3 contextual follow-up chips based on the AI response content.
+// Rules-based: matches topic keywords in the response to relevant next-question chips.
+function generateFollowupChips(content){
+  const c=(content||'').toLowerCase();
+  const chips=[];
+  // Topic → follow-up mappings
+  if(/goal|target|behind|pace/.test(c))chips.push("What if I add $50/mo to my behind-pace goal?");
+  if(/dividend|yield|payout/.test(c))chips.push('Break down my dividends by ticker');
+  if(/portfolio|holding|invest|allocat|VOO|VYM|VGS/.test(c))chips.push('How\u2019s my allocation vs target?');
+  if(/spend|budget|category|food|dining|entertainment/.test(c))chips.push('Where am I over budget this month?');
+  if(/tax|deduction|ATO|bracket/.test(c))chips.push('Estimate my tax at year-end');
+  if(/emergency|buffer|safety/.test(c))chips.push('How many months\u2019 spending do I have saved?');
+  if(/income|salary|pay|paycheck|paycheque/.test(c))chips.push('When is my next paycheck?');
+  if(/university|uni|study|course/.test(c))chips.push('Am I on track for uni Jan 2028?');
+  // Fallback set if no topic matched
+  if(!chips.length)chips.push('What should I focus on this week?','Any red flags in my finances?');
+  // Dedupe + cap at 3
+  return[...new Set(chips)].slice(0,3);
+}
+
+function appendMsg(role,content,scroll=true,addFollowups=false){
   const msgs=document.getElementById('ai-msgs');
   const time=new Date().toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'});
   const div=document.createElement('div');div.className=`msg ${role}`;
-  div.innerHTML=`<div class="msg-bubble">${content.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>')}</div><div class="msg-time">${time}</div>`;
-  msgs.appendChild(div);if(scroll)scrollAiBottom();
+  if(role==='ai'){
+    div.innerHTML=`<div class="ai-identity-row">
+      <div class="ai-identity-dot">✦</div>
+      <div class="ai-identity-label">Advisor</div>
+    </div>
+    <div class="msg-bubble">${formatAiBody(content)}</div>
+    <div class="msg-time">${time}</div>`;
+    msgs.appendChild(div);
+    if(addFollowups){
+      const chips=generateFollowupChips(content);
+      if(chips.length){
+        const fu=document.createElement('div');
+        fu.className='ai-followup-block';
+        fu.innerHTML=`<div class="ai-followup-label">Follow up</div>`+chips.map(q=>`<button class="ai-followup-chip" onclick="askQuick(&quot;${q.replace(/"/g,'\\&quot;').replace(/'/g,"\\'")}&quot;)">${escapeHtml(q)}</button>`).join('');
+        msgs.appendChild(fu);
+      }
+    }
+  }else{
+    // User bubble
+    div.innerHTML=`<div class="msg-bubble">${escapeHtml(content).replace(/\n/g,'<br>')}</div><div class="msg-time">${time}</div>`;
+    msgs.appendChild(div);
+  }
+  if(scroll)scrollAiBottom();
 }
 function scrollAiBottom(){const el=document.getElementById('ai-msgs');if(el)el.scrollTop=el.scrollHeight;}
 function askQuick(q){document.getElementById('ai-inp').value=q;sendAiMsg();}
@@ -9032,7 +9189,7 @@ async function sendAiMsg(){
   const msgs=document.getElementById('ai-msgs');
   const typing=document.createElement('div');
   typing.className='msg ai';typing.id='ai-typing';
-  typing.innerHTML='<div class="ai-typing"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div>';
+  typing.innerHTML='<div class="ai-typing"><div class="ai-typing-dots"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div><div class="ai-typing-label">thinking</div></div>';
   msgs.appendChild(typing);scrollAiBottom();
 
   // Build financial context
@@ -9117,7 +9274,7 @@ Reply conversationally but precisely. Use **bold** for key dollar figures. Keep 
       if(!S.aiHistory)S.aiHistory=[];
       S.aiHistory.push({role:'assistant',content:reply});
     }
-    appendMsg('ai',reply);
+    appendMsg('ai',reply,true,true);
     save();
 
   }catch(e){
@@ -11753,7 +11910,7 @@ async function sendAssistantMsg(){
   appendAssistantMsg('user',txt);
   const msgs=document.getElementById('assistant-msgs');
   const typing=document.createElement('div');typing.className='msg ai';typing.id='asst-typing';
-  typing.innerHTML='<div class="ai-typing"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div>';
+  typing.innerHTML='<div class="ai-typing"><div class="ai-typing-dots"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div><div class="ai-typing-label">thinking</div></div>';
   msgs.appendChild(typing);scrollAssistantBottom();
 
   const sys=`You are FinPlan's Investment Assistant for a ~20-year-old Australian investor building wealth before university (Jan 2028). You have access to their REAL portfolio data below.
