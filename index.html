@@ -42,7 +42,7 @@
   --sans:'Inter',system-ui,-apple-system,sans-serif;
   --display:'Inter',system-ui,-apple-system,sans-serif;
   --sb:env(safe-area-inset-bottom,0px);--st:env(safe-area-inset-top,0px);
-  --hdr-h:60px;--nav-h:74px;
+  --hdr-h:60px;--nav-h:60px;
   --sh-sm:0 1px 2px rgba(0,0,0,.35);
   --sh-md:0 4px 20px rgba(0,0,0,.45);
   --sh-lg:0 12px 40px rgba(0,0,0,.55);
@@ -324,12 +324,14 @@ body.light .hdr{background:rgba(255,255,255,.8)}
   a{text-decoration:none;color:#000!important}
 }
 body.light .bnav{background:rgba(255,255,255,.92)}
-.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;color:var(--t3);font-size:10px;font-weight:500;letter-spacing:.02em;border:none;background:none;transition:all .2s;padding:6px 2px;position:relative;border-radius:14px}
+/* v2.7.19 — icon-only nav with active pill */
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:var(--t3);border:none;background:none;transition:color var(--dur-fast) var(--ease-out);padding:8px 4px;position:relative;border-radius:14px;font-size:0;line-height:0;-webkit-tap-highlight-color:transparent}
+.nb-label{display:none}
 .nb.on{color:var(--acc)}
-.nb.on::before{content:none}
-.nb svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s}
-.nb:active svg{transform:scale(.85)}
-.nb.on svg{transform:scale(1.05)}
+.nb.on::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:32px;background:rgba(0,229,153,.12);border-radius:12px;z-index:-1;transition:opacity var(--dur-fast) var(--ease-out)}
+.nb svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:transform var(--dur-fast) var(--ease-out);position:relative;z-index:1}
+.nb:active svg{transform:scale(.9)}
+.nb.on svg{transform:scale(1.08)}
 
 /* FAB */
 .fab{position:fixed;bottom:calc(var(--nav-h) + var(--sb) + 32px);right:22px;width:56px;height:56px;background:linear-gradient(135deg,var(--acc),var(--acc2));border-radius:18px;border:none;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 8px 24px var(--accd3);z-index:200;transition:all .25s cubic-bezier(.4,0,.2,1)}
@@ -391,7 +393,7 @@ body.ctx-showing .fab{bottom:calc(var(--nav-h) + var(--sb) + 130px);transition:b
 .more-tile svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;margin-bottom:7px}
 
 /* PAGES */
-.pg{display:none;padding:18px 16px 8px}.pg.on{display:block;animation:pgFade .32s cubic-bezier(.16,1,.3,1)}
+.pg{display:none;padding:22px 18px 12px}.pg.on{display:block;animation:pgFade .32s cubic-bezier(.16,1,.3,1)}
 @keyframes pgFade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .pg.on>.card,.pg.on>.hero,.pg.on>.mg,.pg.on>.tog,.pg.on>.alert{animation:cardIn .4s cubic-bezier(.16,1,.3,1) backwards}
 .pg.on>*:nth-child(1){animation-delay:.02s}
@@ -402,8 +404,21 @@ body.ctx-showing .fab{bottom:calc(var(--nav-h) + var(--sb) + 130px);transition:b
 .pg.on>*:nth-child(6){animation-delay:.22s}
 @keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .ai-pg{padding:0}
+/* v2.7.19 — AI page uses fixed positioning so the input dock actually sits at the bottom */
+.ai-pg.on{
+  position:fixed;
+  top:calc(var(--hdr-h,60px) + var(--st));
+  left:0;right:0;bottom:0;
+  display:flex!important;
+  flex-direction:column;
+  background:var(--bg);
+  z-index:50;
+  height:auto;
+  overflow:hidden;
+  padding:0!important;
+}
 /* CARDS */
-.card{background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad-lg);padding:18px;margin-bottom:14px;transition:border-color var(--dur-base) var(--ease-out),transform var(--dur-fast) var(--ease-out);position:relative;overflow:hidden}
+.card{background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad-lg);padding:20px;margin-bottom:18px;transition:border-color var(--dur-base) var(--ease-out),transform var(--dur-fast) var(--ease-out);position:relative;overflow:hidden}
 .card:hover{border-color:var(--bdr-acc2)}
 .card.acc-b{border-color:var(--bdr-acc2);background:var(--glass-strong)}
 /* Glass hero card with radial mint glow */
@@ -416,7 +431,7 @@ body.ctx-showing .fab{bottom:calc(var(--nav-h) + var(--sb) + 130px);transition:b
 .ctitle svg{width:14px;height:14px;stroke:var(--acc);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
 /* METRICS */
-.mg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.mg{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
 .met{background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad);padding:14px;transition:transform var(--dur-fast) var(--ease-out),border-color var(--dur-base) var(--ease-out)}
 .met:hover{border-color:var(--bdr-acc2);transform:translateY(-1px)}
 .ml{font-size:10px;color:var(--t3);margin-bottom:6px;font-weight:600;letter-spacing:.10em;text-transform:uppercase}
@@ -429,12 +444,12 @@ body.ctx-showing .fab{bottom:calc(var(--nav-h) + var(--sb) + 130px);transition:b
 .tg{background:var(--accd);color:var(--acc)}.tb{background:var(--bd);color:var(--b)}.ty{background:var(--yd);color:var(--y)}.tr{background:var(--rd);color:var(--r)}.tp{background:var(--pd);color:var(--p)}
 
 /* HERO */
-.hero{background:var(--glass);border:0.5px solid var(--bdr-acc2);border-radius:var(--rad-lg);padding:20px;margin-bottom:14px;position:relative;overflow:hidden}
+.hero{background:var(--glass);border:0.5px solid var(--bdr-acc2);border-radius:var(--rad-lg);padding:22px 22px 24px;margin-bottom:18px;position:relative;overflow:hidden}
 .hero::before{content:'';position:absolute;inset:0;background:var(--glow-mint);pointer-events:none;border-radius:inherit;animation:heroGlow 6s ease-in-out infinite}
 .hero::after{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(0,229,153,.10) 0%,transparent 70%);pointer-events:none;animation:heroGlow2 8s ease-in-out infinite}
 @keyframes heroGlow2{0%,100%{opacity:.5;transform:translate(0,0)}50%{opacity:.9;transform:translate(-10px,4px)}}
-.hero-l{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.16em;margin-bottom:6px;font-weight:600;position:relative;z-index:1}
-.hero-v{font-size:40px;font-weight:700;color:var(--t);letter-spacing:-1.8px;line-height:1.05;position:relative;z-index:1;font-variant-numeric:tabular-nums}
+.hero-l{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.16em;margin-bottom:8px;font-weight:600;position:relative;z-index:1}
+.hero-v{font-size:34px;font-weight:700;color:var(--t);letter-spacing:-1.4px;line-height:1.05;position:relative;z-index:1;font-variant-numeric:tabular-nums}
 .hero-s{font-size:12px;color:var(--t2);margin-top:8px;position:relative;z-index:1;font-weight:500}
 .tag-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px;position:relative;z-index:1}
 
@@ -592,7 +607,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .ph-b{font-size:11px;color:var(--t2);line-height:1.5}
 
 /* AI */
-.ai-messages{flex:1;overflow-y:auto;padding:14px 12px 20px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.ai-messages{flex:1;min-height:0;overflow-y:auto;padding:16px 14px 22px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .ai-messages::-webkit-scrollbar{display:none}
 /* v2.7.17 — V4 conversation header */
 .ai-conv-header{position:sticky;top:0;background:var(--bg);padding:12px 12px 10px;display:flex;align-items:center;gap:10px;z-index:5;border-bottom:0.5px solid var(--bdr);margin-bottom:6px}
@@ -620,7 +635,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .ai-send:disabled{opacity:.4;cursor:not-allowed}
 .ai-send svg{width:15px;height:15px;stroke:#0a120e;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 /* Message rows */
-.msg{margin:14px 0;display:flex;flex-direction:column;animation:mIn .28s var(--ease-out) both}
+.msg{margin:18px 0;display:flex;flex-direction:column;animation:mIn .28s var(--ease-out) both}
 @keyframes mIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .msg.user{align-items:flex-end}
 .msg.ai{align-items:flex-start}
@@ -630,10 +645,19 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .ai-identity-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .ai-identity-dot{width:26px;height:26px;border-radius:50%;background:rgba(0,229,153,.14);border:0.5px solid rgba(0,229,153,.30);display:flex;align-items:center;justify-content:center;color:var(--acc);font-size:13px;font-weight:700;flex-shrink:0}
 .ai-identity-label{font-size:10px;color:var(--t3);letter-spacing:.04em;font-weight:500}
-.msg.ai .msg-bubble{background:var(--glass);color:var(--t);border-radius:18px;border-bottom-left-radius:6px;padding:14px 16px;font-size:13px;line-height:1.6;font-family:var(--sans);max-width:calc(100% - 8px);margin-left:34px;border:0.5px solid var(--bdr)}
-.msg.ai .msg-bubble strong{color:var(--t);font-weight:700}
-.msg.ai .msg-bubble em{color:var(--acc);font-style:normal;font-weight:600}
-.msg-time{font-size:9px;color:var(--t3);margin-top:4px;padding:0 8px}
+.msg.ai .msg-bubble{background:var(--glass);color:rgba(240,244,240,.90);border-radius:18px;border-bottom-left-radius:6px;padding:15px 17px;font-size:13.5px;line-height:1.72;font-family:var(--sans);max-width:calc(100% - 8px);margin-left:34px;border:0.5px solid var(--bdr);font-weight:400;letter-spacing:.005em}
+.msg.ai .msg-bubble strong{color:var(--t);font-weight:600}
+.msg.ai .msg-bubble em{color:var(--acc);font-style:normal;font-weight:500}
+.msg.ai .msg-bubble p{margin:0 0 10px 0}
+.msg.ai .msg-bubble p:last-child{margin-bottom:0}
+.msg.ai .msg-bubble ul,.msg.ai .msg-bubble ol{margin:8px 0;padding-left:22px}
+.msg.ai .msg-bubble li{margin-bottom:4px}
+.msg.ai .msg-bubble li:last-child{margin-bottom:0}
+.msg.ai .msg-bubble code{background:rgba(0,229,153,.10);color:var(--acc);padding:1px 6px;border-radius:5px;font-family:var(--mono);font-size:12px}
+.msg.ai .msg-bubble h1,.msg.ai .msg-bubble h2,.msg.ai .msg-bubble h3,.msg.ai .msg-bubble h4{color:var(--t);font-weight:600;margin:12px 0 6px 0;font-size:13px;letter-spacing:-.15px;line-height:1.35}
+.msg.ai .msg-bubble h1:first-child,.msg.ai .msg-bubble h2:first-child,.msg.ai .msg-bubble h3:first-child{margin-top:0}
+.msg-time{font-size:9px;color:var(--t3);margin-top:4px;padding:0 8px;opacity:0}
+.msg:hover .msg-time,.msg:last-child .msg-time{opacity:.75}
 .msg.ai .msg-time{margin-left:34px}
 /* Inline mini-widget rendered inside AI response */
 .ai-mini-widget{margin-top:12px;background:rgba(0,229,153,.05);border:0.5px solid rgba(0,229,153,.20);border-radius:12px;padding:12px 14px}
@@ -1055,7 +1079,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
     </div>
 
     <!-- AI ADVISOR -->
-    <div class="pg ai-pg" id="pg-ai" style="display:none;flex-direction:column;height:calc(100vh - calc(var(--hdr-h,56px) + var(--st)) - calc(var(--nav-h) + var(--sb) + 44px))">
+    <div class="pg ai-pg" id="pg-ai" style="display:none">
       <div class="ai-messages" id="ai-msgs"></div>
       <div class="ai-input-wrap">
         <div class="ai-qchips" id="ai-chips"></div>
@@ -1959,9 +1983,30 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.18';
+const APP_VERSION='2.7.19';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.19',
+    date:'2026-07-17',
+    title:'Icon-only nav, breathing room, AI Advisor fixes',
+    sections:{
+      features:[
+        '📱 Bottom navigation redesigned to icons only, matching the concept. Active tab shows a subtle mint pill background behind its icon; icons are slightly larger and lift on tap. Total nav height dropped from 74px to 60px — more room for content',
+        'Global spacing increased across every page. Card padding 18→20, card gap 14→18, hero padding 20→22 with a taller 24px bottom pad, metric grid gap 10→12, message rows 14→18. Everything feels less cramped and more like the concept mockups'
+      ],
+      improvements:[
+        'AI Advisor input dock now actually sits at the bottom of the screen. The page uses fixed positioning when active so the layout is bulletproof — messages scroll independently while the input pill stays anchored at the bottom, always',
+        'AI response text softened. Font weight down to 400 (was inheriting bolder), line-height up to 1.72, letter-spacing eased slightly, colour softened to 90% opacity so it reads like conversation rather than app copy',
+        'AI response markdown parser rebuilt. Now correctly handles headings (# ## ###), bullet lists (- or *), numbered lists (1. 2.), inline `code`, code fences (```), blockquotes (>), paragraph breaks, and **bold** / *emphasis* — no more raw markdown symbols leaking into the rendered message',
+        'Hero value size reduced from 40px to 34px so it doesn\'t dominate the card — leaves room for the stat column on the right to breathe',
+        'Timestamps on message rows are now hidden by default, only appearing on hover or on the most recent message. Less visual noise in a long conversation'
+      ],
+      fixes:[
+        '🐛 Root cause of the AI Advisor cramped/broken layout: the page had an inline `height:calc(100vh - ...)` that double-subtracted the nav height, pushing the input dock off screen on many devices. Fixed by switching to fixed positioning and letting the CSS handle sizing based on actual viewport'
+      ]
+    }
+  },
   {
     v:'2.7.18',
     date:'2026-07-17',
@@ -7452,7 +7497,7 @@ function showPg(id,btn){
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
   document.querySelectorAll('.more-tile').forEach(t=>t.classList.remove('active'));
   const pg=document.getElementById('pg-'+id);
-  if(pg){pg.classList.add('on');if(id==='ai')pg.style.display='flex';}
+  if(pg){pg.classList.add('on');}
   if(btn)btn.classList.add('on');
   document.getElementById('scrl').scrollTop=0;
   currentPg=id;
@@ -7505,7 +7550,7 @@ function showPgFromMore(id){
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
   document.querySelectorAll('.more-tile').forEach(t=>t.classList.remove('active'));
   const pg=document.getElementById('pg-'+id);
-  if(pg){pg.classList.add('on');if(id==='ai')pg.style.display='flex';}
+  if(pg){pg.classList.add('on');}
   document.getElementById('more-btn').classList.add('on');
   const tile=document.getElementById('more-'+id);if(tile)tile.classList.add('active');
   document.getElementById('scrl').scrollTop=0;
@@ -9207,18 +9252,81 @@ function renderAiMiniWidget(spec){
   return`<div class="ai-mini-widget">${spec.title?`<div class="ai-mini-widget-title">${escapeHtml(spec.title)}</div>`:''}${rows}${totalHtml}</div>`;
 }
 
-// Format an AI message body with markdown-lite + optional inline mini-widget
+// Format an AI message body with markdown-lite + optional inline mini-widget.
+// Handles: **bold**, *emphasis*, `inline code`, headings (# ## ###),
+// bullet lists (- and *), numbered lists, blockquotes, paragraph breaks.
 function formatAiBody(content){
   const parsed=parseAiMiniWidget(content);
-  const inline=t=>escapeHtml(t).replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>');
   if(parsed){
     return[
-      parsed.before?inline(parsed.before):'',
+      parsed.before?mdToHtml(parsed.before):'',
       renderAiMiniWidget(parsed.widget),
-      parsed.after?'<div style="margin-top:10px">'+inline(parsed.after)+'</div>':''
+      parsed.after?'<div style="margin-top:10px">'+mdToHtml(parsed.after)+'</div>':''
     ].join('');
   }
-  return inline(content);
+  return mdToHtml(content);
+}
+
+// Small markdown-to-HTML converter tuned for chat replies.
+// Order matters: block-level (headings, lists, code fences) BEFORE inline (bold, code).
+function mdToHtml(text){
+  if(!text)return'';
+  // Split code fences off first so their contents aren't touched by other rules
+  const codeBlocks=[];
+  text=text.replace(/```(?:[\w-]*)\n?([\s\S]*?)```/g,(m,body)=>{
+    codeBlocks.push(body);
+    return`\u0000CB${codeBlocks.length-1}\u0000`;
+  });
+  // Escape HTML on the remainder
+  text=escapeHtml(text);
+  // Restore fenced code blocks as <pre><code>
+  text=text.replace(/\u0000CB(\d+)\u0000/g,(m,i)=>`<pre style="background:rgba(0,229,153,.06);border:0.5px solid rgba(0,229,153,.15);border-radius:8px;padding:10px 12px;margin:8px 0;overflow-x:auto;font-family:var(--mono);font-size:11.5px;color:var(--t);white-space:pre-wrap;line-height:1.5">${escapeHtml(codeBlocks[+i])}</pre>`);
+  // Split into blocks (paragraph-level)
+  const blocks=text.split(/\n{2,}/);
+  const out=blocks.map(block=>{
+    const b=block.trim();
+    if(!b)return'';
+    // Skip if already a rendered pre
+    if(b.startsWith('<pre'))return b;
+    // Headings: # ## ###
+    let m=b.match(/^(#{1,4})\s+(.*)$/);
+    if(m){
+      const level=Math.min(4,m[1].length);
+      return`<h${level}>${inlineMd(m[2])}</h${level}>`;
+    }
+    // Bullet lists: lines starting with - or *
+    if(/^\s*[-*]\s+/.test(b)){
+      const items=b.split(/\n/).filter(l=>l.trim()).map(l=>{
+        const c=l.replace(/^\s*[-*]\s+/,'');
+        return`<li>${inlineMd(c)}</li>`;
+      }).join('');
+      return`<ul>${items}</ul>`;
+    }
+    // Numbered lists
+    if(/^\s*\d+\.\s+/.test(b)){
+      const items=b.split(/\n/).filter(l=>l.trim()).map(l=>{
+        const c=l.replace(/^\s*\d+\.\s+/,'');
+        return`<li>${inlineMd(c)}</li>`;
+      }).join('');
+      return`<ol>${items}</ol>`;
+    }
+    // Blockquote
+    if(/^&gt;\s+/.test(b)){
+      const inner=b.split('\n').map(l=>l.replace(/^&gt;\s?/,'')).join(' ');
+      return`<blockquote style="border-left:2px solid var(--acc);padding:6px 10px;margin:6px 0;color:var(--t2);font-style:italic">${inlineMd(inner)}</blockquote>`;
+    }
+    // Default: paragraph. Preserve internal newlines as <br>.
+    return`<p>${inlineMd(b).replace(/\n/g,'<br>')}</p>`;
+  });
+  return out.filter(Boolean).join('');
+}
+
+// Inline markdown pass — bold, emphasis, inline code. Assumes text is already escaped.
+function inlineMd(t){
+  return t
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/(?<![*\w])\*(?!\s)([^*\n]+?)\*(?!\w)/g,'<em>$1</em>')
+    .replace(/`([^`]+?)`/g,'<code>$1</code>');
 }
 
 // Suggest 2-3 contextual follow-up chips based on the AI response content.
