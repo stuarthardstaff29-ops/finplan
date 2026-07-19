@@ -254,8 +254,8 @@ body.compact .mg{gap:7px}
 
 /* APP SHELL */
 #app{display:none;flex-direction:column;height:100%}
-.hdr{background:rgba(0,0,0,.7);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-bottom:0.5px solid var(--bdr);padding:14px 18px;padding-top:calc(14px + var(--st));display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:relative;z-index:50;transition:transform var(--dur-base) var(--ease-out),margin-top var(--dur-base) var(--ease-out)}
-body.hdr-hidden .hdr{transform:translateY(-100%);margin-bottom:calc(-1 * (var(--hdr-h) + var(--st)))}
+.hdr{background:rgba(0,0,0,.7);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-bottom:0.5px solid var(--bdr);padding:14px 18px;padding-top:calc(14px + var(--st));display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:relative;z-index:50;overflow:hidden;max-height:calc(var(--hdr-h) + var(--st) + 30px);opacity:1;transition:max-height .38s cubic-bezier(.4,0,.2,1),opacity .28s var(--ease-out),padding-top .38s cubic-bezier(.4,0,.2,1),padding-bottom .38s cubic-bezier(.4,0,.2,1),border-bottom-width .28s var(--ease-out)}
+body.hdr-hidden .hdr{max-height:0;opacity:0;padding-top:0;padding-bottom:0;border-bottom-width:0}
 body.light .hdr{background:rgba(255,255,255,.8)}
 .hdr-logo{font-size:19px;font-weight:800;color:var(--acc);letter-spacing:-1px;font-family:var(--display);display:flex;align-items:baseline;gap:1px}
 .hdr-logo em{color:var(--t3);font-style:normal;font-weight:600;font-size:14px;letter-spacing:0}
@@ -343,9 +343,14 @@ body.light .bnav{background:rgba(255,255,255,.92)}
 .nb:active svg{transform:scale(.9)}
 .nb.on svg{transform:scale(1.08)}
 
-/* FAB */
-.fab{position:fixed;bottom:calc(var(--nav-h) + var(--sb) + 32px);right:22px;width:56px;height:56px;background:linear-gradient(135deg,var(--acc),var(--acc2));border-radius:18px;border:none;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 8px 24px var(--accd3);z-index:200;transition:all .25s cubic-bezier(.4,0,.2,1)}
+/* FAB — Add Transaction floating action button */
+.fab{position:fixed;bottom:calc(var(--nav-h) + var(--sb) + 30px);right:20px;width:56px;height:56px;background:var(--acc);border-radius:50%;border:none;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 10px 28px rgba(0,229,153,.35),0 2px 6px rgba(0,0,0,.4);z-index:200;transition:transform var(--dur-fast) var(--ease-out),bottom var(--dur-base) var(--ease-out),opacity var(--dur-base) var(--ease-out),background var(--dur-fast) var(--ease-out)}
+.fab:hover{transform:scale(1.06);background:#00f3a3}
+.fab:active{transform:scale(.94)}
+.fab svg{width:22px;height:22px;stroke:#0a120e;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;fill:none}
 body.fab-visible .fab{display:flex}
+/* When nav is hidden (scrolled down), drop the FAB closer to the bottom edge */
+body.nav-hidden-active .fab{bottom:calc(var(--sb) + 22px)}
 
 /* PERSISTENT CONTEXT PANEL (v1.8.0) */
 .ctx-panel{position:fixed;left:14px;right:14px;bottom:calc(var(--nav-h) + var(--sb) + 22px);background:rgba(13,15,18,.96);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(245,177,60,.18);border-radius:18px;padding:10px 14px 12px;z-index:150;transform:translateY(calc(100% + var(--nav-h) + var(--sb) + 40px));transition:transform .28s cubic-bezier(.4,0,.2,1);pointer-events:none}
@@ -2014,9 +2019,27 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.23';
+const APP_VERSION='2.7.24';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.24',
+    date:'2026-07-17',
+    title:'Add Transaction FAB restored + true full-screen scroll behaviour',
+    sections:{
+      features:[
+        '🎯 Full-screen scroll behaviour reworked. The FinPlan header now hides on first scroll-down and stays hidden until you change pages — no more distracting reappearance when scrolling back up. Only the nav pill tracks scroll direction (it comes back on scroll up so you always have navigation). Header returns automatically the moment you navigate to any page'
+      ],
+      improvements:[
+        '➕ **Add Transaction floating button (FAB) restored on the Accounts page.** Redesigned to V4 language — solid mint circle (56×56), softer icon, deeper drop shadow. Slides down when the nav hides so it stays near the bottom edge as content reclaims space',
+        'Header collapse is now smooth (max-height + opacity transition, 380ms cubic ease). No more layout jump when the header hides or returns — content flows up into the freed space naturally, matching the "true full-screen" feel'
+      ],
+      fixes:[
+        '🐛 Add Transaction FAB was missing from the Accounts page — the regression was the CSS gating combined with the FAB being visually broken by the older gradient/rounded-square treatment. Reworked visually and re-verified the show/hide gate',
+        '🐛 Header reappearing on scroll-up felt "un-fluent" — root cause: it was fighting the user\'s intent, coming back when they weren\'t asking for it. Changed to one-way (hide until page change) which matches how you actually browse'
+      ]
+    }
+  },
   {
     v:'2.7.23',
     date:'2026-07-17',
@@ -5394,14 +5417,13 @@ function setupNavAutoHide(){
   }
   // v2.7.4: scroll direction detection — hide on scroll down, show on scroll up
   // v2.7.23: single global capture-phase listener catches scroll on ANY element
-  // (dashboard #scrl, AI msgs, detail views, etc). More reliable on mobile PWAs
-  // where the scrolling element varies by page.
+  // v2.7.24: HEADER is one-way — hides on first scroll down, stays hidden until
+  // page change (matches "true full-screen" intent). Nav still tracks scroll direction.
   let _shLastTop=0;
   let _shAccum=0;
   let _shTicking=false;
   function onAnyScroll(e){
     const el=e.target;
-    // Determine scrollTop of whatever scrolled
     let st=0;
     if(el===document||el===window||el===document.documentElement||el===document.body){
       st=window.pageYOffset||document.documentElement.scrollTop||document.body.scrollTop||0;
@@ -5414,17 +5436,24 @@ function setupNavAutoHide(){
     _shTicking=true;
     requestAnimationFrame(()=>{
       _shTicking=false;
-      if(st<50){showNav();showHdr();_shLastTop=st;_shAccum=0;return;}
+      // At the very top of scroll, restore nav (header stays hidden per user request)
+      if(st<40){showNav();_shLastTop=st;_shAccum=0;return;}
       const delta=st-_shLastTop;
       _shLastTop=st;
       if(Math.abs(delta)<1)return;
       if(Math.sign(delta)===Math.sign(_shAccum)||_shAccum===0)_shAccum+=delta;
       else _shAccum=delta;
-      if(_shAccum>18){hideNav();hideHdr();_shAccum=0;}
-      else if(_shAccum<-14){showNav();showHdr();_shAccum=0;}
+      if(_shAccum>18){
+        hideNav();
+        hideHdr(); // once scrolled down, header hides and STAYS hidden until page change
+        _shAccum=0;
+      }else if(_shAccum<-14){
+        showNav(); // nav returns on scroll up
+        // header does NOT return on scroll up — only on page change
+        _shAccum=0;
+      }
     });
   }
-  // Capture phase = true so we catch scroll events from any descendant that scrolls
   document.addEventListener('scroll',onAnyScroll,{capture:true,passive:true});
   _lastScrollTop=0;_scrollAccum=0;
   // v2.7.20: on the AI page, the nav stays visible so the user isn't trapped.
@@ -5433,10 +5462,12 @@ function setupNavAutoHide(){
 function hideNav(){
   const nav=document.querySelector('.bnav');if(nav)nav.classList.add('hidden');
   const fab=document.querySelector('.fab');if(fab)fab.classList.add('nav-hidden');
+  document.body.classList.add('nav-hidden-active');
 }
 function showNav(){
   const nav=document.querySelector('.bnav');if(nav)nav.classList.remove('hidden');
   const fab=document.querySelector('.fab');if(fab)fab.classList.remove('nav-hidden');
+  document.body.classList.remove('nav-hidden-active');
 }
 // v2.7.20 — header auto-hide on scroll for a fuller-screen feel
 function hideHdr(){document.body.classList.add('hdr-hidden');}
