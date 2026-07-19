@@ -2019,9 +2019,24 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.24';
+const APP_VERSION='2.7.25';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.25',
+    date:'2026-07-17',
+    title:'Add Transaction FAB — actual fix',
+    sections:{
+      features:[],
+      improvements:[
+        'showPgFromMore now delegates to showPg, so page-specific setup (FAB, header, AI header slot, all page builders) runs consistently no matter how you reach a page — from the bottom nav or from the More sheet. Two code paths collapsed into one, so behavior can\'t drift between them again'
+      ],
+      fixes:[
+        '🐛 **Add Transaction FAB missing on Accounts — real root cause found.** When you open Accounts from the More sheet (which is now the only way to reach it), the entry function `showPgFromMore` was explicitly REMOVING the `fab-visible` class, with a stale comment saying "Transactions is a bottom-nav destination". That was true before v2.7.21 when Accounts had its own bottom-nav tab, but I moved it to More and forgot to update this code path. The FAB was correctly appearing when Accounts was in the bottom nav — never when reached from More. Fixed by having showPgFromMore delegate to showPg (which sets the FAB correctly)',
+        'AI page: welcome/header slot now rebuilds when you navigate to the AI page, so the back button and title always reflect the current state'
+      ]
+    }
+  },
   {
     v:'2.7.24',
     date:'2026-07-17',
@@ -7678,7 +7693,7 @@ function showPg(id,btn){
   if(id==='analytics')buildAnalytics();
   if(id==='kmart')buildKmartPage();
   if(id==='settings'){buildThemeGrid();buildSettingsPage();buildCustomCatsList();}
-  if(id==='ai'){scrollAiBottom();}
+  if(id==='ai'){buildAiWelcome();scrollAiBottom();}
   if(id==='health')buildHealthScore();
   if(id==='streaks')buildStreaksPage();
   if(id==='sinking')buildSinkingPage();
@@ -7709,40 +7724,16 @@ function closeMore(){
 }
 function showPgFromMore(id){
   closeMore();
-  document.querySelectorAll('.pg').forEach(p=>{p.classList.remove('on');p.style.display='';});
+  // v2.7.25: delegate to showPg so page-specific behavior (FAB, header, builders,
+  // on-ai-page class) all fire consistently. Just set the More tab as the "active"
+  // nav indicator since none of the main 4 tabs correspond to this destination.
+  const moreBtn=document.getElementById('more-btn');
+  showPg(id,null);
+  // Override the nav highlight — More tile stays lit, not one of the top-4 tabs
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
-  document.querySelectorAll('.more-tile').forEach(t=>t.classList.remove('active'));
-  const pg=document.getElementById('pg-'+id);
-  if(pg){pg.classList.add('on');}
-  document.getElementById('more-btn').classList.add('on');
-  const tile=document.getElementById('more-'+id);if(tile)tile.classList.add('active');
-  document.getElementById('scrl').scrollTop=0;
-  currentPg=id;
-  // FAB never shown from More sheet (Transactions is a bottom-nav destination)
-  document.body.classList.remove('fab-visible');
-  // Refresh context panel values silently (do not auto-show)
-  if(typeof renderContextPanel==='function')renderContextPanel();
-  if(id==='invest')buildInvestPage();
-  if(id==='timeline')buildTimeline();
-  if(id==='budget'){upAll();buildBudgetPageV4();}
-  if(id==='analytics')buildAnalytics();
-  if(id==='kmart')buildKmartPage();
-  if(id==='settings'){buildThemeGrid();buildSettingsPage();buildCustomCatsList();}
-  if(id==='health')buildHealthScore();
-  if(id==='streaks')buildStreaksPage();
-  if(id==='sinking')buildSinkingPage();
-  if(id==='debts')buildDebtsPage();
-  if(id==='subscriptions')buildSubScan();
-  if(id==='dividends')buildDividendCalendar();
-  if(id==='tax')buildTaxSummary();
-  if(id==='jobs'&&typeof buildJobsPage==='function')buildJobsPage();
-  if(id==='reports'&&typeof buildReportsPage==='function')buildReportsPage();
-  if(id==='assistant'){buildAssistantWelcome();scrollAssistantBottom();}
-  if(id==='payday')buildPaydayPage();
-  if(id==='scenario')buildScenarioPage();
-  if(id==='glance')buildGlancePage();
-  if(id==='recurring')buildRecurringPage();
-  if(id==='insights')buildInsightsPage();
+  if(moreBtn)moreBtn.classList.add('on');
+  const tile=document.getElementById('more-'+id);
+  if(tile)tile.classList.add('active');
 }
 
 // ═══════════════════════════════════════════════════════════
