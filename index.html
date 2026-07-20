@@ -2036,6 +2036,10 @@ let S={
   // from legacy GCFG + goalState on first launch after the migration.
   goals:[],  // [{id, label, icon, color, target, saved, deadline, priority, type, status, log:[{ts,amount,source,note}], milestones:[{amount,label,hit}], notes, createdAt}]
   goalsPool:0,  // unallocated savings that aren't assigned to a specific goal
+  // v2.7.29 — CSV import history + review queue state.
+  // Each import: {id, ts, bank, filename, stats:{new,duplicate,autoCategorised,needsReview}, endBalance, reconciled}
+  imports:[],
+  importReviewAcknowledgedAt:0,  // timestamp of last time user cleared their review queue; used to fade "new" markers
   portfolio:{VOO:7732.93,VYM:1118.04,VYMI:1108.72,VAF:1275.40,VGB:600.08,VGS:0},
   invLog:[],
   // v7 investment model — mirrors CMC Markets portfolio structure.
@@ -2114,9 +2118,29 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.28';
+const APP_VERSION='2.7.29';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.29',
+    date:'2026-07-17',
+    title:'CSV import overhaul — confidence, reconciliation, review queue',
+    sections:{
+      features:[
+        '🎯 **Confidence-based auto-categorisation.** The app now learns from your own transaction history: if you\'ve categorised a payee before (or a similar payee), new imports of the same merchant inherit that category with high confidence. Three tiers: 95% (3+ prior matches), 75% (1-2 prior matches), 60% (built-in rule), then <50% flagged for review. Auto-applies at 85%+, everything below goes to the review queue',
+        '💰 **Balance reconciliation.** Both Westpac and Macquarie CSVs include a running-balance column. After parsing, the app compares the CSV\'s ending balance against what your ledger says it should be. If they match, you get a green "Balance reconciles" card. If they don\'t, a warning card shows the delta with a one-tap "Apply adjustment" button that logs a transparent Reconciliation transaction so the audit trail is preserved',
+        '✎ **Review queue on Accounts.** When imported transactions land with low confidence, a mint-tinted banner appears at the top of Accounts: "X transactions need review". Tap opens a focused sheet showing each one with the suggested category and three actions: confirm (✓), change category (✎), delete (🗑). Confirming a category also teaches the app for next time — that payee will hit 90%+ confidence on future imports',
+        '📊 **Bulk confirm** — one tap accepts all suggested categories at once when they look right'
+      ],
+      improvements:[
+        'Fuzzy duplicate detection window widened from 1.5 days to 3 days so pending↔cleared date drift doesn\'t leak duplicates. Widened window still requires payee-token similarity to prevent false positives on coincidental same-amount transactions',
+        'Import preview shows a richer summary card: New count, Duplicates skipped, Auto-categorised, Need review, plus totals in/out. Every "new" row in the preview shows its confidence badge so you can see what the app thinks before committing',
+        'Import history now persists in `S.imports` (last 50 imports kept) so future features can reason about batches, per-import stats, and "new since last import" boundaries',
+        'Every imported transaction now stores: `importId` (which batch), `importedAt` (timestamp), `autoCategorized: true`, `categoryConfidence` (0-100), `categorySource` (user-history / custom-rule / bank-rule / mq-fallback / unknown), `needsReview` (boolean). Enables the review queue and per-batch analytics'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'2.7.28',
     date:'2026-07-17',
@@ -8418,7 +8442,130 @@ function uncategorisedCount(){
   }).length;
 }
 
-function buildTxnsPage(){buildAcctHero();buildFilterRow();buildTxnList();buildRecList();}
+function buildTxnsPage(){buildAcctHero();buildReviewBanner();buildFilterRow();buildTxnList();buildRecList();}
+
+// v2.7.29 — Review queue banner shown at the top of Accounts when there are
+// imported transactions flagged as needsReview. Tap to filter the list to just those.
+function buildReviewBanner(){
+  let el=document.getElementById('review-banner');
+  if(!el){
+    const heroEl=document.querySelector('#pg-txns .card');
+    if(!heroEl)return;
+    el=document.createElement('div');
+    el.id='review-banner';
+    heroEl.insertAdjacentElement('afterend',el);
+  }
+  const needsReview=(S.transactions||[]).filter(t=>t.needsReview===true);
+  if(!needsReview.length){el.innerHTML='';el.style.display='none';return;}
+  // Group by most recent import
+  const mostRecentImportId=(S.imports||[])[0]?.id;
+  const fromLatestImport=needsReview.filter(t=>t.importId===mostRecentImportId).length;
+  el.style.display='block';
+  el.innerHTML=`<div style="background:linear-gradient(135deg,rgba(240,160,48,.08),rgba(240,160,48,.04));border:0.5px solid rgba(240,160,48,.28);border-radius:14px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="openReviewQueue()">
+    <div style="width:36px;height:36px;border-radius:12px;background:rgba(240,160,48,.18);display:flex;align-items:center;justify-content:center;color:var(--y);flex-shrink:0;font-size:16px">✎</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:12px;font-weight:700;color:var(--t)">${needsReview.length} transaction${needsReview.length===1?'':'s'} need${needsReview.length===1?'s':''} review</div>
+      <div style="font-size:10px;color:var(--t2);margin-top:2px">${fromLatestImport?`${fromLatestImport} from your latest import · `:''}Tap to review categories</div>
+    </div>
+    <div style="color:var(--t3);font-size:14px;flex-shrink:0">›</div>
+  </div>`;
+}
+
+// Focused review queue — filter Accounts to only transactions flagged needsReview
+function openReviewQueue(){
+  const needsReview=(S.transactions||[]).filter(t=>t.needsReview===true);
+  if(!needsReview.length){showToast('No transactions to review');return;}
+  const cm=cmap();
+  const rows=needsReview.map(t=>{
+    const c=cm[t.cat]||{icon:'📌',label:t.cat};
+    const conf=t.categoryConfidence||0;
+    const confLabel=conf>=50?`${conf}% guess`:'unknown';
+    return`<div class="review-row" data-id="${t.id}" style="display:flex;gap:12px;padding:14px;background:var(--glass);border:0.5px solid var(--bdr);border-radius:14px;margin-bottom:10px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--t);margin-bottom:2px">${escapeHtml(t.payee)}</div>
+        <div style="font-size:10px;color:var(--t3);margin-bottom:8px">${t.date} · ${t.acct} · <span class="tag ty" style="font-size:8px">${confLabel}</span></div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--t2)">
+          <span>Suggested:</span>
+          <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:rgba(255,255,255,.04);border-radius:8px;color:var(--t)">${c.icon} ${c.label}</span>
+        </div>
+        <details style="margin-top:6px"><summary style="font-size:9px;color:var(--t3);cursor:pointer">raw narrative</summary><div style="font-size:9px;color:var(--t3);font-family:var(--mono);margin-top:4px;word-break:break-all">${escapeHtml(t.originalNarrative||t.note||'')}</div></details>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;align-items:flex-end">
+        <div style="font-size:13px;font-weight:700;color:${t.dir==='in'?'var(--acc)':'var(--t)'};font-variant-numeric:tabular-nums">${t.dir==='in'?'+':'-'}${fmtD(t.amt)}</div>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-acc btn-xs" onclick="confirmReviewTxn('${t.id}')" title="Accept the suggested category">✓</button>
+          <button class="btn btn-ghost btn-xs" onclick="changeReviewTxn('${t.id}')" title="Change category">✎</button>
+          <button class="btn btn-r btn-xs" onclick="deleteReviewTxn('${t.id}')" title="Delete transaction">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  showSheet(`Review queue · ${needsReview.length}`,`
+    <div style="font-size:11px;color:var(--t2);margin-bottom:12px;line-height:1.55">These transactions were imported with low confidence in the category. Confirm each one, change the category, or delete if it shouldn\'t be here.</div>
+    ${needsReview.length>1?`<button class="btn btn-ghost btn-sm btn-full" style="margin-bottom:12px" onclick="confirmAllReview()">✓ Confirm all suggested categories</button>`:''}
+    ${rows}
+  `);
+}
+
+function confirmReviewTxn(id){
+  const t=(S.transactions||[]).find(x=>x.id===id);
+  if(!t)return;
+  t.needsReview=false;
+  save();
+  // Also learn from the confirmation — add to customRules so future imports get 90%+ confidence
+  if(t.originalNarrative&&typeof ensureCustomRules==='function'){
+    const custom=ensureCustomRules();
+    const kw=(typeof extractKeyword==='function')?extractKeyword(t.originalNarrative):'';
+    if(kw&&!custom.some(r=>r.keyword===kw)){
+      custom.push({keyword:kw,cat:t.cat,payee:t.payee,direction:t.dir,createdAt:Date.now()});
+    }
+  }
+  save();
+  showToast('✓ Confirmed');
+  openReviewQueue(); // refresh
+  buildReviewBanner();
+}
+
+function changeReviewTxn(id){
+  const t=(S.transactions||[]).find(x=>x.id===id);
+  if(!t)return;
+  closeSheet();
+  // Open the standard edit-transaction modal
+  if(typeof openTxnEdit==='function')openTxnEdit(id);
+  else if(typeof editTxn==='function')editTxn(id);
+}
+
+function deleteReviewTxn(id){
+  if(!confirm('Delete this transaction? This cannot be undone.'))return;
+  S.transactions=(S.transactions||[]).filter(x=>x.id!==id);
+  save();
+  showToast('Deleted');
+  openReviewQueue();
+  buildReviewBanner();
+  buildTxnList();
+}
+
+function confirmAllReview(){
+  const needsReview=(S.transactions||[]).filter(t=>t.needsReview===true);
+  if(!needsReview.length)return;
+  if(!confirm(`Confirm the suggested category for all ${needsReview.length} transactions?`))return;
+  needsReview.forEach(t=>{
+    t.needsReview=false;
+    if(t.originalNarrative&&typeof ensureCustomRules==='function'){
+      const custom=ensureCustomRules();
+      const kw=(typeof extractKeyword==='function')?extractKeyword(t.originalNarrative):'';
+      if(kw&&!custom.some(r=>r.keyword===kw)){
+        custom.push({keyword:kw,cat:t.cat,payee:t.payee,direction:t.dir,createdAt:Date.now()});
+      }
+    }
+  });
+  save();
+  closeSheet();
+  showToast(`✓ Confirmed ${needsReview.length}`);
+  buildTxnsPage();
+  S.importReviewAcknowledgedAt=Date.now();
+  save();
+}
 function buildAcctHero(){
   const acct=S.selectedAcct,bal=calcBal(acct),txns=S.transactions.filter(t=>t.acct===acct);
   const totalIn=txns.filter(t=>t.dir==='in').reduce((a,t)=>a+t.amt,0);
@@ -11997,6 +12144,7 @@ function parseWestpacCsv(text){
       rows.push({
         date,narrative:narrative.trim(),amt,dir,
         bank:'westpac',bankAcct:acctNum,subAcct,
+        balance:parseFloat(balanceStr)||null, // v2.7.29 — running balance for reconciliation
         rawRow:i+1
       });
     }catch(e){errors.push({row:i+1,reason:e.message});}
@@ -12036,7 +12184,8 @@ function parseMacquarieCsv(text){
       rows.push({
         date,narrative,amt,dir,
         bank:'macquarie',bankAcct:'macquarie',subAcct:'macquarie',
-        mqCat,mqSubcat, // Macquarie's own categorisation, used as fallback
+        mqCat,mqSubcat,
+        balance:parseFloat(balanceStr)||null, // v2.7.29 — running balance for reconciliation
         rawRow:i+1
       });
     }catch(e){errors.push({row:i+1,reason:e.message});}
@@ -12413,18 +12562,19 @@ function scoreDuplicate(row,existing){
   const targetDate=new Date(row.date+'T00:00:00');
   const eDate=new Date(existing.date+'T00:00:00');
   const daysDiff=Math.abs((eDate-targetDate)/(1000*60*60*24));
-  if(daysDiff>1.5)return 0;
-  // Base score: amount+dir+date match. Amount+direction alone is a very strong signal.
+  // v2.7.29: widen window to 3 days so pending↔cleared drift doesn't leak duplicates
+  if(daysDiff>3.5)return 0;
   let score=120;
-  // Small penalty for date drift (pending vs cleared). ≤1 day still comfortably above threshold.
   score-=Math.round(daysDiff*15);
-  // Bonus: if the existing txn was previously imported from the same bank, that's a strong signal
   if(existing.importedFrom&&existing.importedFrom===row.bank)score+=25;
-  // Bonus: payee similarity — if the raw narrative shares words with the existing payee
+  // Payee similarity — critical for the wider window; without it, two coincidental
+  // same-amount transactions on nearby days would falsely dedupe
   const narrTokens=(row.narrative||'').toLowerCase().split(/\s+/).filter(w=>w.length>3);
   const payeeTokens=(existing.payee||'').toLowerCase().split(/\s+/).filter(w=>w.length>3);
   const shared=narrTokens.filter(w=>payeeTokens.some(p=>p.includes(w)||w.includes(p))).length;
   score+=shared*10;
+  // For wider date drift (>1.5 days), require at least one shared token to prevent false positives
+  if(daysDiff>1.5&&shared===0)return 0;
   return score;
 }
 
@@ -12438,40 +12588,40 @@ function classifyImportRows(parsedRows){
   // Build a signature index for fast exact-match dedup on re-imports
   const sigIndex={};
   existing.forEach((t,j)=>{if(t.importSig)sigIndex[t.importSig]=j;});
+  // v2.7.29 — Build a payee → category history from your existing transactions.
+  // Exact matches score higher confidence than fuzzy matches.
+  const payeeHistory=buildPayeeHistoryIndex(existing);
   // Sort rows by date desc so newest are matched first (they're most likely to already be manually logged)
   const rowsSorted=[...parsedRows].map((r,i)=>({r,i})).sort((a,b)=>b.r.date.localeCompare(a.r.date));
   const resultsById={};
   rowsSorted.forEach(({r,i})=>{
     if(!r.amt||r.amt<=0){resultsById[i]={kind:'skipped',row:{...r,reason:'zero amount'}};return;}
     const sig=buildTxnSignature(r);
-    // ── Priority 1: EXACT signature match (guaranteed dedup on re-import of same CSV) ──
+    // ── Priority 1: EXACT signature match ──
     let bestIdx=null,bestScore=0,exactMatch=false;
     if(sigIndex[sig]!=null&&!consumed.has(sigIndex[sig])){
       bestIdx=sigIndex[sig];bestScore=999;exactMatch=true;
     }else{
-      // ── Priority 2: Fuzzy match (for transactions manually logged before this CSV import) ──
+      // ── Priority 2: Fuzzy match ──
       for(let j=0;j<existing.length;j++){
         if(consumed.has(j))continue;
         const s=scoreDuplicate(r,existing[j]);
         if(s>bestScore){bestScore=s;bestIdx=j;}
       }
     }
-    const cat=categoriseBankTxn(r.narrative,r.dir);
-    if(!cat.matched&&r.mqCat){
-      const mqMap={
-        'Food & Drink':'food','Sports & Fitness':'health','Leisure':'entertainment',
-        'Financial':'transfer','Transport':'transport','Shopping':'shopping',
-        'Bills':'utilities','Home':'utilities','Cash':'other','Income':'income'
-      };
-      const mapped=mqMap[r.mqCat];
-      if(mapped)cat.cat=mapped;
-    }
+    // v2.7.29 — categoriseWithConfidence returns {cat, payee, confidence, source}
+    const catResult=categoriseWithConfidence(r,payeeHistory);
     const suggested={
       date:r.date,amt:r.amt,dir:r.dir,
-      cat:cat.cat,payee:cat.payee,
+      cat:catResult.cat,payee:catResult.payee,
       acct:r.bank,note:`Imported from ${r.bank[0].toUpperCase()+r.bank.slice(1)}`,
-      _matched:cat.matched,_narrative:r.narrative,_subAcct:r.subAcct,
-      _sig:sig
+      _matched:catResult.confidence>=60,
+      _narrative:r.narrative,
+      _subAcct:r.subAcct,
+      _sig:sig,
+      _confidence:catResult.confidence,
+      _catSource:catResult.source,
+      _balance:r.balance  // preserve the CSV's running balance for reconciliation
     };
     if(bestIdx!=null&&bestScore>=100){
       consumed.add(bestIdx);
@@ -12480,12 +12630,92 @@ function classifyImportRows(parsedRows){
       resultsById[i]={kind:'new',row:suggested};
     }
   });
-  // Restore original CSV order in the output
   parsedRows.forEach((r,i)=>{
     const res=resultsById[i];if(!res)return;
     classified[res.kind].push(res.row);
   });
   return classified;
+}
+
+// v2.7.29 — Payee history index. Maps normalised payee tokens to their most-used category.
+// Used to auto-categorise new imports based on how YOU categorised similar transactions before.
+function buildPayeeHistoryIndex(existing){
+  const idx={};  // key: normalized token → value: {counts:{cat:count}, examplePayee:'…'}
+  existing.forEach(t=>{
+    if(!t.payee||!t.cat||t.cat==='other')return;
+    const tokens=normalizePayeeTokens(t.payee);
+    tokens.forEach(tok=>{
+      if(!idx[tok])idx[tok]={counts:{},examplePayee:t.payee};
+      idx[tok].counts[t.cat]=(idx[tok].counts[t.cat]||0)+1;
+    });
+  });
+  return idx;
+}
+
+function normalizePayeeTokens(s){
+  return String(s||'').toUpperCase()
+    .replace(/[^A-Z0-9 ]+/g,' ')
+    .split(/\s+/)
+    .filter(w=>w.length>=4)
+    .filter(w=>!/^\d+$/.test(w));
+}
+
+// Returns {cat, payee, confidence:0-100, source:'user-history'|'custom-rule'|'bank-rule'|'mq-fallback'|'unknown'}
+function categoriseWithConfidence(row,payeeHistory){
+  const narrative=row.narrative||'';
+  const direction=row.dir;
+  // Step 1: try user's own transaction history first — this is the strongest signal
+  const tokens=normalizePayeeTokens(narrative);
+  const histScores={};  // cat → total count across matching tokens
+  let bestExamplePayee=null,bestExampleCount=0;
+  tokens.forEach(tok=>{
+    if(!payeeHistory[tok])return;
+    Object.entries(payeeHistory[tok].counts).forEach(([cat,cnt])=>{
+      histScores[cat]=(histScores[cat]||0)+cnt;
+    });
+    if(payeeHistory[tok].counts&&Object.values(payeeHistory[tok].counts).reduce((a,b)=>a+b,0)>bestExampleCount){
+      bestExamplePayee=payeeHistory[tok].examplePayee;
+      bestExampleCount=Object.values(payeeHistory[tok].counts).reduce((a,b)=>a+b,0);
+    }
+  });
+  const histTop=Object.entries(histScores).sort((a,b)=>b[1]-a[1])[0];
+  if(histTop&&histTop[1]>=3){
+    // 3+ prior transactions with this payee token → strong signal
+    return{cat:histTop[0],payee:bestExamplePayee||extractPayeeFromNarrative(narrative),confidence:95,source:'user-history'};
+  }
+  if(histTop&&histTop[1]>=1){
+    // 1-2 prior matches → moderate signal
+    return{cat:histTop[0],payee:bestExamplePayee||extractPayeeFromNarrative(narrative),confidence:75,source:'user-history'};
+  }
+  // Step 2: existing categoriseBankTxn (custom rules + built-in BANK_RULES)
+  const cat=categoriseBankTxn(narrative,direction);
+  if(cat.matched){
+    // Custom rule = higher confidence than built-in
+    const isCustom=cat.ruleIdx&&String(cat.ruleIdx).startsWith('custom:');
+    return{cat:cat.cat,payee:cat.payee,confidence:isCustom?90:60,source:isCustom?'custom-rule':'bank-rule'};
+  }
+  // Step 3: Macquarie's own category, if present
+  if(row.mqCat){
+    const mqMap={
+      'Food & Drink':'food','Sports & Fitness':'health','Leisure':'entertainment',
+      'Financial':'transfer','Transport':'transport','Shopping':'shopping',
+      'Bills':'utilities','Home':'utilities','Cash':'other','Income':'income'
+    };
+    const mapped=mqMap[row.mqCat];
+    if(mapped)return{cat:mapped,payee:extractPayeeFromNarrative(narrative),confidence:50,source:'mq-fallback'};
+  }
+  // Step 4: unknown
+  return{cat:'other',payee:extractPayeeFromNarrative(narrative),confidence:0,source:'unknown'};
+}
+
+function extractPayeeFromNarrative(narr){
+  if(!narr)return'Unknown';
+  let s=narr.replace(/^(DEBIT CARD PURCHASE|EFTPOS DEBIT|WITHDRAWAL[- ]?[A-Z]*|DEPOSIT[- ]?[A-Z]*|CREDIT CARD PURCHASE|BPAY|OSKO PAYMENT|TRANSFER TO|TRANSFER FROM)\s+/i,'')
+    .replace(/\s+(AUS|USA|NZ|GBR)\s*$/i,'')
+    .replace(/\s+\d{5,}\s*/g,' ')
+    .replace(/\s+/g,' ').trim();
+  // Title case
+  return s.split(' ').slice(0,4).map(w=>w.length>0?w[0].toUpperCase()+w.slice(1).toLowerCase():w).join(' ')||'Unknown';
 }
 
 // Build a stable signature that identifies this exact bank row.
@@ -12536,24 +12766,98 @@ function parseBankCsvFromSheet(){
   const result=parseBankCsv(text);
   if(!result.ok){alert('Import failed: '+result.error);return;}
   const classified=classifyImportRows(result.rows);
-  _pendingBankImport={bank:result.bank,classified,errors:result.errors};
+  // v2.7.29 — compute balance reconciliation
+  const reconcile=computeBalanceReconciliation(result.rows,result.bank);
+  _pendingBankImport={bank:result.bank,classified,errors:result.errors,reconcile};
+  renderBankImportPreview();
+}
+
+// v2.7.29 — Compares the CSV's ending running balance against what the app's records
+// say the balance should be. Returns null if the bank format didn't include a balance
+// column or all values are missing.
+function computeBalanceReconciliation(rows,bank){
+  if(!rows||!rows.length)return null;
+  // Sort chronologically to find the LATEST row's balance (that's the current balance per bank)
+  const withBalance=rows.filter(r=>r.balance!=null);
+  if(!withBalance.length)return null;
+  const sorted=[...withBalance].sort((a,b)=>b.date.localeCompare(a.date));
+  const latest=sorted[0];
+  const bankEndBalance=latest.balance;
+  const asOfDate=latest.date;
+  // App's balance for the same account as of the same date
+  // Uses the same convention as computeBalance / netWorth logic
+  const acct=bank;  // 'westpac' or 'macquarie'
+  const initialBal=(S.initialBalances||{})[acct]||0;
+  const txnsUpToDate=(S.transactions||[]).filter(t=>t.acct===acct&&t.date<=asOfDate);
+  const appBalance=initialBal+txnsUpToDate.reduce((sum,t)=>{
+    if(t.cat==='transfer')return sum; // transfers handled separately
+    return sum+(t.dir==='in'?t.amt:-t.amt);
+  },0);
+  // Include transfers (in/out)
+  const transfersIn=(S.transactions||[]).filter(t=>t.acct===acct&&t.cat==='transfer'&&t.dir==='in'&&t.date<=asOfDate).reduce((a,t)=>a+t.amt,0);
+  const transfersOut=(S.transactions||[]).filter(t=>t.acct===acct&&t.cat==='transfer'&&t.dir==='out'&&t.date<=asOfDate).reduce((a,t)=>a+t.amt,0);
+  const appBalanceFull=appBalance+transfersIn-transfersOut;
+  const delta=bankEndBalance-appBalanceFull;
+  return{
+    bank,acct,asOfDate,
+    _endBalance:bankEndBalance,
+    _appBalance:appBalanceFull,
+    _delta:delta,
+    _reconciled:Math.abs(delta)<0.02
+  };
+}
+
+// Apply a reconciliation adjustment — logs a transparent "Reconciliation" transaction
+// so the audit trail shows what happened.
+function applyReconciliation(){
+  if(!_pendingBankImport||!_pendingBankImport.reconcile)return;
+  const{acct,_delta,asOfDate}=_pendingBankImport.reconcile;
+  if(Math.abs(_delta)<0.02){showToast('Already reconciled');return;}
+  if(!S.transactions)S.transactions=[];
+  S.transactions.unshift({
+    id:uid(),
+    date:asOfDate,
+    amt:Math.abs(_delta),
+    dir:_delta>0?'in':'out',
+    payee:'Reconciliation adjustment',
+    cat:'other',
+    acct,
+    note:`Balance adjustment to match ${acct[0].toUpperCase()+acct.slice(1)} statement of ${asOfDate}`,
+    isReconciliation:true,
+    importedAt:Date.now()
+  });
+  _pendingBankImport.reconcile._reconciled=true;
+  _pendingBankImport.reconcile._delta=0;
+  save();
+  showToast(`Balance reconciled — ${_delta>0?'+':''}${fmtD(_delta)}`);
   renderBankImportPreview();
 }
 function renderBankImportPreview(){
   const el=document.getElementById('bank-import-preview');if(!el||!_pendingBankImport)return;
-  const{bank,classified,errors}=_pendingBankImport;
+  const{bank,classified,errors,reconcile}=_pendingBankImport;
   const cm=cmap();
   const bankLabel=bank==='westpac'?'Westpac':'Macquarie';
   const totalIn=classified.new.filter(r=>r.dir==='in').reduce((a,r)=>a+r.amt,0);
   const totalOut=classified.new.filter(r=>r.dir==='out').reduce((a,r)=>a+r.amt,0);
+  const AUTO_APPLY_THRESHOLD=85;
+  const autoCatCount=classified.new.filter(r=>(r._confidence||0)>=AUTO_APPLY_THRESHOLD).length;
+  const needsReviewCount=classified.new.length-autoCatCount;
+  // Confidence badge for each row
+  const confBadge=(conf)=>{
+    if(conf>=95)return`<span class="tag tg" style="font-size:8px">auto ${conf}%</span>`;
+    if(conf>=AUTO_APPLY_THRESHOLD)return`<span class="tag tb" style="font-size:8px">auto ${conf}%</span>`;
+    if(conf>=50)return`<span class="tag ty" style="font-size:8px">review ${conf}%</span>`;
+    return`<span class="tag ty" style="font-size:8px">unknown</span>`;
+  };
   const rowHtml=(r,idx,section)=>{
     const c=cm[r.cat]||{icon:'📌',col:'#7d8fa3',label:r.cat};
+    const conf=r._confidence||0;
     return`<div class="bench-row" style="align-items:flex-start;padding:8px 0">
       <div class="bench-label" style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:600;color:var(--t);display:flex;align-items:center;gap:6px">
+        <div style="font-size:12px;font-weight:600;color:var(--t);display:flex;align-items:center;gap:6px;flex-wrap:wrap">
           <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${c.col}"></span>
           ${r.payee}
-          ${!r._matched?'<span class="tag ty" style="font-size:8px">unmatched</span>':''}
+          ${section==='new'?confBadge(conf):''}
         </div>
         <div style="font-size:10px;color:var(--t3);margin-top:2px">${r.date} · ${c.icon} ${c.label}</div>
         <details style="margin-top:3px"><summary style="font-size:9px;color:var(--t3);cursor:pointer">raw narrative</summary><div style="font-size:9px;color:var(--t3);font-family:var(--mono);margin-top:2px;word-break:break-all">${r._narrative}</div></details>
@@ -12561,14 +12865,47 @@ function renderBankImportPreview(){
       <div style="text-align:right;flex-shrink:0"><div style="font-size:12px;font-family:var(--mono);color:${r.dir==='in'?'var(--acc)':'var(--r)'};font-weight:700">${r.dir==='in'?'+':'-'}${fmtD(r.amt)}</div><div style="font-size:9px;color:var(--t3)">${r.dir}</div></div>
     </div>`;
   };
+  // v2.7.29 — Balance reconciliation card
+  let reconcileHtml='';
+  if(reconcile){
+    const{_endBalance,_appBalance,_delta,_reconciled,asOfDate}=reconcile;
+    if(_reconciled){
+      reconcileHtml=`<div style="background:rgba(0,229,153,.06);border:0.5px solid rgba(0,229,153,.25);border-radius:10px;padding:12px 14px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="color:var(--acc);font-size:14px">✓</span>
+          <span style="font-size:12px;font-weight:600;color:var(--t)">Balance reconciles</span>
+        </div>
+        <div style="font-size:10px;color:var(--t2);line-height:1.5">${bankLabel} says ${fmtD(_endBalance)} at ${asOfDate}. App matches exactly.</div>
+      </div>`;
+    }else{
+      reconcileHtml=`<div style="background:rgba(240,160,48,.06);border:0.5px solid rgba(240,160,48,.25);border-radius:10px;padding:12px 14px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="color:var(--y);font-size:14px">⚠</span>
+          <span style="font-size:12px;font-weight:600;color:var(--t)">Balance mismatch — ${_delta>0?'+':''}${fmtD(_delta)}</span>
+        </div>
+        <div style="font-size:10px;color:var(--t2);line-height:1.5">
+          ${bankLabel} says <strong style="color:var(--t)">${fmtD(_endBalance)}</strong> at ${asOfDate}. App shows <strong style="color:var(--t)">${fmtD(_appBalance)}</strong>.
+        </div>
+        <div style="font-size:10px;color:var(--t3);line-height:1.5;margin-top:4px">
+          After importing the new transactions below, tap "Apply reconciliation" if the difference remains. This logs a transparent adjustment so the audit trail is preserved.
+        </div>
+        <button class="btn btn-ghost btn-xs" style="margin-top:8px" onclick="applyReconciliation()">Apply ${_delta>0?'+':''}${fmtD(_delta)} adjustment</button>
+      </div>`;
+    }
+  }
   el.innerHTML=`
     <hr style="border:none;border-top:1px solid var(--bdr);margin:0 0 12px">
     <div class="lbl" style="margin-bottom:6px">${bankLabel} import — review before saving</div>
-    <div style="font-size:10px;color:var(--t3);line-height:1.55;margin-bottom:10px">Nothing will be deleted or modified. Only <strong style="color:var(--acc)">new</strong> rows are added — anything the app already knows about is left as-is.</div>
+    <div style="font-size:10px;color:var(--t3);line-height:1.55;margin-bottom:10px">Nothing will be deleted. Only <strong style="color:var(--acc)">new</strong> rows are added — anything already logged is skipped. Transactions with confidence under ${AUTO_APPLY_THRESHOLD}% will be flagged for your review after import.</div>
+    ${reconcileHtml}
     <div style="background:var(--bg3);border-radius:10px;padding:10px 12px;margin-bottom:12px">
       <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t2);padding:2px 0"><span>➕ New (will be added)</span><span class="mono" style="font-weight:700;color:var(--acc)">${classified.new.length}</span></div>
       <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t2);padding:2px 0"><span>✓ Already logged (skipped)</span><span class="mono" style="color:var(--t3)">${classified.duplicate.length}</span></div>
-      ${classified.new.length?`<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t2);padding:4px 0 0;border-top:1px solid var(--bdr);margin-top:4px"><span>Total in / out</span><span class="mono"><span style="color:var(--acc)">+${fmtD(totalIn)}</span> · <span style="color:var(--r)">-${fmtD(totalOut)}</span></span></div>`:''}
+      ${classified.new.length?`
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t2);padding:2px 0"><span>🏷 Auto-categorised (≥${AUTO_APPLY_THRESHOLD}% confidence)</span><span class="mono" style="color:var(--acc)">${autoCatCount}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t2);padding:2px 0"><span>✎ Need your review</span><span class="mono" style="color:${needsReviewCount?'var(--y)':'var(--t3)'}">${needsReviewCount}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t2);padding:4px 0 0;border-top:1px solid var(--bdr);margin-top:4px"><span>Total in / out</span><span class="mono"><span style="color:var(--acc)">+${fmtD(totalIn)}</span> · <span style="color:var(--r)">-${fmtD(totalOut)}</span></span></div>
+      `:''}
     </div>
 
     ${classified.new.length?`<div style="font-size:10px;color:var(--acc);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 4px">➕ New (${classified.new.length})</div>${classified.new.map((r,i)=>rowHtml(r,i,'new')).join('')}`:'<div class="empty"><div class="empty-ico">✓</div><div class="empty-txt">Nothing new to import — everything is already logged.</div></div>'}
@@ -12586,9 +12923,17 @@ function confirmBankImport(){
   const {classified,bank}=_pendingBankImport;
   if(!classified.new.length){closeSheet();return;}
   if(!S.transactions)S.transactions=[];
-  let added=0;
+  // v2.7.29 — create an import record so we can identify which batch each txn came from
+  const importId='imp_'+Date.now().toString(36);
+  const importTs=Date.now();
+  const AUTO_APPLY_THRESHOLD=85;  // confidence >= this → auto-applied; below → flagged for review
+  let added=0,autoCat=0,needsReview=0;
+  const addedIds=[];
   classified.new.forEach(r=>{
-    S.transactions.unshift({
+    const conf=r._confidence||0;
+    const needsRev=conf<AUTO_APPLY_THRESHOLD;
+    if(needsRev)needsReview++;else autoCat++;
+    const tx={
       id:uid(),
       date:r.date,
       amt:Math.round(r.amt*100)/100,
@@ -12598,25 +12943,57 @@ function confirmBankImport(){
       acct:r.acct,
       note:r.note,
       importedFrom:bank,
-      importedAt:Date.now(),
-      importSig:r._sig,             // stable signature for future re-import dedup
-      originalNarrative:r._narrative // raw bank text — used for "learn from correction"
-    });
+      importedAt:importTs,
+      importId,
+      importSig:r._sig,
+      originalNarrative:r._narrative,
+      // v2.7.29 — categorisation metadata
+      autoCategorized:true,
+      categoryConfidence:conf,
+      categorySource:r._catSource||'unknown',
+      needsReview:needsRev,
+      // If the CSV provided a running balance, keep it for reconciliation
+      _bankBalance:r._balance||null
+    };
+    S.transactions.unshift(tx);
+    addedIds.push(tx.id);
     added++;
   });
+  // v2.7.29 — record the import so the review queue + "new since" indicators work
+  if(!Array.isArray(S.imports))S.imports=[];
+  const importRecord={
+    id:importId,
+    ts:importTs,
+    bank,
+    filename:_pendingBankImport.filename||null,
+    stats:{new:added,duplicate:classified.duplicate.length,autoCategorised:autoCat,needsReview},
+    endBalance:_pendingBankImport.reconcile?._endBalance||null,
+    reconciled:_pendingBankImport.reconcile?._reconciled||false,
+    txnIds:addedIds
+  };
+  S.imports.unshift(importRecord);
+  if(S.imports.length>50)S.imports=S.imports.slice(0,50);
   _pendingBankImport=null;
   if(typeof markBankImportRun==='function')markBankImportRun();
   save();snapshotNW();closeSheet();
   refreshAfterChange();
-  if(added>=5&&typeof showSuccessMoment==='function'){
+  // Show a richer success moment with the review call-to-action if needed
+  if(needsReview>0&&typeof showSuccessMoment==='function'){
     showSuccessMoment({
       icon:'↓',
       title:'Import complete',
-      subtitle:`${added} transactions added from ${bank[0].toUpperCase()+bank.slice(1)}`,
-      detail:'Categorised & ready to review'
+      subtitle:`${added} transactions added · ${autoCat} auto-categorised`,
+      detail:`${needsReview} need your review — tap Accounts to see them`
+    });
+  }else if(added>=5&&typeof showSuccessMoment==='function'){
+    showSuccessMoment({
+      icon:'✓',
+      title:'Import complete',
+      subtitle:`${added} transactions from ${bank[0].toUpperCase()+bank.slice(1)}`,
+      detail:autoCat===added?'All auto-categorised — nothing needs review':`${autoCat} auto-categorised · ${needsReview} need review`
     });
   }else{
-    showToast(`Imported ${added} transaction${added===1?'':'s'} from ${bank[0].toUpperCase()+bank.slice(1)}`);
+    showToast(`Imported ${added} · ${needsReview?needsReview+' need review':'all auto-categorised'}`);
   }
 }
 
