@@ -634,6 +634,52 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .ai-conv-header{background:var(--bg);padding:12px 14px;display:flex;align-items:center;gap:10px;border-bottom:0.5px solid var(--bdr)}
 .ai-messages{flex:1;min-height:0;overflow-y:auto;padding:14px 14px 22px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .ai-messages::-webkit-scrollbar{display:none}
+/* ── v2.7.26 — V4 GOALS ── */
+.goal-card{display:flex;gap:14px;padding:16px;background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad-lg);margin-bottom:12px;cursor:pointer;transition:border-color var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out);position:relative;overflow:hidden}
+.goal-card:hover{border-color:var(--bdr-acc2)}
+.goal-card:active{transform:scale(.995)}
+.goal-card.complete{border-color:rgba(0,229,153,.35);background:linear-gradient(180deg,rgba(0,229,153,.06),rgba(255,255,255,.015))}
+.goal-card.behind{border-color:rgba(240,160,48,.24)}
+.goal-icon{width:52px;height:52px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;border:0.5px solid rgba(255,255,255,.08)}
+.goal-main{flex:1;min-width:0}
+.goal-title-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:2px}
+.goal-title{font-size:14px;font-weight:700;color:var(--t);letter-spacing:-.2px;line-height:1.2}
+.goal-verdict{font-size:9px;font-weight:600;padding:3px 8px;border-radius:8px;letter-spacing:.03em;flex-shrink:0;text-transform:uppercase}
+.goal-verdict.on{background:rgba(0,229,153,.12);color:var(--acc)}
+.goal-verdict.behind{background:rgba(240,160,48,.14);color:var(--y)}
+.goal-verdict.ahead{background:rgba(0,229,153,.14);color:var(--acc)}
+.goal-verdict.done{background:rgba(0,229,153,.20);color:var(--acc)}
+.goal-verdict.none{background:rgba(255,255,255,.05);color:var(--t3)}
+.goal-meta{font-size:11px;color:var(--t2);margin-bottom:10px;line-height:1.4}
+.goal-track{height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;margin-bottom:6px}
+.goal-fill{height:100%;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.goal-nums{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;font-variant-numeric:tabular-nums}
+.goal-nums-l{color:var(--t3)}
+.goal-nums-r{color:var(--t);font-weight:600}
+.goal-nums-r .goal-pct{font-size:10px;color:var(--acc);margin-left:6px}
+.goal-quick-add{width:34px;height:34px;border-radius:10px;background:rgba(0,229,153,.10);border:0.5px solid rgba(0,229,153,.25);color:var(--acc);cursor:pointer;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;align-self:center;transition:background var(--dur-fast) var(--ease-out)}
+.goal-quick-add:hover{background:rgba(0,229,153,.20)}
+.goal-quick-add:active{transform:scale(.94)}
+/* Goal form modals — icon + color pickers */
+.icon-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-bottom:12px}
+.icon-btn{aspect-ratio:1;font-size:18px;background:rgba(255,255,255,.03);border:0.5px solid var(--bdr2);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all var(--dur-fast) var(--ease-out)}
+.icon-btn:hover{background:rgba(255,255,255,.06)}
+.icon-btn.on{background:var(--accd);border-color:var(--acc)}
+.color-grid{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.color-swatch{width:30px;height:30px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform var(--dur-fast) var(--ease-out);position:relative}
+.color-swatch:hover{transform:scale(1.08)}
+.color-swatch.on::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#0a120e;font-weight:800;font-size:14px}
+.color-swatch.on{border-color:var(--t);box-shadow:0 0 0 2px var(--bg)}
+.template-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.template-btn{display:flex;align-items:center;gap:10px;padding:12px;background:rgba(255,255,255,.03);border:0.5px solid var(--bdr2);border-radius:12px;cursor:pointer;transition:all var(--dur-fast) var(--ease-out);text-align:left}
+.template-btn:hover{background:rgba(255,255,255,.06);border-color:var(--acc)}
+.template-btn-icon{font-size:22px}
+.template-btn-name{font-size:12px;font-weight:600;color:var(--t)}
+.template-btn-sub{font-size:10px;color:var(--t3)}
+/* Reorder handles */
+.reorder-item{display:flex;align-items:center;gap:12px;padding:12px;background:var(--glass);border:0.5px solid var(--bdr);border-radius:12px;margin-bottom:8px;cursor:grab;touch-action:none}
+.reorder-item.dragging{opacity:.5;cursor:grabbing}
+.reorder-handle{color:var(--t3);font-size:16px;flex-shrink:0}
 /* v2.7.20 — V4 conversation header lives in #ai-header-slot (rule defined above) */
 .ai-conv-icon-btn{background:rgba(255,255,255,.04);border:none;border-radius:10px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;color:var(--t2);cursor:pointer;transition:background var(--dur-fast) var(--ease-out)}
 .ai-conv-icon-btn:hover{background:rgba(255,255,255,.08);color:var(--t)}
@@ -1101,8 +1147,33 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
 
     <!-- GOALS -->
     <div class="pg" id="pg-goals">
-      <div class="card"><div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>Goal tracker</div></div><div id="goal-items"></div></div>
-      <div class="card"><div class="ctitle"><div class="ctitle-l">Total progress</div></div><div id="goals-total"></div></div>
+      <!-- Hero: total progress across all goals -->
+      <div class="hero" id="goals-hero"></div>
+
+      <!-- Action row -->
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+        <button class="btn btn-acc btn-sm" style="flex:1;min-width:0" onclick="openNewGoalModal()">+ New goal</button>
+        <button class="btn btn-ghost btn-sm" style="flex:1;min-width:0" onclick="openReorderGoalsModal()">↕ Reorder</button>
+        <button class="btn btn-ghost btn-sm" style="flex:1;min-width:0" onclick="toggleArchivedGoals()">📁 Archived</button>
+      </div>
+
+      <!-- Section label -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:0 4px;margin:0 0 10px">
+        <div style="font-size:10px;color:var(--t3);letter-spacing:.16em;font-weight:600;text-transform:uppercase">Active goals</div>
+        <div id="goals-count" style="font-size:10px;color:var(--t3)"></div>
+      </div>
+
+      <!-- Active goals list — glass cards -->
+      <div id="goals-list"></div>
+
+      <!-- Archived goals (hidden by default) -->
+      <div id="goals-archived-section" style="display:none;margin-top:20px">
+        <div style="font-size:10px;color:var(--t3);letter-spacing:.16em;font-weight:600;text-transform:uppercase;margin:0 4px 10px">Archived</div>
+        <div id="goals-archived-list"></div>
+      </div>
+
+      <!-- Legacy total block for backwards-compat with any references -->
+      <div id="goals-total" style="display:none"></div>
     </div>
 
     <!-- AI ADVISOR -->
@@ -1915,12 +1986,32 @@ const TL={VOO:'VOO',VYM:'VYM',VYMI:'VYMI',VAF:'VAF',VGB:'VGB',VGS:'VGS/NDQ'};
 const TPCT={VOO:55,VYM:12,VYMI:10,VGB:8,VAF:8,VGS:7};
 const TYLD={VOO:.013,VYM:.029,VYMI:.043,VAF:.038,VGB:.034,VGS:.01};
 const TICKERS=['VOO','VYM','VYMI','VAF','VGB','VGS'];
-const GCFG={
-  emergency:{target:3000,start:600,col:'#ff5c5c',label:'Emergency buffer',tip:'~$400/mo',due:''},
-  holiday:{target:3000,start:0,col:'#f0a030',label:'Holiday fund',tip:'~$200/mo',due:'Nov 2026'},
-  uni:{target:20000,start:0,col:'#4da6ff',label:'University fund',tip:'~$1,053/mo',due:'Jan 2028'},
-  pc:{target:8000,start:0,col:'#00d4a0',label:'PC & laptop fund',tip:'~$421/mo',due:'Jan 2028'}
-};
+// v2.7.26 — GOALS ARE NOW USER-EDITABLE OBJECTS
+// GCFG kept for backwards-compat with legacy code paths that read it;
+// values are dynamically synced from S.goals via syncGCFG(). See v2.7.26 rewrite.
+let GCFG={};
+const GOAL_TEMPLATES=[
+  {id:'emergency',label:'Emergency buffer',icon:'🛟',color:'#e56a5a',target:3000,tip:'~3 months expenses',type:'savings',hint:'A safety net for surprises. Aim for 3 months of essential spending.'},
+  {id:'holiday',label:'Holiday fund',icon:'🌴',color:'#f0a030',target:3000,tip:'Trip fund',type:'savings',hint:'Save toward a specific trip. Set a due date and the app tells you monthly-required.'},
+  {id:'house',label:'House deposit',icon:'🏠',color:'#5aaa90',target:100000,tip:'20% deposit target',type:'savings',hint:'Large multi-year target. Consider splitting into stages.'},
+  {id:'pc',label:'PC / laptop',icon:'💻',color:'#00d4a0',target:4000,tip:'Tech fund',type:'savings',hint:'One-off big purchase. Deadline optional.'},
+  {id:'car',label:'Car fund',icon:'🚗',color:'#4da6ff',target:15000,tip:'Vehicle savings',type:'savings',hint:'For a new or replacement vehicle.'},
+  {id:'wedding',label:'Wedding',icon:'💍',color:'#e56a5a',target:25000,tip:'Big day fund',type:'savings',hint:'Add sub-milestones (venue deposit, rings, honeymoon).'},
+  {id:'debt',label:'Debt payoff',icon:'💳',color:'#e56a5a',target:0,tip:'Get to zero',type:'debt',hint:'Starts at balance, goal is $0.'},
+  {id:'custom',label:'Custom goal',icon:'⭐',color:'#00e599',target:1000,tip:'Something else',type:'savings',hint:'Anything you want to save toward.'}
+];
+const GOAL_ICONS=['🛟','🌴','🏠','💻','🚗','💍','💳','⭐','🎯','🎓','📚','🏋️','🎁','✈️','🎸','📷','🎨','🚴','🏝️','💎','🪑','👶','🐶','🎮','☕'];
+const GOAL_COLORS=['#00e599','#5aaa90','#f0a030','#e56a5a','#4da6ff','#a566e0','#e872b2','#00d4a0','#f0d030','#7a9a8a'];
+
+// Keeps GCFG in sync so the (many) existing call sites keep working during the transition.
+function syncGCFG(){
+  GCFG={};
+  (S.goals||[]).forEach(g=>{
+    if(g.status==='archived')return;
+    GCFG[g.id]={target:g.target||0,start:0,col:g.color||'#00e599',label:g.label||'Goal',tip:g.tip||'',due:g.deadline||'',icon:g.icon||'⭐',type:g.type||'savings'};
+  });
+}
+
 const AI_QUICK=['Am I on track for university?','Where should I cut spending?','Should I rebalance my portfolio?','How do I grow savings faster?','Is my investment strategy good?','What should I prioritise this month?','Am I investing enough?','Full financial health check'];
 const MILESTONE_PCTS=[25,50,75,100];
 
@@ -1941,6 +2032,10 @@ let S={
   recurringRules:[],   // [{id,name,amount,freq,dayOfMonth,weekday,cat,acct,dir,active,lastGenerated,nextDue}]
   pendingTxns:[],      // [{id,ruleId,name,amount,cat,acct,dir,dueDate,createdAt}]
   goalState:{emergency:{saved:600,log:[],milestones:[]},holiday:{saved:0,log:[],milestones:[]},uni:{saved:0,log:[],milestones:[]},pc:{saved:0,log:[],milestones:[]}},
+  // v2.7.26 — Goals as user-editable first-class objects. Populated by ensureGoalsMigrated()
+  // from legacy GCFG + goalState on first launch after the migration.
+  goals:[],  // [{id, label, icon, color, target, saved, deadline, priority, type, status, log:[{ts,amount,source,note}], milestones:[{amount,label,hit}], notes, createdAt}]
+  goalsPool:0,  // unallocated savings that aren't assigned to a specific goal
   portfolio:{VOO:7732.93,VYM:1118.04,VYMI:1108.72,VAF:1275.40,VGB:600.08,VGS:0},
   invLog:[],
   // v7 investment model — mirrors CMC Markets portfolio structure.
@@ -2019,9 +2114,49 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.25';
+const APP_VERSION='2.7.27';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.27',
+    date:'2026-07-17',
+    title:'Fix "cfg is not defined" error in briefing widget',
+    sections:{
+      features:[],
+      improvements:[],
+      fixes:[
+        '🐛 **`cfg is not defined` error in the Today briefing widget.** When I rewrote `computeGoalHealth` to read from the new `S.goals` object model, I removed the old `cfg` and `state` local variables — but the return statement still tried to destructure them, throwing a ReferenceError. This crashed the dashboard\'s briefing widget on render and cascaded into other places that read goal health (behind-pace flags, projected-completion cards). Fixed by aliasing `cfg` to the new `goal` object and reconstructing a compatible `state` shape in the return, so every existing caller reading `h.cfg.label` or `h.state.saved` keeps working without needing to be rewritten',
+        'Also updated one stale reference from `h.cfg.due` (old string field) to `h.goal.deadline` (new field) in the goal detail projection card'
+      ]
+    }
+  },
+  {
+    v:'2.7.26',
+    date:'2026-07-17',
+    title:'Goals redesigned — add, edit, split, delete, reorder, archive',
+    sections:{
+      features:[
+        '🎯 **Goals are now fully editable.** Add new goals from templates (Emergency, Holiday, House, PC, Car, Wedding, Debt, Custom) or build one from scratch with your choice of icon (25 options), color (10 palette swatches), name, target, deadline, current balance, and notes',
+        '**Edit any goal** — change the name, icon, color, target, deadline, or current balance any time. No more hardcoded labels or values',
+        '**Split a goal** into two. Perfect for your PC & laptop case — split into "Laptop (done)" and "PC" with the saved balance divided proportionally to the new targets',
+        '**Delete a goal with smart reallocation.** If you have money saved, you\'re asked where it should go: an unallocated pool, transferred to a specific other goal, or discarded. Complete transparency, no lost money',
+        '**Archive a goal** (keeps history) or **delete permanently**. Archived goals live under a collapsible "Archived" section on the Goals page — unarchive any time',
+        '**Reorder goals** via a drag-friendly modal with up/down arrows. Order matters: top-priority goals catch extra allocations first',
+        '**Quick-add contributions** — every goal card has a mint + button on the right. Tap it for a focused modal with $50/$100/$250/$500 quick chips, a custom amount field, and optional note. Contribution is logged as a timestamped event with source and note',
+        '📊 **V4 goals page rebuild** — hero card with total saved + overall progress ring, active goals as glass cards with icon badges, verdict pills (On pace / Behind pace / Ahead / Complete), meta line with deadline + monthly need, progress bar in the goal\'s color, and stats row. Matches the concept language used elsewhere in the app'
+      ],
+      improvements:[
+        'Contributions are now first-class events — every deposit is a `{ts, amount, source, note}` log entry, so the app can chart savings-over-time per goal in future updates',
+        'Every goal has a unique icon and color of your choosing (or the template default). Same tokens carry through the whole app — verdict pills, progress bars, and briefing cards',
+        'Health verdicts (behind / on pace / ahead) now come with color-coded pills on each goal card, matching the tone in the concept mockups',
+        'Legacy goal detail view now redirects to the new edit modal so tapping any goal card gets you straight to the settings + actions',
+        'Migration is automatic and lossless — your existing 4 goals (Emergency, Holiday, University, PC & laptop) carry over with all saved balances, contribution history, and milestones intact. Just editable now instead of frozen'
+      ],
+      fixes:[
+        '🐛 **"I can\'t edit my goals" — the actual root cause.** The goals system was a hardcoded `const GCFG` in the source code with the labels/targets/deadlines baked in. That\'s why editing wasn\'t exposed anywhere — it was literally impossible without a code change. Fully rewritten as user-editable objects in `S.goals`, with the legacy `GCFG` constant now dynamically synced from your data so existing code paths keep working during the transition'
+      ]
+    }
+  },
   {
     v:'2.7.25',
     date:'2026-07-17',
@@ -3729,6 +3864,13 @@ function openCategoryDetail(catId){
 // 4. GOAL DETAIL
 // ═══════════════════════════════════════════════════════════
 function openGoalDetail(goalKey){
+  // v2.7.26: goals are now user-editable — tapping a card opens the edit modal
+  // (which contains Split / Archive / Delete + all the fields you'd want to change)
+  if(typeof openEditGoalModal==='function'){
+    openEditGoalModal(goalKey);
+    return;
+  }
+  // Fallback to legacy detail view (should never hit)
   const g=GCFG[goalKey];const st=(S.goalState||{})[goalKey];
   if(!g||!st){showToast('Goal not found');return;}
   const pctDone=g.target>0?Math.min(100,Math.round(st.saved/g.target*100)):0;
@@ -6329,6 +6471,173 @@ function onDividendsChanged(){
 // All views (goals page cards, detail view, dashboard) read from computeGoalHealth().
 // ═══════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════
+// v2.7.26 — GOALS: user-editable objects + CRUD API
+// ═══════════════════════════════════════════════════════════
+
+// One-time migration from legacy hardcoded goals (GCFG + goalState) into S.goals.
+// Preserves saved balances, contribution logs, milestones, deadlines.
+function ensureGoalsMigrated(){
+  if(!Array.isArray(S.goals))S.goals=[];
+  if(S.goalsMigrated){syncGCFG();return;}
+  const LEGACY_DEFAULTS={
+    emergency:{label:'Emergency buffer',icon:'🛟',color:'#e56a5a',target:3000,deadline:'',type:'savings',tip:'Safety net'},
+    holiday:{label:'Holiday fund',icon:'🌴',color:'#f0a030',target:3000,deadline:'Nov 2026',type:'savings',tip:'Trip fund'},
+    uni:{label:'University fund',icon:'🎓',color:'#4da6ff',target:20000,deadline:'Jan 2028',type:'savings',tip:'Study fund'},
+    pc:{label:'PC & laptop fund',icon:'💻',color:'#00d4a0',target:8000,deadline:'Jan 2028',type:'savings',tip:'Tech fund'}
+  };
+  const oldState=S.goalState||{};
+  let priority=0;
+  Object.entries(LEGACY_DEFAULTS).forEach(([legacyId,def])=>{
+    const state=oldState[legacyId]||{};
+    S.goals.push({
+      id:legacyId,
+      label:def.label,
+      icon:def.icon,
+      color:def.color,
+      target:def.target,
+      saved:state.saved||0,
+      deadline:def.deadline,
+      priority:priority++,
+      type:def.type,
+      status:'active',
+      log:Array.isArray(state.log)?state.log.slice():[],
+      milestones:Array.isArray(state.milestones)?state.milestones.slice():[],
+      notes:'',
+      tip:def.tip,
+      createdAt:Date.now()
+    });
+  });
+  S.goalsMigrated=true;
+  syncGCFG();
+}
+
+function goalById(id){return (S.goals||[]).find(g=>g.id===id);}
+function activeGoals(){return (S.goals||[]).filter(g=>g.status!=='archived');}
+
+// Create a new goal — required: label. Optional: everything else with sensible defaults.
+function createGoal(opts){
+  const g={
+    id:'g_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6),
+    label:opts.label||'New goal',
+    icon:opts.icon||'⭐',
+    color:opts.color||'#00e599',
+    target:+opts.target||0,
+    saved:+opts.saved||0,
+    deadline:opts.deadline||'',
+    priority:(S.goals||[]).length,
+    type:opts.type||'savings',
+    status:'active',
+    log:[],
+    milestones:opts.milestones||[],
+    notes:opts.notes||'',
+    tip:opts.tip||'',
+    createdAt:Date.now()
+  };
+  if(!Array.isArray(S.goals))S.goals=[];
+  S.goals.push(g);
+  syncGCFG();
+  save();
+  return g;
+}
+
+// Update any field of a goal in place. Call with (id, {label:'X', target:5000, ...})
+function updateGoal(id,patch){
+  const g=goalById(id);if(!g)return null;
+  Object.assign(g,patch);
+  syncGCFG();
+  save();
+  return g;
+}
+
+// Delete a goal. Options: {reallocateTo:'goalId' | 'pool' | 'discard'}
+function deleteGoal(id,opts){
+  opts=opts||{};
+  const g=goalById(id);if(!g)return false;
+  const saved=g.saved||0;
+  if(saved>0&&opts.reallocateTo){
+    if(opts.reallocateTo==='pool'){
+      S.goalsPool=(S.goalsPool||0)+saved;
+    }else if(opts.reallocateTo!=='discard'){
+      const target=goalById(opts.reallocateTo);
+      if(target){
+        target.saved=(target.saved||0)+saved;
+        target.log=target.log||[];
+        target.log.push({ts:Date.now(),amount:saved,source:'reallocation',note:`From "${g.label}"`});
+      }
+    }
+  }
+  S.goals=S.goals.filter(x=>x.id!==id);
+  S.goals.forEach((x,i)=>{x.priority=i;});
+  syncGCFG();
+  save();
+  return true;
+}
+
+function archiveGoal(id){
+  const g=goalById(id);if(!g)return false;
+  g.status='archived';g.archivedAt=Date.now();
+  syncGCFG();save();return true;
+}
+function unarchiveGoal(id){
+  const g=goalById(id);if(!g)return false;
+  g.status='active';delete g.archivedAt;
+  syncGCFG();save();return true;
+}
+
+// Split a goal — you had "PC & laptop" and want just "PC" now that laptop is bought.
+// Creates a new goal `newLabel` inheriting settings; original renamed to `keepLabel`.
+// Saved balance splits proportional to target ratio.
+function splitGoal(id,{keepLabel,newLabel,newIcon,newColor,keepTarget,newTarget}){
+  const g=goalById(id);if(!g)return null;
+  const totalSaved=g.saved||0;
+  const kT=+keepTarget||0,nT=+newTarget||0;
+  const denom=kT+nT||1;
+  const keepShare=Math.round(totalSaved*(kT/denom));
+  const newShare=totalSaved-keepShare;
+  const nGoal={
+    id:'g_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6),
+    label:newLabel,icon:newIcon||g.icon,color:newColor||g.color,
+    target:nT,saved:newShare,deadline:g.deadline,priority:S.goals.length,
+    type:g.type,status:'active',
+    log:[{ts:Date.now(),amount:newShare,source:'split',note:`Split from "${g.label}"`}],
+    milestones:[],notes:'',tip:g.tip,createdAt:Date.now()
+  };
+  g.label=keepLabel;
+  g.target=kT;
+  g.saved=keepShare;
+  g.log=g.log||[];
+  g.log.push({ts:Date.now(),amount:-newShare,source:'split',note:`Split into "${newLabel}"`});
+  S.goals.push(nGoal);
+  syncGCFG();save();
+  return nGoal;
+}
+
+// Add a contribution (positive) or withdrawal (negative). Logged as an event.
+function contributeGoal(id,amount,opts){
+  opts=opts||{};
+  const g=goalById(id);if(!g)return null;
+  const amt=+amount||0;
+  if(!amt)return null;
+  g.saved=Math.max(0,(g.saved||0)+amt);
+  g.log=g.log||[];
+  g.log.push({ts:Date.now(),amount:amt,source:opts.source||'manual',note:opts.note||''});
+  const milestonesHit=[];
+  (g.milestones||[]).forEach(m=>{
+    if(!m.hit&&g.saved>=m.amount){m.hit=Date.now();milestonesHit.push(m);}
+  });
+  syncGCFG();save();
+  return{goal:g,milestonesHit};
+}
+
+function reorderGoal(fromIdx,toIdx){
+  if(!Array.isArray(S.goals)||fromIdx===toIdx)return;
+  const g=S.goals.splice(fromIdx,1)[0];
+  S.goals.splice(toIdx,0,g);
+  S.goals.forEach((x,i)=>{x.priority=i;});
+  syncGCFG();save();
+}
+
 // Parse deadline strings like "Nov 2026", "Jan 2028" into Date at end-of-month
 function parseGoalDeadline(due){
   if(!due)return null;
@@ -6348,15 +6657,16 @@ function parseGoalDeadline(due){
 
 // Central compute — every goal-related view reads from this
 function computeGoalHealth(goalKey){
-  const cfg=GCFG[goalKey];
-  const state=(S.goalState||{})[goalKey];
-  if(!cfg||!state)return null;
+  // v2.7.26: read from S.goals (first-class objects). Legacy code paths that
+  // still pass a legacy key like 'emergency' work because migration preserved those ids.
+  const goal=goalById(goalKey);
+  if(!goal)return null;
   const now=new Date();
-  const saved=state.saved||0;
-  const target=cfg.target||0;
+  const saved=goal.saved||0;
+  const target=goal.target||0;
   const remaining=Math.max(0,target-saved);
   const pct=target>0?Math.min(100,saved/target*100):0;
-  const deadline=parseGoalDeadline(cfg.due);
+  const deadline=parseGoalDeadline(goal.deadline);
   let daysRemaining=null,monthsRemaining=null;
   if(deadline){
     const msRemaining=deadline.getTime()-now.getTime();
@@ -6366,7 +6676,7 @@ function computeGoalHealth(goalKey){
   const monthlyRequired=(monthsRemaining&&monthsRemaining>0&&remaining>0)
     ?remaining/monthsRemaining
     :(remaining>0?null:0);
-  // Contribution history — merge paydayDistributed allocations + manual log entries
+  // Contribution history — merge paydayDistributed + goal.log entries
   const contribs=[];
   Object.values(S.paydayDistributed||{}).forEach(d=>{
     (d.allocations||[]).forEach(a=>{
@@ -6376,14 +6686,13 @@ function computeGoalHealth(goalKey){
       }
     });
   });
-  (state.log||[]).forEach(e=>{
+  (goal.log||[]).forEach(e=>{
     if(e.ts){
-      contribs.push({date:new Date(e.ts).toISOString().slice(0,10),amount:e.amount||0,source:'manual'});
+      contribs.push({date:new Date(e.ts).toISOString().slice(0,10),amount:e.amount||0,source:e.source||'manual',note:e.note||''});
     }else if(e.date){
-      // Best-effort parse of legacy "13 Jul 25" format
       const d=new Date(e.date);
       if(!isNaN(d.getTime())){
-        contribs.push({date:d.toISOString().slice(0,10),amount:e.amount||0,source:'manual'});
+        contribs.push({date:d.toISOString().slice(0,10),amount:e.amount||0,source:e.source||'manual',note:e.note||''});
       }
     }
   });
@@ -6456,7 +6765,13 @@ function computeGoalHealth(goalKey){
     suggestedExtra=Math.ceil(monthlyRequired-monthlyPace);
   }
   return{
-    goalKey,cfg,state,saved,target,remaining,pct,
+    goalKey,goal,
+    // Backwards-compat aliases so briefing / other legacy call sites reading
+    // h.cfg.label or h.state.saved keep working. `goal` has the same shape as
+    // the old cfg (label, target, etc.) plus current data.
+    cfg:goal,
+    state:{saved:goal.saved,log:goal.log||[],milestones:goal.milestones||[]},
+    saved,target,remaining,pct,
     deadline,daysRemaining,monthsRemaining,
     monthlyRequired,monthlyPace,monthlyPaceRecent,monthlyPaceAllTime,
     recentCount:recent.length,totalContribCount:contribs.length,
@@ -6524,7 +6839,7 @@ function buildGoalIntelligenceCard(goalKey){
         :`<span style="color:var(--y)">${h.projectedDelta.weeks} week${h.projectedDelta.weeks===1?'':'s'} late</span>`)
       :'';
     projection=`<div style="background:var(--bg3);border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:12px;color:var(--t2);line-height:1.6">
-      <strong style="color:var(--t)">At current pace</strong> you\'ll finish around <strong style="color:var(--acc)">${projectedStr}</strong>${deltaStr?' — '+deltaStr:''}${h.cfg.due?` (deadline ${h.cfg.due})`:''}.
+      <strong style="color:var(--t)">At current pace</strong> you\'ll finish around <strong style="color:var(--acc)">${projectedStr}</strong>${deltaStr?' — '+deltaStr:''}${h.goal&&h.goal.deadline?` (deadline ${h.goal.deadline})`:''}.
     </div>`;
   }
   // What-if scenarios
@@ -7453,6 +7768,7 @@ function launchApp(){
   if(typeof migrateDashLayout==='function')migrateDashLayout();
   if(typeof runV27Migrations==='function')runV27Migrations();
   if(typeof runV273Migrations==='function')runV273Migrations();
+  if(typeof ensureGoalsMigrated==='function')ensureGoalsMigrated();
   if(typeof ensureAiConversations==='function')ensureAiConversations();
   if(typeof autoDailyCheckIn==='function')autoDailyCheckIn();
   buildDash();buildStaticTimeline();buildAiWelcome();buildThemeGrid();buildSettingsPage();
@@ -9253,48 +9569,466 @@ function resetDashLayout(){
 // ═══════════════════════════════════════════════════════════
 // GOALS
 // ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+// v2.7.26 — V4 GOALS PAGE
+// ═══════════════════════════════════════════════════════════
 function buildGoalsPage(){
-  let html='';
-  Object.entries(GCFG).forEach(([k,g],i)=>{
-    const st=S.goalState[k],p=pct(st.saved,g.target);
-    if(i>0)html+='<hr class="dvdr">';
-    const log=st.log.slice(-4).reverse().map(e=>`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:10px;border-bottom:1px solid var(--bdr)"><span style="color:var(--t3)">${e.date}</span><span style="color:var(--acc)">+${fmtD(e.amount)}</span></div>`).join('');
-    html+=`<div class="prog"><div class="p-lr"><span class="p-n" onclick="openGoalDetail('${k}')" style="cursor:pointer;text-decoration:underline;text-decoration-color:var(--bdr);text-underline-offset:3px">${g.label}</span><span class="p-v">${fmtD(st.saved)} / ${fmtD(g.target)}</span></div><div class="p-track" onclick="openGoalDetail('${k}')" style="cursor:pointer"><div class="p-fill" style="width:${p}%;background:${g.col}"></div></div><div class="p-sub">${p}%${g.due?' · due '+g.due:''} · ${g.tip}</div>${typeof goalVerdictPill==='function'?`<div style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">${goalVerdictPill(k)}${(()=>{const gh=computeGoalHealth(k);if(!gh||gh.monthlyRequired==null||gh.remaining<=0)return '';return `<span style="font-size:10px;color:var(--t3)">Need <strong style="color:var(--t2)">${fmtD(gh.monthlyRequired)}/mo</strong>${gh.monthlyPace>0?` · at <strong style="color:${gh.monthlyPace>=gh.monthlyRequired?'var(--acc)':'var(--y)'}">${fmtD(gh.monthlyPace)}/mo</strong>`:''}</span>`;})()}</div>`:''}<div style="display:flex;gap:6px;margin-top:8px"><input type="number" id="gi-${k}" class="inp" placeholder="Add $" style="margin:0;flex:1" min="0" step="10"><button class="btn btn-acc btn-sm" onclick="addToGoal('${k}')">Add</button><button class="btn btn-ghost btn-sm" onclick="openGoalDetail('${k}')">Details</button></div>${log?`<div style="margin-top:5px">${log}</div>`:''}</div>`;
-  });
-  document.getElementById('goal-items').innerHTML=html;
-  buildGoalsTotals();
+  ensureGoalsMigrated();
+  buildGoalsHero();
+  buildGoalsActiveList();
+  buildGoalsArchivedList();
+  buildGoalsTotals(); // legacy hidden block, kept for compat
 }
+
+function buildGoalsHero(){
+  const el=document.getElementById('goals-hero');if(!el)return;
+  const active=activeGoals();
+  const totalSaved=active.reduce((a,g)=>a+(g.saved||0),0);
+  const totalTarget=active.reduce((a,g)=>a+(g.target||0),0);
+  const totalPct=totalTarget>0?Math.min(100,Math.round(totalSaved/totalTarget*100)):0;
+  // Ring
+  const r=32,c=2*Math.PI*r,off=c*(1-totalPct/100);
+  const behindCount=active.filter(g=>{
+    const h=computeGoalHealth(g.id);
+    return h&&(h.verdict==='behind'||h.verdict==='at-risk');
+  }).length;
+  const completeCount=active.filter(g=>(g.saved||0)>=(g.target||0)&&(g.target||0)>0).length;
+  const statusLine=active.length===0?'Add your first goal to get started':
+    behindCount>0?`${behindCount} behind pace · nudge them today`:
+    completeCount===active.length?'Everything on track — nice work':
+    'On pace across the board';
+  el.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;position:relative;z-index:1">
+      <div style="flex:1;min-width:0">
+        <div class="hero-l">Total saved</div>
+        <div class="hero-v">${fmtD(totalSaved)}</div>
+        <div style="font-size:12px;color:var(--t2);margin-top:8px;line-height:1.4">of ${fmtD(totalTarget)} across ${active.length} active goal${active.length===1?'':'s'}</div>
+        <div style="font-size:11px;margin-top:6px;color:${behindCount>0?'var(--y)':'var(--acc)'};font-weight:500">${statusLine}</div>
+      </div>
+      <div style="position:relative;width:78px;height:78px;flex-shrink:0">
+        <svg width="78" height="78" viewBox="0 0 78 78" style="transform:rotate(-90deg)">
+          <circle cx="39" cy="39" r="${r}" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="8"/>
+          <circle cx="39" cy="39" r="${r}" fill="none" stroke="var(--acc)" stroke-width="8" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}" style="transition:stroke-dashoffset var(--dur-slow) var(--ease-out)"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--acc)">
+          <div style="font-size:16px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums">${totalPct}%</div>
+          <div style="font-size:8px;color:var(--t3);margin-top:2px">overall</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function buildGoalsActiveList(){
+  const el=document.getElementById('goals-list');if(!el)return;
+  const active=activeGoals().sort((a,b)=>(a.priority||0)-(b.priority||0));
+  const countEl=document.getElementById('goals-count');
+  if(countEl)countEl.textContent=active.length?`${active.length} goal${active.length===1?'':'s'}`:'';
+  if(!active.length){
+    el.innerHTML=`<div class="empty"><div class="empty-ico">🎯</div><div class="empty-txt">No goals yet. Tap "+ New goal" to add your first one.</div><button class="btn btn-acc btn-sm empty-cta" onclick="openNewGoalModal()">+ Create a goal</button></div>`;
+    return;
+  }
+  el.innerHTML=active.map(g=>renderGoalCard(g)).join('');
+}
+
+function buildGoalsArchivedList(){
+  const el=document.getElementById('goals-archived-list');if(!el)return;
+  const arch=(S.goals||[]).filter(g=>g.status==='archived');
+  if(!arch.length){
+    el.innerHTML='<div class="empty" style="padding:16px"><div class="empty-txt" style="font-size:11px">No archived goals</div></div>';
+    return;
+  }
+  el.innerHTML=arch.map(g=>{
+    const pct=g.target>0?Math.min(100,Math.round((g.saved||0)/g.target*100)):0;
+    return`<div class="goal-card" style="opacity:.7" onclick="openGoalDetail('${g.id}')">
+      <div class="goal-icon" style="background:${g.color}22;color:${g.color}">${g.icon}</div>
+      <div class="goal-main">
+        <div class="goal-title-row"><div class="goal-title">${escapeHtml(g.label)}</div><div class="goal-verdict none">Archived</div></div>
+        <div class="goal-nums"><span class="goal-nums-l">${fmtD(g.saved||0)}</span><span class="goal-nums-r">${pct}%</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderGoalCard(g){
+  const target=g.target||0;
+  const saved=g.saved||0;
+  const pct=target>0?Math.min(100,Math.round(saved/target*100)):0;
+  const remaining=Math.max(0,target-saved);
+  const health=computeGoalHealth(g.id);
+  const isComplete=target>0&&saved>=target;
+  let verdict='',cls='';
+  if(isComplete){verdict='<div class="goal-verdict done">Complete</div>';cls='complete';}
+  else if(health){
+    if(health.verdict==='behind'||health.verdict==='at-risk'){verdict='<div class="goal-verdict behind">Behind pace</div>';cls='behind';}
+    else if(health.verdict==='on-pace'){verdict='<div class="goal-verdict on">On pace</div>';}
+    else if(health.verdict==='ahead'){verdict='<div class="goal-verdict ahead">Ahead</div>';}
+    else if(health.verdict==='no-deadline'){verdict='<div class="goal-verdict none">No deadline</div>';}
+  }
+  let meta='';
+  if(isComplete){meta=`Goal reached — tap to celebrate 🎉`;}
+  else if(g.deadline&&health&&health.monthsRemaining!=null){
+    const monthsLeft=Math.max(0,Math.round(health.monthsRemaining));
+    meta=`Due ${g.deadline} · ${monthsLeft} month${monthsLeft===1?'':'s'} left`;
+    if(health.monthlyRequired!=null&&health.monthlyRequired>0){
+      meta+=` · need ${fmtDI(health.monthlyRequired)}/mo`;
+    }
+  }else if(g.deadline){
+    meta=`Due ${g.deadline}`;
+  }else if(g.tip){
+    meta=g.tip;
+  }else{
+    meta=`${fmtDI(remaining)} to go`;
+  }
+  return`<div class="goal-card ${cls}" onclick="openGoalDetail('${g.id}')">
+    <div class="goal-icon" style="background:${g.color}22;color:${g.color}">${g.icon}</div>
+    <div class="goal-main">
+      <div class="goal-title-row">
+        <div class="goal-title">${escapeHtml(g.label)}</div>
+        ${verdict}
+      </div>
+      <div class="goal-meta">${meta}</div>
+      <div class="goal-track"><div class="goal-fill" style="width:${pct}%;background:${g.color}"></div></div>
+      <div class="goal-nums">
+        <span class="goal-nums-l">${fmtD(saved)} of ${fmtD(target)}</span>
+        <span class="goal-nums-r">${pct}%<span class="goal-pct">${remaining>0?fmtDI(remaining)+' left':'Done'}</span></span>
+      </div>
+    </div>
+    <button class="goal-quick-add" onclick="event.stopPropagation();openQuickAddModal('${g.id}')" title="Add contribution">+</button>
+  </div>`;
+}
+
+function toggleArchivedGoals(){
+  const sec=document.getElementById('goals-archived-section');
+  if(!sec)return;
+  sec.style.display=sec.style.display==='none'?'block':'none';
+  if(sec.style.display==='block')buildGoalsArchivedList();
+}
+
+// Legacy quick-add via text field (still called by dashboard "Add to goal" widget)
 function addToGoal(k){
-  const el=document.getElementById('gi-'+k);const v=parseFloat(el.value);if(!v||v<=0)return;
-  const prevPct=pct(S.goalState[k].saved,GCFG[k].target);
-  S.goalState[k].saved+=v;
-  S.goalState[k].log.push({amount:v,date:new Date().toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'2-digit'}),ts:Date.now()});
-  el.value='';
-  const newPct=pct(S.goalState[k].saved,GCFG[k].target);
+  const el=document.getElementById('gi-'+k);
+  const v=el?parseFloat(el.value):0;
+  if(!v||v<=0)return;
+  const prevPct=pct(goalById(k)?.saved||0,goalById(k)?.target||1);
+  const result=contributeGoal(k,v,{source:'manual-quick'});
+  if(el)el.value='';
+  const newPct=pct(goalById(k)?.saved||0,goalById(k)?.target||1);
   checkMilestone(k,prevPct,newPct);
+  refreshAll({snapshotNW:true});
+}
+function resetGoal(k){
+  if(!confirm('Reset all progress and history on this goal?'))return;
+  const g=goalById(k);if(!g)return;
+  g.saved=0;g.log=[];g.milestones=[];
   save();refreshAll({snapshotNW:true});
 }
-function resetGoal(k){if(!confirm('Reset?'))return;S.goalState[k].saved=GCFG[k].start;S.goalState[k].log=[];S.goalState[k].milestones=[];save();refreshAll({snapshotNW:true});}
+
 function buildGoalsTotals(){
-  const ts=Object.values(S.goalState).reduce((a,g)=>a+g.saved,0);
-  const tt=Object.values(GCFG).reduce((a,g)=>a+g.target,0);
-  const op=pct(ts,tt);
-  let html=Object.entries(GCFG).map(([k,g])=>{const p=pct(S.goalState[k].saved,g.target);return`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bdr);font-size:12px"><span style="color:var(--t2)">${g.label}</span><span>${fmtDI(S.goalState[k].saved)} <span class="tag ${p>=100?'tg':'tb'}">${p}%</span></span></div>`;}).join('');
-  html+=`<hr class="dvdr"><div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700"><span>Total</span><span>${fmtDI(ts)} / ${fmtDI(tt)} <span class="tag ${op>=100?'tg':'tb'}">${op}%</span></span></div>`;
-  document.getElementById('goals-total').innerHTML=html;
+  const el=document.getElementById('goals-total');if(!el)return;
+  // Kept for backwards compat; hidden in the V4 layout
+  const active=activeGoals();
+  const ts=active.reduce((a,g)=>a+(g.saved||0),0);
+  const tt=active.reduce((a,g)=>a+(g.target||0),0);
+  el.innerHTML=`<div style="font-size:11px;color:var(--t3)">Total: ${fmtDI(ts)} of ${fmtDI(tt)}</div>`;
 }
+
+// ═══════════════════════════════════════════════════════════
+// v2.7.26 — GOAL MODALS: create, edit, split, quick-add, delete, reorder
+// ═══════════════════════════════════════════════════════════
+let _newGoalDraft={icon:'⭐',color:'#00e599',type:'savings'};
+
+function openNewGoalModal(){
+  _newGoalDraft={icon:'⭐',color:'#00e599',type:'savings',target:1000};
+  const templates=GOAL_TEMPLATES.slice(0,6).map(t=>
+    `<button class="template-btn" onclick="pickGoalTemplate('${t.id}')">
+      <div class="template-btn-icon">${t.icon}</div>
+      <div><div class="template-btn-name">${t.label}</div><div class="template-btn-sub">${t.tip}</div></div>
+    </button>`).join('');
+  const html=`<div class="modal-hdr">
+    <div class="modal-title">New goal</div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+  </div>
+  <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.10em;margin-bottom:8px;font-weight:600">Quick start</div>
+  <div class="template-grid">${templates}</div>
+  <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.10em;margin-bottom:8px;font-weight:600">Or build one</div>
+  ${renderGoalForm(_newGoalDraft,false)}
+  <div style="display:flex;gap:8px;margin-top:14px">
+    <button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-acc btn-sm" style="flex:1" onclick="submitNewGoal()">Create goal</button>
+  </div>`;
+  openModal(html);
+}
+
+function pickGoalTemplate(tid){
+  const t=GOAL_TEMPLATES.find(x=>x.id===tid);if(!t)return;
+  const g=createGoal({icon:t.icon,color:t.color,type:t.type,target:t.target,label:t.label,tip:t.tip});
+  closeModal();
+  refreshAll({snapshotNW:true});
+  showToast(`✓ ${g.label} added`);
+}
+
+function renderGoalForm(draft,isEdit){
+  const iconGrid=GOAL_ICONS.map(ic=>
+    `<button class="icon-btn ${ic===draft.icon?'on':''}" onclick="_newGoalDraft.icon='${ic}';document.querySelectorAll('.icon-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on');">${ic}</button>`
+  ).join('');
+  const colorGrid=GOAL_COLORS.map(c=>
+    `<button class="color-swatch ${c===draft.color?'on':''}" style="background:${c}" onclick="_newGoalDraft.color='${c}';document.querySelectorAll('.color-swatch').forEach(b=>b.classList.remove('on'));this.classList.add('on');" aria-label="Color ${c}"></button>`
+  ).join('');
+  return`
+    <div class="lbl">Name</div>
+    <input type="text" id="goal-label" class="inp" placeholder="e.g. Japan trip" value="${escapeHtml(draft.label||'')}">
+    <div class="lbl">Icon</div>
+    <div class="icon-grid">${iconGrid}</div>
+    <div class="lbl">Color</div>
+    <div class="color-grid">${colorGrid}</div>
+    <div class="inp-row">
+      <div>
+        <div class="lbl">Target amount</div>
+        <input type="number" id="goal-target" class="inp" placeholder="1000" value="${draft.target||''}" min="0" step="100">
+      </div>
+      <div>
+        <div class="lbl">Deadline (opt)</div>
+        <input type="text" id="goal-deadline" class="inp" placeholder="Nov 2026" value="${escapeHtml(draft.deadline||'')}">
+      </div>
+    </div>
+    <div class="lbl">Currently saved</div>
+    <input type="number" id="goal-saved" class="inp" placeholder="0" value="${draft.saved||0}" min="0" step="10">
+    <div class="lbl">Notes (opt)</div>
+    <input type="text" id="goal-notes" class="inp" placeholder="e.g. Trip cost breakdown" value="${escapeHtml(draft.notes||'')}">
+  `;
+}
+
+function submitNewGoal(){
+  const opts={
+    label:document.getElementById('goal-label').value.trim(),
+    target:+document.getElementById('goal-target').value||0,
+    saved:+document.getElementById('goal-saved').value||0,
+    deadline:document.getElementById('goal-deadline').value.trim(),
+    notes:document.getElementById('goal-notes').value.trim(),
+    icon:_newGoalDraft.icon,
+    color:_newGoalDraft.color,
+    type:_newGoalDraft.type||'savings'
+  };
+  if(!opts.label){showToast('Goal name required');return;}
+  const g=createGoal(opts);
+  closeModal();
+  refreshAll({snapshotNW:true});
+  showToast(`✓ ${g.label} created`);
+}
+
+function openEditGoalModal(id){
+  const g=goalById(id);if(!g)return;
+  _newGoalDraft={
+    icon:g.icon,color:g.color,type:g.type,label:g.label,
+    target:g.target,saved:g.saved,deadline:g.deadline,notes:g.notes||'',tip:g.tip||''
+  };
+  const html=`<div class="modal-hdr">
+    <div class="modal-title">Edit goal</div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+  </div>
+  ${renderGoalForm(_newGoalDraft,true)}
+  <div style="display:flex;gap:8px;margin-top:14px">
+    <button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-acc btn-sm" style="flex:1" onclick="submitEditGoal('${id}')">Save changes</button>
+  </div>
+  <div style="margin-top:14px;padding-top:14px;border-top:0.5px solid var(--bdr)">
+    <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.10em;margin-bottom:8px;font-weight:600">Advanced</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="btn btn-ghost btn-sm" onclick="openSplitGoalModal('${id}')">↔ Split goal</button>
+      <button class="btn btn-ghost btn-sm" onclick="archiveGoalConfirm('${id}')">📁 Archive</button>
+      <button class="btn btn-r btn-sm" style="grid-column:span 2" onclick="openDeleteGoalModal('${id}')">🗑 Delete goal</button>
+    </div>
+  </div>`;
+  openModal(html);
+}
+
+function submitEditGoal(id){
+  const patch={
+    label:document.getElementById('goal-label').value.trim(),
+    target:+document.getElementById('goal-target').value||0,
+    saved:+document.getElementById('goal-saved').value||0,
+    deadline:document.getElementById('goal-deadline').value.trim(),
+    notes:document.getElementById('goal-notes').value.trim(),
+    icon:_newGoalDraft.icon,
+    color:_newGoalDraft.color
+  };
+  if(!patch.label){showToast('Goal name required');return;}
+  updateGoal(id,patch);
+  closeModal();
+  refreshAll({snapshotNW:true});
+  showToast('✓ Goal updated');
+}
+
+// Split goal modal — for your "PC & laptop → PC alone" case
+function openSplitGoalModal(id){
+  const g=goalById(id);if(!g)return;
+  const html=`<div class="modal-hdr">
+    <div class="modal-title">Split "${escapeHtml(g.label)}"</div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+  </div>
+  <div style="font-size:11px;color:var(--t2);line-height:1.6;margin-bottom:14px">Split this goal into two. The current ${fmtD(g.saved||0)} you've saved will be divided proportionally between the two new targets. Use this when part of a goal is already done (e.g. laptop bought, PC still to save for).</div>
+  <div class="lbl">Keep this goal as</div>
+  <div class="inp-row">
+    <input type="text" id="split-keep-label" class="inp" placeholder="Name" value="${escapeHtml(g.label)}">
+    <input type="number" id="split-keep-target" class="inp" placeholder="New target" value="${Math.round((g.target||0)/2)}" min="0">
+  </div>
+  <div class="lbl">New goal</div>
+  <div class="inp-row">
+    <input type="text" id="split-new-label" class="inp" placeholder="Name">
+    <input type="number" id="split-new-target" class="inp" placeholder="Target" value="${Math.round((g.target||0)/2)}" min="0">
+  </div>
+  <div style="display:flex;gap:8px;margin-top:14px">
+    <button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-acc btn-sm" style="flex:1" onclick="submitSplitGoal('${id}')">Split</button>
+  </div>`;
+  openModal(html);
+}
+
+function submitSplitGoal(id){
+  const opts={
+    keepLabel:document.getElementById('split-keep-label').value.trim(),
+    keepTarget:+document.getElementById('split-keep-target').value||0,
+    newLabel:document.getElementById('split-new-label').value.trim(),
+    newTarget:+document.getElementById('split-new-target').value||0
+  };
+  if(!opts.keepLabel||!opts.newLabel){showToast('Both names required');return;}
+  if(opts.keepTarget<=0||opts.newTarget<=0){showToast('Both targets must be > 0');return;}
+  splitGoal(id,opts);
+  closeModal();
+  refreshAll({snapshotNW:true});
+  showToast('✓ Goal split');
+}
+
+function archiveGoalConfirm(id){
+  const g=goalById(id);if(!g)return;
+  if(!confirm(`Archive "${g.label}"?\n\nThe goal will be hidden from the active list but preserved with all its history. You can unarchive later from Goals → Archived.`))return;
+  archiveGoal(id);
+  closeModal();
+  refreshAll({snapshotNW:true});
+  showToast('📁 Archived');
+}
+
+function openDeleteGoalModal(id){
+  const g=goalById(id);if(!g)return;
+  const saved=g.saved||0;
+  const otherGoals=activeGoals().filter(x=>x.id!==id);
+  const options=otherGoals.map(o=>`<option value="${o.id}">${escapeHtml(o.label)}</option>`).join('');
+  const hasMoney=saved>0;
+  const html=`<div class="modal-hdr">
+    <div class="modal-title">Delete "${escapeHtml(g.label)}"?</div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+  </div>
+  <div style="font-size:12px;color:var(--t2);line-height:1.55;margin-bottom:14px">This will permanently remove the goal. Use "Archive" instead if you want to keep the history.</div>
+  ${hasMoney?`<div class="lbl">You have ${fmtD(saved)} saved here — where should it go?</div>
+    <select class="inp" id="delete-reallocate">
+      <option value="pool">Move to unallocated pool</option>
+      ${options?`<option value="">— or move to a specific goal —</option>${options}`:''}
+      <option value="discard" style="color:var(--r)">Discard (money is lost from goals)</option>
+    </select>`:''}
+  <div style="display:flex;gap:8px;margin-top:14px">
+    <button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-r btn-sm" style="flex:1" onclick="submitDeleteGoal('${id}')">Delete goal</button>
+  </div>`;
+  openModal(html);
+}
+
+function submitDeleteGoal(id){
+  const sel=document.getElementById('delete-reallocate');
+  const reallocateTo=sel?sel.value:'pool';
+  deleteGoal(id,{reallocateTo});
+  closeModal();
+  refreshAll({snapshotNW:true});
+  showToast('🗑 Goal deleted');
+}
+
+function openQuickAddModal(id){
+  const g=goalById(id);if(!g)return;
+  const html=`<div class="modal-hdr">
+    <div class="modal-title">Add to ${escapeHtml(g.label)}</div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+    <div class="goal-icon" style="background:${g.color}22;color:${g.color};width:44px;height:44px;font-size:20px;border-radius:14px">${g.icon}</div>
+    <div>
+      <div style="font-size:13px;font-weight:600;color:var(--t)">${escapeHtml(g.label)}</div>
+      <div style="font-size:11px;color:var(--t3)">${fmtD(g.saved||0)} of ${fmtD(g.target||0)} saved</div>
+    </div>
+  </div>
+  <div class="lbl">Amount</div>
+  <input type="number" id="quickadd-amount" class="inp" placeholder="e.g. 100" min="0" step="10" autofocus>
+  <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
+    <button class="btn btn-ghost btn-xs" onclick="document.getElementById('quickadd-amount').value=50">$50</button>
+    <button class="btn btn-ghost btn-xs" onclick="document.getElementById('quickadd-amount').value=100">$100</button>
+    <button class="btn btn-ghost btn-xs" onclick="document.getElementById('quickadd-amount').value=250">$250</button>
+    <button class="btn btn-ghost btn-xs" onclick="document.getElementById('quickadd-amount').value=500">$500</button>
+  </div>
+  <div class="lbl">Note (optional)</div>
+  <input type="text" id="quickadd-note" class="inp" placeholder="e.g. From payday">
+  <div style="display:flex;gap:8px;margin-top:14px">
+    <button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-acc btn-sm" style="flex:1" onclick="submitQuickAdd('${id}')">Add</button>
+  </div>`;
+  openModal(html);
+}
+
+function submitQuickAdd(id){
+  const amount=+document.getElementById('quickadd-amount').value||0;
+  const note=document.getElementById('quickadd-note').value.trim();
+  if(amount<=0){showToast('Amount required');return;}
+  const g=goalById(id);
+  const prevPct=pct(g?.saved||0,g?.target||1);
+  contributeGoal(id,amount,{source:'manual',note});
+  const newPct=pct(goalById(id)?.saved||0,goalById(id)?.target||1);
+  checkMilestone(id,prevPct,newPct);
+  closeModal();
+  refreshAll({snapshotNW:true});
+  showToast(`✓ +${fmtD(amount)} to ${g.label}`);
+}
+
+function openReorderGoalsModal(){
+  const active=activeGoals().sort((a,b)=>(a.priority||0)-(b.priority||0));
+  const rows=active.map((g,i)=>`
+    <div class="reorder-item" draggable="true" data-idx="${i}" data-id="${g.id}">
+      <div class="reorder-handle">☰</div>
+      <div class="goal-icon" style="background:${g.color}22;color:${g.color};width:34px;height:34px;font-size:16px;border-radius:10px">${g.icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(g.label)}</div>
+        <div style="font-size:10px;color:var(--t3)">${fmtDI(g.saved||0)} of ${fmtDI(g.target||0)}</div>
+      </div>
+      <div style="display:flex;gap:4px;flex-shrink:0">
+        <button class="btn btn-ghost btn-xs" onclick="moveGoalUp(${i})" ${i===0?'disabled':''}>▲</button>
+        <button class="btn btn-ghost btn-xs" onclick="moveGoalDown(${i})" ${i===active.length-1?'disabled':''}>▼</button>
+      </div>
+    </div>`).join('');
+  openModal(`<div class="modal-hdr">
+    <div class="modal-title">Reorder goals</div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+  </div>
+  <div style="font-size:11px;color:var(--t2);margin-bottom:14px;line-height:1.5">Order matters when the app suggests where to put extra money — top goals are prioritised first.</div>
+  ${rows||'<div class="empty" style="padding:14px"><div class="empty-txt">No active goals</div></div>'}
+  <button class="btn btn-acc btn-sm btn-full" style="margin-top:12px" onclick="closeModal()">Done</button>`);
+}
+
+function moveGoalUp(idx){reorderGoal(idx,idx-1);buildGoalsActiveList();buildGoalsHero();openReorderGoalsModal();}
+function moveGoalDown(idx){reorderGoal(idx,idx+1);buildGoalsActiveList();buildGoalsHero();openReorderGoalsModal();}
 
 // ═══════════════════════════════════════════════════════════
 // CONFETTI & MILESTONES
 // ═══════════════════════════════════════════════════════════
 function checkMilestone(key,prevPct,newPct){
-  const ms=S.goalState[key].milestones||[];
+  // v2.7.26: read from S.goals via goalById; falls back to legacy S.goalState for safety
+  const goal=(typeof goalById==='function')?goalById(key):null;
+  const store=goal||(S.goalState||{})[key];
+  if(!store)return;
+  // Use pctMilestones on the goal object (new) or the milestones array (legacy — was array of numbers)
+  let pctHit=Array.isArray(store.pctMilestones)?store.pctMilestones:(Array.isArray(store.milestones)&&(store.milestones.length===0||typeof store.milestones[0]==='number')?store.milestones:[]);
   MILESTONE_PCTS.forEach(mp=>{
-    if(prevPct<mp&&newPct>=mp&&!ms.includes(mp)){
-      ms.push(mp);S.goalState[key].milestones=ms;
-      const g=GCFG[key];
+    if(prevPct<mp&&newPct>=mp&&!pctHit.includes(mp)){
+      pctHit.push(mp);
+      if(goal){goal.pctMilestones=pctHit;}
+      else{S.goalState[key].milestones=pctHit;}
+      const g=goal||GCFG[key]||{label:'Goal',target:0};
       fireConfetti();
-      // 100% is a proper "you did it" moment — full success screen
       if(mp>=100&&typeof showSuccessMoment==='function'){
         showSuccessMoment({
           icon:'🏆',
@@ -9307,6 +10041,7 @@ function checkMilestone(key,prevPct,newPct){
       }
     }
   });
+  save();
 }
 function fireConfetti(){
   const wrap=document.getElementById('confetti-wrap');
