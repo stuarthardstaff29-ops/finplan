@@ -2003,13 +2003,17 @@ const GOAL_TEMPLATES=[
 const GOAL_ICONS=['🛟','🌴','🏠','💻','🚗','💍','💳','⭐','🎯','🎓','📚','🏋️','🎁','✈️','🎸','📷','🎨','🚴','🏝️','💎','🪑','👶','🐶','🎮','☕'];
 const GOAL_COLORS=['#00e599','#5aaa90','#f0a030','#e56a5a','#4da6ff','#a566e0','#e872b2','#00d4a0','#f0d030','#7a9a8a'];
 
-// Keeps GCFG in sync so the (many) existing call sites keep working during the transition.
+// v2.7.30 — Keeps GCFG AND S.goalState in sync from S.goals (single source of truth).
+// Called after every mutation of S.goals (create, update, delete, archive, split, contribute).
+// This is the guarantee that changes to goals propagate everywhere in the app.
 function syncGCFG(){
   GCFG={};
   (S.goals||[]).forEach(g=>{
     if(g.status==='archived')return;
     GCFG[g.id]={target:g.target||0,start:0,col:g.color||'#00e599',label:g.label||'Goal',tip:g.tip||'',due:g.deadline||'',icon:g.icon||'⭐',type:g.type||'savings'};
   });
+  // Also rebuild goalState so legacy code reading it sees current data (not ghosts).
+  if(typeof rebuildGoalStateFromGoals==='function')rebuildGoalStateFromGoals();
 }
 
 const AI_QUICK=['Am I on track for university?','Where should I cut spending?','Should I rebalance my portfolio?','How do I grow savings faster?','Is my investment strategy good?','What should I prioritise this month?','Am I investing enough?','Full financial health check'];
@@ -2118,9 +2122,28 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.29';
+const APP_VERSION='2.7.30';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.30',
+    date:'2026-07-17',
+    title:'Dashboard crash fixed + goal changes now propagate everywhere',
+    sections:{
+      features:[],
+      improvements:[
+        '🛡 Dashboard widgets now render defensively — if any single widget throws an error during render, it shows a small amber fallback card instead of leaving the whole dashboard blank. One broken widget can no longer take down the rest of your page',
+        '📐 Established the single-source-of-truth guarantee for goals. `S.goals` is authoritative; `GCFG` and `S.goalState` are now automatically rebuilt from it on every mutation via `syncGCFG` + `rebuildGoalStateFromGoals`. Any code anywhere in the app that reads `GCFG[key].label` or `S.goalState[key].saved` sees current data — no more ghosts from split/deleted/renamed goals',
+        'Migration also runs the state rebuild on every launch, so any legacy data that got stale before this update (like your split PC & laptop) heals automatically on first open'
+      ],
+      fixes:[
+        '🐛 **Dashboard was completely blank.** The goals dashboard widget read `Object.entries(GCFG).map(([k,g]) => S.goalState[k].saved)`. When you split a goal, the new goal only lived in `S.goals` — not in the legacy `S.goalState` — so `S.goalState[k]` was undefined and `.saved` threw. Since `buildDash` had no try/catch, one bad widget crashed the entire page render. Fixed both the widget (now reads from `activeGoals()`) AND the outer render loop (try/catch)',
+        '🐛 **Payday allocation was still offering "PC & laptop fund" after the split.** It read `Object.keys(S.goalState)` which still contained the pre-split keys because migration only copied FROM goalState, never wrote back TO it. Now the payday page reads directly from `activeGoals()`, so add/edit/split/delete propagates immediately',
+        '🐛 **Live timeline was blank for the same reason** — `Object.entries(GCFG)` combined with `S.goalState[k].saved` access. Rewritten to use `activeGoals()`',
+        '📌 **The systemic issue you called out** ("thought we fixed these — make sure this doesn\'t happen in future") is now enforced by the code itself. Any mutation to `S.goals` triggers `syncGCFG()` which rebuilds BOTH `GCFG` and `S.goalState`, so downstream views can\'t get out of sync. If you delete a goal, it disappears from every list. If you rename one, the new label shows everywhere on next render'
+      ]
+    }
+  },
   {
     v:'2.7.29',
     date:'2026-07-17',
@@ -6517,7 +6540,15 @@ function onDividendsChanged(){
 // Preserves saved balances, contribution logs, milestones, deadlines.
 function ensureGoalsMigrated(){
   if(!Array.isArray(S.goals))S.goals=[];
-  if(S.goalsMigrated){syncGCFG();return;}
+  if(S.goalsMigrated){
+    syncGCFG();
+    // v2.7.30 — REBUILD S.goalState from current S.goals on every launch so any
+    // legacy code reading goalState sees the truth (add/edit/split/delete propagate).
+    // This is the "smart enough to detect changes" guarantee: S.goals is the
+    // single source of truth, GCFG and goalState are read-only mirrors kept in sync.
+    rebuildGoalStateFromGoals();
+    return;
+  }
   const LEGACY_DEFAULTS={
     emergency:{label:'Emergency buffer',icon:'🛟',color:'#e56a5a',target:3000,deadline:'',type:'savings',tip:'Safety net'},
     holiday:{label:'Holiday fund',icon:'🌴',color:'#f0a030',target:3000,deadline:'Nov 2026',type:'savings',tip:'Trip fund'},
@@ -6548,6 +6579,25 @@ function ensureGoalsMigrated(){
   });
   S.goalsMigrated=true;
   syncGCFG();
+  rebuildGoalStateFromGoals();
+}
+
+// v2.7.30 — Rebuild S.goalState so any legacy code reading it sees CURRENT goals.
+// Called after every mutation (create, update, delete, split, contribute, archive)
+// via syncGCFG. Ensures the app's "single source of truth" is S.goals — and everything
+// else (GCFG, goalState) mirrors it automatically.
+function rebuildGoalStateFromGoals(){
+  const newState={};
+  (S.goals||[]).forEach(g=>{
+    if(g.status==='archived')return;
+    newState[g.id]={
+      saved:g.saved||0,
+      log:g.log||[],
+      milestones:g.milestones||[],
+      pctMilestones:g.pctMilestones||[]
+    };
+  });
+  S.goalState=newState;
 }
 
 function goalById(id){return (S.goals||[]).find(g=>g.id===id);}
@@ -9585,7 +9635,10 @@ const DASH_WIDGETS={
     id:'goalSnapshot',label:'Goal snapshot',sub:'Progress across your goals',
     canHalfWidth:false,defaultOn:false,alwaysOn:false,
     render(){
-      const html=Object.entries(GCFG).map(([k,g])=>{const st=S.goalState[k],p=pct(st.saved,g.target);return`<div class="prog"><div class="p-lr"><span class="p-n">${g.label}</span><span class="p-v">${fmtDI(st.saved)} / ${fmtDI(g.target)}</span></div><div class="p-track"><div class="p-fill" style="width:${p}%;background:${g.col}"></div></div><div class="p-sub">${p}%${g.due?' · due '+g.due:''}</div></div>`;}).join('');
+      const html=activeGoals().map(g=>{
+        const p=g.target>0?Math.min(100,Math.round((g.saved||0)/g.target*100)):0;
+        return`<div class="prog"><div class="p-lr"><span class="p-n">${escapeHtml(g.label)}</span><span class="p-v">${fmtDI(g.saved||0)} / ${fmtDI(g.target||0)}</span></div><div class="p-track"><div class="p-fill" style="width:${p}%;background:${g.color||'#00e599'}"></div></div><div class="p-sub">${p}%${g.deadline?' · due '+g.deadline:''}</div></div>`;
+      }).join('');
       return`<div class="card"><div class="ctitle"><div class="ctitle-l">Goal snapshot</div><button class="btn btn-ghost btn-sm" onclick="showPg('goals',document.querySelector('[data-pg=goals]'))">All</button></div>${html}</div>`;
     }
   },
@@ -9667,7 +9720,14 @@ function buildDash(){
   layout.forEach(item=>{
     const w=DASH_WIDGETS[item.id];if(!w)return;
     const canHalf=w.canHalfWidth&&item.size==='half';
-    const wHtml=w.render();
+    // v2.7.30: any widget render throwing must NOT kill the whole dashboard.
+    // Broken widgets get a small fallback card so the user can see what failed.
+    let wHtml;
+    try{wHtml=w.render();}
+    catch(e){
+      console.warn('widget render failed:',item.id,e);
+      wHtml=`<div class="card" style="border-color:rgba(240,160,48,.30);background:rgba(240,160,48,.03)"><div style="font-size:11px;color:var(--y);margin-bottom:4px">⚠ ${w.label||item.id} couldn't render</div><div style="font-size:10px;color:var(--t3);line-height:1.5">This widget hit an error. The rest of your dashboard still works. Try Customise → remove and re-add this widget.</div></div>`;
+    }
     if(canHalf){
       if(halfBuffer){html+=`<div class="dash-row"><div class="dash-widget-half">${halfBuffer.html}</div><div class="dash-widget-half">${wHtml}</div></div>`;halfBuffer=null;}
       else{halfBuffer={html:wHtml};}
@@ -13791,7 +13851,11 @@ function undoDistribution(txnId){
 // ── Source plan editor ──────────────────────────────────────
 function openSourceSettings(sourceKey){
   const src=S.paydaySources?.[sourceKey];if(!src)return;
-  const goalKeys=Object.keys(S.goalState||{});
+  // v2.7.30: read from S.goals directly. S.goalState is stale legacy data that
+  // never gets updated when goals are added/edited/split/deleted.
+  const goalsList=(typeof activeGoals==='function')?activeGoals():[];
+  const goalKeys=goalsList.map(g=>g.id);
+  const goalLabelById={};goalsList.forEach(g=>{goalLabelById[g.id]=g.label;});
   const sinkingList=(S.sinkingFunds||[]).filter(s=>s.target>s.saved);
   const inPlanRefs=new Set(src.plan.filter(p=>p.type==='sinking').map(p=>p.ref));
   const unaddedSinking=sinkingList.filter(s=>!inPlanRefs.has(s.id));
@@ -13816,7 +13880,7 @@ function openSourceSettings(sourceKey){
       <button class="btn btn-ghost btn-sm" onclick="addPlanRow('${sourceKey}','buffer','Leave in account')">+ Buffer</button>
       <button class="btn btn-ghost btn-sm" onclick="addPlanRow('${sourceKey}','invest','Investments')">+ Invest</button>
     </div>
-    ${goalKeys.length?`<div style="margin-top:10px"><div style="font-size:10px;color:var(--t3);margin-bottom:6px">Add goal allocations:</div><div style="display:flex;gap:6px;flex-wrap:wrap">${goalKeys.map(g=>`<button class="btn btn-ghost btn-sm" onclick="addPlanRow('${sourceKey}','goal','${(GCFG?.[g]?.label||g).replace(/'/g,'')}','${g}')">+ ${GCFG?.[g]?.label||g}</button>`).join('')}</div></div>`:''}
+    ${goalKeys.length?`<div style="margin-top:10px"><div style="font-size:10px;color:var(--t3);margin-bottom:6px">Add goal allocations:</div><div style="display:flex;gap:6px;flex-wrap:wrap">${goalKeys.map(g=>`<button class="btn btn-ghost btn-sm" onclick="addPlanRow('${sourceKey}','goal','${(goalLabelById[g]||g).replace(/'/g,'')}','${g}')">+ ${goalLabelById[g]||g}</button>`).join('')}</div></div>`:''}
     ${unaddedSinking.length?`<div style="margin-top:10px"><div style="font-size:10px;color:var(--t3);margin-bottom:6px">Add sinking funds individually:</div><div style="display:flex;gap:6px;flex-wrap:wrap">${unaddedSinking.map(s=>`<button class="btn btn-ghost btn-sm" onclick="addPlanRow('${sourceKey}','sinking','${((s.icon||'💰')+' '+(s.name||'')).replace(/'/g,'')}','${s.id}')">+ ${s.icon||'💰'} ${s.name}</button>`).join('')}</div></div>`:''}
     <button class="btn btn-acc btn-full" style="margin-top:14px" onclick="saveSourcePlan('${sourceKey}')">Save plan</button>
   `);
@@ -14104,15 +14168,23 @@ function buildLiveTl(){
   const ml=Math.max(0,Math.round((new Date(2028,0,1)-new Date())/(1000*60*60*24*30)));
   const inc=monthIncome(),spent=monthSpend(),sr=inc>0?Math.round((inc-spent)/inc*100):0;
   const pt=portTotal();const r=Math.pow(1.07,1/12)-1;let vEst=pt;for(let i=0;i<ml;i++)vEst=vEst*(1+r)+S.sliders.invest;
-  const goalItems=Object.entries(GCFG).map(([k,g])=>{
-    const st=S.goalState[k];const rem=Math.max(0,g.target-st.saved);const mn=ml>0?rem/ml:rem;
-    const monthly4=S.sliders.goals/Object.keys(GCFG).length;const p=pct(st.saved,g.target);
-    const onTrack=p>=100||monthly4>=mn*.9;const est=mn>0?Math.ceil(rem/Math.max(1,monthly4)):0;
+  // v2.7.30: read from S.goals not GCFG+goalState (stale legacy data)
+  const goalsActive=(typeof activeGoals==='function')?activeGoals():[];
+  const goalItems=goalsActive.map(g=>{
+    const saved=g.saved||0;
+    const target=g.target||0;
+    const rem=Math.max(0,target-saved);
+    const mn=ml>0?rem/ml:rem;
+    const monthly4=goalsActive.length?S.sliders.goals/goalsActive.length:0;
+    const p=target>0?Math.min(100,Math.round(saved/target*100)):0;
+    const onTrack=p>=100||monthly4>=mn*.9;
+    const est=mn>0?Math.ceil(rem/Math.max(1,monthly4)):0;
     const cls=p>=100?'done':onTrack?'now':'warn';
     const stag=p>=100?'<span class="tag tg">Complete</span>':onTrack?'<span class="tag tg">On track</span>':'<span class="tag ty">Needs attention</span>';
-    return`<div class="ph ${cls}"><div class="ph-d">${g.due||'Priority'}</div><div class="ph-t">${g.label}</div><div class="ph-b"><strong>${fmtD(st.saved)}</strong> of ${fmtD(g.target)} (${p}%)<br>${p<100?`Need ${fmtD(rem)} more · ${fmtD(mn)}/mo · Est ${est} months`:'Done!'}</div>${stag}</div>`;
+    return`<div class="ph ${cls}"><div class="ph-d">${g.deadline||'Priority'}</div><div class="ph-t">${escapeHtml(g.label)}</div><div class="ph-b"><strong>${fmtD(saved)}</strong> of ${fmtD(target)} (${p}%)<br>${p<100?`Need ${fmtD(rem)} more · ${fmtD(mn)}/mo · Est ${est} months`:'Done!'}</div>${stag}</div>`;
   }).join('');
-  const ts=Object.values(S.goalState).reduce((a,g)=>a+g.saved,0);const tt=Object.values(GCFG).reduce((a,g)=>a+g.target,0);
+  const ts=goalsActive.reduce((a,g)=>a+(g.saved||0),0);
+  const tt=goalsActive.reduce((a,g)=>a+(g.target||0),0);
   document.getElementById('tl-live').innerHTML=`<div class="card acc-b"><div class="ctitle"><div class="ctitle-l">📍 Live — ${ml} months to uni</div></div><div class="mg" style="margin-bottom:0"><div class="met"><div class="ml">Goals</div><div class="mv ${pct(ts,tt)>=50?'col-acc':'col-y'}">${pct(ts,tt)}%</div></div><div class="met"><div class="ml">Est. portfolio</div><div class="mv">${fmtDI(vEst)}</div><div class="ms">Jan 2028</div></div><div class="met"><div class="ml">Savings rate</div><div class="mv ${sr>=30?'col-acc':sr>=20?'col-y':'col-r'}">${sr}%</div></div><div class="met"><div class="ml">Week spend</div><div class="mv ${weekSpend()<=S.sliders.spend?'col-acc':'col-r'}">${fmtDI(weekSpend())}</div></div></div></div><div class="card"><div class="ctitle">Goal tracking</div>${goalItems}</div><div class="card"><div class="ctitle">Spending analysis</div><div style="font-size:12px;color:var(--t2);line-height:1.65">${spent===0?'No spending recorded yet.':monthSpend()<=S.sliders.spend*4.33?`<strong style="color:var(--acc)">Under budget by ${fmtD(S.sliders.spend*4.33-spent)}.</strong> Savings rate ${sr}% is ${sr>=30?'excellent.':sr>=20?'solid — push toward 30%.':'below target.'}`:`<strong style="color:var(--r)">Over budget by ${fmtD(spent-S.sliders.spend*4.33)}.</strong> Review spending categories.`}</div></div>`;
 }
 
