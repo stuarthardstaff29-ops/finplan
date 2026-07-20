@@ -2114,9 +2114,23 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.27';
+const APP_VERSION='2.7.28';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.28',
+    date:'2026-07-17',
+    title:'Fix "Cannot read properties of null" when tapping goal buttons',
+    sections:{
+      features:[],
+      improvements:[],
+      fixes:[
+        '🐛 **Goals modals were completely broken** — every button in the Goals section (New goal, Reorder, Archived, Edit, Split, Delete, Quick-add) threw `Cannot read properties of null (reading \'classList\')` on tap. The new goal modals all called `openModal(htmlString)` — but the app\'s existing `openModal(id)` helper expects a pre-existing element ID, not raw HTML. `document.getElementById(html)` returned null, and the subsequent `.classList.add()` crashed. The generic sheet mechanism (`showSheet`) was the right pattern but I used the wrong helper',
+        'Fixed by overloading `openModal` to detect whether the argument looks like HTML markup — if it does, it strips out the `modal-hdr` block (extracting the title) and routes through the generic sheet automatically. `closeModal()` with no argument now closes any open sheet or modal, matching what the new goal code expected. Both old and new call sites work',
+        'Same fix applies to the category limits modal (Budget page → Set limits) and the conversation list, which used the same pattern'
+      ]
+    }
+  },
   {
     v:'2.7.27',
     date:'2026-07-17',
@@ -8222,8 +8236,40 @@ function saveBalance(){
 // ═══════════════════════════════════════════════════════════
 // MODAL HELPERS
 // ═══════════════════════════════════════════════════════════
-function openModal(id){document.getElementById(id).classList.add('open');}
-function closeModal(id){document.getElementById(id).classList.remove('open');}
+// openModal(id)  — legacy: toggle a pre-defined element's .open class
+// openModal(html) — v2.7.28: if the arg contains HTML (looks like markup),
+//                   route through the generic sheet so callers can pass in
+//                   inline content without needing a pre-built DOM node.
+function openModal(arg){
+  if(typeof arg==='string'&&(arg.includes('<')||arg.includes('&lt;'))){
+    // Treat as HTML content — route through the generic sheet
+    if(typeof showSheet==='function'){
+      // Extract a title from a <div class="modal-title">…</div> if present, else 'Details'
+      const titleMatch=arg.match(/<div class="modal-title"[^>]*>([\s\S]*?)<\/div>/);
+      const title=titleMatch?titleMatch[1].replace(/<[^>]+>/g,'').trim():'Details';
+      // Strip the modal-hdr block (title + close button) since the sheet has its own
+      const body=arg.replace(/<div class="modal-hdr">[\s\S]*?<\/div>\s*<\/div>/,'')
+                    .replace(/<div class="modal-hdr">[\s\S]*?<\/div>/,'');
+      showSheet(title,body);
+      return;
+    }
+  }
+  // Legacy path — treat arg as an element id
+  const el=document.getElementById(arg);
+  if(el)el.classList.add('open');
+}
+function closeModal(id){
+  // If called with no id or a bad id, close any open sheet + generic modals
+  if(!id){
+    if(typeof closeSheet==='function')closeSheet();
+    // Also close any explicit modal that might be open
+    document.querySelectorAll('.overlay.open').forEach(o=>o.classList.remove('open'));
+    return;
+  }
+  const el=document.getElementById(id);
+  if(el)el.classList.remove('open');
+  else if(typeof closeSheet==='function')closeSheet();
+}
 document.addEventListener('click',e=>{if(e.target.classList.contains('overlay'))e.target.classList.remove('open');});
 
 // ═══════════════════════════════════════════════════════════
