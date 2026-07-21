@@ -1706,6 +1706,10 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
           <button class="btn btn-ghost btn-sm" onclick="toggleClaudeKeyVis()">Show</button>
         </div>
         <div id="claude-key-status" style="font-size:11px;margin-top:8px;color:var(--t3)"></div>
+        <div class="setting-row" style="margin-top:14px;padding-top:14px;border-top:0.5px solid var(--bdr)">
+          <div><div class="setting-label">Insight notifications</div><div class="setting-sub">Get a browser notification when the Autopilot spots something urgent (max once/day)</div></div>
+          <button class="toggle-switch" id="tg-autopilot-notifs" onclick="toggleAutopilotNotifs()"></button>
+        </div>
       </div>
 
       <div class="card">
@@ -2122,6 +2126,8 @@ let S={
   nwHistory:[],
   groqApiKey:'',
   claudeApiKey:'',  // v2.7.33 — optional Claude key for AI Autopilot briefings (stronger narration)
+  autopilotNotifs:false,  // v2.7.34 — browser notifications for high-severity insights
+  lastNotifDate:null,     // throttle: one insight notification per day
   sinkingFunds:[],
   debts:[],
   streakData:{days:[],lastCheckin:null,badges:[]},
@@ -2177,9 +2183,30 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.34';
+const APP_VERSION='2.7.35';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.35',
+    date:'2026-07-17',
+    title:'Autopilot extensions — weekly briefing, rebalance plan, notifications + bug sweep',
+    sections:{
+      features:[
+        '📅 **Weekly briefing.** From the Autopilot card, tap "Week in review" for a Sunday-style summary: net worth change over 7 days, spent vs earned this week, biggest spend category, goal progress, and the one thing to focus on next week (pulled from your top insight). Optional AI narration turns it into a warm plain-English recap',
+        '📊 **Rebalance plan.** Tap "Rebalance" on the Autopilot card, enter how much you\'re about to invest, and it shows exactly how to split that money across your holdings to move toward your target allocation — buys only, no selling. Turns the portfolio-drift insight into concrete dollar amounts',
+        '🔔 **Insight notifications.** Opt in from Settings (AI Autopilot section). When the Autopilot spots something urgent, you get a browser notification — throttled to at most once per day so it never nags'
+      ],
+      improvements:[
+        'The weekly briefing reconstructs your net-worth change from the daily snapshot history the app already keeps, so it works from real data with no extra tracking',
+        'Rebalance amounts scale proportionally to how far each holding is from its target — the most underweight positions get the biggest share of new money'
+      ],
+      fixes:[
+        '🐛 **Bug sweep across the goals + autopilot sprint (v2.7.26–v2.7.34).** Caught a function-name collision: the auto-contribute banner\'s "Confirm all" button shared a name with the recurring-transactions confirm function, so it would have popped the wrong dialog. Renamed and fixed',
+        'Hardened every remaining place that read goal balances from the legacy `S.goalState` store (AI advisor context, setup wizard) to read from `activeGoals()` directly — these could theoretically crash if state was momentarily out of sync after a split/delete. Now they can\'t',
+        'Renamed a second colliding function (notification permission) that overlapped with the app\'s existing notification system, so both work independently'
+      ]
+    }
+  },
   {
     v:'2.7.34',
     date:'2026-07-17',
@@ -3739,12 +3766,12 @@ function renderSW(){
 function sw0(){document.getElementById('sw-body').innerHTML=`<div style="text-align:center;padding:20px 0 10px"><div style="font-size:52px;margin-bottom:14px">💰</div><div style="font-size:15px;font-weight:700;color:var(--t);font-family:var(--sans);margin-bottom:10px">Your financial command centre</div></div><p style="font-size:13px;color:var(--t2);line-height:1.65;margin-bottom:14px">Set up takes about 2 minutes. Enter your current figures so everything starts accurate. You can update anything at any time.</p><div class="sw-info">All data is stored only on this device. Nothing is sent anywhere except when you use the AI Advisor.</div>`;}
 function sw1(){document.getElementById('sw-body').innerHTML=`<p style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:16px">Enter the <strong>current real balance</strong> of each account. Transactions you log will be applied on top of these.</p><div class="sw-field"><div class="sw-lbl">Westpac — everyday account $</div><input type="number" class="sw-inp" id="sw-wp" placeholder="e.g. 600" value="${S.acctBalances.westpac||''}"></div><div class="sw-field"><div class="sw-lbl">Macquarie — HISA savings $</div><input type="number" class="sw-inp" id="sw-mq" placeholder="e.g. 0" value="${S.acctBalances.macquarie||''}"></div><div class="sw-info">💡 Westpac should only hold your weekly expense money. Savings accumulate in Macquarie.</div>`;}
 function sw2(){document.getElementById('sw-body').innerHTML=`<p style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:14px">Enter your current holding value for each ETF. Leave $0 if you don't hold it.</p><div class="sw-ticker-grid">${TICKERS.map(t=>`<div class="sw-ticker-item"><div class="sw-ticker-name"><div class="sw-dot" style="background:${TC[t]}"></div>${TL[t]}</div><input type="number" class="sw-inp" id="sw-${t}" placeholder="0.00" value="${Math.round((S.portfolio[t]||0)*100)/100}" style="font-size:13px;padding:8px 10px;margin:0"></div>`).join('')}</div>`;}
-function sw3(){document.getElementById('sw-body').innerHTML=`<p style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:14px">How much have you already saved toward each goal?</p>${Object.entries(GCFG).map(([k,g])=>`<div class="sw-field"><div class="sw-lbl" style="display:flex;align-items:center;gap:5px"><span style="width:7px;height:7px;border-radius:50%;background:${g.col}"></span>${g.label}${g.due?' · due '+g.due:' · priority'} (target ${fmtDI(g.target)})</div><input type="number" class="sw-inp" id="sw-goal-${k}" placeholder="0.00" value="${S.goalState[k].saved||''}"></div>`).join('')}`;}
+function sw3(){document.getElementById('sw-body').innerHTML=`<p style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:14px">How much have you already saved toward each goal?</p>${(typeof activeGoals==='function'?activeGoals():[]).map(g=>`<div class="sw-field"><div class="sw-lbl" style="display:flex;align-items:center;gap:5px"><span style="width:7px;height:7px;border-radius:50%;background:${g.color||'#00e599'}"></span>${g.label}${g.deadline?' · due '+g.deadline:' · priority'} (target ${fmtDI(g.target||0)})</div><input type="number" class="sw-inp" id="sw-goal-${g.id}" placeholder="0.00" value="${g.saved||''}"></div>`).join('')}`;}
 function sw4(){document.getElementById('sw-body').innerHTML=`<p style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:14px">Set your income and budget parameters. Adjustable anytime in the Budget tab.</p><div class="sw-field"><div class="sw-lbl">Dominos weekly avg $</div><input type="number" class="sw-inp" id="sw-kmart" value="${S.sliders.kmart}"></div><div class="sw-row"><div class="sw-field"><div class="sw-lbl">Rent / month $</div><input type="number" class="sw-inp" id="sw-rent" value="${S.sliders.rent}"></div><div class="sw-field"><div class="sw-lbl">Personal spend / week $</div><input type="number" class="sw-inp" id="sw-spend" value="${S.sliders.spend}"></div></div><div class="sw-row"><div class="sw-field"><div class="sw-lbl">Goal savings / month $</div><input type="number" class="sw-inp" id="sw-goals" value="${S.sliders.goals}"></div><div class="sw-field"><div class="sw-lbl">Monthly invest target $</div><input type="number" class="sw-inp" id="sw-invest" value="${S.sliders.invest}"></div></div>`;}
 function swSave(){
   if(swStep===1){S.acctBalances={westpac:parseFloat(document.getElementById('sw-wp').value)||0,macquarie:parseFloat(document.getElementById('sw-mq').value)||0};}
   else if(swStep===2){TICKERS.forEach(t=>{const el=document.getElementById('sw-'+t);if(el)S.portfolio[t]=parseFloat(el.value)||0;});}
-  else if(swStep===3){Object.keys(GCFG).forEach(k=>{const el=document.getElementById('sw-goal-'+k);if(el)S.goalState[k].saved=parseFloat(el.value)||0;});}
+  else if(swStep===3){(typeof activeGoals==='function'?activeGoals():[]).forEach(g=>{const el=document.getElementById('sw-goal-'+g.id);if(el&&typeof updateGoal==='function')updateGoal(g.id,{saved:parseFloat(el.value)||0});});}
   else if(swStep===4){S.sliders={kmart:parseFloat(document.getElementById('sw-kmart').value)||110,rent:parseFloat(document.getElementById('sw-rent').value)||400,spend:parseFloat(document.getElementById('sw-spend').value)||600,goals:parseFloat(document.getElementById('sw-goals').value)||1674,invest:parseFloat(document.getElementById('sw-invest').value)||400};}
 }
 function swNext(){swSave();if(swStep<SW.length-1){swStep++;renderSW();}else{S.setupDone=true;save();launchApp();}}
@@ -7355,7 +7382,7 @@ function dismissPendingContribution(pendingId){
   save();
   if(typeof buildDash==='function'&&currentPg==='dash')buildDash();
 }
-function confirmAllPending(){
+function confirmAllPendingContributions(){
   const pending=[...(S.pendingContributions||[])];
   pending.forEach(p=>confirmPendingContribution(p.id));
 }
@@ -7870,6 +7897,10 @@ function buildAutopilotCard(){
     </div>
     ${insightHtml}
     ${moreCount>0?`<button class="btn btn-ghost btn-sm btn-full" style="margin-top:10px" onclick="openAutopilotFull()">+ ${moreCount} more insight${moreCount===1?'':'s'}</button>`:''}
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openWeeklyBriefing()">📅 Week in review</button>
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openRebalancePlan()">📊 Rebalance</button>
+    </div>
     ${S.claudeApiKey||S.groqApiKey?`<div class="ap-narrate" id="ap-narrate-slot">
       <button class="btn btn-outline btn-sm btn-full" onclick="narrateAutopilot()" id="ap-narrate-btn">✦ Get AI briefing on these</button>
     </div>`:''}
@@ -7972,6 +8003,226 @@ RULES:
     if(btnId&&typeof setBtnLoading==='function')setBtnLoading(btnId,false);
     showToast('Briefing failed: '+(e.message||'try again'));
   }
+}
+
+// ═══════════════════════════════════════════════════════════
+// v2.7.34 — AUTOPILOT: Weekly briefing, rebalance plan, notifications
+// ═══════════════════════════════════════════════════════════
+
+// Build the weekly briefing data — a snapshot of the past 7 days.
+function computeWeeklyBriefing(){
+  const now=new Date();
+  const weekAgo=new Date(now.getTime()-7*24*60*60*1000);
+  const weekAgoStr=weekAgo.toISOString().slice(0,10);
+  // Net worth change over the week
+  const hist=(S.nwHistory||[]).slice();
+  let nwNow=null,nwThen=null;
+  if(hist.length){
+    nwNow=hist[hist.length-1].nw;
+    // Find the snapshot closest to (but not after) a week ago
+    for(let i=hist.length-1;i>=0;i--){
+      if(hist[i].date<=weekAgoStr){nwThen=hist[i].nw;break;}
+    }
+    if(nwThen==null)nwThen=hist[0].nw; // fall back to earliest
+  }
+  const nwDelta=(nwNow!=null&&nwThen!=null)?nwNow-nwThen:null;
+  // Spending this week by category
+  const weekTxns=(S.transactions||[]).filter(t=>t.date&&t.date>=weekAgoStr&&t.dir==='out'&&t.cat!=='transfer'&&t.cat!=='investments');
+  const catSpend={};
+  weekTxns.forEach(t=>{catSpend[t.cat]=(catSpend[t.cat]||0)+(t.amt||0);});
+  const topCat=Object.entries(catSpend).sort((a,b)=>b[1]-a[1])[0];
+  const weekSpendTotal=weekTxns.reduce((a,t)=>a+t.amt,0);
+  // Income this week
+  const weekIncome=(S.transactions||[]).filter(t=>t.date&&t.date>=weekAgoStr&&t.dir==='in'&&t.cat==='income').reduce((a,t)=>a+t.amt,0);
+  // Goal progress this week (contributions logged in the last 7 days)
+  const goalContribs={};
+  (typeof activeGoals==='function'?activeGoals():[]).forEach(g=>{
+    const wk=(g.log||[]).filter(e=>e.ts&&e.ts>=weekAgo.getTime()&&(e.amount||0)>0).reduce((a,e)=>a+e.amount,0);
+    if(wk>0)goalContribs[g.label]=wk;
+  });
+  // The one focus for next week — pull the top-severity insight
+  let focus=null;
+  try{
+    const insights=computeInsights();
+    const top=insights.find(i=>i.severity==='alert')||insights.find(i=>i.severity==='warn');
+    if(top)focus={title:top.title,body:top.body,action:top.action};
+  }catch(e){}
+  return{nwNow,nwThen,nwDelta,weekSpendTotal,topCat,weekIncome,goalContribs,focus,weekTxnCount:weekTxns.length};
+}
+
+// Render the weekly briefing as a sheet
+function openWeeklyBriefing(){
+  const b=computeWeeklyBriefing();
+  const deltaColor=b.nwDelta==null?'var(--t3)':b.nwDelta>=0?'var(--acc)':'var(--r)';
+  const deltaStr=b.nwDelta==null?'—':`${b.nwDelta>=0?'+':''}${fmtD(b.nwDelta)}`;
+  const cm=(typeof cmap==='function')?cmap():{};
+  const topCatHtml=b.topCat?(()=>{const c=cm[b.topCat[0]]||{icon:'📌',label:b.topCat[0]};return`${c.icon} ${c.label} (${fmtD(b.topCat[1])})`;})():'No spending logged';
+  const goalLines=Object.entries(b.goalContribs);
+  showSheet('📅 Your week in review',`
+    <div style="background:linear-gradient(160deg,rgba(0,229,153,.07),rgba(10,18,14,.3));border:0.5px solid var(--bdr-acc2);border-radius:16px;padding:18px;margin-bottom:14px;text-align:center">
+      <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.1em">Net worth change · 7 days</div>
+      <div style="font-size:30px;font-weight:800;color:${deltaColor};margin-top:6px;font-variant-numeric:tabular-nums">${deltaStr}</div>
+      ${b.nwNow!=null?`<div style="font-size:12px;color:var(--t2);margin-top:4px">Now at ${fmtD(b.nwNow)}</div>`:''}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <div style="background:var(--glass);border:0.5px solid var(--bdr);border-radius:12px;padding:13px">
+        <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">Spent this week</div>
+        <div style="font-size:17px;font-weight:700;color:var(--t);margin-top:3px">${fmtD(b.weekSpendTotal)}</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:2px">${b.weekTxnCount} transaction${b.weekTxnCount===1?'':'s'}</div>
+      </div>
+      <div style="background:var(--glass);border:0.5px solid var(--bdr);border-radius:12px;padding:13px">
+        <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">Income this week</div>
+        <div style="font-size:17px;font-weight:700;color:var(--acc);margin-top:3px">${fmtD(b.weekIncome)}</div>
+      </div>
+    </div>
+    <div style="background:var(--glass);border:0.5px solid var(--bdr);border-radius:12px;padding:13px 15px;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Biggest spend category</div>
+      <div style="font-size:14px;font-weight:600;color:var(--t)">${topCatHtml}</div>
+    </div>
+    ${goalLines.length?`<div style="background:var(--glass);border:0.5px solid var(--bdr);border-radius:12px;padding:13px 15px;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Goal progress this week</div>
+      ${goalLines.map(([label,amt])=>`<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px"><span style="color:var(--t2)">${escapeHtml(label)}</span><span style="color:var(--acc);font-weight:600">+${fmtD(amt)}</span></div>`).join('')}
+    </div>`:''}
+    ${b.focus?`<div style="background:rgba(240,160,48,.06);border:0.5px solid rgba(240,160,48,.22);border-radius:12px;padding:14px 15px;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--y);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;font-weight:600">🎯 Focus for next week</div>
+      <div style="font-size:13px;font-weight:600;color:var(--t);margin-bottom:3px">${b.focus.title}</div>
+      <div style="font-size:11.5px;color:var(--t2);line-height:1.5">${b.focus.body}</div>
+      ${b.focus.action?`<button class="btn btn-acc btn-xs" style="margin-top:9px" onclick="closeSheet();${b.focus.action.fn}">${b.focus.action.label}</button>`:''}
+    </div>`:''}
+    ${S.claudeApiKey||S.groqApiKey?`<button class="btn btn-outline btn-sm btn-full" onclick="narrateWeekly()" id="weekly-narrate-btn">✦ Get AI take on my week</button><div id="weekly-narrate-slot"></div>`:''}
+    <div style="font-size:10px;color:var(--t3);text-align:center;margin-top:12px;line-height:1.5">Tip: check this every Sunday to stay on top of your money.</div>
+  `);
+}
+
+// AI narration of the weekly briefing
+async function narrateWeekly(){
+  const b=computeWeeklyBriefing();
+  const claudeKey=(S.claudeApiKey||'').trim();
+  const groqKey=(S.groqApiKey||'').trim();
+  if(!claudeKey&&!groqKey){showToast('Add an API key in Settings');return;}
+  if(typeof setBtnLoading==='function')setBtnLoading('weekly-narrate-btn',true);
+  const facts=[
+    `Net worth change (7 days): ${b.nwDelta==null?'unknown':(b.nwDelta>=0?'+':'')+fmtD(b.nwDelta)}${b.nwNow!=null?`, now at ${fmtD(b.nwNow)}`:''}`,
+    `Spent this week: ${fmtD(b.weekSpendTotal)} across ${b.weekTxnCount} transactions`,
+    `Income this week: ${fmtD(b.weekIncome)}`,
+    b.topCat?`Biggest category: ${b.topCat[0]} (${fmtD(b.topCat[1])})`:'',
+    Object.entries(b.goalContribs).map(([l,a])=>`Goal ${l}: +${fmtD(a)}`).join('; '),
+    b.focus?`Top priority: ${b.focus.title} — ${b.focus.body}`:''
+  ].filter(Boolean).join('\n');
+  const sys=`You are FinPlan's co-pilot for a ~20-year-old in Perth saving for university (Jan 2028), working full-time + food delivery. Below is their week in numbers, already computed. Write a short, warm Sunday briefing (under 130 words, conversational, no lists/headers). Use ONLY these facts. Celebrate wins, be honest about risks, end with the one thing to focus on. Australian context.`;
+  try{
+    let reply='';
+    if(claudeKey){
+      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':claudeKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-5-20250929',max_tokens:350,system:sys,messages:[{role:'user',content:facts}]})});
+      if(!res.ok)throw new Error('Claude '+res.status);
+      const data=await res.json();reply=(data.content||[]).filter(x=>x.type==='text').map(x=>x.text).join('').trim();
+    }else{
+      const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+groqKey},body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:350,temperature:0.7,messages:[{role:'system',content:sys},{role:'user',content:facts}]})});
+      if(!res.ok)throw new Error('Groq '+res.status);
+      const data=await res.json();reply=data.choices?.[0]?.message?.content||'';
+    }
+    const slot=document.getElementById('weekly-narrate-slot');
+    if(slot&&reply)slot.innerHTML=`<div class="ap-narrate-body" style="margin-top:12px">${(typeof mdToHtml==='function')?mdToHtml(reply):reply}</div>`;
+    const btn=document.getElementById('weekly-narrate-btn');if(btn)btn.style.display='none';
+  }catch(e){
+    if(typeof setBtnLoading==='function')setBtnLoading('weekly-narrate-btn',false);
+    showToast('Briefing failed: '+(e.message||'try again'));
+  }
+}
+
+// ── Rebalance plan (turns portfolio drift into exact buy amounts) ──
+function computeRebalancePlan(newMoney){
+  const pt=(typeof portTotal==='function')?portTotal():0;
+  if(pt<=0||typeof TPCT==='undefined'||typeof TICKERS==='undefined')return null;
+  const budget=+newMoney||0;
+  const futureTotal=pt+budget;
+  const moves=[];
+  TICKERS.forEach(t=>{
+    const cur=S.portfolio?.[t]||0;
+    const targetPct=TPCT[t]||0;
+    const targetVal=futureTotal*targetPct/100;
+    const gap=targetVal-cur;
+    moves.push({ticker:t,label:(typeof TL!=='undefined'&&TL[t])?TL[t]:t,cur,targetPct,targetVal,gap,curPct:pt>0?cur/pt*100:0});
+  });
+  // If adding new money: only suggest buys (positive gaps), scaled to the budget
+  let plan=[];
+  if(budget>0){
+    const buys=moves.filter(m=>m.gap>0);
+    const totalGap=buys.reduce((a,m)=>a+m.gap,0);
+    if(totalGap>0){
+      plan=buys.map(m=>({...m,buy:Math.round(budget*(m.gap/totalGap))})).filter(m=>m.buy>0).sort((a,b)=>b.buy-a.buy);
+    }
+  }else{
+    // No new money — show full rebalance (sells + buys)
+    plan=moves.filter(m=>Math.abs(m.gap)>=futureTotal*0.02).map(m=>({...m,buy:Math.round(m.gap)})).sort((a,b)=>Math.abs(b.gap)-Math.abs(a.gap));
+  }
+  return{pt,budget,futureTotal,plan,moves};
+}
+
+function openRebalancePlan(){
+  const defaultBudget=Math.round((S.sliders?.invest||500));
+  showSheet('📊 Rebalance plan',`
+    <div style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:14px">Enter how much you're about to invest, and I'll show exactly how to split it to move your portfolio toward its target allocation — no selling required.</div>
+    <div class="lbl">New money to invest</div>
+    <input type="number" id="rebal-budget" class="inp" value="${defaultBudget}" min="0" step="50" oninput="renderRebalancePlan()">
+    <div id="rebal-result" style="margin-top:14px"></div>
+  `);
+  setTimeout(renderRebalancePlan,50);
+}
+
+function renderRebalancePlan(){
+  const el=document.getElementById('rebal-result');if(!el)return;
+  const budget=+document.getElementById('rebal-budget')?.value||0;
+  const plan=computeRebalancePlan(budget);
+  if(!plan||!plan.plan.length){el.innerHTML=`<div style="font-size:12px;color:var(--t3);text-align:center;padding:16px">${budget>0?'Your allocation is already balanced — split new money by your target percentages.':'Enter an amount to see the plan.'}</div>`;return;}
+  el.innerHTML=`
+    <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Suggested buys</div>
+    ${plan.plan.map(m=>`<div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-top:0.5px solid var(--bdr)">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--t)">${m.label}</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:1px">${Math.round(m.curPct)}% → ${m.targetPct}% target</div>
+      </div>
+      <div style="font-size:15px;font-weight:700;color:var(--acc);font-variant-numeric:tabular-nums">${fmtD(m.buy)}</div>
+    </div>`).join('')}
+    <div style="display:flex;justify-content:space-between;padding:11px 0;border-top:0.5px solid var(--bdr2);margin-top:4px">
+      <span style="font-size:12px;font-weight:700;color:var(--t)">Total</span>
+      <span style="font-size:14px;font-weight:700;color:var(--t)">${fmtD(plan.plan.reduce((a,m)=>a+m.buy,0))}</span>
+    </div>
+    <div style="font-size:10px;color:var(--t3);line-height:1.5;margin-top:10px">This moves you toward your targets using only new contributions. After investing, log the buys in the Investments tab to keep your allocation accurate.</div>
+  `;
+}
+
+// ── Browser notifications for high-severity insights ──
+function requestAutopilotNotifPerm(){
+  if(!('Notification' in window)){showToast('Notifications not supported on this device');return;}
+  Notification.requestPermission().then(perm=>{
+    if(perm==='granted'){
+      S.autopilotNotifs=true;save();
+      showToast('✓ Notifications enabled');
+      if(typeof buildSettingsPage==='function')buildSettingsPage();
+    }else{
+      showToast('Notification permission denied');
+    }
+  });
+}
+function toggleAutopilotNotifs(){
+  if(!S.autopilotNotifs){requestAutopilotNotifPerm();}
+  else{S.autopilotNotifs=false;save();if(typeof buildSettingsPage==='function')buildSettingsPage();}
+}
+// Fire a notification for the top alert-severity insight, throttled to once per day.
+function maybeFireInsightNotif(){
+  if(!S.autopilotNotifs)return;
+  if(!('Notification' in window)||Notification.permission!=='granted')return;
+  const todayStr=today();
+  if(S.lastNotifDate===todayStr)return; // once per day max
+  let insights=[];
+  try{insights=computeInsights();}catch(e){return;}
+  const alert=insights.find(i=>i.severity==='alert');
+  if(!alert)return;
+  try{
+    new Notification('FinPlan · '+alert.title,{body:alert.body,icon:'icon-192.png',tag:'finplan-insight'});
+    S.lastNotifDate=todayStr;save();
+  }catch(e){console.warn('notif failed',e);}
 }
 
 // ── The rewritten briefing widget ──────────────────────────
@@ -8706,6 +8957,7 @@ function launchApp(){
   if(typeof runV273Migrations==='function')runV273Migrations();
   if(typeof ensureGoalsMigrated==='function')ensureGoalsMigrated();
   if(typeof processAutoContributeRules==='function')processAutoContributeRules();
+  if(typeof maybeFireInsightNotif==='function')setTimeout(maybeFireInsightNotif,3000);
   if(typeof ensureAiConversations==='function')ensureAiConversations();
   if(typeof autoDailyCheckIn==='function')autoDailyCheckIn();
   buildDash();buildStaticTimeline();buildAiWelcome();buildThemeGrid();buildSettingsPage();
@@ -10648,7 +10900,7 @@ function buildPendingContribBanner(){
   banner+=`<div style="margin-bottom:12px"><div style="background:linear-gradient(135deg,rgba(0,229,153,.08),rgba(0,229,153,.03));border:0.5px solid rgba(0,229,153,.25);border-radius:16px;padding:14px 16px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
       <div style="font-size:13px;font-weight:700;color:var(--t)">💸 ${pending.length} scheduled contribution${pending.length===1?'':'s'} ready</div>
-      ${pending.length>1?`<button class="btn btn-acc btn-xs" onclick="confirmAllPending();buildDash()">Confirm all</button>`:''}
+      ${pending.length>1?`<button class="btn btn-acc btn-xs" onclick="confirmAllPendingContributions();buildDash()">Confirm all</button>`:''}
     </div>
     <div style="font-size:11px;color:var(--t2);margin-bottom:4px">${fmtD(total)} total waiting for your OK</div>
     ${rows}
@@ -11799,7 +12051,7 @@ async function sendAiMsg(){
   const catSpend={};
   thisMonthTxns().filter(t=>t.dir==='out').forEach(t=>{catSpend[t.cat]=(catSpend[t.cat]||0)+t.amt;});
   const catBD=Object.entries(catSpend).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${k}: $${Math.round(v)}`).join(', ')||'None this month';
-  const goalsSummary=Object.entries(GCFG).map(([k,g])=>`${g.label}: $${Math.round(S.goalState[k].saved)}/$${g.target} (${pct(S.goalState[k].saved,g.target)}%${g.due?' due '+g.due:''})`).join('; ');
+  const goalsSummary=(typeof activeGoals==='function'?activeGoals():[]).map(g=>`${g.label}: $${Math.round(g.saved||0)}/$${g.target||0} (${g.target>0?Math.round((g.saved||0)/g.target*100):0}%${g.deadline?' due '+g.deadline:''})`).join('; ')||'No goals set';
   const shifts=S.kmartShifts||[];
   const shiftEarnings=shifts.reduce((a,s)=>a+s.pay,0);
   const r19=Math.pow(1.07,1/12)-1;let vEst=pt;for(let i=0;i<19;i++)vEst=vEst*(1+r19)+S.sliders.invest;
@@ -15463,6 +15715,8 @@ function buildSettingsPage(){
   const claudeInp=document.getElementById('claude-key-inp');
   if(claudeInp)claudeInp.value=S.claudeApiKey||'';
   if(typeof updateClaudeKeyStatus==='function')updateClaudeKeyStatus();
+  const tgNotif=document.getElementById('tg-autopilot-notifs');
+  if(tgNotif)tgNotif.classList.toggle('on',!!S.autopilotNotifs);
   const fmpInp=document.getElementById('fmp-key-inp');
   if(fmpInp)fmpInp.value=S.fmpApiKey||'';
   updateFmpKeyStatus();
