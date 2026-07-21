@@ -2128,6 +2128,7 @@ let S={
   claudeApiKey:'',  // v2.7.33 — optional Claude key for AI Autopilot briefings (stronger narration)
   autopilotNotifs:false,  // v2.7.34 — browser notifications for high-severity insights
   lastNotifDate:null,     // throttle: one insight notification per day
+  internalTransferKeywords:[],  // v2.7.36 — user-added patterns identifying own-account transfers
   sinkingFunds:[],
   debts:[],
   streakData:{days:[],lastCheckin:null,badges:[]},
@@ -2183,9 +2184,28 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.35';
+const APP_VERSION='2.7.36';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.36',
+    date:'2026-07-17',
+    title:'Receipt & statement vision + intelligent CSV transfer handling',
+    sections:{
+      features:[
+        '📸 **Receipt scanning upgraded to Claude vision.** If you\'ve added a Claude API key, receipt scanning now uses Claude\'s much stronger vision model — reading the merchant, date, total, AND individual line items. Falls back to Groq vision if no Claude key. The line items are saved as a note on the transaction for reference',
+        '🏦 **Statement scanning (new).** Screenshot your bank statement or transaction list and the scanner reads every row at once — date, payee, amount, direction — into a review list. Tick the ones to keep, and import them all in one go. Duplicates already in your ledger are auto-skipped. Toggle between Receipt and Statement mode at the top of the scanner',
+        '🔄 **Intelligent internal-transfer handling.** The CSV importer now recognises movements between your own accounts (e.g. Westpac Life → Choice, TFR Westpac, Osko to yourself) and **excludes them by default** — because moving money between your own accounts doesn\'t change your net worth and shouldn\'t count as spending or income. They\'re shown in a separate "excluded" section in the import preview with a one-tap "Include" if any is actually real spending or outside income'
+      ],
+      improvements:[
+        'Only money that actually leaves your accounts (real spending) or arrives from an outside source (real income) gets counted — internal shuffling is filtered out at import, keeping your spending and income figures honest',
+        'The transfer category was already excluded from all spending and income math app-wide; this change stops the transfers from even being imported in the first place, so they don\'t clutter your ledger',
+        'Statement scanning uses higher image resolution (1600px vs 1024px for receipts) since statement text is smaller and denser',
+        'Internal-transfer detection is pattern-based and extensible — the built-in patterns cover common Westpac self-transfer formats, and the system reads any custom keywords you add'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'2.7.35',
     date:'2026-07-17',
@@ -4348,16 +4368,23 @@ function hideSuccessMoment(){
 // data does travel to Groq but is not stored on any server we control.
 
 function openReceiptScanner(){
-  const key=(S.groqApiKey||'').trim();
-  if(!key||!key.startsWith('gsk_')){
-    if(confirm('Receipt scanner needs a Groq API key. Open Settings to add one?'))showPgFromMore('settings');
+  const hasClaude=(S.claudeApiKey||'').trim().startsWith('sk-ant-');
+  const hasGroq=(S.groqApiKey||'').trim().startsWith('gsk_');
+  if(!hasClaude&&!hasGroq){
+    if(confirm('The scanner needs a Claude or Groq API key. Open Settings to add one?'))showPgFromMore('settings');
     return;
   }
-  showSheet('Scan receipt',`
-    <div style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:14px">
-      Snap a photo of a receipt. The AI reads the merchant, date, total, and suggests a category. You review before saving.
+  window._scanMode='receipt';
+  const engine=hasClaude?'Claude vision':'Groq vision';
+  showSheet('Scan',`
+    <div style="display:flex;gap:6px;margin-bottom:14px;background:var(--bg3);padding:4px;border-radius:10px">
+      <button class="tog-b on" id="scan-mode-receipt" onclick="setScanMode('receipt')" style="flex:1">🧾 Receipt</button>
+      <button class="tog-b" id="scan-mode-statement" onclick="setScanMode('statement')" style="flex:1">🏦 Statement</button>
     </div>
-    <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Take or pick a photo</div>
+    <div id="scan-mode-desc" style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:14px">
+      Snap a receipt. The AI reads the merchant, date, total, and individual line items, then suggests a category. You review before saving.
+    </div>
+    <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Take or pick a photo · using ${engine}</div>
     <label class="receipt-drop" for="receipt-input">
       <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
@@ -4372,25 +4399,45 @@ function openReceiptScanner(){
   `);
 }
 
+function setScanMode(mode){
+  window._scanMode=mode;
+  document.getElementById('scan-mode-receipt')?.classList.toggle('on',mode==='receipt');
+  document.getElementById('scan-mode-statement')?.classList.toggle('on',mode==='statement');
+  const desc=document.getElementById('scan-mode-desc');
+  if(desc)desc.innerHTML=mode==='statement'
+    ?'Screenshot your bank statement or transaction list. The AI reads every row — date, payee, amount, direction — and lets you review before importing. Duplicates are auto-skipped.'
+    :'Snap a receipt. The AI reads the merchant, date, total, and individual line items, then suggests a category. You review before saving.';
+  // Clear any prior preview
+  const st=document.getElementById('receipt-status');if(st)st.innerHTML='';
+  const pv=document.getElementById('receipt-preview');if(pv)pv.innerHTML='';
+}
+
 async function handleReceiptFile(ev){
   const f=ev.target.files&&ev.target.files[0];if(!f)return;
+  const mode=window._scanMode||'receipt';
   const statusEl=document.getElementById('receipt-status');
   const previewEl=document.getElementById('receipt-preview');
-  statusEl.innerHTML=`<div style="color:var(--acc);display:flex;align-items:center;gap:8px"><div class="ai-typing" style="display:inline-flex"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div>Reading receipt…</div>`;
+  statusEl.innerHTML=`<div style="color:var(--acc);display:flex;align-items:center;gap:8px"><div class="ai-typing" style="display:inline-flex"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div>Reading ${mode==='statement'?'statement':'receipt'}…</div>`;
   previewEl.innerHTML='';
   try{
-    // Downscale to max 1024px longest edge to save bandwidth
-    const dataUrl=await downscaleImage(f,1024);
-    const parsed=await callReceiptOCR(dataUrl);
-    if(!parsed){
-      statusEl.innerHTML='<div style="color:var(--r)">Couldn\'t read the receipt. Try a clearer photo.</div>';return;
-    }
-    if(!parsed.confidence||parsed.confidence<0.35){
-      statusEl.innerHTML='<div style="color:var(--y)">Low confidence — please review the fields below carefully.</div>';
+    // Statements need more resolution for small text
+    const dataUrl=await downscaleImage(f,mode==='statement'?1600:1024);
+    const parsed=await callReceiptOCR(dataUrl,mode);
+    if(!parsed){statusEl.innerHTML='<div style="color:var(--r)">Couldn\'t read the image. Try a clearer photo.</div>';return;}
+    if(mode==='statement'){
+      if(!Array.isArray(parsed.transactions)||!parsed.transactions.length){
+        statusEl.innerHTML='<div style="color:var(--y)">No transactions found. Try a clearer screenshot of the transaction list.</div>';return;
+      }
+      statusEl.innerHTML=`<div style="color:var(--acc)">✓ Found ${parsed.transactions.length} transaction${parsed.transactions.length===1?'':'s'} — review and import</div>`;
+      showStatementReview(parsed,dataUrl);
     }else{
-      statusEl.innerHTML='<div style="color:var(--acc)">✓ Extracted — review and save</div>';
+      if(!parsed.confidence||parsed.confidence<0.35){
+        statusEl.innerHTML='<div style="color:var(--y)">Low confidence — please review the fields carefully.</div>';
+      }else{
+        statusEl.innerHTML='<div style="color:var(--acc)">✓ Extracted — review and save</div>';
+      }
+      showReceiptReview(parsed,dataUrl);
     }
-    showReceiptReview(parsed,dataUrl);
   }catch(e){
     statusEl.innerHTML=`<div style="color:var(--r)">Error: ${e.message||'failed'}. Try again or add manually.</div>`;
   }
@@ -4418,42 +4465,92 @@ function downscaleImage(file,maxDim){
   });
 }
 
-async function callReceiptOCR(dataUrl){
-  const key=(S.groqApiKey||'').trim();
-  const prompt=`Extract data from this receipt image. Return ONLY valid JSON with these exact keys and no other text:
+async function callReceiptOCR(dataUrl,mode){
+  mode=mode||'receipt';
+  const claudeKey=(S.claudeApiKey||'').trim();
+  const groqKey=(S.groqApiKey||'').trim();
+  const useClaude=claudeKey.startsWith('sk-ant-');
+  // Build the category list from the user's actual categories
+  const cats=(typeof allCats==='function')?allCats().map(c=>c.id):['food','fuel','transport','subscriptions','utilities','shopping','entertainment','health','other'];
+  const catList=cats.join('", "');
+
+  const receiptPrompt=`You are extracting structured data from a photo of a shopping receipt. Return ONLY valid JSON (no markdown, no prose) in exactly this shape:
 {
-  "merchant": "business name shown on receipt",
-  "date": "YYYY-MM-DD (from receipt, or today if not visible)",
-  "total": final total amount as a number in dollars (e.g. 12.50, no currency symbol),
-  "category": one of ["food","fuel","transport","subscriptions","utilities","shopping","entertainment","health","other"],
-  "confidence": number between 0 and 1 (0.9+ if all fields are clearly readable, 0.5-0.8 if partially readable, below 0.4 if hard to read)
+  "type": "receipt",
+  "merchant": "business name",
+  "date": "YYYY-MM-DD (from receipt; if not visible use today)",
+  "total": <final total as a number, no currency symbol>,
+  "category": one of ["${catList}"],
+  "items": [ {"name": "line item text", "amount": <number>} ],
+  "confidence": <0..1: 0.9+ if clearly readable, 0.5-0.8 partial, <0.4 hard to read>
 }
-If the image is not a receipt or is unreadable, set confidence to 0 and best-guess the rest.`;
+Extract individual line items when they're legible (skip if the receipt only shows a total). Pick the single best category for the overall purchase. If not a receipt, set confidence 0.`;
+
+  const statementPrompt=`You are extracting transactions from a screenshot of a bank statement or transaction list. Return ONLY valid JSON (no markdown, no prose) in exactly this shape:
+{
+  "type": "statement",
+  "transactions": [
+    {
+      "date": "YYYY-MM-DD",
+      "description": "merchant/payee text as shown",
+      "amount": <number, always positive>,
+      "direction": "in" or "out",
+      "category": one of ["${catList}"]
+    }
+  ],
+  "confidence": <0..1>
+}
+Include every transaction row you can read. "direction" is "out" for debits/purchases/withdrawals, "in" for credits/deposits/income. Amount is always positive. If you can't read it, set confidence 0.`;
+
+  const prompt=mode==='statement'?statementPrompt:receiptPrompt;
+
+  if(useClaude){
+    // Claude vision — strip the data URL prefix for base64
+    const m=dataUrl.match(/^data:(image\/\w+);base64,(.+)$/);
+    if(!m)throw new Error('Bad image data');
+    const mediaType=m[1],b64=m[2];
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':claudeKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-5-20250929',
+        max_tokens:1500,
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:mediaType,data:b64}},
+          {type:'text',text:prompt}
+        ]}]
+      })
+    });
+    if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e?.error?.message||('Claude vision '+res.status));}
+    const data=await res.json();
+    const content=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    return parseOcrJson(content);
+  }
+
+  // Groq fallback (llama-4-scout vision)
+  if(!groqKey.startsWith('gsk_'))throw new Error('No vision API key configured');
   const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
     method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+groqKey},
     body:JSON.stringify({
       model:'meta-llama/llama-4-scout-17b-16e-instruct',
-      max_completion_tokens:400,
+      max_completion_tokens:1200,
       temperature:0.1,
       response_format:{type:'json_object'},
-      messages:[{
-        role:'user',
-        content:[
-          {type:'text',text:prompt},
-          {type:'image_url',image_url:{url:dataUrl}}
-        ]
-      }]
+      messages:[{role:'user',content:[
+        {type:'text',text:prompt},
+        {type:'image_url',image_url:{url:dataUrl}}
+      ]}]
     })
   });
-  if(!res.ok){
-    const e=await res.json().catch(()=>({}));
-    throw new Error(e?.error?.message||('API error '+res.status));
-  }
+  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e?.error?.message||('API error '+res.status));}
   const data=await res.json();
-  const content=data.choices?.[0]?.message?.content||'';
+  return parseOcrJson(data.choices?.[0]?.message?.content||'');
+}
+
+function parseOcrJson(content){
+  if(!content)return null;
   try{return JSON.parse(content);}catch(_){}
-  // Try to extract JSON from surrounding text
   const m=content.match(/\{[\s\S]*\}/);
   if(m){try{return JSON.parse(m[0]);}catch(_){}}
   return null;
@@ -4461,13 +4558,14 @@ If the image is not a receipt or is unreadable, set confidence to 0 and best-gue
 
 function showReceiptReview(parsed,dataUrl){
   const previewEl=document.getElementById('receipt-preview');
-  const cats=['food','fuel','transport','subscriptions','utilities','shopping','entertainment','health','other'];
+  const cats=(typeof allCats==='function')?allCats().map(c=>c.id):['food','fuel','transport','subscriptions','utilities','shopping','entertainment','health','other'];
   const cm=cmap();
   const dateVal=(parsed.date&&/^\d{4}-\d{2}-\d{2}$/.test(parsed.date))?parsed.date:today();
   const catVal=cats.includes(parsed.category)?parsed.category:'other';
   const amtVal=(typeof parsed.total==='number'&&parsed.total>0)?parsed.total:0;
   const payeeVal=(parsed.merchant||'').trim()||'Unknown merchant';
-  window._receiptDraft={dataUrl};
+  const items=Array.isArray(parsed.items)?parsed.items.filter(it=>it&&it.name):[];
+  window._receiptDraft={dataUrl,items};
   previewEl.innerHTML=`
     <div style="display:flex;gap:12px;margin-bottom:14px">
       <img src="${dataUrl}" alt="Receipt" style="width:80px;height:80px;object-fit:cover;border-radius:12px;flex-shrink:0;border:1px solid var(--bdr)">
@@ -4491,6 +4589,10 @@ function showReceiptReview(parsed,dataUrl){
       <option value="westpac">Westpac</option>
       <option value="macquarie">Macquarie</option>
     </select>
+    ${items.length?`<details style="margin-top:12px"><summary style="font-size:11px;color:var(--t3);cursor:pointer">${items.length} line item${items.length===1?'':'s'} read from receipt</summary>
+      <div style="margin-top:8px">${items.map(it=>`<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:11px;border-top:0.5px solid var(--bdr)"><span style="color:var(--t2)">${escapeHtml(String(it.name))}</span><span style="color:var(--t3)">${typeof it.amount==='number'?fmtD(it.amount):''}</span></div>`).join('')}</div>
+      <div style="font-size:10px;color:var(--t3);margin-top:6px">Line items are saved as a note for reference. The transaction records the total.</div>
+    </details>`:''}
     <button class="btn btn-acc btn-full" style="margin-top:14px" onclick="saveReceiptTransaction()">Save transaction</button>
   `;
 }
@@ -4503,14 +4605,82 @@ function saveReceiptTransaction(){
   const acct=document.getElementById('rcp-acct').value;
   if(!payee||!amt||amt<=0||!date){alert('Please fill payee, amount and date.');return;}
   if(!S.transactions)S.transactions=[];
+  const items=(window._receiptDraft&&window._receiptDraft.items)||[];
+  const itemNote=items.length?('Receipt: '+items.map(it=>it.name).slice(0,8).join(', ')):'Scanned receipt';
   S.transactions.unshift({
     id:uid(),
     date,amt:Math.round(amt*100)/100,dir:'out',
-    payee,cat,acct,note:'Scanned receipt'
+    payee,cat,acct,note:itemNote,
+    scannedReceipt:true
   });
   markManualTxnLogged();
   save();snapshotNW();closeSheet();refreshAfterChange();
   showToast('Transaction saved ✓');
+}
+
+// ── Statement screenshot review + import ──
+function showStatementReview(parsed,dataUrl){
+  const previewEl=document.getElementById('receipt-preview');
+  const cm=cmap();
+  const txns=parsed.transactions.map((t,i)=>({
+    idx:i,
+    date:(t.date&&/^\d{4}-\d{2}-\d{2}$/.test(t.date))?t.date:today(),
+    desc:(t.description||'').trim()||'Unknown',
+    amount:Math.abs(+t.amount||0),
+    dir:t.direction==='in'?'in':'out',
+    cat:t.category||'other',
+    include:true
+  })).filter(t=>t.amount>0);
+  window._statementDraft={txns,dataUrl};
+  const rows=txns.map(t=>{
+    const c=cm[t.cat]||{icon:'📌',label:t.cat};
+    return`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-top:0.5px solid var(--bdr)">
+      <input type="checkbox" id="stmt-${t.idx}" ${t.include?'checked':''} onchange="toggleStatementTxn(${t.idx})" style="width:16px;height:16px;flex-shrink:0;accent-color:var(--acc)">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(t.desc)}</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:1px">${t.date} · ${c.icon} ${c.label}</div>
+      </div>
+      <div style="font-size:13px;font-weight:700;color:${t.dir==='in'?'var(--acc)':'var(--t)'};flex-shrink:0;font-variant-numeric:tabular-nums">${t.dir==='in'?'+':'-'}${fmtD(t.amount)}</div>
+    </div>`;
+  }).join('');
+  previewEl.innerHTML=`
+    <div style="font-size:11px;color:var(--t2);line-height:1.5;margin-bottom:10px">Review the transactions read from your statement. Untick any you don't want. Duplicates already in your ledger are skipped automatically on import.</div>
+    <label class="lbl">Import into account</label>
+    <select class="inp" id="stmt-acct" style="margin-bottom:10px">
+      <option value="westpac">Westpac</option>
+      <option value="macquarie">Macquarie</option>
+    </select>
+    ${rows}
+    <button class="btn btn-acc btn-full" style="margin-top:14px" onclick="importStatementTxns()">Import selected</button>
+  `;
+}
+function toggleStatementTxn(idx){
+  const d=window._statementDraft;if(!d)return;
+  const t=d.txns.find(x=>x.idx===idx);if(t)t.include=!t.include;
+}
+function importStatementTxns(){
+  const d=window._statementDraft;if(!d)return;
+  const acct=document.getElementById('stmt-acct')?.value||'westpac';
+  const chosen=d.txns.filter(t=>t.include);
+  if(!chosen.length){showToast('Nothing selected');return;}
+  if(!S.transactions)S.transactions=[];
+  let added=0,skipped=0;
+  chosen.forEach(t=>{
+    // Dedup: same date + amount + direction already present?
+    const dup=S.transactions.some(x=>x.date===t.date&&Math.abs((x.amt||0)-t.amount)<0.01&&x.dir===t.dir&&(x.acct===acct));
+    if(dup){skipped++;return;}
+    S.transactions.unshift({
+      id:uid(),
+      date:t.date,amt:Math.round(t.amount*100)/100,dir:t.dir,
+      payee:t.desc,cat:t.cat,acct,
+      note:'Scanned from statement',
+      scannedStatement:true
+    });
+    added++;
+  });
+  markManualTxnLogged();
+  save();snapshotNW();closeSheet();refreshAfterChange();
+  showToast(`Imported ${added}${skipped?` · ${skipped} duplicate${skipped===1?'':'s'} skipped`:''}`);
 }
 
 // ── MISSING-ACTIVITY REMINDERS ─────────────────────────────
@@ -14117,14 +14287,12 @@ function scoreDuplicate(row,existing){
 function classifyImportRows(parsedRows){
   const existing=[...(S.transactions||[])]; // copy — we'll mark consumed ones
   const consumed=new Set();
-  const classified={new:[],duplicate:[],skipped:[]};
+  const classified={new:[],duplicate:[],skipped:[],internal:[]};
   // Build a signature index for fast exact-match dedup on re-imports
   const sigIndex={};
   existing.forEach((t,j)=>{if(t.importSig)sigIndex[t.importSig]=j;});
   // v2.7.29 — Build a payee → category history from your existing transactions.
-  // Exact matches score higher confidence than fuzzy matches.
   const payeeHistory=buildPayeeHistoryIndex(existing);
-  // Sort rows by date desc so newest are matched first (they're most likely to already be manually logged)
   const rowsSorted=[...parsedRows].map((r,i)=>({r,i})).sort((a,b)=>b.r.date.localeCompare(a.r.date));
   const resultsById={};
   rowsSorted.forEach(({r,i})=>{
@@ -14142,7 +14310,6 @@ function classifyImportRows(parsedRows){
         if(s>bestScore){bestScore=s;bestIdx=j;}
       }
     }
-    // v2.7.29 — categoriseWithConfidence returns {cat, payee, confidence, source}
     const catResult=categoriseWithConfidence(r,payeeHistory);
     const suggested={
       date:r.date,amt:r.amt,dir:r.dir,
@@ -14154,11 +14321,15 @@ function classifyImportRows(parsedRows){
       _sig:sig,
       _confidence:catResult.confidence,
       _catSource:catResult.source,
-      _balance:r.balance  // preserve the CSV's running balance for reconciliation
+      _internal:!!catResult.internalTransfer,
+      _balance:r.balance
     };
     if(bestIdx!=null&&bestScore>=100){
       consumed.add(bestIdx);
       resultsById[i]={kind:'duplicate',row:{...suggested,_dup:existing[bestIdx],_score:bestScore,_exact:exactMatch}};
+    }else if(catResult.internalTransfer){
+      // v2.7.36 — internal transfers go to their own bucket, EXCLUDED from import by default
+      resultsById[i]={kind:'internal',row:suggested};
     }else{
       resultsById[i]={kind:'new',row:suggested};
     }
@@ -14194,9 +14365,48 @@ function normalizePayeeTokens(s){
 }
 
 // Returns {cat, payee, confidence:0-100, source:'user-history'|'custom-rule'|'bank-rule'|'mq-fallback'|'unknown'}
+// ═══════════════════════════════════════════════════════════
+// v2.7.36 — INTERNAL TRANSFER DETECTION
+// Movements between your own accounts (e.g. Westpac Life → Choice) are NOT
+// income or spending — they don't change net worth. This detects them so they
+// can be excluded from import, keeping spending/income figures accurate.
+// ═══════════════════════════════════════════════════════════
+
+// User-configurable patterns identifying your own accounts / self-transfers.
+// Seeded with sensible Westpac defaults; extendable in Settings.
+const INTERNAL_TRANSFER_PATTERNS=[
+  /TFR\s+WESTPAC/i,
+  /WESTPAC\s+CHOICE/i,
+  /WESTPAC\s+LIFE/i,
+  /\bLIFE\b.*\bCHOICE\b/i,
+  /\bCHOICE\b.*\bLIFE\b/i,
+  /WITHDRAWAL\s+MOBILE.*TFR/i,
+  /DEPOSIT\s+ONLINE.*TFR/i,
+  /TRANSFER\s+(?:TO|FROM)\s+(?:SAVINGS|SAVER|LIFE|CHOICE|ESAVER)/i,
+  /OSKO\s+PAYMENT.*(?:STUART|HARDSTAFF)/i,
+  /NETBANK\s+TRANSFER/i,
+  /\bINTERNAL\s+TRANSFER\b/i
+];
+
+// Returns true if the narrative looks like a movement between the user's own accounts.
+function isInternalTransfer(narrative){
+  const s=(narrative||'').toString();
+  // User-defined patterns first
+  const userPatterns=S.internalTransferKeywords||[];
+  for(const kw of userPatterns){
+    if(kw&&s.toUpperCase().includes(kw.toUpperCase()))return true;
+  }
+  // Built-in patterns
+  return INTERNAL_TRANSFER_PATTERNS.some(re=>re.test(s));
+}
+
 function categoriseWithConfidence(row,payeeHistory){
   const narrative=row.narrative||'';
   const direction=row.dir;
+  // Step 0: internal transfer? Flag it — these should NOT be recorded as spend/income.
+  if(isInternalTransfer(narrative)){
+    return{cat:'transfer',payee:extractPayeeFromNarrative(narrative)||'Internal transfer',confidence:92,source:'internal-transfer',internalTransfer:true};
+  }
   // Step 1: try user's own transaction history first — this is the strongest signal
   const tokens=normalizePayeeTokens(narrative);
   const histScores={};  // cat → total count across matching tokens
@@ -14223,6 +14433,10 @@ function categoriseWithConfidence(row,payeeHistory){
   // Step 2: existing categoriseBankTxn (custom rules + built-in BANK_RULES)
   const cat=categoriseBankTxn(narrative,direction);
   if(cat.matched){
+    // If a rule marked it a transfer, treat as internal
+    if(cat.cat==='transfer'){
+      return{cat:'transfer',payee:cat.payee,confidence:88,source:'internal-transfer',internalTransfer:true};
+    }
     // Custom rule = higher confidence than built-in
     const isCustom=cat.ruleIdx&&String(cat.ruleIdx).startsWith('custom:');
     return{cat:cat.cat,payee:cat.payee,confidence:isCustom?90:60,source:isCustom?'custom-rule':'bank-rule'};
@@ -14434,6 +14648,7 @@ function renderBankImportPreview(){
     <div style="background:var(--bg3);border-radius:10px;padding:10px 12px;margin-bottom:12px">
       <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t2);padding:2px 0"><span>➕ New (will be added)</span><span class="mono" style="font-weight:700;color:var(--acc)">${classified.new.length}</span></div>
       <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t2);padding:2px 0"><span>✓ Already logged (skipped)</span><span class="mono" style="color:var(--t3)">${classified.duplicate.length}</span></div>
+      ${(classified.internal&&classified.internal.length)?`<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t2);padding:2px 0"><span>🔄 Internal transfers (excluded)</span><span class="mono" style="color:var(--b)">${classified.internal.length}</span></div>`:''}
       ${classified.new.length?`
       <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t2);padding:2px 0"><span>🏷 Auto-categorised (≥${AUTO_APPLY_THRESHOLD}% confidence)</span><span class="mono" style="color:var(--acc)">${autoCatCount}</span></div>
       <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t2);padding:2px 0"><span>✎ Need your review</span><span class="mono" style="color:${needsReviewCount?'var(--y)':'var(--t3)'}">${needsReviewCount}</span></div>
@@ -14441,7 +14656,19 @@ function renderBankImportPreview(){
       `:''}
     </div>
 
-    ${classified.new.length?`<div style="font-size:10px;color:var(--acc);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 4px">➕ New (${classified.new.length})</div>${classified.new.map((r,i)=>rowHtml(r,i,'new')).join('')}`:'<div class="empty"><div class="empty-ico">✓</div><div class="empty-txt">Nothing new to import — everything is already logged.</div></div>'}
+    ${(classified.internal&&classified.internal.length)?`<div style="background:rgba(90,170,144,.06);border:0.5px solid rgba(90,170,144,.22);border-radius:12px;padding:12px 14px;margin-bottom:12px">
+      <div style="font-size:12px;font-weight:600;color:var(--t);margin-bottom:4px">🔄 ${classified.internal.length} internal transfer${classified.internal.length===1?'':'s'} excluded</div>
+      <div style="font-size:10px;color:var(--t2);line-height:1.5">These look like movements between your own accounts (e.g. Westpac Life → Choice). They don't change your net worth, so they're left out to keep spending and income accurate. Tap below if any of these are actually real spending or outside income you want to include.</div>
+      <details style="margin-top:8px"><summary style="font-size:10px;color:var(--b);cursor:pointer">Review the ${classified.internal.length} excluded transfer${classified.internal.length===1?'':'s'}</summary>
+        <div style="margin-top:6px">${classified.internal.map((r,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-top:0.5px solid var(--bdr)">
+          <div style="flex:1;min-width:0"><div style="font-size:11px;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(r._narrative||r.payee)}</div><div style="font-size:9px;color:var(--t3)">${r.date} · ${r.dir}</div></div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--t3);flex-shrink:0">${r.dir==='in'?'+':'-'}${fmtD(r.amt)}</div>
+          <button class="btn btn-ghost btn-xs" style="flex-shrink:0" onclick="includeInternalTransfer(${i})">Include</button>
+        </div>`).join('')}</div>
+      </details>
+    </div>`:''}
+
+    ${classified.new.length?`<div style="font-size:10px;color:var(--acc);text-transform:uppercase;letter-spacing:.07em;margin:12px 0 4px">➕ New (${classified.new.length})</div>${classified.new.map((r,i)=>rowHtml(r,i,'new')).join('')}`:`<div class="empty"><div class="empty-ico">✓</div><div class="empty-txt">Nothing new to import — everything is already logged${(classified.internal&&classified.internal.length)?' or excluded as an internal transfer':''}.</div></div>`}
 
     ${classified.duplicate.length?`<details style="margin-top:12px"><summary style="font-size:10px;color:var(--t3);cursor:pointer">Already logged (${classified.duplicate.length}) — click to expand</summary><div style="margin-top:4px">${classified.duplicate.slice(0,20).map((r,i)=>rowHtml(r,i,'dup')).join('')}${classified.duplicate.length>20?`<div style="font-size:10px;color:var(--t3);padding:6px 0">+ ${classified.duplicate.length-20} more…</div>`:''}</div></details>`:''}
 
@@ -14451,6 +14678,21 @@ function renderBankImportPreview(){
     <button class="btn btn-ghost btn-sm btn-full" style="margin-top:6px" onclick="closeSheet()">Cancel</button>
   `;
 }
+// v2.7.36 — move an excluded internal transfer into the "new" bucket to include it
+function includeInternalTransfer(idx){
+  if(!_pendingBankImport||!_pendingBankImport.classified.internal)return;
+  const row=_pendingBankImport.classified.internal[idx];
+  if(!row)return;
+  // Re-categorise it as a normal transaction (strip the internal flag)
+  row._internal=false;
+  row.cat=row.dir==='in'?'income':'other';
+  row._catSource='user-included';
+  row._confidence=50; // will go to review queue
+  _pendingBankImport.classified.new.push(row);
+  _pendingBankImport.classified.internal.splice(idx,1);
+  renderBankImportPreview();
+}
+
 function confirmBankImport(){
   if(!_pendingBankImport)return;
   const {classified,bank}=_pendingBankImport;
