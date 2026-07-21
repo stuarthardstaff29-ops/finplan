@@ -1157,6 +1157,9 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
         <button class="btn btn-ghost btn-sm" style="flex:1;min-width:0" onclick="toggleArchivedGoals()">📁 Archived</button>
       </div>
 
+      <!-- v2.7.32 — round-ups control -->
+      <div id="goals-roundup-card"></div>
+
       <!-- Section label -->
       <div style="display:flex;justify-content:space-between;align-items:center;padding:0 4px;margin:0 0 10px">
         <div style="font-size:10px;color:var(--t3);letter-spacing:.16em;font-weight:600;text-transform:uppercase">Active goals</div>
@@ -2014,6 +2017,8 @@ function syncGCFG(){
   });
   // Also rebuild goalState so legacy code reading it sees current data (not ghosts).
   if(typeof rebuildGoalStateFromGoals==='function')rebuildGoalStateFromGoals();
+  // v2.7.31: keep payday plans consistent (prune deleted goals, refresh renamed labels)
+  if(typeof syncPaydayPlans==='function')syncPaydayPlans();
 }
 
 const AI_QUICK=['Am I on track for university?','Where should I cut spending?','Should I rebalance my portfolio?','How do I grow savings faster?','Is my investment strategy good?','What should I prioritise this month?','Am I investing enough?','Full financial health check'];
@@ -2109,6 +2114,19 @@ let S={
   },
   paydayDistributed:{},  // {transactionId: {source,date,allocations:[{key,label,amount,type,ref}]}}
   paydayLog:[],          // legacy — kept for back-compat, no longer written to
+  // v2.7.31 — Auto-contribute rules: scheduled monthly transfers into goals.
+  // Each: {id, goalId, amount, dayOfMonth, active, lastFired:'YYYY-MM', createdAt}
+  // On the trigger day, a PENDING contribution is created for user confirmation.
+  autoContributeRules:[],
+  pendingContributions:[], // [{id, ruleId, goalId, amount, dueDate, createdAt}]
+  // v2.7.32 — Round-ups: opt-in spare-change savings. Every debit rounds up to the
+  // nearest dollar; the spare accumulates in roundupPool and is swept (with confirmation)
+  // to a chosen goal weekly.
+  roundupEnabled:false,
+  roundupGoalId:null,   // null = top-priority goal at sweep time
+  roundupPool:0,        // accumulated spare change awaiting sweep
+  roundupLastSweep:null,// YYYY-MM-DD of last sweep
+  roundupLog:[],        // [{ts, txnId, spare}] recent round-up captures (last 100)
   savingsRateHistory:[],
   catStreaks:{},
   nwMilestones:[],
@@ -2122,9 +2140,46 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.30';
+const APP_VERSION='2.7.32';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.32',
+    date:'2026-07-17',
+    title:'Goals Phase B (Wave 2) — round-ups, custom milestones, streaks',
+    sections:{
+      features:[
+        '🪙 **Round-ups.** Opt-in from the Goals page. Every purchase rounds up to the nearest dollar and the spare change accumulates. Once a week (when $1+ has built up), a prompt appears on your dashboard to sweep it into your chosen goal — one tap, nothing moves automatically. Pick a specific goal or let it flow to your top-priority one',
+        '🎯 **Custom milestones.** On any goal\'s detail view, add checkpoints like "$1,000 = book flights" (up to 5 per goal). When your savings cross the amount, you get confetti + a full-screen celebration. Milestones show as a checklist on the detail view with ✓ for ones you\'ve reached',
+        '🔥 **Contribution streaks.** Goals now track how many consecutive months you\'ve contributed. A "🔥 3mo" badge appears on the goal card and a full streak line shows on the detail view. Miss a month and it resets — a gentle nudge to keep the habit going'
+      ],
+      improvements:[
+        'Round-ups are computed from your actual spend transactions (including imported ones), so turning it on retroactively captures spare change from purchases since you enabled it — no need to log anything specially',
+        'The dashboard banner now handles both scheduled auto-contributions AND round-up sweeps, stacking them cleanly when both are ready',
+        'Streaks allow a one-month grace at the start of a new month — contributing in either the current or previous month keeps your streak alive, so you\'re not penalised for contributing on the 2nd instead of the 1st'
+      ],
+      fixes:[]
+    }
+  },
+  {
+    v:'2.7.31',
+    date:'2026-07-17',
+    title:'Goals Phase B (Wave 1) — payday, auto-contribute, goal detail view',
+    sections:{
+      features:[
+        '📅 **Per-goal detail view.** Tapping a goal card now opens a rich detail sheet: large progress ring, remaining + contribution count, pace verdict with projected finish date, a savings-over-time chart, a what-if slider, your auto-contribute rules, and recent contribution history. Edit / Add money buttons are right at the top',
+        '🎚 **What-if slider.** On any goal\'s detail view, drag to see how adding extra per month changes your finish date — "At $350/mo total, you\'d finish around Mar 2027 — that\'s 4 months sooner"',
+        '🔁 **Auto-contribute rules.** Set a recurring monthly contribution per goal (amount + day of month). On the trigger day, a prompt appears on your dashboard — one tap confirms the transfer, nothing moves without your OK. Rules can be paused, resumed, or deleted from the goal detail view',
+        '💸 **Pending contribution banner** on the dashboard. When auto-contribute rules fire, they surface as a mint banner at the top of your dashboard with Confirm / Skip per goal, plus "Confirm all" when multiple are waiting'
+      ],
+      improvements:[
+        'Payday distribution now routes goal allocations through the proper contribution system — each payday deposit into a goal is logged as a dated event with its source, and milestone crossings are checked (so hitting 50%/100% via payday triggers the celebration)',
+        'Payday plans now self-heal when goals change: if you delete a goal, it\'s pruned from every payday plan automatically; if you rename one, the plan label updates. No more ghost allocations pointing at goals that no longer exist',
+        'Auto-contribute uses a "confirm, don\'t auto-fire" model — pending contributions wait for your explicit OK rather than silently moving money, so a mis-configured rule can never drain a goal without you seeing it first'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'2.7.30',
     date:'2026-07-17',
@@ -3925,98 +3980,230 @@ function openCategoryDetail(catId){
 // 4. GOAL DETAIL
 // ═══════════════════════════════════════════════════════════
 function openGoalDetail(goalKey){
-  // v2.7.26: goals are now user-editable — tapping a card opens the edit modal
-  // (which contains Split / Archive / Delete + all the fields you'd want to change)
-  if(typeof openEditGoalModal==='function'){
-    openEditGoalModal(goalKey);
-    return;
-  }
-  // Fallback to legacy detail view (should never hit)
-  const g=GCFG[goalKey];const st=(S.goalState||{})[goalKey];
-  if(!g||!st){showToast('Goal not found');return;}
-  const pctDone=g.target>0?Math.min(100,Math.round(st.saved/g.target*100)):0;
-  const remaining=Math.max(0,g.target-st.saved);
-  // Contribution history from paydayDistributed
-  const contribs=[];
-  Object.values(S.paydayDistributed||{}).forEach(d=>{
-    (d.allocations||[]).forEach(a=>{
-      if(a.type==='goal'&&a.ref===goalKey&&a.amount>0){
-        contribs.push({date:d.txnDate||d.date,amt:a.amount});
-      }
-    });
-  });
-  contribs.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
-  // Sparkline: cumulative saved over time
+  const g=(typeof goalById==='function')?goalById(goalKey):null;
+  if(!g){showToast('Goal not found');return;}
+  const saved=g.saved||0, target=g.target||0;
+  const pctDone=target>0?Math.min(100,Math.round(saved/target*100)):0;
+  const remaining=Math.max(0,target-saved);
+  const health=(typeof computeGoalHealth==='function')?computeGoalHealth(goalKey):null;
+  // Build contribution history from the goal's own log (source of truth)
+  const contribs=(g.log||[]).filter(e=>e.ts&&(e.amount||0)!==0)
+    .map(e=>({date:new Date(e.ts).toISOString().slice(0,10),amt:e.amount,source:e.source||'manual',note:e.note||''}))
+    .sort((a,b)=>a.date.localeCompare(b.date));
+  // Cumulative saved-over-time for the chart
   const cumulative=[];let running=0;
-  contribs.forEach(c=>{running+=c.amt;cumulative.push(running);});
-  // Pace analysis: months since first contribution vs progress
-  let paceMsg='';let projectedDate='';
-  if(contribs.length>=2){
-    const first=new Date(contribs[0].date+'T00:00:00');
-    const now=new Date();
-    const monthsElapsed=Math.max(1,(now-first)/(1000*60*60*24*30.44));
-    const perMonth=st.saved/monthsElapsed;
-    if(perMonth>0){
-      const monthsRemaining=remaining/perMonth;
-      const eta=new Date(now.getTime()+monthsRemaining*30.44*24*60*60*1000);
-      projectedDate=eta.toISOString().slice(0,10);
-      paceMsg=`At ${fmtD(Math.round(perMonth))}/month current pace, you'll hit target on ${projectedDate}.`;
-    }
-  }else{
-    paceMsg='Not enough contribution history yet to project. Distribute a few paydays to see pace.';
+  contribs.forEach(c=>{running+=c.amt;cumulative.push(Math.max(0,running));});
+  // If there's a starting balance not captured in the log, seed the line
+  const loggedTotal=contribs.reduce((a,c)=>a+c.amt,0);
+  if(loggedTotal<saved&&cumulative.length){
+    const seed=saved-loggedTotal;
+    for(let i=0;i<cumulative.length;i++)cumulative[i]+=seed;
   }
-  // Suggested increase if deadline set
-  let suggestedMsg='';
-  if(g.due&&remaining>0){
-    const dueDate=new Date(g.due+'-01T00:00:00');
-    const now=new Date();
-    const monthsToDeadline=Math.max(1,(dueDate-now)/(1000*60*60*24*30.44));
-    const neededPerMonth=remaining/monthsToDeadline;
-    suggestedMsg=`To hit ${g.due} deadline, you need ${fmtD(Math.round(neededPerMonth))}/month from now.`;
-  }
-  // SVG progress ring
-  const ringR=48,ringC=2*Math.PI*ringR;
-  const ringFill=ringC*pctDone/100;
+  // Auto-contribute rules for this goal
+  const rules=(S.autoContributeRules||[]).filter(r=>r.goalId===goalKey);
+  // What-if: base monthly pace from health, slider adds extra
+  const basePace=health&&health.monthlyPace>0?Math.round(health.monthlyPace):0;
+  // v2.7.32 — streak + custom milestones
+  const streak=(typeof goalContributionStreak==='function')?goalContributionStreak(goalKey):0;
+  const milestones=Array.isArray(g.customMilestones)?g.customMilestones.slice().sort((a,b)=>a.amount-b.amount):[];
+  // Ring
+  const ringR=48,ringC=2*Math.PI*ringR,ringFill=ringC*pctDone/100;
+  const verdictColor=g.color||'var(--acc)';
 
-  openDetail(`
-    <div class="detail-hero-wrap detail-hero-goal">
-      <div class="detail-goal-ring">
+  showSheet(`${g.icon} ${g.label}`,`
+    <div style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:4px 0 8px">
+      <div style="position:relative;width:130px;height:130px;margin-bottom:10px">
         <svg viewBox="0 0 120 120" style="width:130px;height:130px;transform:rotate(-90deg)">
-          <circle cx="60" cy="60" r="${ringR}" fill="none" stroke="var(--bg3)" stroke-width="8"/>
-          <circle cx="60" cy="60" r="${ringR}" fill="none" stroke="${g.col||'var(--acc)'}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${ringFill} ${ringC}" style="filter:drop-shadow(0 0 12px ${g.col||'var(--acc)'}66)"/>
+          <circle cx="60" cy="60" r="${ringR}" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="9"/>
+          <circle cx="60" cy="60" r="${ringR}" fill="none" stroke="${verdictColor}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${ringFill} ${ringC}" style="filter:drop-shadow(0 0 10px ${verdictColor}55);transition:stroke-dasharray .6s cubic-bezier(.4,0,.2,1)"/>
         </svg>
-        <div class="detail-goal-ring-pct">${pctDone}%</div>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+          <div style="font-size:26px;font-weight:800;color:var(--t);line-height:1">${pctDone}%</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:2px">complete</div>
+        </div>
       </div>
-      <div class="detail-hero-label">Goal</div>
-      <div class="detail-hero-title">${g.label}</div>
-      <div class="detail-hero-amt">${fmtD(st.saved)}</div>
-      <div class="detail-hero-sub">of ${fmtD(g.target)} target${g.due?' · due '+g.due:''}</div>
+      <div style="font-size:24px;font-weight:800;color:var(--t);font-variant-numeric:tabular-nums">${fmtD(saved)}</div>
+      <div style="font-size:12px;color:var(--t2);margin-top:2px">of ${fmtD(target)}${g.deadline?' · due '+g.deadline:''}</div>
+      ${streak>=2?`<div style="margin-top:8px;font-size:11px;font-weight:600;color:var(--y);background:rgba(240,160,48,.12);padding:4px 12px;border-radius:20px">🔥 ${streak}-month contribution streak</div>`:''}
     </div>
 
-    <div class="detail-metrics">
-      <div class="detail-metric"><div class="detail-metric-l">Remaining</div><div class="detail-metric-v">${fmtD(remaining)}</div></div>
-      <div class="detail-metric"><div class="detail-metric-l">Contributions</div><div class="detail-metric-v">${contribs.length}</div></div>
+    <div style="display:flex;gap:8px;margin:8px 0 14px">
+      <button class="btn btn-acc btn-sm" style="flex:1" onclick="closeSheet();openQuickAddModal('${goalKey}')">+ Add money</button>
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeSheet();openEditGoalModal('${goalKey}')">Edit goal</button>
     </div>
 
-    ${typeof buildGoalIntelligenceCard==='function'?buildGoalIntelligenceCard(goalKey):`<div class="detail-card detail-card-accent">
-      <div class="detail-card-title">Pace analysis</div>
-      <div class="detail-card-body">${paceMsg}</div>
-      ${suggestedMsg?`<div class="detail-card-body" style="margin-top:6px;color:var(--y)">${suggestedMsg}</div>`:''}
-    </div>`}
-    ${cumulative.length>1?`<div class="detail-card"><div class="detail-card-title">Cumulative progress</div>${sparklineSvg(cumulative,{width:280,height:60,color:g.col||'var(--acc)'})}</div>`:''}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <div style="background:var(--glass);border:0.5px solid var(--bdr);border-radius:12px;padding:12px">
+        <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em">Remaining</div>
+        <div style="font-size:17px;font-weight:700;color:var(--t);margin-top:3px">${fmtD(remaining)}</div>
+      </div>
+      <div style="background:var(--glass);border:0.5px solid var(--bdr);border-radius:12px;padding:12px">
+        <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em">Contributions</div>
+        <div style="font-size:17px;font-weight:700;color:var(--t);margin-top:3px">${contribs.length}</div>
+      </div>
+    </div>
 
-    ${contribs.length?`<div class="detail-card">
-      <div class="detail-card-title" style="margin-bottom:8px">Recent contributions</div>
-      ${contribs.slice(-8).reverse().map(c=>`<div class="detail-txn-row">
-        <div style="font-size:12px;color:var(--t)">${fmtDate(c.date)}</div>
-        <div style="font-size:13px;font-weight:600;color:var(--acc)">+${fmtD(c.amt)}</div>
-      </div>`).join('')}
+    ${health&&health.verdictLabel?`<div style="background:${health.verdict==='behind'||health.verdict==='at-risk'?'rgba(240,160,48,.06)':'rgba(0,229,153,.05)'};border:0.5px solid ${health.verdict==='behind'||health.verdict==='at-risk'?'rgba(240,160,48,.22)':'rgba(0,229,153,.20)'};border-radius:12px;padding:13px 15px;margin-bottom:12px">
+      <div style="font-size:12px;font-weight:600;color:var(--t);margin-bottom:3px">${health.verdictIcon||''} ${health.verdictLabel}</div>
+      ${health.monthlyRequired!=null&&remaining>0?`<div style="font-size:11px;color:var(--t2);line-height:1.55">Need <strong style="color:var(--t)">${fmtD(health.monthlyRequired)}/mo</strong> to hit your deadline.${basePace>0?` You're averaging <strong style="color:${basePace>=health.monthlyRequired?'var(--acc)':'var(--y)'}">${fmtD(basePace)}/mo</strong>.`:''}</div>`:''}
+      ${health.projectedDate&&remaining>0?`<div style="font-size:11px;color:var(--t3);margin-top:4px">At current pace: finish around <strong style="color:var(--t2)">${fmtDate(health.projectedDate)}</strong></div>`:''}
     </div>`:''}
 
-    <div class="detail-actions">
-      <button class="btn btn-acc btn-full" onclick="closeDetail();showPgFromMore('payday')">Distribute income to goals</button>
+    ${cumulative.length>1?`<div style="background:var(--glass);border:0.5px solid var(--bdr);border-radius:14px;padding:14px 14px 10px;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Savings over time</div>
+      ${sparklineSvg(cumulative,{width:290,height:64,color:verdictColor})}
+    </div>`:''}
+
+    <!-- What-if slider -->
+    ${remaining>0?`<div style="background:var(--glass);border:0.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">What if I add extra?</div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--t2)">Extra per month</span>
+        <span id="whatif-amt" style="font-size:16px;font-weight:700;color:var(--acc);font-variant-numeric:tabular-nums">${fmtD(0)}</span>
+      </div>
+      <input type="range" id="whatif-slider" min="0" max="1000" step="25" value="0" style="width:100%;accent-color:${verdictColor}" oninput="updateWhatIf('${goalKey}',${basePace},${remaining})">
+      <div id="whatif-result" style="font-size:12px;color:var(--t2);line-height:1.55;margin-top:10px">${basePace>0?`At your current ${fmtD(basePace)}/mo pace, drag the slider to see how extra contributions change your finish date.`:'Add a monthly amount to project a finish date.'}</div>
+    </div>`:`<div style="background:rgba(0,229,153,.06);border:0.5px solid rgba(0,229,153,.25);border-radius:14px;padding:16px;margin-bottom:12px;text-align:center">
+      <div style="font-size:15px;font-weight:700;color:var(--acc)">🎯 Goal reached!</div>
+      <div style="font-size:12px;color:var(--t2);margin-top:4px">You've saved ${fmtD(saved)}. Consider raising the target, or archive this goal.</div>
+    </div>`}
+
+    <!-- Auto-contribute rules -->
+    <div style="background:var(--glass);border:0.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${rules.length?'10px':'8px'}">
+        <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em">Auto-contribute</div>
+        <button class="btn btn-ghost btn-xs" onclick="openAutoRuleModal('${goalKey}')">+ Add rule</button>
+      </div>
+      ${rules.length?rules.map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-top:0.5px solid var(--bdr)">
+        <div style="min-width:0">
+          <div style="font-size:13px;font-weight:600;color:var(--t)">${fmtD(r.amount)} / month</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:1px">On day ${r.dayOfMonth} · ${r.active?'<span style="color:var(--acc)">Active</span>':'<span style="color:var(--t3)">Paused</span>'}</div>
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          <button class="btn btn-ghost btn-xs" onclick="toggleAutoRule('${r.id}');closeSheet();openGoalDetail('${goalKey}')">${r.active?'Pause':'Resume'}</button>
+          <button class="btn btn-r btn-xs" onclick="deleteAutoRule('${r.id}');closeSheet();openGoalDetail('${goalKey}')">🗑</button>
+        </div>
+      </div>`).join(''):`<div style="font-size:11px;color:var(--t3);line-height:1.5">Set up a recurring monthly contribution. On the chosen day, you'll get a one-tap prompt to confirm the transfer.</div>`}
     </div>
+
+    <!-- v2.7.32 — Custom milestones -->
+    <div style="background:var(--glass);border:0.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${milestones.length?'10px':'8px'}">
+        <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em">Milestones</div>
+        <button class="btn btn-ghost btn-xs" onclick="openMilestoneModal('${goalKey}')">+ Add</button>
+      </div>
+      ${milestones.length?milestones.map(m=>{
+        const hit=!!m.hit;
+        const reached=(g.saved||0)>=m.amount;
+        return`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:0.5px solid var(--bdr)">
+          <div style="width:24px;height:24px;border-radius:50%;background:${reached?'rgba(0,229,153,.15)':'rgba(255,255,255,.04)'};display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;color:${reached?'var(--acc)':'var(--t3)'}">${reached?'✓':'○'}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:600;color:${reached?'var(--t)':'var(--t2)'}">${escapeHtml(m.label)}</div>
+            <div style="font-size:10px;color:var(--t3)">${fmtD(m.amount)}${hit?' · reached':''}</div>
+          </div>
+          <button class="btn btn-ghost btn-xs" style="flex-shrink:0" onclick="deleteCustomMilestone('${goalKey}','${m.id}');closeSheet();openGoalDetail('${goalKey}')">🗑</button>
+        </div>`;
+      }).join(''):`<div style="font-size:11px;color:var(--t3);line-height:1.5">Add custom checkpoints like "$1,000 = book flights". You'll get a celebration when your savings cross each one.</div>`}
+    </div>
+
+    ${contribs.length?`<div style="background:var(--glass);border:0.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:8px">
+      <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Recent contributions</div>
+      ${contribs.slice(-8).reverse().map(c=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:0.5px solid var(--bdr)">
+        <div style="min-width:0">
+          <div style="font-size:12px;color:var(--t)">${fmtDate(c.date)}</div>
+          ${c.note||c.source!=='manual'?`<div style="font-size:10px;color:var(--t3);margin-top:1px">${c.note||c.source}</div>`:''}
+        </div>
+        <div style="font-size:13px;font-weight:600;color:${c.amt>0?'var(--acc)':'var(--r)'};flex-shrink:0">${c.amt>0?'+':''}${fmtD(c.amt)}</div>
+      </div>`).join('')}
+    </div>`:''}
   `);
+}
+
+// What-if slider live update
+function updateWhatIf(goalKey,basePace,remaining){
+  const slider=document.getElementById('whatif-slider');
+  const amtEl=document.getElementById('whatif-amt');
+  const resEl=document.getElementById('whatif-result');
+  if(!slider||!amtEl||!resEl)return;
+  const extra=+slider.value;
+  amtEl.textContent=fmtD(extra);
+  const totalPace=basePace+extra;
+  if(totalPace<=0){
+    resEl.innerHTML='Add a monthly amount to project a finish date.';
+    return;
+  }
+  const monthsToFinish=remaining/totalPace;
+  const finish=new Date();finish.setMonth(finish.getMonth()+Math.ceil(monthsToFinish));
+  const finishStr=finish.toLocaleDateString('en-AU',{month:'short',year:'numeric'});
+  // Compare to base-pace finish
+  let comparison='';
+  if(basePace>0&&extra>0){
+    const baseMonths=remaining/basePace;
+    const saved=Math.round(baseMonths-monthsToFinish);
+    if(saved>=1)comparison=` — that's <strong style="color:var(--acc)">${saved} month${saved===1?'':'s'} sooner</strong>`;
+  }
+  resEl.innerHTML=`At <strong style="color:var(--t)">${fmtD(totalPace)}/mo</strong> total, you'd finish around <strong style="color:var(--acc)">${finishStr}</strong>${comparison}.`;
+}
+
+// Auto-rule creation modal
+function openAutoRuleModal(goalKey){
+  const g=(typeof goalById==='function')?goalById(goalKey):null;
+  if(!g)return;
+  const health=(typeof computeGoalHealth==='function')?computeGoalHealth(goalKey):null;
+  const suggested=health&&health.monthlyRequired?Math.ceil(health.monthlyRequired/10)*10:100;
+  openModal(`<div class="modal-hdr">
+    <div class="modal-title">Auto-contribute to ${escapeHtml(g.label)}</div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+  </div>
+  <div style="font-size:11px;color:var(--t2);line-height:1.55;margin-bottom:14px">Set up a recurring monthly contribution. On the chosen day each month, you'll get a one-tap prompt on your dashboard to confirm the transfer — nothing moves without your OK.</div>
+  <div class="lbl">Amount per month</div>
+  <input type="number" id="ar-amount" class="inp" placeholder="${suggested}" value="${suggested}" min="0" step="10">
+  <div class="lbl">Day of month</div>
+  <input type="number" id="ar-day" class="inp" placeholder="1" value="1" min="1" max="28">
+  <div style="font-size:10px;color:var(--t3);margin-top:-4px;margin-bottom:8px">Capped at 28 so every month has this day.</div>
+  <div style="display:flex;gap:8px;margin-top:14px">
+    <button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-acc btn-sm" style="flex:1" onclick="submitAutoRule('${goalKey}')">Create rule</button>
+  </div>`);
+}
+function submitAutoRule(goalKey){
+  const amount=+document.getElementById('ar-amount').value||0;
+  const day=+document.getElementById('ar-day').value||1;
+  if(amount<=0){showToast('Amount required');return;}
+  createAutoRule({goalId:goalKey,amount,dayOfMonth:day});
+  closeModal();
+  showToast('✓ Auto-contribute rule created');
+  openGoalDetail(goalKey);
+}
+
+// v2.7.32 — Custom milestone creation modal
+function openMilestoneModal(goalKey){
+  const g=(typeof goalById==='function')?goalById(goalKey):null;
+  if(!g)return;
+  const half=Math.round((g.target||1000)/2);
+  openModal(`<div class="modal-hdr">
+    <div class="modal-title">Add milestone to ${escapeHtml(g.label)}</div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+  </div>
+  <div style="font-size:11px;color:var(--t2);line-height:1.55;margin-bottom:14px">Custom checkpoints along the way to your target. When your savings cross the amount, you'll get a celebration. Great for tying savings to real events — "$1,000 = book flights".</div>
+  <div class="lbl">Milestone amount</div>
+  <input type="number" id="ms-amount" class="inp" placeholder="${half}" value="${half}" min="0" step="50">
+  <div class="lbl">Label</div>
+  <input type="text" id="ms-label" class="inp" placeholder="e.g. Book flights" maxlength="40">
+  <div style="display:flex;gap:8px;margin-top:14px">
+    <button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-acc btn-sm" style="flex:1" onclick="submitMilestone('${goalKey}')">Add milestone</button>
+  </div>`);
+}
+function submitMilestone(goalKey){
+  const amount=+document.getElementById('ms-amount').value||0;
+  const label=document.getElementById('ms-label').value.trim();
+  if(amount<=0){showToast('Amount required');return;}
+  if(!label){showToast('Label required');return;}
+  addCustomMilestone(goalKey,amount,label);
+  closeModal();
+  showToast('✓ Milestone added');
+  openGoalDetail(goalKey);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -6726,6 +6913,220 @@ function reorderGoal(fromIdx,toIdx){
   syncGCFG();save();
 }
 
+// ═══════════════════════════════════════════════════════════
+// v2.7.31 — AUTO-CONTRIBUTE RULES (scheduled monthly transfers into goals)
+// ═══════════════════════════════════════════════════════════
+function autoRuleById(id){return (S.autoContributeRules||[]).find(r=>r.id===id);}
+
+// ═══════════════════════════════════════════════════════════
+// v2.7.32 — CONTRIBUTION STREAKS (consecutive months with a contribution)
+// ═══════════════════════════════════════════════════════════
+// Returns the number of consecutive months (ending this month or last month)
+// that had at least one positive contribution to this goal.
+function goalContributionStreak(goalId){
+  const g=(typeof goalById==='function')?goalById(goalId):null;
+  if(!g||!Array.isArray(g.log))return 0;
+  // Collect the set of YYYY-MM months that had a positive contribution
+  const months=new Set();
+  g.log.forEach(e=>{
+    if((e.amount||0)>0&&e.ts){
+      months.add(new Date(e.ts).toISOString().slice(0,7));
+    }
+  });
+  if(!months.size)return 0;
+  // Walk backwards from this month. Allow the streak to be "current" if either
+  // this month or last month has a contribution (grace for early in the month).
+  const now=new Date();
+  let cursor=new Date(now.getFullYear(),now.getMonth(),1);
+  const thisMonth=cursor.toISOString().slice(0,7);
+  const lastMonth=new Date(now.getFullYear(),now.getMonth()-1,1).toISOString().slice(0,7);
+  if(!months.has(thisMonth)&&!months.has(lastMonth))return 0;
+  // If this month is empty but last month has one, start counting from last month
+  if(!months.has(thisMonth))cursor=new Date(now.getFullYear(),now.getMonth()-1,1);
+  let streak=0;
+  while(months.has(cursor.toISOString().slice(0,7))){
+    streak++;
+    cursor=new Date(cursor.getFullYear(),cursor.getMonth()-1,1);
+  }
+  return streak;
+}
+
+// ── Custom milestone CRUD ──
+function addCustomMilestone(goalId,amount,label){
+  const g=goalById(goalId);if(!g)return;
+  if(!Array.isArray(g.customMilestones))g.customMilestones=[];
+  if(g.customMilestones.length>=5){showToast('Max 5 milestones per goal');return;}
+  g.customMilestones.push({
+    id:'ms_'+Date.now().toString(36),
+    amount:+amount||0,
+    label:label||'Milestone',
+    hit:(g.saved||0)>=(+amount||0)?Date.now():null
+  });
+  g.customMilestones.sort((a,b)=>a.amount-b.amount);
+  save();
+}
+function deleteCustomMilestone(goalId,msId){
+  const g=goalById(goalId);if(!g||!Array.isArray(g.customMilestones))return;
+  g.customMilestones=g.customMilestones.filter(m=>m.id!==msId);
+  save();
+}
+
+function createAutoRule({goalId,amount,dayOfMonth}){
+  if(!Array.isArray(S.autoContributeRules))S.autoContributeRules=[];
+  const rule={
+    id:'ar_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6),
+    goalId,
+    amount:+amount||0,
+    dayOfMonth:Math.min(28,Math.max(1,+dayOfMonth||1)), // cap at 28 so every month has the day
+    active:true,
+    lastFired:null,
+    createdAt:Date.now()
+  };
+  S.autoContributeRules.push(rule);
+  save();
+  return rule;
+}
+function updateAutoRule(id,patch){
+  const r=autoRuleById(id);if(!r)return null;
+  Object.assign(r,patch);save();return r;
+}
+function deleteAutoRule(id){
+  S.autoContributeRules=(S.autoContributeRules||[]).filter(r=>r.id!==id);
+  // Also drop any pending contributions from this rule
+  S.pendingContributions=(S.pendingContributions||[]).filter(p=>p.ruleId!==id);
+  save();
+}
+function toggleAutoRule(id){
+  const r=autoRuleById(id);if(!r)return;
+  r.active=!r.active;save();
+}
+
+// Engine: run on launch. For each active rule, if we're on/past its day this month
+// and it hasn't fired this month, create a PENDING contribution for confirmation.
+function processAutoContributeRules(){
+  if(!Array.isArray(S.autoContributeRules))return;
+  if(!Array.isArray(S.pendingContributions))S.pendingContributions=[];
+  const now=new Date();
+  const ym=now.toISOString().slice(0,7); // 'YYYY-MM'
+  const dom=now.getDate();
+  S.autoContributeRules.forEach(rule=>{
+    if(!rule.active)return;
+    if(rule.lastFired===ym)return; // already fired this month
+    // Only fire once we've reached the rule's day of month
+    if(dom<rule.dayOfMonth)return;
+    // Make sure the goal still exists
+    const g=(typeof goalById==='function')?goalById(rule.goalId):null;
+    if(!g){return;} // goal deleted — rule is dormant (cleaned up in UI)
+    // Skip if a pending contribution for this rule+month already exists
+    const exists=S.pendingContributions.some(p=>p.ruleId===rule.id&&p.dueDate.slice(0,7)===ym);
+    if(exists)return;
+    S.pendingContributions.push({
+      id:'pc_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,5),
+      ruleId:rule.id,
+      goalId:rule.goalId,
+      amount:rule.amount,
+      dueDate:now.toISOString().slice(0,10),
+      createdAt:Date.now()
+    });
+    rule.lastFired=ym;
+  });
+  save();
+}
+
+function confirmPendingContribution(pendingId){
+  const p=(S.pendingContributions||[]).find(x=>x.id===pendingId);
+  if(!p)return;
+  const g=(typeof goalById==='function')?goalById(p.goalId):null;
+  if(g){
+    const prevPct=g.target>0?(g.saved||0)/g.target*100:0;
+    contributeGoal(p.goalId,p.amount,{source:'auto-rule',note:'Scheduled auto-contribution'});
+    const newPct=g.target>0?(g.saved||0)/g.target*100:0;
+    if(typeof checkMilestone==='function')checkMilestone(p.goalId,prevPct,newPct);
+  }
+  S.pendingContributions=(S.pendingContributions||[]).filter(x=>x.id!==pendingId);
+  save();
+  refreshAll?.({snapshotNW:true});
+  showToast(`✓ +${fmtD(p.amount)} to ${g?g.label:'goal'}`);
+}
+function dismissPendingContribution(pendingId){
+  S.pendingContributions=(S.pendingContributions||[]).filter(x=>x.id!==pendingId);
+  save();
+  if(typeof buildDash==='function'&&currentPg==='dash')buildDash();
+}
+function confirmAllPending(){
+  const pending=[...(S.pendingContributions||[])];
+  pending.forEach(p=>confirmPendingContribution(p.id));
+}
+
+// ═══════════════════════════════════════════════════════════
+// v2.7.32 — ROUND-UPS (opt-in spare-change savings, batched weekly)
+// ═══════════════════════════════════════════════════════════
+// Computes total round-up spare from debit transactions since the last sweep.
+// Round-up = ceil(amt) - amt for each spend transaction (never for transfers/income).
+function computeRoundupPool(){
+  if(!S.roundupEnabled)return 0;
+  const since=S.roundupLastSweep||S.roundupEnabledAt||'2000-01-01';
+  let pool=0;
+  (S.transactions||[]).forEach(t=>{
+    if(t.dir!=='out')return;
+    if(t.cat==='transfer'||t.cat==='income')return;
+    if(t.isReconciliation||t.isRoundup)return;
+    if((t.date||'')<since)return;
+    const spare=Math.ceil(t.amt)-t.amt;
+    if(spare>0.001&&spare<1)pool+=spare;
+  });
+  return Math.round(pool*100)/100;
+}
+
+// Should we prompt for a sweep? True if enabled, pool >= $1, and it's been 7+ days
+// since last sweep (or never swept).
+function shouldPromptRoundupSweep(){
+  if(!S.roundupEnabled)return false;
+  const pool=computeRoundupPool();
+  if(pool<1)return false;
+  if(!S.roundupLastSweep)return true;
+  const last=new Date(S.roundupLastSweep+'T00:00:00');
+  const daysSince=(Date.now()-last.getTime())/(1000*60*60*24);
+  return daysSince>=7;
+}
+
+// Execute the sweep: move the pool into the chosen goal (or top-priority goal).
+function sweepRoundups(){
+  const pool=computeRoundupPool();
+  if(pool<0.01){showToast('Nothing to sweep yet');return;}
+  // Determine target goal
+  let goalId=S.roundupGoalId;
+  if(!goalId||!goalById(goalId)){
+    // Default: top-priority active goal that isn't complete
+    const candidates=activeGoals().filter(g=>(g.saved||0)<(g.target||0)).sort((a,b)=>(a.priority||0)-(b.priority||0));
+    goalId=candidates.length?candidates[0].id:(activeGoals()[0]?.id);
+  }
+  if(!goalId){showToast('No goal to sweep into');return;}
+  const g=goalById(goalId);
+  const prevPct=g&&g.target>0?(g.saved||0)/g.target*100:0;
+  contributeGoal(goalId,pool,{source:'roundup',note:'Round-up spare change'});
+  const newPct=g&&g.target>0?(g.saved||0)/g.target*100:0;
+  if(typeof checkMilestone==='function')checkMilestone(goalId,prevPct,newPct);
+  S.roundupLastSweep=today();
+  save();
+  refreshAll?.({snapshotNW:true});
+  if(typeof showSuccessMoment==='function'){
+    showSuccessMoment({icon:'🪙',title:'Round-ups swept',subtitle:`${fmtD(pool)} → ${g?g.label:'goal'}`,detail:'Spare change put to work'});
+  }else{
+    showToast(`🪙 ${fmtD(pool)} swept to ${g?g.label:'goal'}`);
+  }
+}
+
+function toggleRoundups(on){
+  S.roundupEnabled=!!on;
+  if(on&&!S.roundupEnabledAt)S.roundupEnabledAt=today();
+  save();
+  if(typeof buildSettingsPage==='function')buildSettingsPage();
+}
+function setRoundupGoal(goalId){
+  S.roundupGoalId=goalId||null;save();
+}
+
 // Parse deadline strings like "Nov 2026", "Jan 2028" into Date at end-of-month
 function parseGoalDeadline(due){
   if(!due)return null;
@@ -7857,6 +8258,7 @@ function launchApp(){
   if(typeof runV27Migrations==='function')runV27Migrations();
   if(typeof runV273Migrations==='function')runV273Migrations();
   if(typeof ensureGoalsMigrated==='function')ensureGoalsMigrated();
+  if(typeof processAutoContributeRules==='function')processAutoContributeRules();
   if(typeof ensureAiConversations==='function')ensureAiConversations();
   if(typeof autoDailyCheckIn==='function')autoDailyCheckIn();
   buildDash();buildStaticTimeline();buildAiWelcome();buildThemeGrid();buildSettingsPage();
@@ -9737,10 +10139,63 @@ function buildDash(){
     }
   });
   flush();
-  wrap.innerHTML=html;
+  // v2.7.31 — prepend pending auto-contribution prompts (if any are due)
+  const pendingBanner=buildPendingContribBanner();
+  wrap.innerHTML=pendingBanner+html;
   // Fire post-mount hooks for widgets that need them (charts etc.)
   layout.forEach(item=>{const w=DASH_WIDGETS[item.id];if(w&&w.post)try{w.post();}catch(e){console.warn('widget post',item.id,e);}});
   if(typeof renderContextPanel==='function')renderContextPanel();
+}
+
+// v2.7.31 — Dashboard banner for pending auto-contribute prompts awaiting confirmation
+function buildPendingContribBanner(){
+  const pending=S.pendingContributions||[];
+  // v2.7.32 — also surface round-up sweep prompt
+  const roundupReady=(typeof shouldPromptRoundupSweep==='function')&&shouldPromptRoundupSweep();
+  const roundupPool=roundupReady?computeRoundupPool():0;
+  if(!pending.length&&!roundupReady)return '';
+  let banner='';
+  // Round-up sweep card
+  if(roundupReady){
+    let targetLabel='top-priority goal';
+    if(S.roundupGoalId&&goalById(S.roundupGoalId))targetLabel=goalById(S.roundupGoalId).label;
+    else{const c=activeGoals().filter(g=>(g.saved||0)<(g.target||0)).sort((a,b)=>(a.priority||0)-(b.priority||0))[0];if(c)targetLabel=c.label;}
+    banner+=`<div style="margin-bottom:12px"><div style="background:linear-gradient(135deg,rgba(240,160,48,.08),rgba(240,160,48,.03));border:0.5px solid rgba(240,160,48,.25);border-radius:16px;padding:14px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <div style="min-width:0">
+          <div style="font-size:13px;font-weight:700;color:var(--t)">🪙 ${fmtD(roundupPool)} in round-ups ready</div>
+          <div style="font-size:11px;color:var(--t2);margin-top:2px">Sweep spare change into ${escapeHtml(targetLabel)}</div>
+        </div>
+        <button class="btn btn-acc btn-xs" style="flex-shrink:0" onclick="sweepRoundups();buildDash()">Sweep</button>
+      </div>
+    </div></div>`;
+  }
+  if(!pending.length)return banner;
+  const total=pending.reduce((a,p)=>a+(p.amount||0),0);
+  const rows=pending.map(p=>{
+    const g=(typeof goalById==='function')?goalById(p.goalId):null;
+    if(!g)return '';
+    return`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-top:0.5px solid var(--bdr)">
+      <div style="width:32px;height:32px;border-radius:10px;background:${g.color}22;color:${g.color};display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">${g.icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;color:var(--t)">${fmtD(p.amount)} → ${escapeHtml(g.label)}</div>
+        <div style="font-size:10px;color:var(--t3)">Scheduled contribution</div>
+      </div>
+      <div style="display:flex;gap:5px;flex-shrink:0">
+        <button class="btn btn-acc btn-xs" onclick="confirmPendingContribution('${p.id}');buildDash()">Confirm</button>
+        <button class="btn btn-ghost btn-xs" onclick="dismissPendingContribution('${p.id}')">Skip</button>
+      </div>
+    </div>`;
+  }).join('');
+  banner+=`<div style="margin-bottom:12px"><div style="background:linear-gradient(135deg,rgba(0,229,153,.08),rgba(0,229,153,.03));border:0.5px solid rgba(0,229,153,.25);border-radius:16px;padding:14px 16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+      <div style="font-size:13px;font-weight:700;color:var(--t)">💸 ${pending.length} scheduled contribution${pending.length===1?'':'s'} ready</div>
+      ${pending.length>1?`<button class="btn btn-acc btn-xs" onclick="confirmAllPending();buildDash()">Confirm all</button>`:''}
+    </div>
+    <div style="font-size:11px;color:var(--t2);margin-bottom:4px">${fmtD(total)} total waiting for your OK</div>
+    ${rows}
+  </div></div>`;
+  return banner;
 }
 
 // ── Dashboard customiser sheet ───────────────────────────────
@@ -9828,9 +10283,41 @@ function resetDashLayout(){
 function buildGoalsPage(){
   ensureGoalsMigrated();
   buildGoalsHero();
+  buildRoundupCard();
   buildGoalsActiveList();
   buildGoalsArchivedList();
   buildGoalsTotals(); // legacy hidden block, kept for compat
+}
+
+// v2.7.32 — round-up control card on the Goals page
+function buildRoundupCard(){
+  const el=document.getElementById('goals-roundup-card');if(!el)return;
+  const on=!!S.roundupEnabled;
+  const pool=on?computeRoundupPool():0;
+  const goals=activeGoals();
+  let targetLabel='top-priority goal';
+  if(S.roundupGoalId&&goalById(S.roundupGoalId))targetLabel=goalById(S.roundupGoalId).label;
+  el.innerHTML=`<div style="background:var(--glass);border:0.5px solid var(--bdr);border-radius:14px;padding:14px 16px;margin-bottom:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <div style="min-width:0">
+        <div style="font-size:13px;font-weight:700;color:var(--t)">🪙 Round-ups</div>
+        <div style="font-size:11px;color:var(--t2);margin-top:2px;line-height:1.45">${on?`Spare change accumulates and sweeps weekly to ${escapeHtml(targetLabel)}.`:'Round every purchase up to the nearest dollar; save the difference.'}</div>
+      </div>
+      <button class="toggle-switch ${on?'on':''}" onclick="toggleRoundups(${!on})" style="flex-shrink:0"></button>
+    </div>
+    ${on?`<div style="margin-top:12px;padding-top:12px;border-top:0.5px solid var(--bdr)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span style="font-size:11px;color:var(--t3)">Accumulated since last sweep</span>
+        <span style="font-size:15px;font-weight:700;color:var(--acc)">${fmtD(pool)}</span>
+      </div>
+      <div class="lbl" style="margin-bottom:6px">Sweep into</div>
+      <select class="inp" style="margin-bottom:10px" onchange="setRoundupGoal(this.value);buildRoundupCard()">
+        <option value="">Top-priority goal (auto)</option>
+        ${goals.map(g=>`<option value="${g.id}" ${S.roundupGoalId===g.id?'selected':''}>${escapeHtml(g.label)}</option>`).join('')}
+      </select>
+      <button class="btn ${pool>=1?'btn-acc':'btn-ghost'} btn-sm btn-full" ${pool<0.01?'disabled style="opacity:.5"':''} onclick="sweepRoundups();buildGoalsPage()">Sweep ${fmtD(pool)} now</button>
+    </div>`:''}
+  </div>`;
 }
 
 function buildGoalsHero(){
@@ -9932,12 +10419,15 @@ function renderGoalCard(g){
   }else{
     meta=`${fmtDI(remaining)} to go`;
   }
+  // v2.7.32 — contribution streak badge
+  const streak=(typeof goalContributionStreak==='function')?goalContributionStreak(g.id):0;
+  const streakBadge=streak>=2?`<span style="font-size:9px;font-weight:600;color:var(--y);background:rgba(240,160,48,.12);padding:2px 6px;border-radius:6px;white-space:nowrap">🔥 ${streak}mo</span>`:'';
   return`<div class="goal-card ${cls}" onclick="openGoalDetail('${g.id}')">
     <div class="goal-icon" style="background:${g.color}22;color:${g.color}">${g.icon}</div>
     <div class="goal-main">
       <div class="goal-title-row">
         <div class="goal-title">${escapeHtml(g.label)}</div>
-        ${verdict}
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">${streakBadge}${verdict}</div>
       </div>
       <div class="goal-meta">${meta}</div>
       <div class="goal-track"><div class="goal-fill" style="width:${pct}%;background:${g.color}"></div></div>
@@ -10294,6 +10784,27 @@ function checkMilestone(key,prevPct,newPct){
       }
     }
   });
+  // v2.7.32 — custom amount-based milestones the user defined (e.g. "$1000 = book flights")
+  if(goal&&Array.isArray(goal.customMilestones)){
+    const saved=goal.saved||0;
+    const prevSaved=goal.target>0?(prevPct/100)*goal.target:saved; // approximate prior balance
+    goal.customMilestones.forEach(m=>{
+      if(!m.hit&&saved>=m.amount){
+        m.hit=Date.now();
+        fireConfetti();
+        if(typeof showSuccessMoment==='function'){
+          showSuccessMoment({
+            icon:'🎯',
+            title:m.label||'Milestone reached!',
+            subtitle:`${g.label} · ${fmtD(m.amount)}`,
+            detail:'Custom milestone hit'
+          });
+        }else{
+          showToast(`🎯 ${m.label||'Milestone'}: ${fmtD(m.amount)}`);
+        }
+      }
+    });
+  }
   save();
 }
 function fireConfetti(){
@@ -13688,11 +14199,42 @@ function markHistoricalIncomeDistributed(sourceKey){
 // Sinking funds are merged in dynamically so the plan auto-reflects the user's full budget.
 function computeAllocations(sourceKey,amount){
   const src=S.paydaySources?.[sourceKey];if(!src)return[];
-  const planItems=src.plan.map(p=>({...p,amount:Math.round(amount*p.pct/100*100)/100}));
-  // Active sinking funds: if a sourcePlanItem has type 'sinking' it stays; otherwise we render them as a separate cluster
-  // For simplicity, sinking funds are shown alongside the plan items with their own row, but allocations come from the plan only
-  // To include them in the % plan, add them via openSourceSettings.
+  // v2.7.31: prune plan items whose goal was deleted so ghosts don't get allocations
+  const validPlan=src.plan.filter(p=>{
+    if(p.type!=='goal')return true;
+    return (typeof goalById==='function')?!!goalById(p.ref):true;
+  });
+  const planItems=validPlan.map(p=>{
+    // Refresh the label from the current goal (in case it was renamed)
+    let label=p.label;
+    if(p.type==='goal'&&typeof goalById==='function'){
+      const g=goalById(p.ref);if(g)label=g.label;
+    }
+    return{...p,label,amount:Math.round(amount*p.pct/100*100)/100};
+  });
   return planItems;
+}
+
+// v2.7.31 — Keep payday plans consistent with the current goals list.
+// Prunes plan items pointing at deleted goals, refreshes labels for renamed goals.
+// Called on launch (via ensureGoalsMigrated) and after goal mutations.
+function syncPaydayPlans(){
+  const sources=S.paydaySources||{};
+  Object.values(sources).forEach(src=>{
+    if(!Array.isArray(src.plan))return;
+    src.plan=src.plan.filter(p=>{
+      if(p.type!=='goal')return true;
+      const g=(typeof goalById==='function')?goalById(p.ref):null;
+      return !!g; // drop items whose goal no longer exists
+    });
+    // Refresh labels for renamed goals
+    src.plan.forEach(p=>{
+      if(p.type==='goal'&&typeof goalById==='function'){
+        const g=goalById(p.ref);
+        if(g)p.label=g.label;
+      }
+    });
+  });
 }
 
 function openDistributeFlow(txnId){
@@ -13755,10 +14297,16 @@ function confirmDistribution(txnId){
   // Apply each allocation
   allocs.forEach(a=>{
     if(a.amount<=0)return;
-    if(a.type==='goal'&&S.goalState?.[a.ref]){
-      S.goalState[a.ref].saved=(S.goalState[a.ref].saved||0)+a.amount;
-      if(!S.goalState[a.ref].log)S.goalState[a.ref].log=[];
-      S.goalState[a.ref].log.push({amt:a.amount,date:today(),note:src.label+' payday'});
+    if(a.type==='goal'&&a.ref){
+      // v2.7.31: route through contributeGoal so the contribution is logged as a
+      // proper event (with source+note) AND milestone crossings get checked.
+      const g=(typeof goalById==='function')?goalById(a.ref):null;
+      if(g){
+        const prevPct=g.target>0?(g.saved||0)/g.target*100:0;
+        contributeGoal(a.ref,a.amount,{source:'payday',note:src.label+' payday'});
+        const newPct=g.target>0?(g.saved||0)/g.target*100:0;
+        if(typeof checkMilestone==='function')checkMilestone(a.ref,prevPct,newPct);
+      }
     }else if(a.type==='invest'){
       if(!S.contributions)S.contributions=[];
       S.contributions.unshift({id:uid(),ticker:S.selectedTicker||'VOO',amount:a.amount,units:null,price:null,date:today(),status:'pending',note:src.label+' payday allocation'});
