@@ -634,6 +634,30 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .ai-conv-header{background:var(--bg);padding:12px 14px;display:flex;align-items:center;gap:10px;border-bottom:0.5px solid var(--bdr)}
 .ai-messages{flex:1;min-height:0;overflow-y:auto;padding:14px 14px 22px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .ai-messages::-webkit-scrollbar{display:none}
+/* ── v2.7.33 — AI AUTOPILOT ── */
+.autopilot-card{background:linear-gradient(160deg,rgba(0,229,153,.07),rgba(10,18,14,.4));border:0.5px solid var(--bdr-acc2);border-radius:var(--rad-lg);padding:18px 16px;position:relative;overflow:hidden}
+.autopilot-hdr{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.autopilot-badge{width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;box-shadow:0 0 16px var(--accd2)}
+.autopilot-title{font-size:14px;font-weight:800;color:var(--t);letter-spacing:-.2px}
+.autopilot-sub{font-size:10px;color:var(--t3);margin-top:1px}
+.ap-insight{display:flex;gap:12px;padding:13px 0;border-top:0.5px solid var(--bdr)}
+.ap-insight:first-of-type{border-top:none}
+.ap-ico{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;background:rgba(255,255,255,.04)}
+.ap-ico.alert{background:rgba(229,106,90,.14)}
+.ap-ico.warn{background:rgba(240,160,48,.14)}
+.ap-ico.win{background:rgba(0,229,153,.14)}
+.ap-ico.info{background:rgba(90,170,144,.12)}
+.ap-body{flex:1;min-width:0}
+.ap-title{font-size:13px;font-weight:700;color:var(--t);line-height:1.3;margin-bottom:3px;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.ap-metric{font-size:10px;font-weight:600;padding:2px 7px;border-radius:6px;white-space:nowrap;flex-shrink:0;background:rgba(255,255,255,.05);color:var(--t2)}
+.ap-metric.alert{background:rgba(229,106,90,.14);color:var(--r)}
+.ap-metric.warn{background:rgba(240,160,48,.14);color:var(--y)}
+.ap-metric.win{background:rgba(0,229,153,.14);color:var(--acc)}
+.ap-text{font-size:11.5px;color:var(--t2);line-height:1.55}
+.ap-action{margin-top:8px}
+.ap-empty{text-align:center;padding:16px 8px;color:var(--t3);font-size:12px;line-height:1.6}
+.ap-narrate{margin-top:14px;padding-top:14px;border-top:0.5px solid var(--bdr)}
+.ap-narrate-body{font-size:12.5px;color:var(--t2);line-height:1.72;white-space:pre-wrap}
 /* ── v2.7.26 — V4 GOALS ── */
 .goal-card{display:flex;gap:14px;padding:16px;background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad-lg);margin-bottom:12px;cursor:pointer;transition:border-color var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out);position:relative;overflow:hidden}
 .goal-card:hover{border-color:var(--bdr-acc2)}
@@ -1673,6 +1697,18 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
       </div>
 
       <div class="card">
+        <div class="ctitle"><div class="ctitle-l">AI Autopilot — Claude API key (optional)</div></div>
+        <div style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:10px">The AI Autopilot works fully without any key — all insights are computed on-device. Adding a Claude key (from <strong style="color:var(--acc)">console.anthropic.com</strong>) unlocks richer natural-language briefings that narrate your insights. If left blank, briefings fall back to your Groq key.</div>
+        <label class="lbl">Claude API key</label>
+        <input type="password" class="inp" id="claude-key-inp" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
+        <div style="display:flex;gap:7px">
+          <button class="btn btn-acc" style="flex:1" onclick="saveClaudeKey()">Save key</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleClaudeKeyVis()">Show</button>
+        </div>
+        <div id="claude-key-status" style="font-size:11px;margin-top:8px;color:var(--t3)"></div>
+      </div>
+
+      <div class="card">
         <div class="ctitle"><div class="ctitle-l">Market prices — FMP API key (optional)</div></div>
         <div style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:10px">Optional. Get a free key at <strong style="color:var(--acc)">financialmodelingprep.com</strong> (250 requests/day).<br><br><strong style="color:var(--y)">What this gives you:</strong> end-of-day close prices (yesterday's close) for US-listed holdings (VOO, VYM, VYMI). This is <em>not</em> real-time — the FMP free plan no longer includes real-time quotes. ASX-listed ETFs (VAF, VGB, VGS) aren't covered on the free plan either — use screenshot scan or manual entry for those.</div>
         <label class="lbl">FMP API key</label>
@@ -2085,6 +2121,7 @@ let S={
   notifSettings:{spend:false,payday:false,monthly:false},
   nwHistory:[],
   groqApiKey:'',
+  claudeApiKey:'',  // v2.7.33 — optional Claude key for AI Autopilot briefings (stronger narration)
   sinkingFunds:[],
   debts:[],
   streakData:{days:[],lastCheckin:null,badges:[]},
@@ -2140,9 +2177,29 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.32';
+const APP_VERSION='2.7.33';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.33',
+    date:'2026-07-17',
+    title:'AI Autopilot — proactive insight engine',
+    sections:{
+      features:[
+        '✦ **AI Autopilot** — a new intelligence layer that reasons across your entire financial picture and surfaces what matters, right at the top of your dashboard. It runs fully on-device: no API calls, no cost, works offline. The analysis is real financial logic, not a chatbot guessing',
+        '🔍 **Six insight engines**: (1) Spending anomalies — flags any category running >1.5× your rolling 3-month average, with the projected month-end figure; (2) Goal pace — which goals will land late, by how many months, and the exact auto-contribute bump that fixes each; (3) Cashflow — projects your month-end spend vs income and warns before you overspend, or confirms your safe-to-spend headroom; (4) Portfolio drift — holdings more than 8 points off their target allocation, with a rebalance nudge; (5) Savings-rate trend — month-over-month movement in your savings rate; (6) Wins — goals nearly complete, goals ahead of pace, positive momentum',
+        '⚡ **One-tap actions** — insights carry actions where relevant. "Emergency fund behind pace" comes with a "Set +$80/mo auto-rule" button that creates the rule instantly. "Goal almost there" offers "Add the rest"',
+        '✦ **AI briefing (Layer 2)** — optional. If you add a Claude API key (or use your existing Groq key), the Autopilot can narrate its computed insights into a warm, plain-English briefing — like a sharp friend who just looked at your accounts. The AI only phrases the pre-computed facts; it never invents numbers or does the analysis itself, so the figures are always trustworthy',
+        '📋 **All-insights view** — tap "All insights" to see the full ranked list in a focused sheet, each with its severity, metric, and action'
+      ],
+      improvements:[
+        'The Autopilot card sits at the top of the dashboard by default (existing users get it auto-added via a layout migration). You can reposition or hide it via Customise like any other widget',
+        'Insights are ranked by severity (alerts first, then warnings, wins, info) and within each tier by magnitude, so the most important thing is always first',
+        'Added an optional Claude API key field in Settings (separate from Groq). The Autopilot works fully without it — the key only enables the richer natural-language briefing. If blank, briefings fall back to your Groq key'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'2.7.32',
     date:'2026-07-17',
@@ -5182,6 +5239,233 @@ function computeBudgetSummary(){
   return{income,spent,varSpend,savingsRate,monthlyVarBudget,monthlyLeft};
 }
 
+// ═══════════════════════════════════════════════════════════
+// v2.7.33 — AI AUTOPILOT: on-device insight engine
+// Reasons across goals, spending, income, cashflow, portfolio, savings rate,
+// and produces a ranked list of typed insights. Zero API calls — pure analysis.
+// ═══════════════════════════════════════════════════════════
+
+// Rolling per-category average over the last N complete months (excludes current month).
+function categoryBaseline(months){
+  months=months||3;
+  const now=new Date();
+  const buckets={}; // cat -> {ym -> total}
+  (S.transactions||[]).forEach(t=>{
+    if(t.dir!=='out'||t.cat==='transfer'||t.cat==='investments'||t.cat==='income')return;
+    if(!t.date)return;
+    const ym=t.date.slice(0,7);
+    const curYm=now.toISOString().slice(0,7);
+    if(ym>=curYm)return; // exclude current (incomplete) month
+    if(!buckets[t.cat])buckets[t.cat]={};
+    buckets[t.cat][ym]=(buckets[t.cat][ym]||0)+(t.amt||0);
+  });
+  // Only keep the most recent N months per category
+  const baseline={};
+  Object.entries(buckets).forEach(([cat,byMonth])=>{
+    const sortedMonths=Object.keys(byMonth).sort().slice(-months);
+    if(!sortedMonths.length)return;
+    const total=sortedMonths.reduce((a,m)=>a+byMonth[m],0);
+    baseline[cat]=total/sortedMonths.length;
+  });
+  return baseline;
+}
+
+// Project end-of-month spend by extrapolating current pace across the full month.
+function projectMonthEndSpend(){
+  const wp=computeWeekProgress();
+  const spentSoFar=(typeof monthSpend==='function')?monthSpend():0;
+  const dayFrac=wp.dayOfMonth/wp.daysInMonth;
+  if(dayFrac<=0)return spentSoFar;
+  return spentSoFar/dayFrac;
+}
+
+// The core engine. Returns a ranked array of insight objects:
+// {id, type, severity:'alert'|'warn'|'info'|'win', icon, title, body, metric, action?:{label,fn}}
+function computeInsights(){
+  const insights=[];
+  const cm=(typeof cmap==='function')?cmap():{};
+  const now=new Date();
+
+  // ── 1. SPENDING ANOMALIES (category vs 3-month baseline) ──
+  try{
+    const baseline=categoryBaseline(3);
+    const {spent:curSpend}=computeCategorySpending();
+    const wp=computeWeekProgress();
+    const dayFrac=Math.max(0.15,wp.dayOfMonth/wp.daysInMonth); // avoid early-month noise
+    Object.entries(curSpend).forEach(([cat,amt])=>{
+      const base=baseline[cat];
+      if(!base||base<40)return; // ignore tiny categories
+      // Project this category to month-end at current pace
+      const projected=amt/dayFrac;
+      if(projected>base*1.5&&(projected-base)>=40){
+        const c=cm[cat]||{icon:'📌',label:cat};
+        insights.push({
+          id:'spend-'+cat,
+          type:'spending',
+          severity:projected>base*2?'alert':'warn',
+          icon:c.icon||'📈',
+          title:`${c.label||cat} spending is running high`,
+          body:`You've spent ${fmtD(amt)} so far this month. At this pace you'll hit about ${fmtD(projected)} — your recent average is ${fmtD(base)}.`,
+          metric:`+${fmtD(projected-base)} vs avg`,
+          sortKey:(projected-base)
+        });
+      }
+    });
+  }catch(e){console.warn('insight spending',e);}
+
+  // ── 2. GOAL PACE (which goals land late, and the fix) ──
+  try{
+    (typeof activeGoals==='function'?activeGoals():[]).forEach(g=>{
+      if((g.saved||0)>=(g.target||0))return; // complete
+      const h=(typeof computeGoalHealth==='function')?computeGoalHealth(g.id):null;
+      if(!h)return;
+      if((h.verdict==='behind'||h.verdict==='at-risk')&&h.monthlyRequired!=null){
+        const gap=h.monthlyRequired-(h.monthlyPace||0);
+        const bump=Math.ceil(Math.max(0,gap)/10)*10;
+        insights.push({
+          id:'goal-'+g.id,
+          type:'goal',
+          severity:h.verdict==='at-risk'?'alert':'warn',
+          icon:g.icon||'🎯',
+          title:`${g.label} is behind pace`,
+          body:`To hit ${g.deadline||'your target'} you need ${fmtD(h.monthlyRequired)}/mo${h.monthlyPace>0?`, but you're averaging ${fmtD(h.monthlyPace)}/mo`:''}.${bump>0?` Adding ${fmtD(bump)}/mo would get you back on track.`:''}`,
+          metric:h.projectedDate?`ETA ${fmtDate(h.projectedDate)}`:'behind',
+          action:bump>0?{label:`Set +${fmtD(bump)}/mo auto-rule`,fn:`quickAutoRule('${g.id}',${bump})`}:null,
+          sortKey:gap*2
+        });
+      }else if(h.verdict==='ahead'){
+        insights.push({
+          id:'goal-ahead-'+g.id,
+          type:'goal',
+          severity:'win',
+          icon:g.icon||'🎯',
+          title:`${g.label} is ahead of schedule`,
+          body:`You're pacing faster than needed${h.projectedDate?` — projected to finish around ${fmtDate(h.projectedDate)}`:''}. Nice work.`,
+          metric:'ahead',
+          sortKey:5
+        });
+      }
+    });
+  }catch(e){console.warn('insight goals',e);}
+
+  // ── 3. CASHFLOW / SAFE-TO-SPEND ──
+  try{
+    const budget=computeBudgetSummary();
+    const projected=projectMonthEndSpend();
+    const income=budget.income||0;
+    if(income>0&&projected>income*0.95){
+      insights.push({
+        id:'cashflow-tight',
+        type:'cashflow',
+        severity:projected>income?'alert':'warn',
+        icon:'⚠️',
+        title:projected>income?'Projected to overspend this month':'Spending close to income this month',
+        body:`At current pace you'll spend about ${fmtD(projected)} against ${fmtD(income)} income. ${projected>income?`That's ${fmtD(projected-income)} over.`:`That leaves only ${fmtD(income-projected)} of headroom.`}`,
+        metric:projected>income?`-${fmtD(projected-income)}`:`${fmtD(income-projected)} left`,
+        sortKey:(projected-income)+1000
+      });
+    }else if(income>0&&budget.monthlyLeft>0){
+      insights.push({
+        id:'cashflow-ok',
+        type:'cashflow',
+        severity:'info',
+        icon:'💵',
+        title:'Safe to spend this month',
+        body:`You have about ${fmtD(budget.monthlyLeft)} of discretionary budget left. Projected month-end spend ${fmtD(projected)} is comfortably under your ${fmtD(income)} income.`,
+        metric:`${fmtD(budget.monthlyLeft)} free`,
+        sortKey:1
+      });
+    }
+  }catch(e){console.warn('insight cashflow',e);}
+
+  // ── 4. PORTFOLIO DRIFT (holdings vs target allocation) ──
+  try{
+    const pt=(typeof portTotal==='function')?portTotal():0;
+    if(pt>500&&typeof TPCT!=='undefined'&&typeof TICKERS!=='undefined'){
+      let worst=null;
+      TICKERS.forEach(t=>{
+        const val=S.portfolio?.[t]||0;
+        const actualPct=pt>0?val/pt*100:0;
+        const targetPct=TPCT[t]||0;
+        const drift=actualPct-targetPct;
+        if(Math.abs(drift)>=8&&(!worst||Math.abs(drift)>Math.abs(worst.drift))){
+          worst={ticker:t,drift,actualPct,targetPct,val};
+        }
+      });
+      if(worst){
+        const over=worst.drift>0;
+        const label=(typeof TL!=='undefined'&&TL[worst.ticker])?TL[worst.ticker]:worst.ticker;
+        insights.push({
+          id:'port-drift',
+          type:'portfolio',
+          severity:'info',
+          icon:'📊',
+          title:`Portfolio drift: ${label}`,
+          body:`${label} is ${Math.round(worst.actualPct)}% of your portfolio vs a ${worst.targetPct}% target — ${over?'overweight':'underweight'} by ${Math.abs(Math.round(worst.drift))} points. ${over?'Consider directing new contributions elsewhere.':'Consider topping this up on your next buy.'}`,
+          metric:`${over?'+':''}${Math.round(worst.drift)}pts`,
+          sortKey:Math.abs(worst.drift)
+        });
+      }
+    }
+  }catch(e){console.warn('insight portfolio',e);}
+
+  // ── 5. SAVINGS RATE TREND ──
+  try{
+    const hist=(S.savingsRateHistory||[]).slice(-4);
+    if(hist.length>=2){
+      const latest=hist[hist.length-1];
+      const prev=hist[hist.length-2];
+      const delta=(latest.rate||0)-(prev.rate||0);
+      if(Math.abs(delta)>=8){
+        insights.push({
+          id:'savings-trend',
+          type:'savings',
+          severity:delta>0?'win':'warn',
+          icon:delta>0?'📈':'📉',
+          title:`Savings rate ${delta>0?'improved':'dropped'} to ${latest.rate}%`,
+          body:`Your savings rate went from ${prev.rate}% to ${latest.rate}% month-over-month${delta>0?' — momentum is building.':'. Worth a look at what shifted.'}`,
+          metric:`${delta>0?'+':''}${delta}%`,
+          sortKey:Math.abs(delta)
+        });
+      }
+    }
+  }catch(e){console.warn('insight savings',e);}
+
+  // ── 6. WINS: near-complete goals + milestones close ──
+  try{
+    (typeof activeGoals==='function'?activeGoals():[]).forEach(g=>{
+      const pctDone=g.target>0?(g.saved||0)/g.target*100:0;
+      if(pctDone>=90&&pctDone<100){
+        insights.push({
+          id:'goal-close-'+g.id,
+          type:'goal',
+          severity:'win',
+          icon:'🏁',
+          title:`${g.label} is almost there`,
+          body:`Just ${fmtD(g.target-g.saved)} to go — ${Math.round(pctDone)}% complete. One good contribution finishes it.`,
+          metric:`${Math.round(pctDone)}%`,
+          action:{label:'Add the rest',fn:`openQuickAddModal('${g.id}')`},
+          sortKey:8
+        });
+      }
+    });
+  }catch(e){console.warn('insight wins',e);}
+
+  // Rank: severity weight first, then sortKey magnitude
+  const sevWeight={alert:1000,warn:500,win:200,info:100};
+  insights.sort((a,b)=>(sevWeight[b.severity]+(b.sortKey||0))-(sevWeight[a.severity]+(a.sortKey||0)));
+  return insights;
+}
+
+// Quick helper: create an auto-contribute rule from an insight action
+function quickAutoRule(goalId,amount){
+  if(typeof createAutoRule==='function'){
+    createAutoRule({goalId,amount,dayOfMonth:1});
+    showToast(`✓ Auto-rule set: ${fmtD(amount)}/mo`);
+    if(currentPg==='dash'&&typeof buildDash==='function')buildDash();
+  }
+}
+
 function computeWeekProgress(){
   const now=new Date();
   const year=now.getFullYear(),month=now.getMonth();
@@ -7525,6 +7809,151 @@ function computeBriefingItems(){
 
   items.sort((a,b)=>a.pri-b.pri);
   return items;
+}
+
+// ═══════════════════════════════════════════════════════════
+// v2.7.33 — AI AUTOPILOT card renderer + Claude narration (Layer 2)
+// ═══════════════════════════════════════════════════════════
+function buildAutopilotCard(){
+  const el=document.getElementById('dash-autopilot-w');if(!el)return;
+  let insights=[];
+  try{insights=computeInsights();}catch(e){console.warn('computeInsights failed',e);}
+  const top=insights.slice(0,4);
+  const alertCount=insights.filter(i=>i.severity==='alert').length;
+  const winCount=insights.filter(i=>i.severity==='win').length;
+  // Header summary line
+  let summary='Everything looks steady right now.';
+  if(alertCount>0)summary=`${alertCount} thing${alertCount===1?'':'s'} need${alertCount===1?'s':''} attention`;
+  else if(insights.length>0)summary=`${insights.length} insight${insights.length===1?'':'s'} for you${winCount?` · ${winCount} win${winCount===1?'':'s'}`:''}`;
+
+  const insightHtml=top.length?top.map(i=>{
+    const sev=i.severity||'info';
+    const actionBtn=i.action?`<div class="ap-action"><button class="btn btn-acc btn-xs" onclick="${i.action.fn}">${i.action.label}</button></div>`:'';
+    return`<div class="ap-insight">
+      <div class="ap-ico ${sev}">${i.icon||'•'}</div>
+      <div class="ap-body">
+        <div class="ap-title"><span>${i.title}</span>${i.metric?`<span class="ap-metric ${sev}">${i.metric}</span>`:''}</div>
+        <div class="ap-text">${i.body}</div>
+        ${actionBtn}
+      </div>
+    </div>`;
+  }).join(''):`<div class="ap-empty">🌿 Nothing urgent right now. Your goals are on pace and spending is in check. Keep it up.</div>`;
+
+  const moreCount=insights.length-top.length;
+
+  el.innerHTML=`<div class="autopilot-card">
+    <div class="autopilot-hdr">
+      <div class="autopilot-badge">✦</div>
+      <div style="flex:1;min-width:0">
+        <div class="autopilot-title">AI Autopilot</div>
+        <div class="autopilot-sub">${summary}</div>
+      </div>
+      <button class="btn btn-ghost btn-xs" onclick="openAutopilotFull()">All insights</button>
+    </div>
+    ${insightHtml}
+    ${moreCount>0?`<button class="btn btn-ghost btn-sm btn-full" style="margin-top:10px" onclick="openAutopilotFull()">+ ${moreCount} more insight${moreCount===1?'':'s'}</button>`:''}
+    ${S.claudeApiKey||S.groqApiKey?`<div class="ap-narrate" id="ap-narrate-slot">
+      <button class="btn btn-outline btn-sm btn-full" onclick="narrateAutopilot()" id="ap-narrate-btn">✦ Get AI briefing on these</button>
+    </div>`:''}
+  </div>`;
+}
+
+// Full insights sheet
+function openAutopilotFull(){
+  let insights=[];
+  try{insights=computeInsights();}catch(e){}
+  if(!insights.length){
+    showSheet('AI Autopilot',`<div class="ap-empty">🌿 Nothing needs your attention right now. All goals on pace, spending in check.</div>`);
+    return;
+  }
+  const html=insights.map(i=>{
+    const sev=i.severity||'info';
+    const actionBtn=i.action?`<div class="ap-action"><button class="btn btn-acc btn-xs" onclick="closeSheet();${i.action.fn}">${i.action.label}</button></div>`:'';
+    return`<div class="ap-insight">
+      <div class="ap-ico ${sev}">${i.icon||'•'}</div>
+      <div class="ap-body">
+        <div class="ap-title"><span>${i.title}</span>${i.metric?`<span class="ap-metric ${sev}">${i.metric}</span>`:''}</div>
+        <div class="ap-text">${i.body}</div>
+        ${actionBtn}
+      </div>
+    </div>`;
+  }).join('');
+  showSheet('AI Autopilot · all insights',`
+    <div style="font-size:11px;color:var(--t2);line-height:1.55;margin-bottom:12px">Everything the Autopilot noticed across your goals, spending, cashflow, portfolio, and savings — ranked by importance.</div>
+    ${html}
+    ${S.claudeApiKey||S.groqApiKey?`<button class="btn btn-acc btn-sm btn-full" style="margin-top:14px" onclick="narrateAutopilot(true)">✦ Get an AI briefing on all of this</button>`:''}
+  `);
+}
+
+// Layer 2 — Claude (or Groq fallback) narrates the computed insights in natural prose.
+// The AI does NOT do the analysis — it only turns pre-computed facts into a friendly briefing.
+async function narrateAutopilot(inSheet){
+  let insights=[];
+  try{insights=computeInsights();}catch(e){}
+  if(!insights.length){showToast('Nothing to brief on right now');return;}
+  const claudeKey=(S.claudeApiKey||'').trim();
+  const groqKey=(S.groqApiKey||'').trim();
+  const useClaude=!!claudeKey;
+  if(!claudeKey&&!groqKey){
+    showToast('Add an API key in Settings for AI briefings');
+    return;
+  }
+  // Target slot
+  const btnId=inSheet?null:'ap-narrate-btn';
+  if(btnId&&typeof setBtnLoading==='function')setBtnLoading(btnId,true);
+  // Build a compact fact sheet from the insights (no raw account data beyond what's needed)
+  const factSheet=insights.map((i,n)=>`${n+1}. [${i.severity}] ${i.title} — ${i.body}${i.metric?` (${i.metric})`:''}`).join('\n');
+  const sys=`You are FinPlan's financial co-pilot for a ~20-year-old in Perth, Australia saving for university (Jan 2028) while working full-time plus food delivery. Below is a list of insights the app has ALREADY computed from their real data. Your job is to weave them into a short, warm, direct briefing — like a sharp friend who just looked at their finances.
+
+RULES:
+- Use ONLY the facts below. Do not invent numbers or add financial advice not grounded in these insights.
+- Lead with the single most important thing. Group related points naturally.
+- Be encouraging where there are wins, honest where there are risks.
+- Keep it under 160 words. Conversational, no bullet lists, no headers. Use their actual figures.
+- Australian context (AUD, super, HECS aware) but don't over-explain.`;
+  const userMsg=`Here are today's computed insights:\n\n${factSheet}\n\nWrite my briefing.`;
+
+  try{
+    let reply='';
+    if(useClaude){
+      const res=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':claudeKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify({
+          model:'claude-sonnet-4-5-20250929',
+          max_tokens:400,
+          system:sys,
+          messages:[{role:'user',content:userMsg}]
+        })
+      });
+      if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e?.error?.message||'Claude API '+res.status);}
+      const data=await res.json();
+      reply=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n').trim();
+    }else{
+      const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+groqKey},
+        body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:400,temperature:0.7,messages:[{role:'system',content:sys},{role:'user',content:userMsg}]})
+      });
+      if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e?.error?.message||'Groq API '+res.status);}
+      const data=await res.json();
+      reply=data.choices?.[0]?.message?.content||'';
+    }
+    if(!reply)throw new Error('Empty response');
+    const rendered=(typeof parseMarkdown==='function')?parseMarkdown(reply):reply;
+    if(inSheet){
+      // Replace sheet content's briefing button area
+      const body=document.querySelector('.sheet-body')||document.querySelector('#sheet-body');
+      showSheet('✦ Your AI briefing',`<div class="ap-narrate-body">${rendered}</div><button class="btn btn-ghost btn-sm btn-full" style="margin-top:14px" onclick="openAutopilotFull()">← Back to insights</button>`);
+    }else{
+      const slot=document.getElementById('ap-narrate-slot');
+      if(slot)slot.innerHTML=`<div class="ap-narrate-body">${rendered}</div><button class="btn btn-ghost btn-xs" style="margin-top:10px" onclick="narrateAutopilot()">↻ Regenerate</button>`;
+    }
+  }catch(e){
+    console.warn('narrate failed',e);
+    if(btnId&&typeof setBtnLoading==='function')setBtnLoading(btnId,false);
+    showToast('Briefing failed: '+(e.message||'try again'));
+  }
 }
 
 // ── The rewritten briefing widget ──────────────────────────
@@ -9918,6 +10347,12 @@ const DASH_WIDGETS={
       </div>`;
     }
   },
+  autopilot:{
+    id:'autopilot',label:'AI Autopilot',sub:'Proactive insights across your whole picture',
+    canHalfWidth:false,defaultOn:true,alwaysOn:false,
+    render(){return`<div id="dash-autopilot-w"></div>`;},
+    post(){const w=document.getElementById('dash-autopilot-w');if(w)buildAutopilotCard();}
+  },
   briefing:{
     id:'briefing',label:'Today briefing',sub:'Urgent items scored by priority',
     canHalfWidth:false,defaultOn:true,alwaysOn:false,
@@ -10075,6 +10510,7 @@ const DASH_WIDGETS={
 // Default layout — MINIMAL by default per user preference.
 // Each entry: {id, size:'full'|'half'}
 const DEFAULT_DASH_LAYOUT=[
+  {id:'autopilot',size:'full'},
   {id:'netWorth',size:'full'},
   {id:'trends',size:'full'},
   {id:'reminders',size:'full'},
@@ -10083,9 +10519,13 @@ const DEFAULT_DASH_LAYOUT=[
 // Migration: add new default-on widgets to layouts saved before those widgets existed.
 // Guarded by version so it only runs once per new widget wave.
 function migrateDashLayout(){
-  const version='2.4.0';
+  const version='2.7.33';
   if(S.dashLayoutMigratedTo===version)return;
   if(!Array.isArray(S.dashLayout)||!S.dashLayout.length){S.dashLayoutMigratedTo=version;return;}
+  // v2.7.33 — put Autopilot at the very top for existing users
+  if(!S.dashLayout.some(l=>l.id==='autopilot')){
+    S.dashLayout.unshift({id:'autopilot',size:'full'});
+  }
   // For any widget with defaultOn:true that's missing from the saved layout, insert it
   Object.values(DASH_WIDGETS).forEach(w=>{
     if(!w.defaultOn||w.alwaysOn)return;
@@ -14750,6 +15190,9 @@ function buildSettingsPage(){
   const keyInp=document.getElementById('groq-key-inp');
   if(keyInp)keyInp.value=S.groqApiKey||'';
   updateGroqKeyStatus();
+  const claudeInp=document.getElementById('claude-key-inp');
+  if(claudeInp)claudeInp.value=S.claudeApiKey||'';
+  if(typeof updateClaudeKeyStatus==='function')updateClaudeKeyStatus();
   const fmpInp=document.getElementById('fmp-key-inp');
   if(fmpInp)fmpInp.value=S.fmpApiKey||'';
   updateFmpKeyStatus();
@@ -14801,6 +15244,26 @@ function saveGroqKey(){
 }
 function toggleKeyVis(){
   const inp=document.getElementById('groq-key-inp');if(!inp)return;
+  inp.type=inp.type==='password'?'text':'password';
+}
+// v2.7.33 — Claude key for AI Autopilot briefings
+function updateClaudeKeyStatus(){
+  const el=document.getElementById('claude-key-status');if(!el)return;
+  if(S.claudeApiKey&&S.claudeApiKey.startsWith('sk-ant-')){
+    el.innerHTML='<span style="color:var(--acc)">✅ Key saved — Autopilot briefings use Claude</span>';
+  }else if(S.claudeApiKey){
+    el.innerHTML='<span style="color:var(--y)">⚠️ Key saved but looks unusual — Claude keys start with sk-ant-</span>';
+  }else{
+    el.innerHTML='<span style="color:var(--t3)">Optional — Autopilot works without it. Briefings fall back to Groq.</span>';
+  }
+}
+function saveClaudeKey(){
+  const val=document.getElementById('claude-key-inp')?.value.trim()||'';
+  if(!val){showToast('Enter your Claude API key first');return;}
+  S.claudeApiKey=val;save();updateClaudeKeyStatus();showToast('Claude key saved ✓');
+}
+function toggleClaudeKeyVis(){
+  const inp=document.getElementById('claude-key-inp');if(!inp)return;
   inp.type=inp.type==='password'?'text':'password';
 }
 function buildCustomCatsList(){
