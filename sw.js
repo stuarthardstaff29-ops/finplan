@@ -1,6 +1,6 @@
 // v2.7.22 — AGGRESSIVE updates. skipWaiting on install, clients.claim on activate,
 // notify all clients to reload so the new SW never sits behind old cached HTML.
-const CACHE='finplan-v2-7-36';
+const CACHE='finplan-v2-8-0';
 const ASSETS=['./manifest.json'];
 
 self.addEventListener('install',e=>{
