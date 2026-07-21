@@ -1210,7 +1210,7 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
       <div class="ai-input-wrap">
         <div class="ai-qchips" id="ai-chips"></div>
         <div class="ai-send-row">
-          <textarea class="ai-ta" id="ai-inp" placeholder="Ask anything about your finances…" rows="1" oninput="autoResize(this)" onkeydown="aiKey(event)"></textarea>
+          <textarea class="ai-ta" id="ai-inp" placeholder="Ask or command — &quot;how much on coffee?&quot;, &quot;add $100 to holiday&quot;…" rows="1" oninput="autoResize(this)" onkeydown="aiKey(event)"></textarea>
           <button class="ai-send" id="ai-send-btn" onclick="sendAiMsg()"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
         </div>
       </div>
@@ -2177,9 +2177,27 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.7.33';
+const APP_VERSION='2.7.34';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.7.34',
+    date:'2026-07-17',
+    title:'Natural language — ask and command your finances',
+    sections:{
+      features:[
+        '💬 **Natural-language queries.** Ask the AI Advisor plain questions and get instant, data-grounded answers — no API call, no wait. "How much did I spend on coffee since March?" → real total with a breakdown by payee. Also handles: "what\'s my balance", "how\'s my holiday goal going", "what\'s my portfolio worth", "what\'s my net worth". Answers come with inline mini-widgets and a jump-to button where relevant',
+        '⚡ **Natural-language commands.** Tell the app to do things: "add $100 to holiday fund", "move $200 from holiday to PC fund", "log $15 on coffee". Each action shows a confirmation bubble with the exact before/after figures — one tap to confirm, nothing changes without your OK. Moves between goals, contributions, and expense logging all supported',
+        '🧠 **Smart local interpretation.** The engine understands timeframes ("since March", "last month", "this week", "last 30 days"), fuzzy category names ("coffee" → Food, "petrol" → Fuel), and goal aliases ("uni", "holiday", "PC") — so you can type naturally without exact labels'
+      ],
+      improvements:[
+        'The natural-language engine runs entirely on-device and for free — queries and commands never hit the API. Only open-ended advice ("what should I focus on this quarter?") falls through to the AI model, so your credits are spent only where reasoning genuinely helps',
+        'Every command that changes your data (contributions, transfers, expense logs) requires an explicit confirmation tap with the exact figures shown — no accidental changes',
+        'Goal-to-goal transfers via chat are logged on both goals\' contribution histories, so the audit trail stays complete'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'2.7.33',
     date:'2026-07-17',
@@ -11460,6 +11478,231 @@ function generateFollowupChips(content){
   return[...new Set(chips)].slice(0,3);
 }
 
+// ═══════════════════════════════════════════════════════════
+// v2.7.34 — NATURAL LANGUAGE ENGINE
+// Interprets queries + commands locally (fast, free, deterministic) before
+// falling through to the LLM for open-ended advice.
+// ═══════════════════════════════════════════════════════════
+
+// Parse a time phrase into a start date (YYYY-MM-DD) or null for "all time".
+function nlParseTimeRange(text){
+  const t=text.toLowerCase();
+  const now=new Date();
+  const monthNames={january:0,february:1,march:2,april:3,may:4,june:5,july:6,august:7,september:8,october:9,november:10,december:11,jan:0,feb:1,mar:2,apr:3,jun:5,jul:6,aug:7,sep:8,sept:8,oct:9,nov:10,dec:11};
+  if(/this month/.test(t))return{start:new Date(now.getFullYear(),now.getMonth(),1).toISOString().slice(0,10),label:'this month'};
+  if(/last month/.test(t)){const d=new Date(now.getFullYear(),now.getMonth()-1,1);return{start:d.toISOString().slice(0,10),end:new Date(now.getFullYear(),now.getMonth(),0).toISOString().slice(0,10),label:'last month'};}
+  if(/this week/.test(t)){const d=new Date(now);d.setDate(d.getDate()-d.getDay());return{start:d.toISOString().slice(0,10),label:'this week'};}
+  if(/this year/.test(t))return{start:new Date(now.getFullYear(),0,1).toISOString().slice(0,10),label:'this year'};
+  if(/last (\d+) days?/.test(t)){const n=+t.match(/last (\d+) days?/)[1];const d=new Date(now);d.setDate(d.getDate()-n);return{start:d.toISOString().slice(0,10),label:`last ${n} days`};}
+  if(/last (\d+) months?/.test(t)){const n=+t.match(/last (\d+) months?/)[1];const d=new Date(now.getFullYear(),now.getMonth()-n,1);return{start:d.toISOString().slice(0,10),label:`last ${n} months`};}
+  const sinceMatch=t.match(/since\s+([a-z]+)(?:\s+(\d{4}))?/);
+  if(sinceMatch&&monthNames[sinceMatch[1]]!=null){
+    const mo=monthNames[sinceMatch[1]];
+    let yr=sinceMatch[2]?+sinceMatch[2]:now.getFullYear();
+    if(!sinceMatch[2]&&mo>now.getMonth())yr--;
+    return{start:new Date(yr,mo,1).toISOString().slice(0,10),label:`since ${sinceMatch[1][0].toUpperCase()+sinceMatch[1].slice(1)}${sinceMatch[2]?' '+sinceMatch[2]:''}`};
+  }
+  return null;
+}
+
+function nlMatchCategory(text){
+  const t=text.toLowerCase();
+  const cats=allCats();
+  for(const c of cats){
+    if(t.includes(c.id)||t.includes(c.label.toLowerCase()))return c.id;
+  }
+  const aliases={food:['coffee','eat','eating','dining','restaurant','takeaway','lunch','dinner','groceries','grocery','cafe','snack','food'],
+    fuel:['petrol','gas','gasoline','fuel'],
+    entertainment:['movies','games','gaming','fun','entertainment','netflix','spotify','streaming'],
+    transport:['uber','bus','train','transport','travel','taxi'],
+    shopping:['clothes','shopping','amazon','shop','clothing'],
+    subscriptions:['subscription','subscriptions','sub'],
+    health:['gym','doctor','medical','health','pharmacy','medicine'],
+    utilities:['electricity','water','power','utilities','bills','internet'],
+    rent:['rent'],
+    investments:['invest','investments','shares','etf']};
+  for(const[cat,words]of Object.entries(aliases)){
+    if(words.some(w=>t.includes(w)))return cat;
+  }
+  return null;
+}
+
+function nlMatchGoal(text){
+  const t=text.toLowerCase();
+  const goals=(typeof activeGoals==='function')?activeGoals():[];
+  for(const g of goals){
+    const label=g.label.toLowerCase();
+    if(t.includes(label))return g;
+    const words=label.split(/\s+/).filter(w=>w.length>=4&&!['fund','goal','savings'].includes(w));
+    if(words.some(w=>t.includes(w)))return g;
+  }
+  if(/emergenc/.test(t))return goals.find(g=>/emergenc/i.test(g.label));
+  if(/holiday|trip|vacation/.test(t))return goals.find(g=>/holiday|trip|vacation/i.test(g.label));
+  if(/uni|univ|study|college/.test(t))return goals.find(g=>/uni|univ|study|college/i.test(g.label));
+  if(/pc|laptop|computer|tech/.test(t))return goals.find(g=>/pc|laptop|computer|tech/i.test(g.label));
+  if(/car|vehicle/.test(t))return goals.find(g=>/car|vehicle/i.test(g.label));
+  return null;
+}
+
+function nlParseAmount(text){
+  const m=text.match(/\$?\s*([\d,]+(?:\.\d{1,2})?)\s*(k)?/i);
+  if(!m)return null;
+  let amt=parseFloat(m[1].replace(/,/g,''));
+  if(m[2]&&m[2].toLowerCase()==='k')amt*=1000;
+  return isNaN(amt)?null:amt;
+}
+
+// MAIN: try to handle locally. Returns null if it should go to the LLM.
+function nlTryHandle(rawText){
+  const text=rawText.trim();
+  const t=text.toLowerCase();
+
+  // ══ QUERIES ══
+  if(/how much.*(spend|spent|spending)|(spend|spent).*on\s+\w+/.test(t)&&!/should|will|can i afford/.test(t)){
+    const cat=nlMatchCategory(t);
+    const range=nlParseTimeRange(t)||{start:new Date(new Date().getFullYear(),new Date().getMonth(),1).toISOString().slice(0,10),label:'this month'};
+    const txns=(S.transactions||[]).filter(x=>{
+      if(x.dir!=='out'||x.cat==='transfer')return false;
+      if(range.start&&(x.date||'')<range.start)return false;
+      if(range.end&&(x.date||'')>range.end)return false;
+      if(cat&&x.cat!==cat)return false;
+      return true;
+    });
+    const total=txns.reduce((a,x)=>a+x.amt,0);
+    const cm=cmap();
+    const catLabel=cat?(cm[cat]?.label||cat):'everything';
+    const catIcon=cat?(cm[cat]?.icon||''):'💸';
+    if(!txns.length){
+      return{handled:true,response:`You have no ${cat?catLabel.toLowerCase():''} spending recorded ${range.label}.`};
+    }
+    const byPayee={};
+    txns.forEach(x=>{byPayee[x.payee]=(byPayee[x.payee]||0)+x.amt;});
+    const topPayees=Object.entries(byPayee).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    let widget=`\`\`\`widget{"title":"${catIcon} ${catLabel} · ${range.label}","rows":[`;
+    widget+=topPayees.map(([p,v])=>`{"label":"${String(p).replace(/"/g,'')}","value":"${fmtD(v)}"}`).join(',');
+    widget+=`],"total":"${fmtD(total)}"}\`\`\``;
+    return{handled:true,response:`You've spent **${fmtD(total)}** on ${catLabel.toLowerCase()} ${range.label} across ${txns.length} transaction${txns.length===1?'':'s'}.\n\n${widget}`};
+  }
+
+  if(/(what.?s|whats|show).*(balance|in my|how much.*(in|do i have))/.test(t)||/^balance/.test(t)||/how much.*(in|do i have).*(westpac|macquarie|account|bank|savings)/.test(t)){
+    const wp=calcBal('westpac'),mq=calcBal('macquarie');
+    if(/westpac/.test(t))return{handled:true,response:`Your Westpac balance is **${fmtD(wp)}**.`};
+    if(/macquarie|savings|hisa/.test(t))return{handled:true,response:`Your Macquarie balance is **${fmtD(mq)}**.`};
+    return{handled:true,response:`**${fmtD(wp+mq)}** total across your accounts:\n\n\`\`\`widget{"title":"💳 Account balances","rows":[{"label":"Westpac (everyday)","value":"${fmtD(wp)}"},{"label":"Macquarie (savings)","value":"${fmtD(mq)}"}],"total":"${fmtD(wp+mq)}"}\`\`\``};
+  }
+
+  if(/(how.?s|hows|how much).*(goal|saved|saving)|progress.*(on|toward)/.test(t)){
+    const g=nlMatchGoal(t);
+    if(g){
+      const p=g.target>0?Math.round((g.saved||0)/g.target*100):0;
+      const h=(typeof computeGoalHealth==='function')?computeGoalHealth(g.id):null;
+      let extra='';
+      if(h&&h.monthlyRequired!=null&&(g.saved||0)<(g.target||0)){
+        extra=` To hit ${g.deadline||'your target'} you need about **${fmtD(h.monthlyRequired)}/mo**.`;
+      }
+      return{handled:true,response:`**${g.label}**: ${fmtD(g.saved||0)} of ${fmtD(g.target||0)} saved (**${p}%**).${extra}`,action:{label:`Open ${g.label}`,fn:`openGoalDetail('${g.id}')`}};
+    }
+  }
+
+  if(/(how.?s|hows|what.?s|whats).*(portfolio|investments|shares|stocks)|portfolio.*(worth|value|doing)/.test(t)){
+    const pt=portTotal();
+    const holdings=TICKERS.filter(x=>(S.portfolio[x]||0)>0).map(x=>`{"label":"${TL[x]}","value":"${fmtD(S.portfolio[x])}"}`).join(',');
+    return{handled:true,response:`Your portfolio is worth **${fmtD(pt)}**, generating ~${fmtD(annDiv())}/yr in dividends.\n\n\`\`\`widget{"title":"📈 Holdings","rows":[${holdings}],"total":"${fmtD(pt)}"}\`\`\``,action:{label:'Open Investments',fn:`showPgFromMore('invest')`}};
+  }
+
+  if(/net worth|networth|how much am i worth|total.*worth/.test(t)){
+    const nw=portTotal()+calcBal('westpac')+calcBal('macquarie');
+    return{handled:true,response:`Your total net worth is **${fmtD(nw)}** — ${fmtD(portTotal())} invested plus ${fmtD(calcBal('westpac')+calcBal('macquarie'))} in cash.`};
+  }
+
+  // ══ ACTIONS (require confirmation) ══
+  const moveMatch=t.match(/(move|transfer|shift)\s+\$?[\d,.]+k?\s+from\s+(.+?)\s+to\s+(.+)/);
+  if(moveMatch){
+    const amt=nlParseAmount(t);
+    const fromG=nlMatchGoal(moveMatch[2]);
+    const toG=nlMatchGoal(moveMatch[3]);
+    if(amt&&fromG&&toG&&fromG.id!==toG.id){
+      return{handled:true,confirm:{
+        text:`Move **${fmtD(amt)}** from **${fromG.label}** (${fmtD(fromG.saved||0)}) to **${toG.label}** (${fmtD(toG.saved||0)})?`,
+        fn:`nlExecMove('${fromG.id}','${toG.id}',${amt})`
+      }};
+    }
+    if(amt&&(!fromG||!toG)){
+      return{handled:true,response:`I understood you want to move ${fmtD(amt)}, but couldn't match ${!fromG?'the source goal':'the destination goal'}. Your goals are: ${activeGoals().map(g=>g.label).join(', ')}.`};
+    }
+  }
+
+  const addMatch=t.match(/(add|put|contribute|deposit)\s+\$?[\d,.]+k?\s+(to|into|toward)\s+(.+)/);
+  if(addMatch){
+    const amt=nlParseAmount(t);
+    const g=nlMatchGoal(addMatch[3]);
+    if(amt&&g){
+      return{handled:true,confirm:{
+        text:`Add **${fmtD(amt)}** to **${g.label}**? That brings it to ${fmtD((g.saved||0)+amt)} of ${fmtD(g.target||0)}.`,
+        fn:`nlExecAdd('${g.id}',${amt})`
+      }};
+    }
+  }
+
+  const logMatch=t.match(/(log|record|spent?)\s+\$?[\d,.]+k?\s+(on|for|at)\s+(.+)/);
+  if(logMatch&&!addMatch&&!/goal/.test(t)){
+    const amt=nlParseAmount(t);
+    const cat=nlMatchCategory(logMatch[3])||'other';
+    const catWord=nlMatchCategory(logMatch[3]);
+    const payeeRaw=catWord?logMatch[3].replace(new RegExp(catWord,'i'),'').trim():logMatch[3].trim();
+    const payee=payeeRaw?payeeRaw.split(' ').map(w=>w[0]?.toUpperCase()+w.slice(1)).join(' '):(cmap()[cat]?.label||'Expense');
+    if(amt){
+      const cm=cmap();
+      return{handled:true,confirm:{
+        text:`Log a **${fmtD(amt)}** expense — ${cm[cat]?.icon||''} ${cm[cat]?.label||cat}${payee?` ("${payee}")`:''}?`,
+        fn:`nlExecLog(${amt},'${cat}','${String(payee).replace(/'/g,'')}')`
+      }};
+    }
+  }
+
+  return null; // not handled — pass to LLM
+}
+
+function nlExecMove(fromId,toId,amt){
+  const from=goalById(fromId),to=goalById(toId);
+  if(!from||!to)return;
+  if((from.saved||0)<amt){showToast(`${from.label} only has ${fmtD(from.saved||0)}`);return;}
+  contributeGoal(fromId,-amt,{source:'transfer',note:`Moved to ${to.label}`});
+  contributeGoal(toId,amt,{source:'transfer',note:`Moved from ${from.label}`});
+  refreshAll?.({snapshotNW:true});
+  nlReplaceConfirm(`✓ Moved **${fmtD(amt)}** from ${from.label} to ${to.label}. ${to.label} is now at ${fmtD(to.saved||0)}.`);
+}
+function nlExecAdd(goalId,amt){
+  const g=goalById(goalId);if(!g)return;
+  const prevPct=g.target>0?(g.saved||0)/g.target*100:0;
+  contributeGoal(goalId,amt,{source:'manual',note:'Added via chat'});
+  const newPct=g.target>0?(g.saved||0)/g.target*100:0;
+  if(typeof checkMilestone==='function')checkMilestone(goalId,prevPct,newPct);
+  refreshAll?.({snapshotNW:true});
+  nlReplaceConfirm(`✓ Added **${fmtD(amt)}** to ${g.label}. Now at ${fmtD(g.saved||0)} of ${fmtD(g.target||0)}.`);
+}
+function nlExecLog(amt,cat,payee){
+  if(!S.transactions)S.transactions=[];
+  S.transactions.unshift({id:uid(),amt,dir:'out',date:today(),payee:payee||'Expense',cat,acct:S.selectedAcct||'westpac',note:'Logged via chat'});
+  save();refreshAll?.({snapshotNW:true});
+  nlReplaceConfirm(`✓ Logged **${fmtD(amt)}** — ${cmap()[cat]?.label||cat}${payee?` ("${payee}")`:''}.`);
+}
+function nlReplaceConfirm(html){
+  const pending=document.getElementById('nl-pending-confirm');
+  const inner=`<div class="ai-identity-row"><div class="ai-identity-dot">✦</div><div class="ai-identity-label">Advisor</div></div><div class="msg-bubble">${formatAiBody(html)}</div>`;
+  if(pending){
+    pending.innerHTML=inner;pending.removeAttribute('id');
+  }else{
+    appendMsg('ai',html);
+  }
+  scrollAiBottom?.();
+}
+function nlCancelConfirm(){
+  const pending=document.getElementById('nl-pending-confirm');
+  if(pending){pending.innerHTML=`<div class="ai-identity-row"><div class="ai-identity-dot">✦</div><div class="ai-identity-label">Advisor</div></div><div class="msg-bubble">No worries — cancelled.</div>`;pending.removeAttribute('id');}
+  scrollAiBottom?.();
+}
+
 function appendMsg(role,content,scroll=true,addFollowups=false){
   const msgs=document.getElementById('ai-msgs');
   const time=new Date().toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'});
@@ -11505,17 +11748,44 @@ async function sendAiMsg(){
   }
 
   inp.value='';inp.style.height='auto';
-  setBtnLoading('ai-send-btn',true);
-  // v2.7.1: save to active conversation
-  const _activeConv=(typeof getActiveConversation==='function')?getActiveConversation():null;
-  if(_activeConv){
-    _activeConv.messages.push({role:'user',content:txt,ts:Date.now()});
-    _activeConv.updatedAt=Date.now();
-  }else{
-    if(!S.aiHistory)S.aiHistory=[];
-    S.aiHistory.push({role:'user',content:txt});
-  }
+  // v2.7.34 — try the natural-language engine first (queries + actions, local & free)
   appendMsg('user',txt);
+  const _activeConvEarly=(typeof getActiveConversation==='function')?getActiveConversation():null;
+  if(_activeConvEarly){_activeConvEarly.messages.push({role:'user',content:txt,ts:Date.now()});_activeConvEarly.updatedAt=Date.now();}
+  else{if(!S.aiHistory)S.aiHistory=[];S.aiHistory.push({role:'user',content:txt});}
+  let nlResult=null;
+  try{nlResult=nlTryHandle(txt);}catch(e){console.warn('nl engine',e);}
+  if(nlResult&&nlResult.handled){
+    save();
+    if(nlResult.confirm){
+      // Render a confirmation bubble with Confirm / Cancel
+      const msgs=document.getElementById('ai-msgs');
+      const bubble=document.createElement('div');
+      bubble.className='msg ai';bubble.id='nl-pending-confirm';
+      bubble.innerHTML=`<div class="ai-identity-row"><div class="ai-identity-dot">✦</div><div class="ai-identity-label">Advisor</div></div><div class="msg-bubble">${formatAiBody(nlResult.confirm.text)}<div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-acc btn-sm" onclick="${nlResult.confirm.fn}">Confirm</button><button class="btn btn-ghost btn-sm" onclick="nlCancelConfirm()">Cancel</button></div></div>`;
+      msgs.appendChild(bubble);scrollAiBottom();
+    }else{
+      let html=nlResult.response;
+      appendMsg('ai',html);
+      if(nlResult.action){
+        // Append an action button to the last AI message's bubble
+        const msgs=document.getElementById('ai-msgs');
+        const last=msgs.lastElementChild;
+        const bub=last&&last.querySelector('.msg-bubble');
+        if(bub){const b=document.createElement('div');b.style.marginTop='10px';b.innerHTML=`<button class="btn btn-ghost btn-xs" onclick="${nlResult.action.fn}">${nlResult.action.label}</button>`;bub.appendChild(b);}
+      }
+      // Save AI response to conversation
+      if(_activeConvEarly){_activeConvEarly.messages.push({role:'assistant',content:nlResult.response,ts:Date.now()});}
+      else{S.aiHistory.push({role:'assistant',content:nlResult.response});}
+      save();
+    }
+    scrollAiBottom();
+    return; // handled locally — no LLM call, no cost
+  }
+
+  setBtnLoading('ai-send-btn',true);
+  // v2.7.1: save to active conversation (already saved above for NL; guard against double)
+  const _activeConv=_activeConvEarly;
 
   // Typing indicator
   const msgs=document.getElementById('ai-msgs');
