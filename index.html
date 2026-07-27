@@ -1940,6 +1940,9 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
       <div class="card">
         <div class="ctitle"><div class="ctitle-l">Data</div></div>
         <div class="setting-row"><div><div class="setting-label">Export transactions</div><div class="setting-sub">Download as CSV</div></div><button class="btn btn-ghost btn-sm" onclick="exportCSV()">Export</button></div>
+        <div class="setting-row"><div><div class="setting-label">Download backup</div><div class="setting-sub">Full data as a JSON file</div></div><button class="btn btn-ghost btn-sm" onclick="exportBackup()">Backup</button></div>
+        <div class="setting-row"><div><div class="setting-label">Storage used</div><div class="setting-sub" id="settings-storage-sub">Calculating…</div></div><div id="settings-storage-bar" style="width:70px;height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;flex-shrink:0"><div id="settings-storage-fill" style="height:100%;width:0;background:var(--acc)"></div></div></div>
+        <div class="setting-row"><div><div class="setting-label">Diagnostics</div><div class="setting-sub">App info + error log</div></div><button class="btn btn-ghost btn-sm" onclick="openDiagnostics()">Open</button></div>
         <div class="setting-row"><div><div class="setting-label">Re-run setup wizard</div><div class="setting-sub">Update your starting figures</div></div><button class="btn btn-ghost btn-sm" onclick="rerunSetup()">Open</button></div>
         <div class="setting-row"><div><div class="setting-label">Clear all data</div><div class="setting-sub">Wipes everything and restarts</div></div><button class="btn btn-r btn-sm" onclick="clearAll()">Clear</button></div>
       </div>
@@ -2187,6 +2190,37 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
 
 <script>
 // ═══════════════════════════════════════════════════════════
+// v2.8.11 — GLOBAL ERROR BOUNDARY
+// Catches any uncaught error so one broken component can't white-screen the app.
+// Keeps a small in-memory log the user can view + copy from Settings → diagnostics.
+// ═══════════════════════════════════════════════════════════
+window.__fpErrors=[];
+function __fpLogError(kind,msg,src,line,col,stack){
+  try{
+    window.__fpErrors.push({t:Date.now(),kind,msg:String(msg||'').slice(0,300),src:String(src||'').split('/').pop(),line,col,stack:String(stack||'').slice(0,600)});
+    if(window.__fpErrors.length>50)window.__fpErrors=window.__fpErrors.slice(-50);
+    // Show a subtle toast if the app is up and running (not during boot)
+    if(window.__fpBooted&&typeof showToast==='function'){
+      showToast('⚠ Something hiccuped — the app kept running');
+    }
+  }catch(e){/* never let the logger itself throw */}
+}
+window.addEventListener('error',function(e){
+  __fpLogError('error',e.message,e.filename,e.lineno,e.colno,e.error&&e.error.stack);
+  // Don't preventDefault — let devtools still see it, but the app survives because
+  // our own code paths are individually guarded (see safeCall / widget try-catch).
+});
+window.addEventListener('unhandledrejection',function(e){
+  const r=e.reason;
+  __fpLogError('promise',r&&r.message?r.message:String(r),'',0,0,r&&r.stack);
+});
+// Wrap a function so a throw is logged and swallowed rather than bubbling up.
+function safeCall(fn,label){
+  try{return fn();}
+  catch(e){__fpLogError('safeCall',(label?label+': ':'')+(e.message||e),'',0,0,e.stack);return undefined;}
+}
+
+// ═══════════════════════════════════════════════════════════
 // CONSTANTS & THEMES
 // ═══════════════════════════════════════════════════════════
 const THEMES=[
@@ -2385,9 +2419,29 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.8.10';
+const APP_VERSION='2.8.11';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.8.11',
+    date:'2026-07-27',
+    title:'Foundation hardening — the road to 3.0 begins',
+    sections:{
+      features:[
+        '🔧 **Diagnostics panel** (Settings → Data → Diagnostics). Shows app version, data counts, storage usage, and any errors logged this session — with a one-tap copy so problems can be reported precisely',
+        '💾 **Download backup** (Settings → Data). Exports your entire FinPlan data as a JSON file you can keep safe. Also offered automatically if storage ever fills up',
+        '📊 **Storage usage indicator** in Settings, so you can see how much of the device\'s local storage FinPlan is using before it becomes a problem'
+      ],
+      improvements:[
+        'Added a global error boundary: if any single part of the app hits an unexpected error, the app keeps running instead of freezing, logs the details for diagnostics, and shows a quiet notice rather than a blank screen',
+        'Storage-full situations are now detected and surfaced clearly, with a prompt to back up your data — instead of silently failing to save',
+        'Page and widget errors now feed into the diagnostics log, so intermittent issues can be traced'
+      ],
+      fixes:[
+        '🧹 Removed duplicate internal functions left over from earlier development (dividend calculation and transaction categorisation each had a stale second copy). No behaviour change — just a cleaner, safer codebase where future edits can\'t accidentally touch dead code'
+      ]
+    }
+  },
   {
     v:'2.8.10',
     date:'2026-07-27',
@@ -3913,7 +3967,66 @@ function save(){
     S.schemaVersion=SCHEMA_VERSION;
     localStorage.setItem(STORAGE_KEY,JSON.stringify(S));
     localStorage.setItem(META_KEY,JSON.stringify({ts:Date.now(),v:SCHEMA_VERSION}));
-  }catch(e){console.warn('Save failed:',e);}
+    window.__fpSaveFailed=false;
+  }catch(e){
+    console.warn('Save failed:',e);
+    // v2.8.11 — detect a full localStorage and warn the user loudly ONCE,
+    // rather than silently losing their data.
+    const quotaHit=e&&(e.name==='QuotaExceededError'||e.code===22||e.code===1014||/quota/i.test(e.message||''));
+    if(quotaHit&&!window.__fpSaveFailed){
+      window.__fpSaveFailed=true;
+      if(typeof __fpLogError==='function')__fpLogError('storage','localStorage quota exceeded — save failed');
+      if(typeof showToast==='function')showToast('⚠ Storage full — export a backup to avoid losing data');
+      // Surface a blocking notice so the user acts before losing more
+      setTimeout(()=>{
+        if(typeof showSheet==='function'){
+          showSheet('⚠ Storage is full',`
+            <div style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:14px">
+              This device's local storage for FinPlan is full, so new changes can\'t be saved. Nothing already saved is lost, but to avoid losing recent changes you should free up space.
+            </div>
+            <div style="font-size:11px;color:var(--t2);line-height:1.7;margin-bottom:14px">
+              What usually helps: clearing old imported receipt images, or removing very old transactions you no longer need. Export a backup first so you always have a copy.
+            </div>
+            <button class="btn btn-acc btn-full" onclick="closeSheet();if(typeof exportBackup==='function')exportBackup()">Export a backup now</button>
+            <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="closeSheet()">Dismiss</button>
+          `);
+        }
+      },400);
+    }
+  }
+}
+
+// v2.8.11 — minimal full-state JSON export (the storage-full escape hatch;
+// the fuller export/backup system arrives in Phase 4).
+function exportBackup(){
+  try{
+    const payload={app:'FinPlan',version:APP_VERSION,exportedAt:new Date().toISOString(),state:S};
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=`finplan-backup-${today()}.json`;
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    if(typeof showToast==='function')showToast('✓ Backup downloaded');
+  }catch(e){
+    if(typeof __fpLogError==='function')__fpLogError('export',e.message);
+    if(typeof showToast==='function')showToast('Export failed');
+  }
+}
+
+// v2.8.11 — estimate how much of localStorage this app is using.
+function getStorageInfo(){
+  try{
+    let used=0;
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i);
+      const v=localStorage.getItem(k)||'';
+      used+=k.length+v.length;
+    }
+    const usedBytes=used*2; // UTF-16 ≈ 2 bytes/char
+    const LIMIT=5*1024*1024; // typical 5MB cap
+    return{usedKB:Math.round(usedBytes/1024),pct:Math.min(100,Math.round(usedBytes/LIMIT*100)),bytes:usedBytes,limit:LIMIT};
+  }catch(e){return{usedKB:0,pct:0,bytes:0,limit:5*1024*1024};}
 }
 
 function load(){
@@ -4135,11 +4248,8 @@ function portCostBasis(){
 function portPnl(){return (S.holdings||[]).reduce((a,h)=>a+holdingPnl(h),0);}
 function portPnlPct(){const c=portCostBasis();return c>0?(portPnl()/c*100):0;}
 function tickerYield(tk){return TYLD[tk]!=null?TYLD[tk]:0.02;}
-function annDiv(){
-  const hs=S.holdings||[];
-  if(hs.length)return hs.reduce((a,h)=>a+holdingValue(h)*tickerYield(h.ticker),0);
-  let d=0;for(const k in (S.portfolio||{}))d+=S.portfolio[k]*(TYLD[k]||0);return d;
-}
+// annDiv() is defined later (single source of truth) using projectAnnualDivForHolding().
+// The earlier duplicate that used holdingValue×tickerYield was removed in v2.8.11.
 // Completed contributions only (pending/cancelled excluded from invested totals)
 function totalContributed(){
   return (S.contributions||[]).filter(c=>c.status==='completed').reduce((a,c)=>a+(c.amount||0),0);
@@ -7678,7 +7788,7 @@ function refreshAll(opts){
     if(opts.snapshotNW!==false&&typeof snapshotNW==='function')snapshotNW();
     const builder=PAGE_BUILDERS[currentPg];
     if(typeof builder==='function'){
-      try{builder();}catch(e){console.warn('[refreshAll] '+currentPg+':',e);}
+      try{builder();}catch(e){console.warn('[refreshAll] '+currentPg+':',e);if(typeof __fpLogError==='function')__fpLogError('page-builder',currentPg+': '+(e.message||e),'',0,0,e.stack);}
     }
     // Always-visible surfaces: context panel + reminders + notif dot
     if(typeof renderContextPanel==='function'){try{renderContextPanel();}catch(_){}}
@@ -9915,6 +10025,7 @@ function launchApp(){
   if(typeof markAppOpened==='function')markAppOpened();
   // What's New popup + persistent banner
   maybeShowWhatsNew();
+  window.__fpBooted=true; // v2.8.11 — error toasts only after boot completes
 }
 // ── What's New popup ─────────────────────────────────────────
 function maybeShowWhatsNew(){
@@ -11846,6 +11957,7 @@ function buildDash(){
     try{wHtml=w.render();}
     catch(e){
       console.warn('widget render failed:',item.id,e);
+      if(typeof __fpLogError==='function')__fpLogError('widget-render',item.id+': '+(e.message||e),'',0,0,e.stack);
       wHtml=`<div class="card" style="border-color:rgba(240,160,48,.30);background:rgba(240,160,48,.03)"><div style="font-size:11px;color:var(--y);margin-bottom:4px">⚠ ${w.label||item.id} couldn't render</div><div style="font-size:10px;color:var(--t3);line-height:1.5">This widget hit an error. The rest of your dashboard still works. Try Customise → remove and re-add this widget.</div></div>`;
     }
     if(canHalf){
@@ -15941,26 +16053,9 @@ const BANK_RULES=[
   {match:/SELFWEALTH|STAKE|PEARLER/i, cat:'investments',   payee:'Broker'}
 ];
 
-// Categorise a description. Returns {cat, payee, matched:boolean, ruleIdx:number}
-function categoriseBankTxn(desc,direction){
-  const clean=(desc||'').trim();
-  for(let i=0;i<BANK_RULES.length;i++){
-    const r=BANK_RULES[i];
-    if(r.direction&&r.direction!==direction)continue;
-    if(r.match instanceof RegExp?r.match.test(clean):clean.toUpperCase().includes(r.match.toUpperCase())){
-      return{cat:r.cat,payee:r.payee,matched:true,ruleIdx:i};
-    }
-  }
-  // Fallback: try to extract merchant name from Westpac's structured narrative
-  // "DEBIT CARD PURCHASE MERCHANT NAME LOCATION AUS" → "MERCHANT NAME"
-  let payee=clean;
-  const m=clean.match(/^(?:DEBIT CARD PURCHASE|EFTPOS DEBIT|DEBIT CARD REFUND)\s+(.+?)(?:\s+[A-Z][A-Z ]{2,}\s+(?:AUS|USA|NZ)|\s{2,})/i);
-  if(m)payee=m[1].trim();
-  // Cleanup: strip trailing numbers, "AUS"/"USA"
-  payee=payee.replace(/\s+(?:AUS|USA|NZ|GBR)$/i,'').replace(/\s+\d{3,}\s*$/,'').replace(/\s+/g,' ').trim();
-  const defaultCat=direction==='in'?'income':'other';
-  return{cat:defaultCat,payee:payee||'Unknown',matched:false,ruleIdx:-1};
-}
+// categoriseBankTxn() is defined later (single source of truth) and checks the
+// user's learned custom rules before the built-in BANK_RULES. An earlier duplicate
+// that only checked BANK_RULES was removed in v2.8.11.
 
 // ─── PARSER: Westpac ───────────────────────────────────────
 // Format: Bank Account, Date (DD/MM/YYYY), Narrative, Debit Amount, Credit Amount, Balance, Categories, Serial
@@ -18192,6 +18287,14 @@ function buildSettingsPage(){
   const tgRm=document.getElementById('tg-reduce-motion');if(tgRm)tgRm.classList.toggle('on',!!S.uiPrefs.reduceMotion);
   const tgH=document.getElementById('tg-haptics');if(tgH)tgH.classList.toggle('on',!(S.uiPrefs&&S.uiPrefs.noHaptics));
   const tgCi=document.getElementById('tg-checkin');if(tgCi)tgCi.classList.toggle('on',!(S.uiPrefs&&S.uiPrefs.noCheckInPrompt));
+  // v2.8.11 — storage usage indicator
+  const stInfo=(typeof getStorageInfo==='function')?getStorageInfo():null;
+  if(stInfo){
+    const sub=document.getElementById('settings-storage-sub');
+    const fill=document.getElementById('settings-storage-fill');
+    if(sub)sub.textContent=`${stInfo.usedKB}KB used · ${stInfo.pct}% of estimate`;
+    if(fill){fill.style.width=stInfo.pct+'%';fill.style.background=stInfo.pct>=90?'var(--r)':stInfo.pct>=70?'var(--y)':'var(--acc)';}
+  }
   const tgC=document.getElementById('tg-compact');if(tgC)tgC.classList.toggle('on',!!S.uiPrefs.compact);
   const tgCtx=document.getElementById('tg-ctx');if(tgCtx)tgCtx.classList.toggle('on',!!S.uiPrefs.ctxPanel);
   // Version + changelog
@@ -18222,6 +18325,45 @@ function toggleCheckInPrompt(){
   if(!S.uiPrefs)S.uiPrefs={};
   S.uiPrefs.noCheckInPrompt=!S.uiPrefs.noCheckInPrompt;
   save();buildSettingsPage();
+}
+// v2.8.11 — diagnostics: show the captured error log so a friend can screenshot/send it
+function openDiagnostics(){
+  const errs=window.__fpErrors||[];
+  const storage=(typeof getStorageInfo==='function')?getStorageInfo():null;
+  const body=`
+    <div style="font-size:11px;color:var(--t2);line-height:1.6;margin-bottom:14px">
+      Technical details about this app instance. If something went wrong, tap "Copy" and send it over — it helps track down the cause.
+    </div>
+    <div class="an-card" style="margin-bottom:12px">
+      <div class="an-card-t">App</div>
+      <div style="font-size:11px;color:var(--t2);line-height:1.8">
+        Version: <strong style="color:var(--t)">v${APP_VERSION}</strong><br>
+        Transactions: ${(S.transactions||[]).length}<br>
+        Goals: ${(S.goals||[]).length}<br>
+        ${storage?`Storage used: ${storage.usedKB}KB (${storage.pct}% of estimate)`:''}
+      </div>
+    </div>
+    <div class="an-card">
+      <div class="an-card-t">Errors logged this session (${errs.length})</div>
+      ${errs.length?errs.slice().reverse().slice(0,15).map(e=>`<div style="font-size:10px;color:var(--t3);font-family:var(--mono);padding:6px 0;border-top:0.5px solid var(--bdr);word-break:break-all">
+        <span style="color:var(--y)">[${e.kind}]</span> ${escapeHtml(e.msg)}${e.src?`<br><span style="color:var(--t3)">${escapeHtml(e.src)}:${e.line}</span>`:''}
+      </div>`).join(''):'<div style="font-size:11px;color:var(--acc);padding:6px 0">✓ No errors logged — running clean.</div>'}
+    </div>
+    <button class="btn btn-ghost btn-sm btn-full" style="margin-top:12px" onclick="copyDiagnostics()">📋 Copy diagnostics</button>
+  `;
+  showSheet('🔧 Diagnostics',body);
+}
+function copyDiagnostics(){
+  const errs=window.__fpErrors||[];
+  const lines=[`FinPlan v${APP_VERSION} diagnostics`,
+    `Transactions: ${(S.transactions||[]).length} · Goals: ${(S.goals||[]).length}`,
+    `User agent: ${navigator.userAgent}`,
+    `Errors (${errs.length}):`,
+    ...errs.map(e=>`  [${e.kind}] ${e.msg} @ ${e.src}:${e.line}${e.stack?'\n    '+e.stack.split('\n')[0]:''}`)];
+  const text=lines.join('\n');
+  (navigator.clipboard?navigator.clipboard.writeText(text):Promise.reject())
+    .then(()=>showToast('✓ Copied'))
+    .catch(()=>{const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');showToast('✓ Copied');}catch(_){showToast('Copy failed');}document.body.removeChild(ta);});
 }
 function updateFmpKeyStatus(){
   const el=document.getElementById('fmp-key-status');if(!el)return;
