@@ -199,6 +199,8 @@ body.reduce-motion .spl-ring-arc,body.reduce-motion .spl-orb,body.reduce-motion 
 
 /* Sparkline */
 .detail-sparkline{display:block;width:100%;height:auto;margin-top:12px}
+/* v2.8.2 — inline/compact sparkline (metric tiles): fixed size, no stretch */
+.detail-sparkline.spark-inline{width:auto;margin-top:0;flex-shrink:0}
 .detail-sparkline-labels{display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:var(--t3);letter-spacing:.05em;text-transform:uppercase}
 
 /* Detail transaction rows (inside cards) */
@@ -743,6 +745,39 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .ap-empty{text-align:center;padding:16px 8px;color:var(--t3);font-size:12px;line-height:1.6}
 .ap-narrate{margin-top:14px;padding-top:14px;border-top:0.5px solid var(--bdr)}
 .ap-narrate-body{font-size:12.5px;color:var(--t2);line-height:1.72;white-space:pre-wrap}
+/* ── v2.8.2 — ANALYTICS REDESIGN ── */
+.an-sections{display:flex;gap:5px;overflow-x:auto;padding:4px;background:var(--bg3);border-radius:11px;margin-bottom:10px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.an-sections::-webkit-scrollbar{display:none}
+.an-sec-b{flex:0 0 auto;padding:8px 14px;border:none;background:transparent;border-radius:8px;font-size:12px;font-weight:600;color:var(--t3);cursor:pointer;font-family:var(--sans);transition:background var(--dur-fast) var(--ease-out),color var(--dur-fast) var(--ease-out);white-space:nowrap;min-height:36px}
+.an-sec-b.on{background:var(--bg5);color:var(--t);box-shadow:var(--sh-sm)}
+.an-range-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;padding:0 2px}
+#an-range-label{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em}
+.an-range-btn{background:none;border:none;color:var(--b);font-size:10px;font-weight:600;cursor:pointer;font-family:var(--sans);padding:4px 6px;border-radius:6px;min-height:32px}
+.an-range-btn:active{background:var(--bg4)}
+/* Metric tiles with sparkline + delta */
+.an-tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.an-tile{background:var(--glass);border:0.5px solid var(--bdr);border-radius:12px;padding:11px 12px;cursor:pointer;transition:border-color var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out);text-align:left;font-family:var(--sans)}
+.an-tile:active{transform:scale(.98)}
+.an-tile-l{font-size:10px;color:var(--t3);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.an-tile-v{font-size:19px;font-weight:800;color:var(--t);font-variant-numeric:tabular-nums;line-height:1.15}
+.an-tile-foot{display:flex;align-items:center;justify-content:space-between;margin-top:5px;gap:6px}
+.an-tile-d{font-size:10px;font-weight:600;white-space:nowrap}
+/* Flow bar */
+.an-flow{display:flex;height:26px;border-radius:7px;overflow:hidden;gap:2px;margin-bottom:9px}
+.an-flow-seg{display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;min-width:0;overflow:hidden;white-space:nowrap}
+.an-flow-key{display:flex;flex-wrap:wrap;gap:10px}
+.an-flow-key-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--t2)}
+.an-flow-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+/* Section card */
+.an-card{background:var(--glass);border:0.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:12px}
+.an-card-t{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.an-empty{text-align:center;padding:26px 14px;color:var(--t3);font-size:12px;line-height:1.6}
+/* Attention list */
+.an-attn{background:rgba(240,160,48,.06);border:0.5px solid rgba(240,160,48,.24);border-radius:12px;padding:12px 14px}
+.an-attn-row{display:flex;gap:9px;align-items:flex-start;padding:7px 0;border-top:0.5px solid var(--bdr)}
+.an-attn-row:first-of-type{border-top:none;padding-top:2px}
+.an-attn-ico{font-size:14px;flex-shrink:0;line-height:1.4}
+.an-attn-txt{font-size:11.5px;color:var(--t2);line-height:1.55}
 /* ── v2.7.26 — V4 GOALS ── */
 .goal-card{display:flex;gap:14px;padding:16px;background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad-lg);margin-bottom:12px;cursor:pointer;transition:border-color var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out);position:relative;overflow:hidden}
 .goal-card:hover{border-color:var(--bdr-acc2)}
@@ -1316,46 +1351,34 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
 
     <!-- ANALYTICS -->
     <div class="pg" id="pg-analytics">
-      <div class="tog" id="analytics-period-tog">
+      <!-- v2.8.2 — section tabs -->
+      <div class="an-sections" id="an-sections">
+        <button class="an-sec-b on" data-sec="overview" onclick="setAnalyticsSection('overview')">Overview</button>
+        <button class="an-sec-b" data-sec="spending" onclick="setAnalyticsSection('spending')">Spending</button>
+        <button class="an-sec-b" data-sec="income" onclick="setAnalyticsSection('income')">Income</button>
+        <button class="an-sec-b" data-sec="trends" onclick="setAnalyticsSection('trends')">Trends</button>
+        <button class="an-sec-b" data-sec="wealth" onclick="setAnalyticsSection('wealth')">Wealth</button>
+        <button class="an-sec-b" data-sec="habits" onclick="setAnalyticsSection('habits')">Habits</button>
+      </div>
+      <!-- period selector -->
+      <div class="tog" id="analytics-period-tog" style="margin-bottom:8px">
         <button class="tog-b" data-period="week" onclick="setAnalyticsPeriod('week',this)">Week</button>
         <button class="tog-b on" data-period="month" onclick="setAnalyticsPeriod('month',this)">Month</button>
         <button class="tog-b" data-period="quarter" onclick="setAnalyticsPeriod('quarter',this)">Quarter</button>
         <button class="tog-b" data-period="year" onclick="setAnalyticsPeriod('year',this)">Year</button>
+        <button class="tog-b" data-period="all" onclick="setAnalyticsPeriod('all',this)">All</button>
       </div>
-      <div class="mg" id="analytics-summary"></div>
-      <div class="card">
-        <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><path d="M12 2v20M2 12h20"/></svg>Fixed vs variable</div></div>
-        <div id="fixed-variable-split"></div>
+      <div class="an-range-row">
+        <span id="an-range-label"></span>
+        <button class="an-range-btn" onclick="openCustomRangePicker()">Custom range</button>
       </div>
-      <div class="card">
-        <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg><span id="trend-title">Spending trend</span></div></div>
-        <div class="chart-wrap"><canvas id="monthly-chart" role="img" aria-label="Spending trend chart">Spending trend</canvas></div>
-      </div>
-      <div class="card">
-        <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg><span id="catbd-title">Spending by category</span></div></div>
-        <div id="cat-breakdown"></div>
-      </div>
-      <div class="card">
-        <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Budget performance</div></div>
-        <div id="budget-performance"></div>
-      </div>
-      <div class="card">
-        <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12" y2="17"/></svg>Insights</div></div>
-        <div id="analytics-insights"></div>
-      </div>
-      <div class="card">
-        <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg>Savings rate history</div></div>
-        <div id="savings-rate-summary" style="font-size:12px;color:var(--t2);margin-bottom:10px"></div>
-        <div class="chart-wrap" style="height:150px"><canvas id="savings-rate-chart" role="img" aria-label="Savings rate over time">Savings rate history</canvas></div>
-      </div>
-      <div class="card">
-        <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>Spending trends</div></div>
-        <div id="spending-trends"></div>
-      </div>
-      <div class="card">
-        <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Weekly share card</div><button class="btn btn-acc btn-sm" onclick="buildShareCard()">Generate</button></div>
-        <div id="share-card-wrap"></div>
-      </div>
+      <!-- section containers -->
+      <div id="an-sec-overview" class="an-sec"></div>
+      <div id="an-sec-spending" class="an-sec" style="display:none"></div>
+      <div id="an-sec-income" class="an-sec" style="display:none"></div>
+      <div id="an-sec-trends" class="an-sec" style="display:none"></div>
+      <div id="an-sec-wealth" class="an-sec" style="display:none"></div>
+      <div id="an-sec-habits" class="an-sec" style="display:none"></div>
     </div>
 
     <!-- KMART SHIFTS -->
@@ -2266,6 +2289,8 @@ let S={
   invDividendsReceived:{VOO:0,VYM:0,VYMI:0,VAF:0,VGB:0,VGS:0},
   benchmarks:{sp500:'',asx200:''},
   analyticsPeriod:'month',
+  analyticsSection:'overview',   // v2.8.2 — which analytics sub-section is active
+  analyticsCustomRange:null,     // {from:'YYYY-MM-DD', to:'YYYY-MM-DD'} when period==='custom'
   // v9 features
   paydaySources:{
     fulltime:{label:'Full-Time Job',keywords:['full-time','fulltime','salary','wage'],plan:[
@@ -2313,9 +2338,32 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.8.1';
+const APP_VERSION='2.8.2';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.8.2',
+    date:'2026-07-23',
+    title:'Analytics rebuilt (Wave 1) — sections, periods, and a dense overview',
+    sections:{
+      features:[
+        '📊 **Analytics is now six sections**, not one long scroll. Overview, Spending, Income, Trends, Wealth, and Habits each get their own space with room for real depth. Tabs scroll horizontally and remember where you were',
+        '📅 **Extended period control.** Week, Month, Quarter, Year, All-time, plus a custom date range picker. Every section updates to match, and the header shows exactly which window you\'re looking at',
+        '📈 **Overview section, fully built.** Eight metric tiles — total spend, income, saved, savings rate, variable, fixed, invested, and transaction count — each showing the value, the percentage change against the previous period, and a sparkline of the last several periods. Colour tells you whether the direction is good or bad, so overspending reads red and rising income reads green',
+        '💸 **Money flow bar.** A single visual tracking every dollar of income to where it actually landed — saved, fixed costs, variable spending, or invested. Answers "where did it all go" in one glance',
+        '⚡ **Tiles are tappable.** Total spend jumps to the Spending section, income to Income, saved to Wealth — the numbers are navigation, not decoration'
+      ],
+      improvements:[
+        'Built a shared analytics compute layer so every section reads from one calculation instead of duplicating logic — category breakdowns, merchant aggregates, day-of-week patterns, and period comparisons are all computed once and cached',
+        'The cache invalidates automatically whenever your data changes, so figures are never stale after adding a transaction or importing a CSV',
+        'Only the visible section renders, so switching periods stays fast even with a long transaction history'
+      ],
+      fixes:[
+        '🐛 **Sparklines were sharing one gradient definition.** Every sparkline on a page used a hardcoded gradient id, so the second and subsequent ones silently inherited the first one\'s colour fill. Each now gets a unique id — visible immediately on the eight-tile overview',
+        'Added a compact sparkline variant so inline sparklines in metric tiles no longer stretch to full width or inherit the detail-view top margin'
+      ]
+    }
+  },
   {
     v:'2.8.1',
     date:'2026-07-22',
@@ -4031,7 +4079,10 @@ function sparklineSvg(values,opts){
   opts=opts||{};
   const width=opts.width||280,height=opts.height||50;
   const color=opts.color||'var(--acc)';
-  if(!values||values.length<2)return`<svg class="detail-sparkline" viewBox="0 0 ${width} ${height}"></svg>`;
+  // v2.8.2 — inline mode renders at a fixed compact size (metric tiles)
+  const cls='detail-sparkline'+(opts.inline?' spark-inline':'');
+  const sizeAttr=opts.inline?` width="${width}" height="${height}"`:'';
+  if(!values||values.length<2)return`<svg class="${cls}"${sizeAttr} viewBox="0 0 ${width} ${height}"></svg>`;
   const max=Math.max(...values),min=Math.min(...values);
   const range=(max-min)||1;
   const dx=width/(values.length-1);
@@ -4041,9 +4092,12 @@ function sparklineSvg(values,opts){
     return`${x.toFixed(1)},${y.toFixed(1)}`;
   }).join(' ');
   const areaPoints=`0,${height} `+points+` ${width},${height}`;
-  return`<svg class="detail-sparkline" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
-    <defs><linearGradient id="spark-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity="0.28"/><stop offset="100%" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
-    <polygon points="${areaPoints}" fill="url(#spark-grad)"/>
+  // v2.8.2 — unique gradient id per instance, otherwise every sparkline on the page
+  // reuses the first one's gradient (visible as wrong/missing fills on metric tiles)
+  const gid='spark-grad-'+Math.random().toString(36).slice(2,9);
+  return`<svg class="${cls}"${sizeAttr} viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+    <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity="0.28"/><stop offset="100%" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
+    <polygon points="${areaPoints}" fill="url(#${gid})"/>
     <polyline points="${points}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>`;
 }
@@ -7368,6 +7422,8 @@ const PAGE_BUILDERS={
 function refreshAll(opts){
   opts=opts||{};
   try{
+    // v2.8.2 — data changed, so any cached analytics aggregate is stale
+    if(typeof invalidateAnalyticsCache==='function')invalidateAnalyticsCache();
     if(opts.snapshotNW!==false&&typeof snapshotNW==='function')snapshotNW();
     const builder=PAGE_BUILDERS[currentPg];
     if(typeof builder==='function'){
@@ -12807,14 +12863,203 @@ function periodRange(period){
   else if(period==='month'){start=new Date(now.getFullYear(),now.getMonth(),1);}
   else if(period==='quarter'){const q=Math.floor(now.getMonth()/3);start=new Date(now.getFullYear(),q*3,1);}
   else if(period==='year'){start=new Date(now.getFullYear(),0,1);}
+  else if(period==='all'){
+    // v2.8.2 — earliest transaction date, or a year back if none
+    const dates=(S.transactions||[]).map(t=>t.date).filter(Boolean).sort();
+    start=dates.length?new Date(dates[0]+'T00:00:00'):new Date(now.getFullYear()-1,now.getMonth(),1);
+  }
+  else if(period==='custom'){
+    const cr=S.analyticsCustomRange||{};
+    start=cr.from?new Date(cr.from+'T00:00:00'):new Date(now.getFullYear(),now.getMonth(),1);
+    if(cr.to)end=new Date(cr.to+'T23:59:59');
+  }
   else{start=new Date(now.getFullYear(),now.getMonth(),1);}
   return{start,end};
 }
-function periodLabel(p){return p==='week'?'This week':p==='month'?'This month':p==='quarter'?'This quarter':'This year';}
+// v2.8.2 — The equivalent window immediately before the current one, for deltas.
+function prevPeriodRange(period){
+  const{start,end}=periodRange(period);
+  if(period==='all')return null; // nothing before "all"
+  if(period==='custom'){
+    const span=end-start;
+    return{start:new Date(start.getTime()-span-1),end:new Date(start.getTime()-1)};
+  }
+  const now=new Date();
+  if(period==='week'){
+    const s=new Date(start);s.setDate(s.getDate()-7);
+    const e=new Date(start.getTime()-1);
+    return{start:s,end:e};
+  }
+  if(period==='month'){
+    const s=new Date(now.getFullYear(),now.getMonth()-1,1);
+    const e=new Date(now.getFullYear(),now.getMonth(),0,23,59,59);
+    return{start:s,end:e};
+  }
+  if(period==='quarter'){
+    const q=Math.floor(now.getMonth()/3);
+    const s=new Date(now.getFullYear(),(q-1)*3,1);
+    const e=new Date(now.getFullYear(),q*3,0,23,59,59);
+    return{start:s,end:e};
+  }
+  if(period==='year'){
+    return{start:new Date(now.getFullYear()-1,0,1),end:new Date(now.getFullYear()-1,11,31,23,59,59)};
+  }
+  return null;
+}
+function txnsInRange(range){
+  if(!range)return[];
+  return (S.transactions||[]).filter(t=>{
+    if(!t.date)return false;
+    const d=new Date(t.date+'T12:00:00');
+    return d>=range.start&&d<=range.end;
+  });
+}
+function prevPeriodTxns(period){return txnsInRange(prevPeriodRange(period));}
+function periodLabel(p){return p==='week'?'This week':p==='month'?'This month':p==='quarter'?'This quarter':p==='year'?'This year':p==='all'?'All time':'Custom range';}
+// Short label for the comparison caption, e.g. "vs June"
+function prevPeriodLabel(p){
+  const r=prevPeriodRange(p);
+  if(!r)return '';
+  if(p==='week')return 'vs last week';
+  if(p==='month')return 'vs '+r.start.toLocaleDateString('en-AU',{month:'long'});
+  if(p==='quarter')return 'vs last quarter';
+  if(p==='year')return 'vs '+r.start.getFullYear();
+  return 'vs previous';
+}
+// Human-readable current range, e.g. "1 – 22 July"
+function periodRangeLabel(p){
+  const{start,end}=periodRange(p);
+  const sameMonth=start.getMonth()===end.getMonth()&&start.getFullYear()===end.getFullYear();
+  const opts={day:'numeric',month:'short'};
+  if(p==='all')return 'All time';
+  if(sameMonth)return `${start.getDate()} – ${end.getDate()} ${start.toLocaleDateString('en-AU',{month:'long'})}`;
+  return `${start.toLocaleDateString('en-AU',opts)} – ${end.toLocaleDateString('en-AU',opts)}`;
+}
 function periodTxns(period){
   const{start,end}=periodRange(period);
   return S.transactions.filter(t=>{if(!t.date)return false;const d=new Date(t.date+'T12:00:00');return d>=start&&d<=end;});
 }
+// ═══════════════════════════════════════════════════════════
+// v2.8.2 — ANALYTICS COMPUTE LAYER
+// One place that computes everything the analytics sections need, for a given
+// period. Every section reads from this — no duplicated calc logic.
+// Cached per (period + transaction count) so switching tabs is instant.
+// ═══════════════════════════════════════════════════════════
+let _analyticsCache={key:null,data:null};
+
+function computeAnalytics(period){
+  period=period||S.analyticsPeriod||'month';
+  const txCount=(S.transactions||[]).length;
+  const key=period+':'+txCount+':'+(S.analyticsCustomRange?JSON.stringify(S.analyticsCustomRange):'');
+  if(_analyticsCache.key===key&&_analyticsCache.data)return _analyticsCache.data;
+
+  const range=periodRange(period);
+  const txns=txnsInRange(range);
+  const prevRange=prevPeriodRange(period);
+  const prevTxns=txnsInRange(prevRange);
+  const cm=(typeof cmap==='function')?cmap():{};
+
+  // ── Core aggregates for a given transaction set ──
+  function agg(list){
+    const variable=list.filter(isVariableSpend).reduce((a,t)=>a+(t.amt||0),0);
+    const fixed=list.filter(isFixedSpend).reduce((a,t)=>a+(t.amt||0),0);
+    const income=list.filter(t=>t.dir==='in'&&t.cat==='income').reduce((a,t)=>a+(t.amt||0),0);
+    const invested=list.filter(t=>t.dir==='out'&&t.cat==='investments').reduce((a,t)=>a+(t.amt||0),0);
+    const spend=variable+fixed;
+    const saved=income-spend-invested;
+    const rate=income>0?Math.round((saved+invested)/income*100):0;
+    return{variable,fixed,spend,income,invested,saved,rate,count:list.length};
+  }
+  const cur=agg(txns),prev=prevTxns.length||prevRange?agg(prevTxns):null;
+
+  // ── Category breakdown (spend only, excludes transfers + investments) ──
+  function catBreak(list){
+    const out={};
+    list.filter(t=>t.dir==='out'&&t.cat!=='investments'&&catType(t.cat)!=='transfer').forEach(t=>{
+      if(!out[t.cat])out[t.cat]={amt:0,count:0,txns:[]};
+      out[t.cat].amt+=(t.amt||0);
+      out[t.cat].count++;
+      out[t.cat].txns.push(t);
+    });
+    return out;
+  }
+  const cats=catBreak(txns),prevCats=catBreak(prevTxns);
+  const catList=Object.entries(cats).map(([id,d])=>{
+    const c=cm[id]||{icon:'📌',col:'#7d8fa3',label:id,type:'variable'};
+    const prevAmt=prevCats[id]?prevCats[id].amt:0;
+    const delta=prevAmt>0?((d.amt-prevAmt)/prevAmt*100):null;
+    return{
+      id,label:c.label||id,icon:c.icon||'📌',color:c.col||'#7d8fa3',type:c.type||'variable',
+      amt:d.amt,count:d.count,txns:d.txns,
+      avg:d.count>0?d.amt/d.count:0,
+      prevAmt,delta,
+      pct:cur.spend>0?d.amt/cur.spend*100:0
+    };
+  }).sort((a,b)=>b.amt-a.amt);
+
+  // ── Merchant leaderboard ──
+  const merchants={};
+  txns.filter(t=>t.dir==='out'&&t.cat!=='investments'&&catType(t.cat)!=='transfer').forEach(t=>{
+    const name=(t.payee||'Unknown').trim();
+    if(!merchants[name])merchants[name]={name,amt:0,count:0,cats:{},txns:[]};
+    merchants[name].amt+=(t.amt||0);
+    merchants[name].count++;
+    merchants[name].cats[t.cat]=(merchants[name].cats[t.cat]||0)+1;
+    merchants[name].txns.push(t);
+  });
+  const merchantList=Object.values(merchants).map(m=>({
+    ...m,
+    avg:m.count>0?m.amt/m.count:0,
+    topCat:Object.entries(m.cats).sort((a,b)=>b[1]-a[1])[0]?.[0]||'other'
+  })).sort((a,b)=>b.amt-a.amt);
+
+  // ── Day-of-week spending pattern (0=Sun..6=Sat) ──
+  const dow=[0,0,0,0,0,0,0],dowCount=[0,0,0,0,0,0,0];
+  txns.filter(t=>t.dir==='out'&&t.cat!=='investments'&&catType(t.cat)!=='transfer').forEach(t=>{
+    const d=new Date(t.date+'T12:00:00');
+    const i=d.getDay();
+    dow[i]+=(t.amt||0);dowCount[i]++;
+  });
+
+  // ── Largest single transactions ──
+  const largest=txns.filter(t=>t.dir==='out'&&t.cat!=='investments'&&catType(t.cat)!=='transfer')
+    .sort((a,b)=>(b.amt||0)-(a.amt||0)).slice(0,10);
+
+  // ── Spending velocity: are we burning faster than the period is elapsing? ──
+  const now=new Date();
+  const elapsed=Math.max(0,Math.min(1,(now-range.start)/(range.end-range.start||1)));
+  const projectedSpend=elapsed>0.02?cur.spend/elapsed:cur.spend;
+
+  const data={
+    period,range,prevRange,txns,prevTxns,
+    cur,prev,
+    cats:catList,merchants:merchantList,
+    dow,dowCount,largest,
+    elapsed,projectedSpend,
+    cm
+  };
+  _analyticsCache={key,data};
+  return data;
+}
+// Invalidate when data changes
+function invalidateAnalyticsCache(){_analyticsCache={key:null,data:null};}
+
+// Percentage-change helper returning {pct, dir, color, arrow}
+function deltaInfo(curVal,prevVal,inverse){
+  if(prevVal==null||prevVal===0)return null;
+  const pct=Math.round((curVal-prevVal)/Math.abs(prevVal)*100);
+  if(pct===0)return{pct:0,dir:'flat',color:'var(--t3)',arrow:'→'};
+  const up=pct>0;
+  // inverse=true means "up is bad" (e.g. spending)
+  const good=inverse?!up:up;
+  return{
+    pct:Math.abs(pct),
+    dir:up?'up':'down',
+    color:good?'var(--acc)':'var(--r)',
+    arrow:up?'↑':'↓'
+  };
+}
+
 function periodVariableBudget(period){
   const weekly=S.sliders.spend||0;
   if(period==='week')return weekly;
@@ -12824,21 +13069,227 @@ function periodVariableBudget(period){
   return weekly*4.33;
 }
 function setAnalyticsPeriod(p,btn){
-  S.analyticsPeriod=p;save();
+  S.analyticsPeriod=p;
+  if(p!=='custom')S.analyticsCustomRange=null; // leaving custom clears the saved window
+  if(typeof invalidateAnalyticsCache==='function')invalidateAnalyticsCache();
+  save();
   document.querySelectorAll('#analytics-period-tog .tog-b').forEach(b=>b.classList.remove('on'));
   if(btn)btn.classList.add('on');
   buildAnalytics();
 }
+// ═══════════════════════════════════════════════════════════
+// v2.8.2 — ANALYTICS: sectioned renderer
+// ═══════════════════════════════════════════════════════════
+function setAnalyticsSection(sec){
+  S.analyticsSection=sec;save();
+  document.querySelectorAll('#an-sections .an-sec-b').forEach(b=>b.classList.toggle('on',b.dataset.sec===sec));
+  ['overview','spending','income','trends','wealth','habits'].forEach(s=>{
+    const el=document.getElementById('an-sec-'+s);
+    if(el)el.style.display=(s===sec)?'':'none';
+  });
+  buildAnalytics();
+  // Scroll the active tab into view
+  const btn=document.querySelector(`#an-sections .an-sec-b[data-sec="${sec}"]`);
+  if(btn&&btn.scrollIntoView)btn.scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'});
+}
+
 function buildAnalytics(){
-  document.querySelectorAll('#analytics-period-tog .tog-b').forEach(b=>b.classList.toggle('on',b.dataset.period===(S.analyticsPeriod||'month')));
-  buildAnalyticsSummary();
-  buildFixedVariableSplit();
-  buildTrendChart();
-  buildCatBreakdown();
-  buildBudgetPerformance();
-  buildAnalyticsInsights();
-  buildSavingsRateChart();
-  buildSpendingTrends();
+  const period=S.analyticsPeriod||'month';
+  const sec=S.analyticsSection||'overview';
+  // Reflect current period + section in the controls
+  document.querySelectorAll('#analytics-period-tog .tog-b').forEach(b=>b.classList.toggle('on',b.dataset.period===period));
+  document.querySelectorAll('#an-sections .an-sec-b').forEach(b=>b.classList.toggle('on',b.dataset.sec===sec));
+  ['overview','spending','income','trends','wealth','habits'].forEach(s=>{
+    const el=document.getElementById('an-sec-'+s);
+    if(el)el.style.display=(s===sec)?'':'none';
+  });
+  const rl=document.getElementById('an-range-label');
+  if(rl)rl.textContent=periodRangeLabel(period);
+  // Render the active section only (cheap + fast)
+  try{
+    if(sec==='overview')buildAnOverview();
+    else if(sec==='spending')buildAnSpending();
+    else if(sec==='income')buildAnIncome();
+    else if(sec==='trends')buildAnTrends();
+    else if(sec==='wealth')buildAnWealth();
+    else if(sec==='habits')buildAnHabits();
+  }catch(e){
+    console.warn('analytics section failed',sec,e);
+    const el=document.getElementById('an-sec-'+sec);
+    if(el)el.innerHTML=`<div class="an-empty">Something went wrong rendering this section.<br><span style="font-size:10px">${escapeHtml(e.message||'')}</span></div>`;
+  }
+}
+
+// ── OVERVIEW ─────────────────────────────────────────────
+function buildAnOverview(){
+  const el=document.getElementById('an-sec-overview');if(!el)return;
+  const period=S.analyticsPeriod||'month';
+  const A=computeAnalytics(period);
+  const {cur,prev}=A;
+  const cmpLabel=prevPeriodLabel(period);
+
+  // Metric tiles: value, delta vs previous, sparkline of the trailing series
+  const series=buildTrailingSeries(period);
+  function tile(label,value,curVal,prevVal,inverse,spark,color,onclick){
+    const d=prev?deltaInfo(curVal,prevVal,inverse):null;
+    const sparkSvg=spark&&spark.length>1?sparklineSvg(spark,{width:46,height:16,inline:true,color:d?d.color:'var(--t3)'}):'';
+    return`<button class="an-tile" ${onclick?`onclick="${onclick}"`:''}>
+      <div class="an-tile-l">${label}</div>
+      <div class="an-tile-v" ${color?`style="color:${color}"`:''}>${value}</div>
+      <div class="an-tile-foot">
+        <span class="an-tile-d" style="color:${d?d.color:'var(--t3)'}">${d?`${d.arrow} ${d.pct}%`:'—'}</span>
+        ${sparkSvg}
+      </div>
+    </button>`;
+  }
+
+  const tiles=[
+    tile('Total spend',fmtDI(cur.spend),cur.spend,prev?prev.spend:null,true,series.spend,'',"setAnalyticsSection('spending')"),
+    tile('Income',fmtDI(cur.income),cur.income,prev?prev.income:null,false,series.income,'',"setAnalyticsSection('income')"),
+    tile('Saved',fmtDI(cur.saved+cur.invested),cur.saved+cur.invested,prev?prev.saved+prev.invested:null,false,series.saved,'var(--acc)',"setAnalyticsSection('wealth')"),
+    tile('Savings rate',cur.rate+'%',cur.rate,prev?prev.rate:null,false,series.rate,'',''),
+    tile('Variable spend',fmtDI(cur.variable),cur.variable,prev?prev.variable:null,true,series.variable,'var(--y)',"setAnalyticsSection('spending')"),
+    tile('Fixed spend',fmtDI(cur.fixed),cur.fixed,prev?prev.fixed:null,true,series.fixed,'var(--b)',"setAnalyticsSection('spending')"),
+    tile('Invested',fmtDI(cur.invested),cur.invested,prev?prev.invested:null,false,series.invested,'var(--acc2)',"setAnalyticsSection('wealth')"),
+    tile('Transactions',cur.count,cur.count,prev?prev.count:null,false,series.count,'','')
+  ].join('');
+
+  // Money flow bar — every dollar in, tracked to where it landed
+  const flowTotal=Math.max(1,cur.income);
+  const segs=[
+    {label:'Saved',v:Math.max(0,cur.saved),c:'#1baf7a',t:'#04342C'},
+    {label:'Fixed',v:cur.fixed,c:'#2a78d6',t:'#042C53'},
+    {label:'Variable',v:cur.variable,c:'#eb6834',t:'#4A1B0C'},
+    {label:'Invest',v:cur.invested,c:'#4a3aa7',t:'#EEEDFE'}
+  ].filter(s=>s.v>0);
+  const flowSum=segs.reduce((a,s)=>a+s.v,0)||1;
+  const flowHtml=segs.length?`
+    <div class="an-flow">${segs.map(s=>{
+      const w=s.v/flowSum*100;
+      return`<div class="an-flow-seg" style="width:${w}%;background:${s.c};color:${s.t}">${w>14?s.label:''}</div>`;
+    }).join('')}</div>
+    <div class="an-flow-key">${segs.map(s=>`<div class="an-flow-key-item"><span class="an-flow-dot" style="background:${s.c}"></span>${s.label} ${fmtDI(s.v)}</div>`).join('')}</div>
+    <div style="font-size:10px;color:var(--t3);line-height:1.5;margin-top:8px">${cur.income>0?`Every dollar of the ${fmtDI(cur.income)} that came in, tracked to where it landed.`:'Log some income to see the full flow.'}</div>
+  `:`<div class="an-empty">No money movement recorded for this period.</div>`;
+
+  // Attention items — reuse the Autopilot insight engine
+  let attn='';
+  try{
+    const ins=(typeof computeInsights==='function')?computeInsights().slice(0,3):[];
+    if(ins.length){
+      attn=`<div class="an-attn">
+        <div style="font-size:11px;font-weight:700;color:var(--t);margin-bottom:6px">Worth your attention</div>
+        ${ins.map(i=>`<div class="an-attn-row"><span class="an-attn-ico">${i.icon||'•'}</span><span class="an-attn-txt"><strong style="color:var(--t)">${i.title}</strong> — ${i.body}</span></div>`).join('')}
+      </div>`;
+    }
+  }catch(e){}
+
+  el.innerHTML=`
+    ${prev?`<div style="text-align:right;font-size:10px;color:var(--t3);margin-bottom:6px">${cmpLabel}</div>`:''}
+    <div class="an-tiles">${tiles}</div>
+    <div class="an-card">
+      <div class="an-card-t">Where the money went</div>
+      ${flowHtml}
+    </div>
+    ${attn}
+  `;
+}
+
+// Build trailing series for sparklines — last N buckets ending with the current period
+function buildTrailingSeries(period){
+  const out={spend:[],income:[],saved:[],rate:[],variable:[],fixed:[],invested:[],count:[]};
+  const now=new Date();
+  const buckets=[];
+  const N=period==='week'?8:period==='month'?6:period==='quarter'?4:3;
+  for(let i=N-1;i>=0;i--){
+    let s,e;
+    if(period==='week'){
+      s=new Date(now);s.setDate(now.getDate()-now.getDay()-i*7);s.setHours(0,0,0,0);
+      e=new Date(s);e.setDate(s.getDate()+6);e.setHours(23,59,59);
+    }else if(period==='month'||period==='all'||period==='custom'){
+      s=new Date(now.getFullYear(),now.getMonth()-i,1);
+      e=new Date(now.getFullYear(),now.getMonth()-i+1,0,23,59,59);
+    }else if(period==='quarter'){
+      const q=Math.floor(now.getMonth()/3)-i;
+      s=new Date(now.getFullYear(),q*3,1);
+      e=new Date(now.getFullYear(),q*3+3,0,23,59,59);
+    }else{
+      s=new Date(now.getFullYear()-i,0,1);
+      e=new Date(now.getFullYear()-i,11,31,23,59,59);
+    }
+    buckets.push({start:s,end:e});
+  }
+  buckets.forEach(b=>{
+    const list=txnsInRange(b);
+    const variable=list.filter(isVariableSpend).reduce((a,t)=>a+(t.amt||0),0);
+    const fixed=list.filter(isFixedSpend).reduce((a,t)=>a+(t.amt||0),0);
+    const income=list.filter(t=>t.dir==='in'&&t.cat==='income').reduce((a,t)=>a+(t.amt||0),0);
+    const invested=list.filter(t=>t.dir==='out'&&t.cat==='investments').reduce((a,t)=>a+(t.amt||0),0);
+    const spend=variable+fixed;
+    const saved=income-spend-invested;
+    out.spend.push(Math.round(spend));
+    out.income.push(Math.round(income));
+    out.saved.push(Math.round(saved+invested));
+    out.rate.push(income>0?Math.round((saved+invested)/income*100):0);
+    out.variable.push(Math.round(variable));
+    out.fixed.push(Math.round(fixed));
+    out.invested.push(Math.round(invested));
+    out.count.push(list.length);
+  });
+  return out;
+}
+
+// Custom range picker
+function openCustomRangePicker(){
+  const cr=S.analyticsCustomRange||{};
+  const{start,end}=periodRange(S.analyticsPeriod||'month');
+  const defFrom=cr.from||start.toISOString().slice(0,10);
+  const defTo=cr.to||end.toISOString().slice(0,10);
+  showSheet('Custom date range',`
+    <div style="font-size:11px;color:var(--t2);line-height:1.55;margin-bottom:14px">Pick any window to analyse. Every section updates to match.</div>
+    <label class="lbl">From</label>
+    <input type="date" class="inp" id="an-cr-from" value="${defFrom}">
+    <label class="lbl">To</label>
+    <input type="date" class="inp" id="an-cr-to" value="${defTo}">
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeSheet()">Cancel</button>
+      <button class="btn btn-acc btn-sm" style="flex:1" onclick="applyCustomRange()">Apply range</button>
+    </div>
+  `);
+}
+function applyCustomRange(){
+  const from=document.getElementById('an-cr-from')?.value;
+  const to=document.getElementById('an-cr-to')?.value;
+  if(!from||!to){showToast('Pick both dates');return;}
+  if(from>to){showToast('From must be before To');return;}
+  S.analyticsCustomRange={from,to};
+  S.analyticsPeriod='custom';
+  invalidateAnalyticsCache();save();closeSheet();
+  document.querySelectorAll('#analytics-period-tog .tog-b').forEach(b=>b.classList.remove('on'));
+  buildAnalytics();
+  showToast('✓ Custom range applied');
+}
+
+// ── Placeholder sections (Waves 2-4) ─────────────────────
+function buildAnSpending(){
+  const el=document.getElementById('an-sec-spending');if(!el)return;
+  el.innerHTML=`<div class="an-empty">📊 The Spending deep-dive lands in Wave 2 — treemap, merchant leaderboard, heatmaps, and full drill-down.</div>`;
+}
+function buildAnIncome(){
+  const el=document.getElementById('an-sec-income');if(!el)return;
+  el.innerHTML=`<div class="an-empty">💵 The Income section lands in Wave 3 — source breakdown, pay reliability, and hourly rate analysis.</div>`;
+}
+function buildAnTrends(){
+  const el=document.getElementById('an-sec-trends');if(!el)return;
+  el.innerHTML=`<div class="an-empty">📈 The Trends section lands in Wave 3 — multi-metric series, month-over-month grid, and projections.</div>`;
+}
+function buildAnWealth(){
+  const el=document.getElementById('an-sec-wealth');if(!el)return;
+  el.innerHTML=`<div class="an-empty">💎 The Wealth section lands in Wave 4 — net worth composition, allocation drift, and goal funding.</div>`;
+}
+function buildAnHabits(){
+  const el=document.getElementById('an-sec-habits');if(!el)return;
+  el.innerHTML=`<div class="an-empty">🔄 The Habits section lands in Wave 4 — streaks, weekday patterns, and subscription creep.</div>`;
 }
 function buildAnalyticsSummary(){
   const p=S.analyticsPeriod||'month';
