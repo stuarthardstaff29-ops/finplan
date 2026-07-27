@@ -2383,9 +2383,24 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.8.7';
+const APP_VERSION='2.8.8';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.8.8',
+    date:'2026-07-27',
+    title:'Critical fix — modal forms were silently breaking',
+    sections:{
+      features:[],
+      improvements:[
+        'Goal create and edit forms now read their fields defensively, so a missing field can never crash the save — it just skips gracefully'
+      ],
+      fixes:[
+        '🐛 **Fixed the "Save changes" crash on goal editing** (and a whole class of modal bugs behind it). Modals built as inline HTML were routed through the sheet system, which stripped their header using a text pattern that assumed a simple structure. Because the header contains a close button, the pattern removed too little and left broken markup that swallowed the form fields — so every field lookup returned null and the save threw "Cannot read properties of null". The header is now removed by properly matching balanced tags, which fixes goal editing and any other inline modal that had the same hidden fault',
+        '🐛 **Zero balances now truly work end-to-end.** With the form fields no longer being eaten, setting a goal\'s saved amount to 0 (or any value) saves correctly'
+      ]
+    }
+  },
   {
     v:'2.8.7',
     date:'2026-07-27',
@@ -10320,9 +10335,11 @@ function openModal(arg){
       // Extract a title from a <div class="modal-title">…</div> if present, else 'Details'
       const titleMatch=arg.match(/<div class="modal-title"[^>]*>([\s\S]*?)<\/div>/);
       const title=titleMatch?titleMatch[1].replace(/<[^>]+>/g,'').trim():'Details';
-      // Strip the modal-hdr block (title + close button) since the sheet has its own
-      const body=arg.replace(/<div class="modal-hdr">[\s\S]*?<\/div>\s*<\/div>/,'')
-                    .replace(/<div class="modal-hdr">[\s\S]*?<\/div>/,'');
+      // v2.8.8 — strip the modal-hdr block. The previous regex assumed the header
+      // ended in </div></div>, but headers contain a nested <button>, so it matched
+      // too little and left dangling markup that swallowed the form fields (every
+      // getElementById then returned null). Strip by balanced scan instead.
+      const body=stripModalHdr(arg);
       showSheet(title,body);
       return;
     }
@@ -10330,6 +10347,29 @@ function openModal(arg){
   // Legacy path — treat arg as an element id
   const el=document.getElementById(arg);
   if(el)el.classList.add('open');
+}
+// Remove the leading <div class="modal-hdr">…</div> block by matching balanced <div> tags.
+function stripModalHdr(html){
+  const start=html.indexOf('<div class="modal-hdr"');
+  if(start===-1)return html;
+  // Walk forward counting div nesting until the modal-hdr div closes
+  let i=start,depth=0;
+  const openRe=/<div\b/gi,closeRe=/<\/div>/gi;
+  // Simple linear scan
+  let idx=start;
+  depth=0;
+  while(idx<html.length){
+    const nextOpen=html.indexOf('<div',idx);
+    const nextClose=html.indexOf('</div>',idx);
+    if(nextClose===-1)break;
+    if(nextOpen!==-1&&nextOpen<nextClose){
+      depth++;idx=nextOpen+4;
+    }else{
+      depth--;idx=nextClose+6;
+      if(depth===0)break;
+    }
+  }
+  return (html.slice(0,start)+html.slice(idx)).trim();
 }
 function closeModal(id){
   // If called with no id or a bad id, close any open sheet + generic modals
@@ -12184,12 +12224,13 @@ function renderGoalForm(draft,isEdit){
 }
 
 function submitNewGoal(){
+  const val=(fid)=>{const el=document.getElementById(fid);return el?el.value:'';};
   const opts={
-    label:document.getElementById('goal-label').value.trim(),
-    target:+document.getElementById('goal-target').value||0,
-    saved:+document.getElementById('goal-saved').value||0,
-    deadline:document.getElementById('goal-deadline').value.trim(),
-    notes:document.getElementById('goal-notes').value.trim(),
+    label:val('goal-label').trim(),
+    target:+val('goal-target')||0,
+    saved:+val('goal-saved')||0,
+    deadline:val('goal-deadline').trim(),
+    notes:val('goal-notes').trim(),
     icon:_newGoalDraft.icon,
     color:_newGoalDraft.color,
     type:_newGoalDraft.type||'savings'
@@ -12230,14 +12271,16 @@ function openEditGoalModal(id){
 function submitEditGoal(id){
   const g=goalById(id);if(!g){showToast('Goal not found');return;}
   const draft=_newGoalDraft||{};
-  const savedRaw=document.getElementById('goal-saved').value;
-  const targetRaw=document.getElementById('goal-target').value;
+  const val=(fid)=>{const el=document.getElementById(fid);return el?el.value:'';};
+  const savedRaw=val('goal-saved');
+  const targetRaw=val('goal-target');
+  const labelRaw=val('goal-label');
   const patch={
-    label:document.getElementById('goal-label').value.trim(),
+    label:labelRaw.trim(),
     target:targetRaw===''?0:(+targetRaw||0),
     saved:savedRaw===''?0:(+savedRaw||0),      // explicit: empty or 0 both save as 0
-    deadline:document.getElementById('goal-deadline').value.trim(),
-    notes:document.getElementById('goal-notes').value.trim(),
+    deadline:val('goal-deadline').trim(),
+    notes:val('goal-notes').trim(),
     icon:draft.icon||g.icon,
     color:draft.color||g.color
   };
