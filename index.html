@@ -2375,9 +2375,30 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.8.3';
+const APP_VERSION='2.8.4';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.8.4',
+    date:'2026-07-23',
+    title:'Analytics Wave 3 — Income and Trends',
+    sections:{
+      features:[
+        '💵 **Income section.** Expected vs actual — compares what your jobs should pay against what actually landed this period, with a progress bar and plain-English read. Income by source attributes each payment to a job using its keywords, showing how much of each source\'s expected amount has arrived. Tap any source to see every payment',
+        '📊 **Pay reliability.** For your full-time income, measures the average gap between paydays and how consistent it is ("Very steady · ±1 day variance") from your logged payment history',
+        '⏱ **Effective hourly rate.** For any job with hours-per-week set, shows your real take-home per hour — net income divided by hours worked. Add hours on the Jobs page to light this up',
+        '💰 **Income vs outgoings.** A clean waterfall of income in, spending out, invested, and your net surplus or shortfall for the period',
+        '📈 **Trends section.** A 12-month line chart with six toggleable metrics — total spend, income, saved, variable, fixed, and savings rate — with gridlines and data points. Below it, a month-by-month comparison grid showing each month\'s value and its change',
+        '🔀 **Category trajectories.** Small-multiple mini-charts for your top four categories, each showing its own 6-month shape with a rising/falling/flat read. Tap any to drill in. Plus a next-month spending projection from your recent trend'
+      ],
+      improvements:[
+        'The Trends section always works on a rolling 12-month monthly view regardless of the selected period, since trends need time to be meaningful',
+        'Income attribution is keyword-based and reuses the same job keywords that categorise your imports, so it stays consistent with how income is recognised elsewhere',
+        'Both sections reuse the Wave 2 drill-down sheet system, so tapping through feels identical across the whole analytics tab'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'2.8.3',
     date:'2026-07-23',
@@ -13594,12 +13615,327 @@ function escapeAttr(s){return String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;
 
 function buildAnIncome(){
   const el=document.getElementById('an-sec-income');if(!el)return;
-  el.innerHTML=`<div class="an-empty">💵 The Income section lands in Wave 3 — source breakdown, pay reliability, and hourly rate analysis.</div>`;
+  const period=S.analyticsPeriod||'month';
+  const A=computeAnalytics(period);
+  if(typeof ensureJobs==='function')ensureJobs();
+  const jobs=(S.jobs||[]).filter(j=>j.active);
+
+  // Actual income transactions this period
+  const incomeTxns=A.txns.filter(t=>t.dir==='in'&&t.cat==='income');
+  const actualTotal=incomeTxns.reduce((a,t)=>a+(t.amt||0),0);
+
+  // Attribute each income transaction to a job via keywords
+  function attributeToJob(txn){
+    const hay=((txn.payee||'')+' '+(txn.note||'')+' '+(txn.narrative||'')).toLowerCase();
+    for(const j of jobs){
+      const kws=j.keywords||[];
+      if(kws.some(k=>k&&hay.includes(k.toLowerCase())))return j.id;
+    }
+    return null;
+  }
+  const bySource={};
+  let attributed=0;
+  incomeTxns.forEach(t=>{
+    const jid=attributeToJob(t);
+    const key=jid||'other';
+    if(!bySource[key])bySource[key]={amt:0,count:0,txns:[]};
+    bySource[key].amt+=(t.amt||0);bySource[key].count++;bySource[key].txns.push(t);
+    if(jid)attributed+=(t.amt||0);
+  });
+
+  // Expected monthly income from jobs, scaled to the period
+  const scale=period==='week'?1/4.33:period==='month'?1:period==='quarter'?3:period==='year'?12:1;
+  let expectedMonthly=0;
+  const jobExpected={};
+  jobs.forEach(j=>{
+    let m=0;
+    if(j.netMonthly>0)m=j.netMonthly;
+    else if(j.grossAnnual>0)m=Math.round((typeof calcNetAnnual==='function'?calcNetAnnual(j.grossAnnual):j.grossAnnual*0.75)/12);
+    else if(j.grossWeekly>0)m=Math.round((typeof calcNetAnnual==='function'?calcNetAnnual(j.grossWeekly*52):j.grossWeekly*52*0.85)/12);
+    jobExpected[j.id]=m;expectedMonthly+=m;
+  });
+  const expectedPeriod=period==='all'?null:Math.round(expectedMonthly*scale);
+
+  // ── Source breakdown cards ──
+  const sourceRows=jobs.map(j=>{
+    const got=bySource[j.id]?bySource[j.id].amt:0;
+    const exp=jobExpected[j.id]*scale;
+    const pct=exp>0?Math.round(got/exp*100):null;
+    const col=j.id==='fulltime'?'#2a78d6':j.id==='dominos'?'#eb6834':'#1baf7a';
+    return`<div class="an-tbl-row" ${bySource[j.id]?`onclick="openIncomeSourceDrill('${j.id}')"`:''}>
+      <div class="an-tbl-ico" style="background:${col}22;color:${col}">${j.id==='fulltime'?'💼':j.id==='dominos'?'🍕':'💰'}</div>
+      <div class="an-tbl-main">
+        <div class="an-tbl-name">${escapeHtml(j.label)}</div>
+        <div class="an-tbl-sub">${bySource[j.id]?`${bySource[j.id].count} payment${bySource[j.id].count===1?'':'s'}`:'nothing logged'}${exp>0&&period!=='all'?` · expected ${fmtDI(exp)}`:''}</div>
+      </div>
+      <div class="an-tbl-right">
+        <div class="an-tbl-amt">${fmtDI(got)}</div>
+        ${pct!=null&&period!=='all'?`<div class="an-tbl-delta" style="color:${pct>=95?'var(--acc)':pct>=70?'var(--y)':'var(--r)'}">${pct}% of expected</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+  const otherIncome=bySource.other;
+  const otherRow=otherIncome?`<div class="an-tbl-row" onclick="openIncomeSourceDrill('other')">
+    <div class="an-tbl-ico" style="background:#7d8fa322;color:#7d8fa3">❓</div>
+    <div class="an-tbl-main"><div class="an-tbl-name">Unattributed</div><div class="an-tbl-sub">${otherIncome.count} payment${otherIncome.count===1?'':'s'} · no matching job keyword</div></div>
+    <div class="an-tbl-amt">${fmtDI(otherIncome.amt)}</div>
+  </div>`:'';
+
+  // ── Expected vs actual headline ──
+  const evaCard=(expectedPeriod!=null)?`<div class="an-card">
+    <div class="an-card-t">Expected vs actual</div>
+    <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
+      <span style="font-size:24px;font-weight:800;color:var(--t);font-variant-numeric:tabular-nums">${fmtDI(actualTotal)}</span>
+      <span style="font-size:12px;color:var(--t3)">of ${fmtDI(expectedPeriod)} expected</span>
+    </div>
+    <div style="height:10px;background:var(--bg4);border-radius:5px;overflow:hidden;margin-bottom:6px">
+      <div style="width:${Math.min(100,expectedPeriod>0?Math.round(actualTotal/expectedPeriod*100):0)}%;height:100%;background:${actualTotal>=expectedPeriod*0.95?'var(--acc)':actualTotal>=expectedPeriod*0.7?'var(--y)':'var(--r)'}"></div>
+    </div>
+    <div style="font-size:10px;color:var(--t3);line-height:1.5">${actualTotal>=expectedPeriod*0.95?'Your income is landing as expected.':actualTotal>=expectedPeriod*0.7?'Some expected income has not landed yet this period.':period==='month'?'Well below expected — either paydays have not arrived yet or income was not logged.':'Below expected for this period.'}</div>
+  </div>`:'';
+
+  // ── Pay reliability: gaps between full-time paydays ──
+  let reliabilityCard='';
+  const ftTxns=(S.transactions||[]).filter(t=>{
+    if(t.dir!=='in'||t.cat!=='income')return false;
+    const hay=((t.payee||'')+' '+(t.note||'')).toLowerCase();
+    const ft=jobs.find(j=>j.id==='fulltime');
+    return ft&&(ft.keywords||[]).some(k=>k&&hay.includes(k.toLowerCase()));
+  }).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  if(ftTxns.length>=3){
+    const gaps=[];
+    for(let i=1;i<ftTxns.length;i++){
+      const d1=new Date(ftTxns[i-1].date+'T12:00:00'),d2=new Date(ftTxns[i].date+'T12:00:00');
+      gaps.push(Math.round((d2-d1)/(1000*60*60*24)));
+    }
+    const avgGap=Math.round(gaps.reduce((a,g)=>a+g,0)/gaps.length);
+    const variance=gaps.length>1?Math.round(Math.sqrt(gaps.reduce((a,g)=>a+Math.pow(g-avgGap,2),0)/gaps.length)):0;
+    reliabilityCard=`<div class="an-card">
+      <div class="an-card-t">Pay reliability · full-time</div>
+      <div class="an-drill-stat" style="margin-bottom:0">
+        <div class="an-drill-card"><div class="an-drill-l">Avg gap</div><div class="an-drill-v">${avgGap} days</div></div>
+        <div class="an-drill-card"><div class="an-drill-l">Consistency</div><div class="an-drill-v" style="color:${variance<=2?'var(--acc)':variance<=5?'var(--y)':'var(--r)'}">${variance<=2?'Very steady':variance<=5?'Fairly steady':'Irregular'}</div></div>
+      </div>
+      <div style="font-size:10px;color:var(--t3);line-height:1.5;margin-top:10px">Based on ${ftTxns.length} logged full-time payments, ±${variance} days variance.</div>
+    </div>`;
+  }
+
+  // ── Hourly rate analysis (needs hoursPerWeek) ──
+  let hourlyCard='';
+  const hourlyJobs=jobs.filter(j=>j.hoursPerWeek>0);
+  if(hourlyJobs.length){
+    hourlyCard=`<div class="an-card">
+      <div class="an-card-t">Effective hourly rate</div>
+      ${hourlyJobs.map(j=>{
+        const monthlyNet=jobExpected[j.id];
+        const weeklyNet=monthlyNet*12/52;
+        const rate=j.hoursPerWeek>0?weeklyNet/j.hoursPerWeek:0;
+        return`<div class="an-txn-row"><div class="an-txn-payee">${escapeHtml(j.label)} · ${j.hoursPerWeek}h/wk</div><div class="an-txn-amt" style="color:var(--acc)">${fmtD(rate)}/hr</div></div>`;
+      }).join('')}
+      <div style="font-size:10px;color:var(--t3);line-height:1.5;margin-top:8px">Net take-home divided by hours worked. Add hours per week on the Jobs page for any job to see its rate.</div>
+    </div>`;
+  }
+
+  // ── Income vs spending this period ──
+  const surplus=actualTotal-A.cur.spend-A.cur.invested;
+  const waterfallCard=`<div class="an-card">
+    <div class="an-card-t">Income vs outgoings</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--t2)">Income in</span><span style="font-size:13px;font-weight:700;color:var(--acc)">+${fmtDI(actualTotal)}</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--t2)">Spending out</span><span style="font-size:13px;font-weight:700;color:var(--r)">-${fmtDI(A.cur.spend)}</span></div>
+      ${A.cur.invested>0?`<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--t2)">Invested</span><span style="font-size:13px;font-weight:700;color:var(--acc2)">-${fmtDI(A.cur.invested)}</span></div>`:''}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:0.5px solid var(--bdr)"><span style="font-size:12px;font-weight:700;color:var(--t)">Net ${surplus>=0?'surplus':'shortfall'}</span><span style="font-size:15px;font-weight:800;color:${surplus>=0?'var(--acc)':'var(--r)'}">${surplus>=0?'+':''}${fmtDI(surplus)}</span></div>
+    </div>
+  </div>`;
+
+  if(!jobs.length&&!incomeTxns.length){
+    el.innerHTML=`<div class="an-empty">💵 No income sources set up yet.<br>Add your jobs on the Jobs page, or log some income transactions.</div>`;
+    return;
+  }
+
+  el.innerHTML=`
+    ${evaCard}
+    <div class="an-card">
+      <div class="an-card-t">Income by source</div>
+      ${sourceRows}${otherRow}
+      ${attributed<actualTotal&&!otherRow?'':''}
+    </div>
+    ${waterfallCard}
+    ${reliabilityCard}
+    ${hourlyCard}
+  `;
 }
+
+function openIncomeSourceDrill(jobId){
+  const period=S.analyticsPeriod||'month';
+  const A=computeAnalytics(period);
+  const jobs=(S.jobs||[]);
+  const job=jobs.find(j=>j.id===jobId);
+  const label=job?job.label:'Unattributed income';
+  const incomeTxns=A.txns.filter(t=>t.dir==='in'&&t.cat==='income');
+  function matches(t){
+    const hay=((t.payee||'')+' '+(t.note||'')+' '+(t.narrative||'')).toLowerCase();
+    if(jobId==='other')return !jobs.some(j=>(j.keywords||[]).some(k=>k&&hay.includes(k.toLowerCase())));
+    return job&&(job.keywords||[]).some(k=>k&&hay.includes(k.toLowerCase()));
+  }
+  const txns=incomeTxns.filter(matches).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const total=txns.reduce((a,t)=>a+(t.amt||0),0);
+  const avg=txns.length?total/txns.length:0;
+  showSheet(`💰 ${label}`,`
+    <div class="an-drill-stat">
+      <div class="an-drill-card"><div class="an-drill-l">Total this period</div><div class="an-drill-v">${fmtD(total)}</div></div>
+      <div class="an-drill-card"><div class="an-drill-l">Payments</div><div class="an-drill-v">${txns.length}</div></div>
+      <div class="an-drill-card"><div class="an-drill-l">Average</div><div class="an-drill-v">${fmtD(avg)}</div></div>
+      <div class="an-drill-card"><div class="an-drill-l">Type</div><div class="an-drill-v" style="font-size:13px">${job?escapeHtml(job.type||'—'):'Unknown'}</div></div>
+    </div>
+    <div class="an-card">
+      <div class="an-card-t">Every payment this period</div>
+      ${txns.length?txns.map(t=>`<div class="an-txn-row">
+        <div style="min-width:0"><div class="an-txn-payee">${escapeHtml(t.payee||'—')}</div><div class="an-txn-date">${fmtDate(t.date)}</div></div>
+        <div class="an-txn-amt" style="color:var(--acc)">+${fmtDI(t.amt)}</div>
+      </div>`).join(''):'<div class="an-empty">No payments this period.</div>'}
+    </div>
+  `);
+}
+
+let _anTrendMetric='spend';
 function buildAnTrends(){
   const el=document.getElementById('an-sec-trends');if(!el)return;
-  el.innerHTML=`<div class="an-empty">📈 The Trends section lands in Wave 3 — multi-metric series, month-over-month grid, and projections.</div>`;
+  // Trends always works on a rolling monthly view regardless of period (trends need time)
+  const N=12;
+  const now=new Date();
+  const months=[];
+  for(let i=N-1;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    const e=new Date(now.getFullYear(),now.getMonth()-i+1,0,23,59,59);
+    months.push({d,e,ym:d.toISOString().slice(0,7),label:d.toLocaleDateString('en-AU',{month:'short'})});
+  }
+  const seriesData=months.map(m=>{
+    const list=txnsInRange({start:m.d,end:m.e});
+    const variable=list.filter(isVariableSpend).reduce((a,t)=>a+(t.amt||0),0);
+    const fixed=list.filter(isFixedSpend).reduce((a,t)=>a+(t.amt||0),0);
+    const income=list.filter(t=>t.dir==='in'&&t.cat==='income').reduce((a,t)=>a+(t.amt||0),0);
+    const invested=list.filter(t=>t.dir==='out'&&t.cat==='investments').reduce((a,t)=>a+(t.amt||0),0);
+    const spend=variable+fixed;
+    const saved=income-spend-invested;
+    return{spend,income,saved:saved+invested,variable,fixed,rate:income>0?Math.round((saved+invested)/income*100):0};
+  });
+  const metricDefs={
+    spend:{label:'Total spend',color:'#eb6834'},
+    income:{label:'Income',color:'#1baf7a'},
+    saved:{label:'Saved',color:'#00e599'},
+    variable:{label:'Variable',color:'#eda100'},
+    fixed:{label:'Fixed',color:'#2a78d6'},
+    rate:{label:'Savings rate',color:'#4a3aa7'}
+  };
+  const activeVals=seriesData.map(s=>s[_anTrendMetric]);
+  const md=metricDefs[_anTrendMetric];
+
+  // Metric toggle chips
+  const chips=Object.entries(metricDefs).map(([k,m])=>`<button class="an-sort-b ${k===_anTrendMetric?'on':''}" onclick="setTrendMetric('${k}')">${m.label}</button>`).join('');
+
+  // Big line chart via sparkline (scaled up)
+  const maxV=Math.max(...activeVals,1);
+  const chartH=140;
+  const lineChart=`<div style="position:relative">${bigLineSvg(activeVals,months.map(m=>m.label),md.color,chartH,_anTrendMetric==='rate')}</div>`;
+
+  // Month-over-month comparison grid (last 6 months)
+  const recent=months.slice(-6).map((m,idx)=>{
+    const gi=months.length-6+idx;
+    const s=seriesData[gi];
+    const prev=gi>0?seriesData[gi-1]:null;
+    const d=prev?deltaInfo(s[_anTrendMetric],prev[_anTrendMetric],_anTrendMetric==='spend'||_anTrendMetric==='variable'||_anTrendMetric==='fixed'):null;
+    const val=_anTrendMetric==='rate'?s[_anTrendMetric]+'%':fmtDI(s[_anTrendMetric]);
+    return`<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-top:0.5px solid var(--bdr)">
+      <span style="font-size:12px;color:var(--t2)">${m.d.toLocaleDateString('en-AU',{month:'long',year:'2-digit'})}</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:13px;font-weight:700;color:var(--t);font-variant-numeric:tabular-nums">${val}</span>
+        ${d?`<span style="font-size:10px;font-weight:600;color:${d.color};min-width:44px;text-align:right">${d.arrow} ${d.pct}%</span>`:'<span style="min-width:44px"></span>'}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Category trajectory small multiples (top 4 categories, 6-month mini trends)
+  const A=computeAnalytics('all');
+  const topCats=A.cats.slice(0,4);
+  const smallMultiples=topCats.map(c=>{
+    const vals=lastNMonthsForCat(c.id,6).vals;
+    const trend=vals.length>=2?(vals[vals.length-1]-vals[0]):0;
+    return`<div style="background:var(--glass);border:0.5px solid var(--bdr);border-radius:10px;padding:10px" onclick="openCatDrill('${c.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.icon} ${c.label}</span>
+      </div>
+      ${sparklineSvg(vals,{width:130,height:36,inline:true,color:c.color})}
+      <div style="font-size:9px;color:${trend>0?'var(--r)':trend<0?'var(--acc)':'var(--t3)'};margin-top:4px">${trend>0?'↑ rising':trend<0?'↓ falling':'→ flat'}</div>
+    </div>`;
+  }).join('');
+
+  // Simple projection: linear from last 3 months
+  let projCard='';
+  const last3=seriesData.slice(-3).map(s=>s.spend);
+  if(last3.length===3&&last3.some(v=>v>0)){
+    const avgSpend=Math.round(last3.reduce((a,v)=>a+v,0)/3);
+    const trend=last3[2]-last3[0];
+    const nextEst=Math.max(0,Math.round(last3[2]+trend/2));
+    projCard=`<div class="an-card">
+      <div class="an-card-t">Next month projection</div>
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px">
+        <span style="font-size:22px;font-weight:800;color:var(--t);font-variant-numeric:tabular-nums">${fmtDI(nextEst)}</span>
+        <span style="font-size:11px;color:var(--t3)">projected spend</span>
+      </div>
+      <div style="font-size:10px;color:var(--t3);line-height:1.5">Based on your last 3 months (avg ${fmtDI(avgSpend)}), spending is ${trend>50?'trending up':trend<-50?'trending down':'holding steady'}.</div>
+    </div>`;
+  }
+
+  el.innerHTML=`
+    <div class="an-card">
+      <div class="an-card-t">12-month trend</div>
+      <div class="an-sort-row">${chips}</div>
+      ${lineChart}
+    </div>
+    <div class="an-card">
+      <div class="an-card-t">${md.label} · month by month</div>
+      ${recent}
+    </div>
+    ${projCard}
+    ${topCats.length?`<div class="an-card">
+      <div class="an-card-t">Category trajectories · tap to drill</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${smallMultiples}</div>
+    </div>`:''}
+  `;
 }
+function setTrendMetric(m){_anTrendMetric=m;buildAnTrends();}
+
+// A larger line chart (SVG) for the trends view — with gridlines + area fill
+function bigLineSvg(values,labels,color,height,isPct){
+  const width=300;
+  if(!values||values.length<2)return`<div class="an-empty">Not enough history yet.</div>`;
+  const max=Math.max(...values,isPct?100:1),min=Math.min(...values,0);
+  const range=(max-min)||1;
+  const pad=6;
+  const dx=width/(values.length-1);
+  const pts=values.map((v,i)=>{
+    const x=i*dx;
+    const y=height-pad-((v-min)/range)*(height-pad*2);
+    return{x,y,v};
+  });
+  const line=pts.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const area=`0,${height} `+line+` ${width},${height}`;
+  const gid='trend-'+Math.random().toString(36).slice(2,8);
+  // Gridlines at 0/50/100%
+  const gridY=[0.25,0.5,0.75].map(f=>{const y=pad+f*(height-pad*2);return`<line x1="0" y1="${y}" x2="${width}" y2="${y}" stroke="rgba(255,255,255,.05)" stroke-width="1"/>`;}).join('');
+  // X labels (every other to avoid crowding)
+  const xLabels=labels.map((l,i)=>i%2===0?`<span style="font-size:8px;color:var(--t3)">${l}</span>`:'<span></span>').join('');
+  return`<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="width:100%;height:${height}px;display:block">
+    <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity="0.25"/><stop offset="100%" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
+    ${gridY}
+    <polygon points="${area}" fill="url(#${gid})"/>
+    <polyline points="${line}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    ${pts.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.5" fill="${color}"/>`).join('')}
+  </svg>
+  <div style="display:flex;justify-content:space-between;margin-top:4px">${xLabels}</div>`;
+}
+
 function buildAnWealth(){
   const el=document.getElementById('an-sec-wealth');if(!el)return;
   el.innerHTML=`<div class="an-empty">💎 The Wealth section lands in Wave 4 — net worth composition, allocation drift, and goal funding.</div>`;
