@@ -782,6 +782,8 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .an-attn-row:first-of-type{border-top:none;padding-top:2px}
 .an-attn-ico{font-size:14px;flex-shrink:0;line-height:1.4}
 .an-attn-txt{font-size:11.5px;color:var(--t2);line-height:1.55}
+/* v2.8.9 — sticky import action bar so you never scroll to apply */
+.import-sticky-bar{position:sticky;top:0;z-index:5;display:flex;gap:8px;padding:10px 0;margin-bottom:8px;background:linear-gradient(180deg,var(--bg) 70%,transparent);backdrop-filter:blur(4px)}
 /* v2.8.3 — Spending section */
 .an-treemap{display:flex;gap:3px;height:150px;margin-bottom:4px}
 .an-tm-col{display:flex;flex-direction:column;gap:3px;min-width:0}
@@ -2383,9 +2385,43 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.8.8';
+const APP_VERSION='2.8.10';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.8.10',
+    date:'2026-07-27',
+    title:'Import categorisation — the real income bug',
+    sections:{
+      features:[],
+      improvements:[
+        'Exact transaction rules now take priority over fuzzy history matching during import, so a clearly-labelled narrative is always categorised by its rule first'
+      ],
+      fixes:[
+        '🐛 **Fixed salary being mislabelled as a payment from a relative.** Your pay (DEPOSIT-SALARY METAL MANU LTD) was being hijacked by the history-matching step: generic words in the narrative like DEPOSIT and SALARY coincidentally matched unrelated past transactions, so the importer guessed the wrong payee before the exact salary rule ever ran. Exact rules now run first — salary is recognised as salary. This also fixes any other transaction with a recognisable narrative that could have been overridden by coincidental word matches in your history'
+      ]
+    }
+  },
+  {
+    v:'2.8.9',
+    date:'2026-07-27',
+    title:'CSV import fixes — reclassify, sticky import button, better transfer detection',
+    sections:{
+      features:[
+        '🔧 **Fix any transaction before importing.** Every new row in the import preview now has a "Fix" button — change the payee, change the category, or mark it as an internal transfer to exclude it. Optionally remember the fix so future imports of the same narrative are handled automatically. This is the reliable way to correct income that came through under the wrong name',
+        '📌 **Sticky "Import" button.** The import button now sticks to the top of the preview as you scroll, so you no longer have to scroll all the way to the bottom to apply a big import'
+      ],
+      improvements:[
+        'Added MM Manufacturing salary detection so full-time pay is recognised as income even when it arrives via Osko rather than a labelled salary deposit',
+        'Broadened Westpac internal-transfer detection to catch more narrative formats (TFR + Life/Choice/Saver in either order, mobile/online transfers, generic "transfer to my/own account"), so more self-transfers are excluded automatically',
+        'When you mark something as an internal transfer via Fix, it moves straight to the excluded bucket and can teach a rule so it stays excluded next time'
+      ],
+      fixes:[
+        '🐛 Income arriving via Osko could be attributed to the sending person\'s name instead of the employer. You can now correct this in one tap with Fix, and teach it so it never happens again',
+        '🐛 Some Westpac internal transfers were still being recorded as real transactions because their narrative format wasn\'t covered — the detection now catches more variants'
+      ]
+    }
+  },
   {
     v:'2.8.8',
     date:'2026-07-27',
@@ -15839,6 +15875,11 @@ const BANK_RULES=[
   {match:/DEPOSIT-SALARY KMART AUSTRALIA/i,   cat:'income',  payee:'Kmart (historical pay)',   direction:'in'},
   {match:/DOMINO'?S|DOMINOS PIZZA|DOMINO PIZZA/i, cat:'income',  payee:"Domino's (delivery pay)",   direction:'in'},
   {match:/DEPOSIT-SALARY METAL MANU/i,        cat:'income',  payee:'Full-time salary',     direction:'in'},
+  // v2.8.9 — MM Manufacturing pays via Osko; narrative can show the company or the
+  // sender's name rather than "DEPOSIT-SALARY". Catch the common variants as INCOME
+  // (direction:'in' guard prevents matching outgoing payments to a similarly-named payee).
+  {match:/\bMM\s*MANUFACTURING\b/i,           cat:'income',  payee:'Full-time salary (MM Manufacturing)', direction:'in'},
+  {match:/\bMETAL\s*MANU/i,                    cat:'income',  payee:'Full-time salary (MM Manufacturing)', direction:'in'},
   {match:/TFR Westpac|WITHDRAWAL MOBILE.*TFR|DEPOSIT ONLINE.*TFR/i, cat:'transfer', payee:'Westpac internal transfer'},
   {match:/WITHDRAWAL-OSKO PAYMENT.*Stuart Austin Hardstaff/i, cat:'transfer', payee:'Own account (Osko)'},
   // ── Food & fast food ───────────────────────────────────────
@@ -16489,7 +16530,15 @@ const INTERNAL_TRANSFER_PATTERNS=[
   /TRANSFER\s+(?:TO|FROM)\s+(?:SAVINGS|SAVER|LIFE|CHOICE|ESAVER)/i,
   /OSKO\s+PAYMENT.*(?:STUART|HARDSTAFF)/i,
   /NETBANK\s+TRANSFER/i,
-  /\bINTERNAL\s+TRANSFER\b/i
+  /\bINTERNAL\s+TRANSFER\b/i,
+  // v2.8.9 — broader Westpac self-transfer coverage
+  /\bTFR\b.*\b(?:LIFE|CHOICE|SAVER|SAVINGS)\b/i,
+  /\b(?:LIFE|CHOICE|SAVER|SAVINGS)\b.*\bTFR\b/i,
+  /WITHDRAWAL[- ]?MOBILE\s+(?:TRANSFER|TFR)/i,
+  /DEPOSIT[- ]?ONLINE\s+(?:TRANSFER|TFR)/i,
+  /TRANSFER\s+(?:TO|FROM)\s+(?:MY|OWN)\b/i,
+  /\bWESTPAC\b.*\b(?:TRANSFER|TFR)\b/i,
+  /\b(?:TRANSFER|TFR)\b.*\bWESTPAC\b/i
 ];
 
 // Returns true if the narrative looks like a movement between the user's own accounts.
@@ -16511,7 +16560,21 @@ function categoriseWithConfidence(row,payeeHistory){
   if(isInternalTransfer(narrative)){
     return{cat:'transfer',payee:extractPayeeFromNarrative(narrative)||'Internal transfer',confidence:92,source:'internal-transfer',internalTransfer:true};
   }
-  // Step 1: try user's own transaction history first — this is the strongest signal
+  // v2.8.10 — Step 0.5: strong EXACT rules run BEFORE fuzzy history matching.
+  // Previously, history-token matching (Step 1) could hijack an unambiguous
+  // narrative like "DEPOSIT-SALARY METAL MANU LTD" because generic tokens such as
+  // DEPOSIT/SALARY matched unrelated past transactions (e.g. a payment from a
+  // relative), mislabelling salary as that person. Custom rules and specific
+  // built-in rules are exact substring/regex matches and should win outright.
+  const exact=categoriseBankTxn(narrative,direction);
+  if(exact.matched){
+    const isCustom=exact.ruleIdx&&String(exact.ruleIdx).startsWith('custom:');
+    if(exact.cat==='transfer'){
+      return{cat:'transfer',payee:exact.payee,confidence:90,source:'internal-transfer',internalTransfer:true};
+    }
+    return{cat:exact.cat,payee:exact.payee,confidence:isCustom?95:88,source:isCustom?'custom-rule':'bank-rule'};
+  }
+  // Step 1: try user's own transaction history — only when no exact rule matched.
   const tokens=normalizePayeeTokens(narrative);
   const histScores={};  // cat → total count across matching tokens
   let bestExamplePayee=null,bestExampleCount=0;
@@ -16534,17 +16597,7 @@ function categoriseWithConfidence(row,payeeHistory){
     // 1-2 prior matches → moderate signal
     return{cat:histTop[0],payee:bestExamplePayee||extractPayeeFromNarrative(narrative),confidence:75,source:'user-history'};
   }
-  // Step 2: existing categoriseBankTxn (custom rules + built-in BANK_RULES)
-  const cat=categoriseBankTxn(narrative,direction);
-  if(cat.matched){
-    // If a rule marked it a transfer, treat as internal
-    if(cat.cat==='transfer'){
-      return{cat:'transfer',payee:cat.payee,confidence:88,source:'internal-transfer',internalTransfer:true};
-    }
-    // Custom rule = higher confidence than built-in
-    const isCustom=cat.ruleIdx&&String(cat.ruleIdx).startsWith('custom:');
-    return{cat:cat.cat,payee:cat.payee,confidence:isCustom?90:60,source:isCustom?'custom-rule':'bank-rule'};
-  }
+  // (Exact bank rules already ran at Step 0.5 above.)
   // Step 3: Macquarie's own category, if present
   if(row.mqCat){
     const mqMap={
@@ -16713,7 +16766,11 @@ function renderBankImportPreview(){
         <div style="font-size:10px;color:var(--t3);margin-top:2px">${r.date} · ${c.icon} ${c.label}</div>
         <details style="margin-top:3px"><summary style="font-size:9px;color:var(--t3);cursor:pointer">raw narrative</summary><div style="font-size:9px;color:var(--t3);font-family:var(--mono);margin-top:2px;word-break:break-all">${r._narrative}</div></details>
       </div>
-      <div style="text-align:right;flex-shrink:0"><div style="font-size:12px;font-family:var(--mono);color:${r.dir==='in'?'var(--acc)':'var(--r)'};font-weight:700">${r.dir==='in'?'+':'-'}${fmtD(r.amt)}</div><div style="font-size:9px;color:var(--t3)">${r.dir}</div></div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:12px;font-family:var(--mono);color:${r.dir==='in'?'var(--acc)':'var(--r)'};font-weight:700">${r.dir==='in'?'+':'-'}${fmtD(r.amt)}</div>
+        <div style="font-size:9px;color:var(--t3)">${r.dir}</div>
+        ${section==='new'?`<button class="btn btn-ghost btn-xs" style="margin-top:4px;padding:2px 7px" onclick="reclassifyImportRow(${idx})">Fix</button>`:''}
+      </div>
     </div>`;
   };
   // v2.7.29 — Balance reconciliation card
@@ -16747,6 +16804,10 @@ function renderBankImportPreview(){
   el.innerHTML=`
     <hr style="border:none;border-top:1px solid var(--bdr);margin:0 0 12px">
     <div class="lbl" style="margin-bottom:6px">${bankLabel} import — review before saving</div>
+    ${classified.new.length?`<div class="import-sticky-bar">
+      <button class="btn btn-acc" style="flex:1" onclick="confirmBankImport()">✓ Import ${classified.new.length}</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeSheet()">Cancel</button>
+    </div>`:''}
     <div style="font-size:10px;color:var(--t3);line-height:1.55;margin-bottom:10px">Nothing will be deleted. Only <strong style="color:var(--acc)">new</strong> rows are added — anything already logged is skipped. Transactions with confidence under ${AUTO_APPLY_THRESHOLD}% will be flagged for your review after import.</div>
     ${reconcileHtml}
     <div style="background:var(--bg3);border-radius:10px;padding:10px 12px;margin-bottom:12px">
@@ -16797,6 +16858,65 @@ function includeInternalTransfer(idx){
   renderBankImportPreview();
 }
 
+// v2.8.9 — fix a transaction's category/payee at review time, and optionally teach
+// a rule so future imports of the same narrative are handled automatically.
+function reclassifyImportRow(idx){
+  if(!_pendingBankImport||!_pendingBankImport.classified.new)return;
+  const row=_pendingBankImport.classified.new[idx];
+  if(!row)return;
+  const cats=(typeof allCats==='function')?allCats():[];
+  const catOpts=cats.map(c=>`<option value="${c.id}" ${c.id===row.cat?'selected':''}>${c.icon} ${c.label}</option>`).join('');
+  const kw=(typeof extractKeyword==='function')?extractKeyword(row._narrative||''):'';
+  showSheet('Fix transaction',`
+    <div style="background:var(--bg3);border-radius:10px;padding:10px 12px;margin-bottom:14px">
+      <div style="font-size:11px;color:var(--t2);font-family:var(--mono);word-break:break-all;line-height:1.5">${escapeHtml(row._narrative||row.payee)}</div>
+      <div style="font-size:10px;color:var(--t3);margin-top:4px">${row.date} · ${row.dir==='in'?'+':'-'}${fmtD(row.amt)}</div>
+    </div>
+    <div class="lbl">Payee name</div>
+    <input type="text" id="rc-payee" class="inp" value="${escapeAttr(row.payee||'')}">
+    <div class="lbl">Category</div>
+    <select id="rc-cat" class="inp">${catOpts}</select>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12px;color:var(--t2);cursor:pointer">
+      <input type="checkbox" id="rc-internal" style="width:16px;height:16px"> This is a transfer between my own accounts (exclude it)
+    </label>
+    ${kw&&kw.length>=3?`<label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:var(--t2);cursor:pointer">
+      <input type="checkbox" id="rc-teach" checked style="width:16px;height:16px"> Remember this for future imports containing "${escapeHtml(kw)}"
+    </label>`:''}
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="renderBankImportPreview()">Cancel</button>
+      <button class="btn btn-acc btn-sm" style="flex:1" onclick="applyReclassify(${idx})">Apply</button>
+    </div>
+  `);
+}
+function applyReclassify(idx){
+  if(!_pendingBankImport)return;
+  const row=_pendingBankImport.classified.new[idx];
+  if(!row)return;
+  const newPayee=(document.getElementById('rc-payee')?.value||row.payee).trim();
+  const newCat=document.getElementById('rc-cat')?.value||row.cat;
+  const isInternal=document.getElementById('rc-internal')?.checked;
+  const teach=document.getElementById('rc-teach')?.checked;
+  const kw=(typeof extractKeyword==='function')?extractKeyword(row._narrative||''):'';
+  // Teach a custom rule so future imports catch it
+  if(teach&&kw&&kw.length>=3&&typeof ensureCustomRules==='function'){
+    const custom=ensureCustomRules();
+    if(!custom.some(r=>r.keyword===kw)){
+      custom.push({keyword:kw,cat:isInternal?'transfer':newCat,payee:isInternal?'Internal transfer':newPayee,direction:row.dir});
+      if(!S.customRules)S.customRules=custom;
+    }
+  }
+  if(isInternal){
+    // Move it to the excluded internal bucket
+    row.cat='transfer';row.payee='Internal transfer';row._internal=true;
+    if(!_pendingBankImport.classified.internal)_pendingBankImport.classified.internal=[];
+    _pendingBankImport.classified.internal.push(row);
+    _pendingBankImport.classified.new.splice(idx,1);
+  }else{
+    row.payee=newPayee;row.cat=newCat;row._confidence=100;row._catSource='user-fixed';
+  }
+  save();renderBankImportPreview();
+  showToast('✓ Updated'+(isInternal?' — excluded as transfer':''));
+}
 function confirmBankImport(){
   if(!_pendingBankImport)return;
   const {classified,bank}=_pendingBankImport;
