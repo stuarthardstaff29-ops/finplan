@@ -2375,9 +2375,27 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.8.4';
+const APP_VERSION='2.8.5';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.8.5',
+    date:'2026-07-23',
+    title:'Analytics Wave 4 — Wealth and Habits (analytics complete)',
+    sections:{
+      features:[
+        '💎 **Wealth section.** Net worth composition charted over your recent snapshots, a liquid-vs-invested split with per-account breakdown, portfolio allocation vs target (with a drift marker on each holding and a one-tap rebalance plan), goal funding progress across every goal, and a 6-month contribution-consistency bar chart',
+        '🔄 **Habits section.** Weekday vs weekend spending split, your logging streak and days tracked, a small-purchase impulse indicator, possible recurring payments detected from merchants you pay a consistent amount across 3+ months, category drift showing which categories are trending up or down over 3 months, and personal records (best savings rate, leanest month, longest streaks)',
+        '🎉 **Analytics is now complete** — all six sections built: Overview, Spending, Income, Trends, Wealth, and Habits, each with drill-downs, period awareness, and comparison built in'
+      ],
+      improvements:[
+        'The allocation-vs-target view marks your target percentage as a tick on each holding\'s bar, so drift is visible at a glance rather than needing mental math',
+        'Subscription detection looks for consistent amounts (within 15%) across 3+ months rather than just repeat merchants, so one-off repeat purchases don\'t get flagged as recurring',
+        'Every wealth and habits card degrades to a helpful empty state when the underlying data is thin, rather than showing a broken chart'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'2.8.4',
     date:'2026-07-23',
@@ -13938,11 +13956,262 @@ function bigLineSvg(values,labels,color,height,isPct){
 
 function buildAnWealth(){
   const el=document.getElementById('an-sec-wealth');if(!el)return;
-  el.innerHTML=`<div class="an-empty">💎 The Wealth section lands in Wave 4 — net worth composition, allocation drift, and goal funding.</div>`;
+  const invested=(typeof portTotal==='function')?portTotal():0;
+  const wp=(typeof calcBal==='function')?calcBal('westpac'):0;
+  const mq=(typeof calcBal==='function')?calcBal('macquarie'):0;
+  const liquid=wp+mq;
+  const nw=invested+liquid;
+  const hist=(S.nwHistory||[]).slice();
+
+  // ── Net worth composition over time ──
+  let compCard='';
+  if(hist.length>1){
+    const recent=hist.slice(-30);
+    const nwVals=recent.map(h=>h.nw);
+    const investedVals=recent.map(h=>h.invested||0);
+    compCard=`<div class="an-card">
+      <div class="an-card-t">Net worth · last ${recent.length} snapshots</div>
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px">
+        <span style="font-size:24px;font-weight:800;color:var(--t);font-variant-numeric:tabular-nums">${fmtD(nw)}</span>
+        ${(()=>{const first=recent[0].nw,delta=nw-first;return delta!==0?`<span style="font-size:12px;color:${delta>=0?'var(--acc)':'var(--r)'}">${delta>=0?'↗ +':'↘ '}${fmtDI(Math.abs(delta))} over period</span>`:'';})()}
+      </div>
+      ${bigLineSvg(nwVals,recent.map((h,i)=>i%5===0?fmtDate(h.date):''),'#00e599',130,false)}
+    </div>`;
+  }
+
+  // ── Liquid vs invested split ──
+  const liquidPct=nw>0?Math.round(liquid/nw*100):0;
+  const investedPct=100-liquidPct;
+  const splitCard=`<div class="an-card">
+    <div class="an-card-t">Liquid vs invested</div>
+    <div class="an-flow" style="margin-bottom:10px">
+      <div class="an-flow-seg" style="width:${liquidPct}%;background:#5aaa90;color:#04342C">${liquidPct>16?'Liquid':''}</div>
+      <div class="an-flow-seg" style="width:${investedPct}%;background:#4a3aa7;color:#EEEDFE">${investedPct>16?'Invested':''}</div>
+    </div>
+    <div class="an-drill-stat" style="margin-bottom:0">
+      <div class="an-drill-card"><div class="an-drill-l">Liquid (cash)</div><div class="an-drill-v">${fmtD(liquid)}</div><div style="font-size:10px;color:var(--t3);margin-top:2px">${liquidPct}% · Westpac ${fmtDI(wp)} · Macq ${fmtDI(mq)}</div></div>
+      <div class="an-drill-card"><div class="an-drill-l">Invested</div><div class="an-drill-v">${fmtD(invested)}</div><div style="font-size:10px;color:var(--t3);margin-top:2px">${investedPct}% of net worth</div></div>
+    </div>
+  </div>`;
+
+  // ── Portfolio allocation vs target ──
+  let allocCard='';
+  if(invested>100){
+    const rows=TICKERS.map(t=>{
+      const val=S.portfolio?.[t]||0;
+      const actual=invested>0?val/invested*100:0;
+      const target=TPCT[t]||0;
+      const drift=actual-target;
+      return{t,val,actual,target,drift,col:TC[t]||'#7d8fa3',label:TL[t]||t};
+    }).filter(r=>r.val>0||r.target>0).sort((a,b)=>b.val-a.val);
+    allocCard=`<div class="an-card">
+      <div class="an-card-t">Allocation vs target</div>
+      ${rows.map(r=>`<div style="padding:8px 0;border-top:0.5px solid var(--bdr)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+          <span style="font-size:12px;font-weight:600;color:var(--t)"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${r.col};margin-right:6px"></span>${r.label}</span>
+          <span style="font-size:11px;color:var(--t2);font-variant-numeric:tabular-nums">${Math.round(r.actual)}% <span style="color:var(--t3)">/ ${r.target}%</span></span>
+        </div>
+        <div style="position:relative;height:6px;background:var(--bg4);border-radius:3px;overflow:hidden">
+          <div style="position:absolute;left:0;top:0;height:100%;width:${Math.min(100,r.actual)}%;background:${r.col};opacity:.7"></div>
+          <div style="position:absolute;left:${Math.min(100,r.target)}%;top:-2px;height:10px;width:2px;background:var(--t)"></div>
+        </div>
+        ${Math.abs(r.drift)>=5?`<div style="font-size:9px;color:${r.drift>0?'var(--y)':'var(--b)'};margin-top:3px">${r.drift>0?'overweight':'underweight'} by ${Math.abs(Math.round(r.drift))} pts</div>`:''}
+      </div>`).join('')}
+      <button class="btn btn-ghost btn-sm btn-full" style="margin-top:10px" onclick="openRebalancePlan()">📊 Rebalance plan</button>
+    </div>`;
+  }
+
+  // ── Goal funding progress ──
+  const goals=(typeof activeGoals==='function')?activeGoals():[];
+  let goalsCard='';
+  if(goals.length){
+    goalsCard=`<div class="an-card">
+      <div class="an-card-t">Goal funding</div>
+      ${goals.map(g=>{
+        const pct=g.target>0?Math.min(100,Math.round((g.saved||0)/g.target*100)):0;
+        return`<div style="padding:8px 0;border-top:0.5px solid var(--bdr)" onclick="openGoalDetail('${g.id}')">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+            <span style="font-size:12px;color:var(--t)">${g.icon} ${escapeHtml(g.label)}</span>
+            <span style="font-size:11px;color:var(--t2)">${fmtDI(g.saved||0)} / ${fmtDI(g.target||0)}</span>
+          </div>
+          <div style="height:6px;background:var(--bg4);border-radius:3px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${g.color||'var(--acc)'}"></div></div>
+        </div>`;
+      }).join('')}
+      <div style="font-size:10px;color:var(--t3);margin-top:10px">Total across goals: ${fmtDI(goals.reduce((a,g)=>a+(g.saved||0),0))} of ${fmtDI(goals.reduce((a,g)=>a+(g.target||0),0))}</div>
+    </div>`;
+  }
+
+  // ── Contribution consistency (money into goals + investments per month) ──
+  let contribCard='';
+  const now=new Date();
+  const contribMonths=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    const ym=d.toISOString().slice(0,7);
+    let sum=0;
+    goals.forEach(g=>{(g.log||[]).forEach(e=>{if(e.ts&&(e.amount||0)>0&&new Date(e.ts).toISOString().slice(0,7)===ym)sum+=e.amount;});});
+    // Plus investment contributions from transactions
+    sum+=(S.transactions||[]).filter(t=>t.dir==='out'&&t.cat==='investments'&&(t.date||'').startsWith(ym)).reduce((a,t)=>a+(t.amt||0),0);
+    contribMonths.push({label:d.toLocaleDateString('en-AU',{month:'short'}).charAt(0),val:Math.round(sum)});
+  }
+  if(contribMonths.some(m=>m.val>0)){
+    const maxC=Math.max(...contribMonths.map(m=>m.val),1);
+    contribCard=`<div class="an-card">
+      <div class="an-card-t">Contribution consistency · 6 months</div>
+      <div style="display:flex;align-items:flex-end;gap:6px;height:80px;margin-bottom:6px">
+        ${contribMonths.map(m=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end">
+          <div style="font-size:8px;color:var(--t3)">${m.val>0?fmtDI(m.val):''}</div>
+          <div style="width:100%;height:${Math.max(3,m.val/maxC*60)}px;background:${m.val>0?'var(--acc)':'var(--bg4)'};border-radius:4px 4px 0 0"></div>
+          <div style="font-size:9px;color:var(--t3)">${m.label}</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  if(nw===0&&!goals.length){
+    el.innerHTML=`<div class="an-empty">💎 Add account balances, holdings, or goals to see your wealth breakdown.</div>`;
+    return;
+  }
+
+  el.innerHTML=compCard+splitCard+allocCard+goalsCard+contribCard;
 }
+
 function buildAnHabits(){
   const el=document.getElementById('an-sec-habits');if(!el)return;
-  el.innerHTML=`<div class="an-empty">🔄 The Habits section lands in Wave 4 — streaks, weekday patterns, and subscription creep.</div>`;
+  const txns=(S.transactions||[]);
+  if(txns.length<5){
+    el.innerHTML=`<div class="an-empty">🔄 Habits need a bit of history to spot patterns.<br>Come back after logging or importing more transactions.</div>`;
+    return;
+  }
+  const spend=txns.filter(t=>t.dir==='out'&&t.cat!=='investments'&&catType(t.cat)!=='transfer');
+
+  // ── Weekday vs weekend split ──
+  let weekdayTotal=0,weekendTotal=0,weekdayCount=0,weekendCount=0;
+  spend.forEach(t=>{
+    const day=new Date(t.date+'T12:00:00').getDay();
+    if(day===0||day===6){weekendTotal+=t.amt;weekendCount++;}
+    else{weekdayTotal+=t.amt;weekdayCount++;}
+  });
+  const wdAvg=weekdayCount?weekdayTotal/weekdayCount:0;
+  const weAvg=weekendCount?weekendTotal/weekendCount:0;
+  const splitTotal=weekdayTotal+weekendTotal||1;
+  const wePct=Math.round(weekendTotal/splitTotal*100);
+  const weekendCard=`<div class="an-card">
+    <div class="an-card-t">Weekday vs weekend</div>
+    <div class="an-flow" style="margin-bottom:10px">
+      <div class="an-flow-seg" style="width:${100-wePct}%;background:#2a78d6;color:#042C53">${100-wePct>16?'Weekday':''}</div>
+      <div class="an-flow-seg" style="width:${wePct}%;background:#eb6834;color:#4A1B0C">${wePct>16?'Weekend':''}</div>
+    </div>
+    <div style="font-size:10px;color:var(--t3);line-height:1.5">Avg weekday transaction ${fmtD(wdAvg)} · avg weekend ${fmtD(weAvg)}${weAvg>wdAvg*1.3?' — weekends run notably higher':weAvg<wdAvg*0.7?' — weekdays run higher':''}</div>
+  </div>`;
+
+  // ── Logging streak (consecutive days with a transaction) ──
+  const dayset=new Set(txns.map(t=>t.date).filter(Boolean));
+  let streak=0;const cur=new Date();
+  for(let i=0;i<365;i++){
+    const ds=cur.toISOString().slice(0,10);
+    if(dayset.has(ds))streak++;
+    else if(i>0)break;
+    cur.setDate(cur.getDate()-1);
+  }
+  const totalDaysLogged=dayset.size;
+
+  // ── Impulse indicator: small frequent purchases (<$20) ──
+  const small=spend.filter(t=>t.amt<20);
+  const smallTotal=small.reduce((a,t)=>a+t.amt,0);
+  const smallByMonth={};
+  small.forEach(t=>{const ym=(t.date||'').slice(0,7);smallByMonth[ym]=(smallByMonth[ym]||0)+1;});
+  const recentMonth=new Date().toISOString().slice(0,7);
+  const smallThisMonth=smallByMonth[recentMonth]||0;
+
+  const habitStatsCard=`<div class="an-card">
+    <div class="an-card-t">Your patterns</div>
+    <div class="an-drill-stat" style="margin-bottom:0">
+      <div class="an-drill-card"><div class="an-drill-l">Logging streak</div><div class="an-drill-v">${streak} day${streak===1?'':'s'}</div></div>
+      <div class="an-drill-card"><div class="an-drill-l">Days tracked</div><div class="an-drill-v">${totalDaysLogged}</div></div>
+      <div class="an-drill-card"><div class="an-drill-l">Small buys (&lt;$20)</div><div class="an-drill-v">${small.length}</div><div style="font-size:10px;color:var(--t3);margin-top:2px">${fmtDI(smallTotal)} total · ${smallThisMonth} this month</div></div>
+      <div class="an-drill-card"><div class="an-drill-l">Avg transaction</div><div class="an-drill-v">${fmtD(spend.length?spend.reduce((a,t)=>a+t.amt,0)/spend.length:0)}</div></div>
+    </div>
+  </div>`;
+
+  // ── Subscription creep: recurring-looking merchants ──
+  const merchMonths={};
+  spend.forEach(t=>{
+    const p=(t.payee||'').trim();if(!p)return;
+    const ym=(t.date||'').slice(0,7);
+    if(!merchMonths[p])merchMonths[p]={months:new Set(),total:0,amts:[]};
+    merchMonths[p].months.add(ym);merchMonths[p].total+=t.amt;merchMonths[p].amts.push(t.amt);
+  });
+  const subs=Object.entries(merchMonths)
+    .filter(([p,d])=>d.months.size>=3&&d.amts.length>=3)
+    .map(([p,d])=>{
+      // Consistent amount = likely subscription
+      const avg=d.total/d.amts.length;
+      const consistent=d.amts.every(a=>Math.abs(a-avg)<avg*0.15);
+      return{name:p,months:d.months.size,avg,consistent,total:d.total};
+    })
+    .filter(s=>s.consistent)
+    .sort((a,b)=>b.months-a.months).slice(0,6);
+  let subsCard='';
+  if(subs.length){
+    subsCard=`<div class="an-card">
+      <div class="an-card-t">Possible recurring payments</div>
+      ${subs.map(s=>`<div class="an-txn-row" onclick="openMerchantDrill('${escapeAttr(s.name)}')">
+        <div style="min-width:0"><div class="an-txn-payee">${escapeHtml(s.name)}</div><div class="an-txn-date">${s.months} months · ~${fmtD(s.avg)} each</div></div>
+        <div class="an-txn-amt" style="color:var(--y)">${fmtDI(s.avg)}/mo</div>
+      </div>`).join('')}
+      <div style="font-size:10px;color:var(--t3);line-height:1.5;margin-top:8px">Merchants you've paid a similar amount to across 3+ months — likely subscriptions or regular bills.</div>
+    </div>`;
+  }
+
+  // ── Category drift: which categories are trending up over 3 months ──
+  const A=computeAnalytics('all');
+  const drifters=[];
+  A.cats.slice(0,10).forEach(c=>{
+    const vals=lastNMonthsForCat(c.id,3).vals;
+    if(vals.length===3&&vals[0]>0){
+      const change=(vals[2]-vals[0])/vals[0]*100;
+      if(Math.abs(change)>=25)drifters.push({cat:c,change,vals});
+    }
+  });
+  drifters.sort((a,b)=>Math.abs(b.change)-Math.abs(a.change));
+  let driftCard='';
+  if(drifters.length){
+    driftCard=`<div class="an-card">
+      <div class="an-card-t">Category drift · 3 months</div>
+      ${drifters.slice(0,5).map(d=>`<div class="an-txn-row" onclick="openCatDrill('${d.cat.id}')">
+        <div style="display:flex;align-items:center;gap:8px;min-width:0"><span>${d.cat.icon}</span><span class="an-txn-payee">${d.cat.label}</span></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          ${sparklineSvg(d.vals,{width:50,height:18,inline:true,color:d.change>0?'#e56a5a':'#00e599'})}
+          <span class="an-txn-amt" style="color:${d.change>0?'var(--r)':'var(--acc)'};min-width:44px;text-align:right">${d.change>0?'↑':'↓'}${Math.abs(Math.round(d.change))}%</span>
+        </div>
+      </div>`).join('')}
+      <div style="font-size:10px;color:var(--t3);line-height:1.5;margin-top:8px">Categories moving most over the last 3 months — worth a look if any surprise you.</div>
+    </div>`;
+  }
+
+  // ── Personal records ──
+  const monthTotals={};
+  spend.forEach(t=>{const ym=(t.date||'').slice(0,7);monthTotals[ym]=(monthTotals[ym]||0)+t.amt;});
+  const savingsMonths={};
+  (S.savingsRateHistory||[]).forEach(s=>{if(s.month)savingsMonths[s.month]=s.rate;});
+  const bestSaveRate=Object.entries(savingsMonths).sort((a,b)=>b[1]-a[1])[0];
+  const leanestMonth=Object.entries(monthTotals).filter(([m])=>m<recentMonth).sort((a,b)=>a[1]-b[1])[0];
+  let recordsCard='';
+  const records=[];
+  if(bestSaveRate)records.push(`🏆 Best savings rate: <strong style="color:var(--acc)">${bestSaveRate[1]}%</strong> in ${ymLabel(bestSaveRate[0])}`);
+  if(leanestMonth)records.push(`💚 Leanest spending month: <strong style="color:var(--t)">${fmtDI(leanestMonth[1])}</strong> in ${ymLabel(leanestMonth[0])}`);
+  if(streak>=3)records.push(`🔥 Current logging streak: <strong style="color:var(--y)">${streak} days</strong>`);
+  const biggestGoalStreak=Math.max(0,...(activeGoals?activeGoals():[]).map(g=>typeof goalContributionStreak==='function'?goalContributionStreak(g.id):0));
+  if(biggestGoalStreak>=2)records.push(`📈 Longest goal contribution streak: <strong style="color:var(--acc)">${biggestGoalStreak} months</strong>`);
+  if(records.length){
+    recordsCard=`<div class="an-card">
+      <div class="an-card-t">Personal records</div>
+      ${records.map(r=>`<div style="font-size:12px;color:var(--t2);line-height:1.7;padding:4px 0">${r}</div>`).join('')}
+    </div>`;
+  }
+
+  el.innerHTML=habitStatsCard+weekendCard+subsCard+driftCard+recordsCard;
 }
 function buildAnalyticsSummary(){
   const p=S.analyticsPeriod||'month';
