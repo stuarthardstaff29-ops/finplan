@@ -778,6 +778,43 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .an-attn-row:first-of-type{border-top:none;padding-top:2px}
 .an-attn-ico{font-size:14px;flex-shrink:0;line-height:1.4}
 .an-attn-txt{font-size:11.5px;color:var(--t2);line-height:1.55}
+/* v2.8.3 — Spending section */
+.an-treemap{display:flex;gap:3px;height:150px;margin-bottom:4px}
+.an-tm-col{display:flex;flex-direction:column;gap:3px;min-width:0}
+.an-tm-block{border-radius:7px;padding:8px;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer;overflow:hidden;transition:transform var(--dur-fast) var(--ease-out);min-width:0}
+.an-tm-block:active{transform:scale(.97)}
+.an-tm-name{font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+.an-tm-val{font-size:12px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.an-sort-row{display:flex;gap:5px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none}
+.an-sort-row::-webkit-scrollbar{display:none}
+.an-sort-b{flex:0 0 auto;padding:5px 11px;border:0.5px solid var(--bdr);background:transparent;border-radius:16px;font-size:11px;font-weight:600;color:var(--t3);cursor:pointer;font-family:var(--sans);white-space:nowrap;min-height:30px}
+.an-sort-b.on{background:var(--accd);border-color:var(--bdr-acc);color:var(--acc)}
+.an-tbl-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:0.5px solid var(--bdr);cursor:pointer}
+.an-tbl-row:first-of-type{border-top:none}
+.an-tbl-ico{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.an-tbl-main{flex:1;min-width:0}
+.an-tbl-name{font-size:12.5px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.an-tbl-sub{font-size:10px;color:var(--t3);margin-top:1px}
+.an-tbl-right{text-align:right;flex-shrink:0}
+.an-tbl-amt{font-size:13px;font-weight:700;color:var(--t);font-variant-numeric:tabular-nums}
+.an-tbl-delta{font-size:9px;font-weight:600;margin-top:1px}
+.an-rank{width:18px;font-size:11px;color:var(--t3);text-align:center;flex-shrink:0;font-variant-numeric:tabular-nums}
+/* Day-of-week heatmap */
+.an-heat{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px}
+.an-heat-cell{aspect-ratio:1;border-radius:5px;cursor:pointer;transition:transform var(--dur-fast) var(--ease-out);position:relative}
+.an-heat-cell:active{transform:scale(.9)}
+.an-heat-labels{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.an-heat-lbl{text-align:center;font-size:9px;color:var(--t3)}
+/* Drill sheet bits */
+.an-drill-stat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.an-drill-card{background:var(--glass);border:0.5px solid var(--bdr);border-radius:12px;padding:12px}
+.an-drill-l{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em}
+.an-drill-v{font-size:16px;font-weight:700;color:var(--t);margin-top:3px;font-variant-numeric:tabular-nums}
+.an-txn-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-top:0.5px solid var(--bdr)}
+.an-txn-row:first-of-type{border-top:none}
+.an-txn-payee{font-size:12px;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.an-txn-date{font-size:10px;color:var(--t3);margin-top:1px}
+.an-txn-amt{font-size:13px;font-weight:600;flex-shrink:0;font-variant-numeric:tabular-nums}
 /* ── v2.7.26 — V4 GOALS ── */
 .goal-card{display:flex;gap:14px;padding:16px;background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad-lg);margin-bottom:12px;cursor:pointer;transition:border-color var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out);position:relative;overflow:hidden}
 .goal-card:hover{border-color:var(--bdr-acc2)}
@@ -2338,9 +2375,29 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.8.2';
+const APP_VERSION='2.8.3';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.8.3',
+    date:'2026-07-23',
+    title:'Analytics Wave 2 — the Spending deep-dive',
+    sections:{
+      features:[
+        '🗂 **Category treemap.** Your spending categories sized by amount in a tap-anywhere block layout — the biggest categories are literally the biggest blocks. Balanced across two columns so it reads cleanly at a glance',
+        '📋 **Sortable category table.** Every category with its amount, transaction count, average size, share of spending, and change vs the previous period. Re-sort by amount, frequency, average size, or biggest change with one tap',
+        '🏪 **Merchant leaderboard.** Who you actually pay, ranked by total — with visit count and average transaction. Tap any merchant to see every transaction with them this period',
+        '📅 **Day-of-week heatmap.** See which days you spend most, coloured by intensity, with a plain-English read ("Saturday is your heaviest day — 3.2× your Monday spend"). Tap any day to see its transactions',
+        '💰 **Largest transactions + spending velocity.** Your biggest single purchases this period, plus a live projection of where your spending is heading by period-end based on how far through you are',
+        '🔍 **Full drill-down system.** Tap any category, merchant, or day to open a detail sheet with its own stats, 6-month trend, sub-breakdowns, and complete transaction list. This drill-down system is the foundation the remaining analytics sections will reuse'
+      ],
+      improvements:[
+        'Every drill-down respects the active period and comparison window, so the numbers always match what you\'re looking at in the section',
+        'The category detail sheet shows a true 6-month trend line (all-time, not period-bound) so you can see the trajectory even when viewing a single month'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'2.8.2',
     date:'2026-07-23',
@@ -13271,10 +13328,270 @@ function applyCustomRange(){
 }
 
 // ── Placeholder sections (Waves 2-4) ─────────────────────
+// ── SPENDING (Wave 2) ────────────────────────────────────
+let _anSpendSort='amount';
 function buildAnSpending(){
   const el=document.getElementById('an-sec-spending');if(!el)return;
-  el.innerHTML=`<div class="an-empty">📊 The Spending deep-dive lands in Wave 2 — treemap, merchant leaderboard, heatmaps, and full drill-down.</div>`;
+  const period=S.analyticsPeriod||'month';
+  const A=computeAnalytics(period);
+  if(!A.cats.length){
+    el.innerHTML=`<div class="an-empty">No spending recorded for ${periodLabel(period).toLowerCase()}.<br>Log or import some transactions to see the breakdown.</div>`;
+    return;
+  }
+  const totalSpend=A.cur.spend;
+
+  // ── Treemap: top categories sized by amount ──
+  const top=A.cats.slice(0,6);
+  const tmTotal=top.reduce((a,c)=>a+c.amt,0)||1;
+  // Split into two columns: col1 gets the biggest, col2 the rest, roughly balanced
+  const col1=[],col2=[];let s1=0,s2=0;
+  top.forEach(c=>{if(s1<=s2){col1.push(c);s1+=c.amt;}else{col2.push(c);s2+=c.amt;}});
+  function tmBlock(c){
+    const h=Math.max(14,c.amt/Math.max(s1,s2)*100);
+    const dark=tmTextColor(c.color);
+    return`<div class="an-tm-block" style="flex:${Math.max(0.5,c.amt)};background:${c.color};color:${dark}" onclick="openCatDrill('${c.id}')">
+      <span class="an-tm-name">${c.icon} ${c.label}</span>
+      <span class="an-tm-val">${fmtDI(c.amt)}</span>
+    </div>`;
+  }
+  const treemap=`<div class="an-treemap">
+    <div class="an-tm-col" style="flex:${s1||1}">${col1.map(tmBlock).join('')}</div>
+    ${col2.length?`<div class="an-tm-col" style="flex:${s2||1}">${col2.map(tmBlock).join('')}</div>`:''}
+  </div>`;
+
+  // ── Sortable table ──
+  const sorted=sortCats(A.cats,_anSpendSort);
+  const tableRows=sorted.map((c,i)=>{
+    const d=c.delta!=null?deltaInfo(c.amt,c.prevAmt,true):null;
+    return`<div class="an-tbl-row" onclick="openCatDrill('${c.id}')">
+      <div class="an-tbl-ico" style="background:${c.color}22;color:${c.color}">${c.icon}</div>
+      <div class="an-tbl-main">
+        <div class="an-tbl-name">${c.label} <span style="font-size:9px;color:var(--t3);font-weight:500">${c.type==='fixed'?'FIXED':'VAR'}</span></div>
+        <div class="an-tbl-sub">${c.count} txn${c.count===1?'':'s'} · avg ${fmtDI(c.avg)} · ${Math.round(c.pct)}%</div>
+      </div>
+      <div class="an-tbl-right">
+        <div class="an-tbl-amt">${fmtDI(c.amt)}</div>
+        ${d?`<div class="an-tbl-delta" style="color:${d.color}">${d.arrow} ${d.pct}%</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  // ── Merchant leaderboard ──
+  const merch=A.merchants.slice(0,8);
+  const merchRows=merch.length?merch.map((m,i)=>`<div class="an-tbl-row" onclick="openMerchantDrill('${escapeAttr(m.name)}')">
+    <div class="an-rank">${i+1}</div>
+    <div class="an-tbl-main">
+      <div class="an-tbl-name">${escapeHtml(m.name)}</div>
+      <div class="an-tbl-sub">${m.count}× · avg ${fmtDI(m.avg)}</div>
+    </div>
+    <div class="an-tbl-amt">${fmtDI(m.amt)}</div>
+  </div>`).join(''):`<div class="an-empty">No merchant data — transactions need payee names.</div>`;
+
+  // ── Day-of-week heatmap ──
+  const dowMax=Math.max(...A.dow,1);
+  const dowLabels=['S','M','T','W','T','F','S'];
+  const dowOrder=[1,2,3,4,5,6,0]; // Mon-first
+  const heatCells=dowOrder.map(i=>{
+    const intensity=A.dow[i]/dowMax;
+    const op=A.dow[i]>0?(0.15+intensity*0.85).toFixed(2):0.05;
+    return`<div class="an-heat-cell" style="background:rgba(235,104,52,${op})" onclick="openDowDrill(${i})" title="${dowLabels[i]}: ${fmtDI(A.dow[i])}"></div>`;
+  }).join('');
+  const heatLabelRow=dowOrder.map(i=>`<div class="an-heat-lbl">${dowLabels[i]}</div>`).join('');
+  const heaviestDay=A.dow.indexOf(Math.max(...A.dow));
+  const lightestActive=A.dow.map((v,i)=>({v,i})).filter(x=>x.v>0).sort((a,b)=>a.v-b.v)[0];
+  const dowNames=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  let dowInsight='';
+  if(Math.max(...A.dow)>0&&lightestActive){
+    const ratio=A.dow[heaviestDay]/(lightestActive.v||1);
+    dowInsight=`${dowNames[heaviestDay]} is your heaviest day${ratio>1.5?` — ${ratio.toFixed(1)}× your ${dowNames[lightestActive.i]} spend`:''}.`;
+  }
+
+  // ── Largest transactions ──
+  const largeRows=A.largest.slice(0,6).map(t=>{
+    const c=A.cm[t.cat]||{icon:'📌',label:t.cat,col:'#7d8fa3'};
+    return`<div class="an-txn-row">
+      <div style="display:flex;align-items:center;gap:9px;min-width:0">
+        <div class="an-tbl-ico" style="background:${c.col}22;color:${c.col};width:26px;height:26px;font-size:13px">${c.icon}</div>
+        <div style="min-width:0"><div class="an-txn-payee">${escapeHtml(t.payee||c.label)}</div><div class="an-txn-date">${fmtDate(t.date)} · ${c.label}</div></div>
+      </div>
+      <div class="an-txn-amt" style="color:var(--t)">${fmtDI(t.amt)}</div>
+    </div>`;
+  }).join('');
+
+  // ── Spending velocity (only meaningful for in-progress periods) ──
+  let velocityCard='';
+  if((period==='month'||period==='week'||period==='quarter'||period==='year')&&A.elapsed<0.97&&A.elapsed>0.02){
+    const proj=A.projectedSpend;
+    const pace=A.cur.income>0?proj/A.cur.income:0;
+    velocityCard=`<div class="an-card">
+      <div class="an-card-t">Spending velocity</div>
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
+        <span style="font-size:22px;font-weight:800;color:var(--t);font-variant-numeric:tabular-nums">${fmtDI(proj)}</span>
+        <span style="font-size:11px;color:var(--t3)">projected by period end</span>
+      </div>
+      <div style="height:8px;background:var(--bg4);border-radius:4px;overflow:hidden;margin-bottom:6px">
+        <div style="width:${Math.round(A.elapsed*100)}%;height:100%;background:var(--acc)"></div>
+      </div>
+      <div style="font-size:10px;color:var(--t3);line-height:1.5">${Math.round(A.elapsed*100)}% through the period · spent ${fmtDI(A.cur.spend)} so far${A.cur.income>0&&proj>A.cur.income?` · <span style="color:var(--r)">on track to exceed income</span>`:''}</div>
+    </div>`;
+  }
+
+  el.innerHTML=`
+    <div class="an-card">
+      <div class="an-card-t">Category treemap · tap to drill in</div>
+      ${treemap}
+      <div style="font-size:10px;color:var(--t3);margin-top:8px">Total spend ${fmtDI(totalSpend)} across ${A.cats.length} categories</div>
+    </div>
+    ${velocityCard}
+    <div class="an-card">
+      <div class="an-card-t">All categories</div>
+      <div class="an-sort-row">
+        <button class="an-sort-b ${_anSpendSort==='amount'?'on':''}" onclick="setSpendSort('amount')">Amount</button>
+        <button class="an-sort-b ${_anSpendSort==='count'?'on':''}" onclick="setSpendSort('count')">Frequency</button>
+        <button class="an-sort-b ${_anSpendSort==='avg'?'on':''}" onclick="setSpendSort('avg')">Avg size</button>
+        <button class="an-sort-b ${_anSpendSort==='change'?'on':''}" onclick="setSpendSort('change')">Biggest change</button>
+      </div>
+      ${tableRows}
+    </div>
+    <div class="an-card">
+      <div class="an-card-t">Top merchants</div>
+      ${merchRows}
+    </div>
+    <div class="an-card">
+      <div class="an-card-t">When you spend</div>
+      <div class="an-heat">${heatCells}</div>
+      <div class="an-heat-labels">${heatLabelRow}</div>
+      ${dowInsight?`<div style="font-size:10px;color:var(--t3);line-height:1.5;margin-top:8px">${dowInsight}</div>`:''}
+    </div>
+    <div class="an-card">
+      <div class="an-card-t">Largest transactions</div>
+      ${largeRows||'<div class="an-empty">None this period.</div>'}
+    </div>
+  `;
 }
+
+function tmTextColor(hex){
+  // Pick a dark text colour derived from the block colour for contrast
+  return '#0a120e';
+}
+function sortCats(cats,mode){
+  const c=[...cats];
+  if(mode==='count')return c.sort((a,b)=>b.count-a.count);
+  if(mode==='avg')return c.sort((a,b)=>b.avg-a.avg);
+  if(mode==='change')return c.sort((a,b)=>Math.abs(b.delta||0)-Math.abs(a.delta||0));
+  return c.sort((a,b)=>b.amt-a.amt);
+}
+function setSpendSort(mode){_anSpendSort=mode;buildAnSpending();}
+
+// ── DRILL-DOWN SHEETS (reused by all sections) ───────────
+function openCatDrill(catId){
+  const period=S.analyticsPeriod||'month';
+  const A=computeAnalytics(period);
+  const cat=A.cats.find(c=>c.id===catId);
+  if(!cat){showToast('No data');return;}
+  const d=cat.delta!=null?deltaInfo(cat.amt,cat.prevAmt,true):null;
+  // Monthly trend for this category (last 6 months, all-time)
+  const monthly=lastNMonthsForCat(catId,6);
+  // Merchants within this category (this period)
+  const merchInCat={};
+  cat.txns.forEach(t=>{const p=(t.payee||'Unknown').trim();merchInCat[p]=(merchInCat[p]||0)+(t.amt||0);});
+  const topMerch=Object.entries(merchInCat).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  // Transaction list
+  const txnList=[...cat.txns].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+
+  showSheet(`${cat.icon} ${cat.label}`,`
+    <div class="an-drill-stat">
+      <div class="an-drill-card"><div class="an-drill-l">This period</div><div class="an-drill-v">${fmtD(cat.amt)}</div></div>
+      <div class="an-drill-card"><div class="an-drill-l">vs previous</div><div class="an-drill-v" style="color:${d?d.color:'var(--t3)'}">${d?`${d.arrow} ${d.pct}%`:'—'}</div></div>
+      <div class="an-drill-card"><div class="an-drill-l">Transactions</div><div class="an-drill-v">${cat.count}</div></div>
+      <div class="an-drill-card"><div class="an-drill-l">Average</div><div class="an-drill-v">${fmtD(cat.avg)}</div></div>
+    </div>
+    ${monthly.vals.length>1?`<div class="an-card" style="margin-bottom:12px">
+      <div class="an-card-t">6-month trend</div>
+      ${sparklineSvg(monthly.vals,{width:290,height:56,color:cat.color})}
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--t3);margin-top:4px">${monthly.labels.map(l=>`<span>${l}</span>`).join('')}</div>
+    </div>`:''}
+    ${topMerch.length?`<div class="an-card" style="margin-bottom:12px">
+      <div class="an-card-t">Top merchants in ${cat.label}</div>
+      ${topMerch.map(([name,amt])=>`<div class="an-txn-row"><div class="an-txn-payee">${escapeHtml(name)}</div><div class="an-txn-amt" style="color:var(--t)">${fmtDI(amt)}</div></div>`).join('')}
+    </div>`:''}
+    <div class="an-card">
+      <div class="an-card-t">All ${cat.label} transactions this period</div>
+      ${txnList.map(t=>`<div class="an-txn-row">
+        <div style="min-width:0"><div class="an-txn-payee">${escapeHtml(t.payee||'—')}</div><div class="an-txn-date">${fmtDate(t.date)}</div></div>
+        <div class="an-txn-amt" style="color:var(--t)">${fmtDI(t.amt)}</div>
+      </div>`).join('')}
+    </div>
+  `);
+}
+
+function openMerchantDrill(name){
+  const period=S.analyticsPeriod||'month';
+  const A=computeAnalytics(period);
+  const m=A.merchants.find(x=>x.name===name);
+  if(!m){showToast('No data');return;}
+  const txnList=[...m.txns].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const cm=A.cm;
+  showSheet(`🏪 ${name}`,`
+    <div class="an-drill-stat">
+      <div class="an-drill-card"><div class="an-drill-l">Total spent</div><div class="an-drill-v">${fmtD(m.amt)}</div></div>
+      <div class="an-drill-card"><div class="an-drill-l">Visits</div><div class="an-drill-v">${m.count}</div></div>
+      <div class="an-drill-card"><div class="an-drill-l">Average</div><div class="an-drill-v">${fmtD(m.avg)}</div></div>
+      <div class="an-drill-card"><div class="an-drill-l">Category</div><div class="an-drill-v" style="font-size:13px">${(cm[m.topCat]||{label:m.topCat}).label}</div></div>
+    </div>
+    <div class="an-card">
+      <div class="an-card-t">Every transaction this period</div>
+      ${txnList.map(t=>`<div class="an-txn-row">
+        <div style="min-width:0"><div class="an-txn-payee">${(cm[t.cat]||{icon:'📌'}).icon} ${(cm[t.cat]||{label:t.cat}).label}</div><div class="an-txn-date">${fmtDate(t.date)}</div></div>
+        <div class="an-txn-amt" style="color:var(--t)">${fmtDI(t.amt)}</div>
+      </div>`).join('')}
+    </div>
+  `);
+}
+
+function openDowDrill(dayIdx){
+  const period=S.analyticsPeriod||'month';
+  const A=computeAnalytics(period);
+  const dayNames=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const txns=A.txns.filter(t=>{
+    if(t.dir!=='out'||t.cat==='investments'||catType(t.cat)==='transfer')return false;
+    return new Date(t.date+'T12:00:00').getDay()===dayIdx;
+  }).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const total=txns.reduce((a,t)=>a+(t.amt||0),0);
+  const cm=A.cm;
+  if(!txns.length){showToast(`No ${dayNames[dayIdx]} spending`);return;}
+  showSheet(`${dayNames[dayIdx]} spending`,`
+    <div class="an-drill-stat">
+      <div class="an-drill-card"><div class="an-drill-l">Total on ${dayNames[dayIdx]}s</div><div class="an-drill-v">${fmtD(total)}</div></div>
+      <div class="an-drill-card"><div class="an-drill-l">Transactions</div><div class="an-drill-v">${txns.length}</div></div>
+    </div>
+    <div class="an-card">
+      <div class="an-card-t">Every ${dayNames[dayIdx]} transaction</div>
+      ${txns.map(t=>`<div class="an-txn-row">
+        <div style="min-width:0"><div class="an-txn-payee">${escapeHtml(t.payee||'—')}</div><div class="an-txn-date">${fmtDate(t.date)} · ${(cm[t.cat]||{label:t.cat}).label}</div></div>
+        <div class="an-txn-amt" style="color:var(--t)">${fmtDI(t.amt)}</div>
+      </div>`).join('')}
+    </div>
+  `);
+}
+
+// Helper: last N months of spend for a single category (all-time, not period-bound)
+function lastNMonthsForCat(catId,n){
+  const now=new Date();
+  const labels=[],vals=[];
+  for(let i=n-1;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    const ym=d.toISOString().slice(0,7);
+    const sum=(S.transactions||[]).filter(t=>t.cat===catId&&t.dir==='out'&&(t.date||'').startsWith(ym)).reduce((a,t)=>a+(t.amt||0),0);
+    labels.push(d.toLocaleDateString('en-AU',{month:'short'}).charAt(0));
+    vals.push(Math.round(sum));
+  }
+  return{labels,vals};
+}
+
+// Attribute-safe escaping for onclick payloads
+function escapeAttr(s){return String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;');}
+
 function buildAnIncome(){
   const el=document.getElementById('an-sec-income');if(!el)return;
   el.innerHTML=`<div class="an-empty">💵 The Income section lands in Wave 3 — source breakdown, pay reliability, and hourly rate analysis.</div>`;
