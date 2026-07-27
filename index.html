@@ -1235,6 +1235,9 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
 
 /* NET WORTH CHART */
 .nw-chart-wrap{position:relative;width:100%;height:140px;margin-top:6px}
+.nw-range{display:flex;gap:3px}
+.nw-range-b{padding:3px 8px;border:none;background:var(--bg4);border-radius:6px;font-size:10px;font-weight:600;color:var(--t3);cursor:pointer;font-family:var(--sans);min-height:26px}
+.nw-range-b.on{background:var(--accd);color:var(--acc)}
 
 /* SEARCH */
 .search-wrap{position:relative;margin-bottom:10px}
@@ -1832,6 +1835,7 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
         <div class="ctitle"><div class="ctitle-l">Display &amp; motion</div></div>
         <div class="setting-row"><div><div class="setting-label">Reduce motion</div><div class="setting-sub">Minimise animations and transitions</div></div><button class="toggle-switch" id="tg-reduce-motion" onclick="toggleUiPref('reduceMotion')"></button></div>
         <div class="setting-row"><div><div class="setting-label">Haptic feedback</div><div class="setting-sub">Subtle vibration on taps and confirmations</div></div><button class="toggle-switch" id="tg-haptics" onclick="toggleHaptics()"></button></div>
+        <div class="setting-row"><div><div class="setting-label">Daily check-in prompt</div><div class="setting-sub">Streak greeting when you open the app each day</div></div><button class="toggle-switch" id="tg-checkin" onclick="toggleCheckInPrompt()"></button></div>
         <div class="setting-row"><div><div class="setting-label">Compact spacing</div><div class="setting-sub">Tighter layout, more on screen</div></div><button class="toggle-switch" id="tg-compact" onclick="toggleUiPref('compact')"></button></div>
         <div class="setting-row"><div><div class="setting-label">Context panel</div><div class="setting-sub">"At a glance" strip that slides in when scrolling up</div></div><button class="toggle-switch" id="tg-ctx" onclick="toggleUiPref('ctxPanel')"></button></div>
       </div>
@@ -2006,9 +2010,7 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
     <button class="more-tile" id="more-scenario" onclick="showPgFromMore('scenario')"><svg viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0H5a2 2 0 0 1-2-2v-4m6 6h10a2 2 0 0 0 2-2v-4"/></svg>What-if</button>
     <button class="more-tile" id="more-insights" onclick="showPgFromMore('insights')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Insights</button>
     <button class="more-tile" id="more-health" onclick="showPgFromMore('health')"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Health</button>
-    <button class="more-tile" id="more-streaks" onclick="showPgFromMore('streaks')"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Streaks</button>
     <button class="more-tile" id="more-sinking" onclick="showPgFromMore('sinking')"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Sinking</button>
-    <button class="more-tile" id="more-debts" onclick="showPgFromMore('debts')"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Net worth</button>
     <button class="more-tile" id="more-dividends" onclick="showPgFromMore('dividends')"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Divs</button>
     <button class="more-tile" id="more-tax" onclick="showPgFromMore('tax')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>ATO Tax</button>
     <button class="more-tile" id="more-timeline" onclick="showPgFromMore('timeline')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Timeline</button>
@@ -2313,6 +2315,8 @@ let S={
   customCats:[],
   notifSettings:{spend:false,payday:false,monthly:false},
   nwHistory:[],
+  nwChartRange:'3M',   // v2.8.7 — dashboard net-worth chart view range
+  checkInPromptShown:null,  // v2.8.7 — date the daily check-in prompt last showed
   groqApiKey:'',
   claudeApiKey:'',  // v2.7.33 — optional Claude key for AI Autopilot briefings (stronger narration)
   autopilotNotifs:false,  // v2.7.34 — browser notifications for high-severity insights
@@ -2379,9 +2383,27 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.8.6';
+const APP_VERSION='2.8.7';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.8.7',
+    date:'2026-07-27',
+    title:'Friction log fixes — round two: check-in prompt, leaner tabs, net-worth chart',
+    sections:{
+      features:[
+        '👋 **Daily check-in prompt.** Instead of a standalone Streaks tab, a friendly greeting now appears once a day when you open the app — showing your current streak, the last 7 days, and your longest run. Tap "Checked in" and it dismisses. Turn it off anytime in Settings',
+        '📈 **Net-worth chart view ranges.** The dashboard net-worth chart now has 1M / 3M / 6M / 1Y / All range buttons, plus a line underneath showing how many snapshots exist and when it last recorded — so you can see it IS tracking'
+      ],
+      improvements:[
+        'Removed the standalone Streaks tab — its streak tracking lives on in the daily prompt, which is a better home for it',
+        'Removed the standalone Net Worth tab — its liability tracking moved into the Analytics → Wealth section, which already covers the assets, allocation, and history it used to show. Liabilities and "true net worth after debts" now live there, with add/remove',
+        'The net-worth chart line is now honest: a gentler curve and a padded y-axis so ordinary movements no longer look like dramatic climbs. It was recording correctly all along — this makes the display match reality',
+        'The "Net worth" quick-link on the More summary now jumps straight to the Wealth analytics section'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'2.8.6',
     date:'2026-07-27',
@@ -4111,6 +4133,13 @@ function calcBal(acct){
     if(tr.toAcct===acct)b+=tr.amount;
   });
   return b;
+}
+function setNwChartRange(r){
+  S.nwChartRange=r;save();
+  document.querySelectorAll('#nw-range-tog .nw-range-b').forEach(b=>b.classList.toggle('on',b.textContent.trim().toUpperCase()===r||(r==='ALL'&&b.textContent.trim()==='All')));
+  // Re-run just the chart widget's post hook
+  const w=DASH_WIDGETS&&DASH_WIDGETS.nwChart;
+  if(w&&typeof w.post==='function')w.post();
 }
 function snapshotNW(){
   const invested=portTotal();
@@ -6455,6 +6484,56 @@ function autoDailyCheckIn(){
   }
   S.longestStreak=Math.max(S.longestStreak||0,S.currentStreak);
   save();
+}
+
+// v2.8.7 — Daily check-in launch prompt (replaces the standalone Streaks tab).
+// Shows once per day on open, celebrates the streak, then dismisses.
+function maybeShowCheckInPrompt(){
+  const t=today();
+  if(S.checkInPromptShown===t)return;           // already shown today
+  if(S.uiPrefs&&S.uiPrefs.noCheckInPrompt)return; // user turned it off
+  if(document.querySelector('.overlay.open'))return; // don't stack on another sheet
+  S.checkInPromptShown=t;save();
+  const streak=S.currentStreak||1;
+  const longest=S.longestStreak||streak;
+  const flame=streak>=30?'⚡':streak>=7?'🔥':'🌱';
+  // Last 7 days dots
+  const dots=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const ds=d.toISOString().slice(0,10);
+    const active=ds<=t&&( // crude: mark the last `streak` days as active
+      (new Date(t+'T12:00:00')-new Date(ds+'T12:00:00'))/(86400000) < streak
+    );
+    dots.push(`<div style="flex:1;height:6px;border-radius:3px;background:${active?'var(--acc)':'var(--bg4)'}"></div>`);
+  }
+  const isNew=streak===1&&(S.longestStreak||0)<=1;
+  showSheet('👋 Welcome back',`
+    <div style="text-align:center;padding:6px 0 4px">
+      <div style="font-size:44px;line-height:1;margin-bottom:8px">${flame}</div>
+      <div style="font-size:32px;font-weight:800;color:var(--t);font-variant-numeric:tabular-nums">${streak}</div>
+      <div style="font-size:12px;color:var(--t2);margin-top:2px">day${streak===1?'':'s'} in a row${streak>=2?' — keep it going':''}</div>
+    </div>
+    <div style="display:flex;gap:4px;margin:16px 0 6px">${dots.join('')}</div>
+    <div style="font-size:10px;color:var(--t3);text-align:center;margin-bottom:14px">Longest streak: ${longest} day${longest===1?'':'s'}</div>
+    ${isNew?'<div style="font-size:11px;color:var(--t2);text-align:center;line-height:1.5;margin-bottom:14px">Open FinPlan each day to build your streak. Small consistent check-ins beat occasional deep dives.</div>':''}
+    <button class="btn btn-acc btn-full" onclick="confirmCheckIn()">✓ Checked in for today</button>
+    <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="closeSheet()">Dismiss</button>
+    <div style="text-align:center;margin-top:10px"><button style="background:none;border:none;color:var(--t3);font-size:10px;cursor:pointer;font-family:var(--sans)" onclick="disableCheckInPrompt()">Don't show this daily</button></div>
+  `);
+}
+function confirmCheckIn(){
+  closeSheet();
+  if(typeof haptic==='function')haptic([15,40,15]);
+  const streak=S.currentStreak||1;
+  if(streak>0&&streak%7===0&&typeof fireConfetti==='function')fireConfetti();
+  showToast(`🔥 ${streak} day streak`);
+}
+function disableCheckInPrompt(){
+  if(!S.uiPrefs)S.uiPrefs={};
+  S.uiPrefs.noCheckInPrompt=true;save();
+  closeSheet();
+  showToast('Daily check-in turned off — re-enable in Settings');
 }
 
 // ── MILESTONE RESET (fixes falsely-triggered achievements) ──
@@ -9777,6 +9856,7 @@ function launchApp(){
   if(typeof updateFeedbackFabCount==='function')updateFeedbackFabCount();
   if(typeof ensureAiConversations==='function')ensureAiConversations();
   if(typeof autoDailyCheckIn==='function')autoDailyCheckIn();
+  if(typeof maybeShowCheckInPrompt==='function')setTimeout(maybeShowCheckInPrompt,900);
   buildDash();buildStaticTimeline();buildAiWelcome();buildThemeGrid();buildSettingsPage();
   scheduleLocalNotifs();
   initContextPanel();
@@ -9972,7 +10052,7 @@ function renderContextPanel(){
   }
   // 4. Net worth — always show as the anchor
   const nw=portTotal()+calcBal('westpac')+calcBal('macquarie');
-  items.push({dot:'var(--t3)',label:'Net worth',val:fmtD(nw),cls:'dim',action:"showPgFromMore('debts')"});
+  items.push({dot:'var(--t3)',label:'Net worth',val:fmtD(nw),cls:'dim',action:"S.analyticsSection='wealth';showPgFromMore('analytics')"});
   // Take top 3 (net worth stays at position 4 → shows if fewer than 3 alerts)
   const top=items.slice(0,3);
   const alerts=top.filter(x=>x.cls==='hi').length;
@@ -11586,18 +11666,45 @@ const DASH_WIDGETS={
   nwChart:{
     id:'nwChart',label:'Net worth chart',sub:'History over time',
     canHalfWidth:false,defaultOn:false,alwaysOn:false,
-    render(){return`<div class="card"><div class="ctitle"><div class="ctitle-l">Net worth over time</div></div><div class="nw-chart-wrap"><canvas id="nw-chart-w" role="img">Net worth history</canvas></div></div>`;},
+    render(){
+      const ranges=[['1M','1M'],['3M','3M'],['6M','6M'],['1Y','1Y'],['ALL','All']];
+      const active=S.nwChartRange||'3M';
+      const toggle=ranges.map(([k,l])=>`<button class="nw-range-b ${active===k?'on':''}" onclick="setNwChartRange('${k}')">${l}</button>`).join('');
+      return`<div class="card">
+        <div class="ctitle"><div class="ctitle-l">Net worth over time</div><div class="nw-range" id="nw-range-tog">${toggle}</div></div>
+        <div class="nw-chart-wrap"><canvas id="nw-chart-w" role="img">Net worth history</canvas></div>
+        <div id="nw-chart-meta" style="font-size:10px;color:var(--t3);margin-top:8px;text-align:center"></div>
+      </div>`;
+    },
     post(){
       const c=document.getElementById('nw-chart-w');if(!c)return;
       c.id='nw-chart';
-      const nwH=S.nwHistory||[];const wp=calcBal('westpac'),mq=calcBal('macquarie'),pt=portTotal(),nw=wp+mq+pt;
+      const allH=(S.nwHistory||[]).slice();
+      const wp=calcBal('westpac'),mq=calcBal('macquarie'),pt=portTotal(),nw=wp+mq+pt;
+      // Filter to the selected range
+      const range=S.nwChartRange||'3M';
+      const dayCut={'1M':30,'3M':90,'6M':180,'1Y':365,'ALL':99999}[range]||90;
+      const cutoff=new Date();cutoff.setDate(cutoff.getDate()-dayCut);
+      let nwH=allH.filter(h=>new Date(h.date+'T12:00:00')>=cutoff);
+      if(nwH.length<2)nwH=allH.slice(-Math.max(2,nwH.length)); // fall back so it never looks empty
       const labels=nwH.map(h=>fmtDate(h.date));const data=nwH.map(h=>h.nw);
       if(labels.length<2){labels.unshift('Start');data.unshift(data[0]||Math.round(nw));}
+      // Meta line so it's visibly recording
+      const meta=document.getElementById('nw-chart-meta');
+      if(meta){
+        const first=data[0],lastV=data[data.length-1],chg=lastV-first;
+        const span=nwH.length>1?`${nwH.length} snapshots`:'building history';
+        meta.innerHTML=allH.length?`${span} · ${chg>=0?'+':''}${fmtDI(chg)} over range · last recorded ${fmtDate(allH[allH.length-1].date)}`:'No snapshots yet — this fills in as you use the app.';
+      }
       const acc=getComputedStyle(document.documentElement).getPropertyValue('--acc').trim()||'#00d4a0';
       const ctx=c.getContext('2d');const grad=ctx.createLinearGradient(0,0,0,140);
       grad.addColorStop(0,acc+'33');grad.addColorStop(1,acc+'00');
       if(nwChart){try{nwChart.destroy();}catch(_){} nwChart=null;}
-      nwChart=new Chart(c,{type:'line',data:{labels,datasets:[{data,borderColor:acc,backgroundColor:grad,fill:true,tension:.4,pointRadius:nwH.length>30?0:3,pointBackgroundColor:acc,borderWidth:2.5}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:400},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'$'+c.parsed.y.toLocaleString()}}},scales:{x:{ticks:{color:'#4a5d72',font:{size:9},autoSkip:true,maxRotation:0,maxTicksLimit:6},grid:{display:false}},y:{ticks:{color:'#4a5d72',font:{size:9},callback:v=>'$'+(v/1000).toFixed(1)+'k'},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+      // Honest y-axis: pad 8% below min and above max so small moves don't look dramatic,
+      // and don't force zero (would flatten real movement) unless the range is tiny.
+      const dMin=Math.min(...data),dMax=Math.max(...data);
+      const pad=Math.max(50,(dMax-dMin)*0.15);
+      nwChart=new Chart(c,{type:'line',data:{labels,datasets:[{data,borderColor:acc,backgroundColor:grad,fill:true,tension:.18,pointRadius:nwH.length>30?0:3,pointBackgroundColor:acc,borderWidth:2.5}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:400},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'$'+c.parsed.y.toLocaleString()}}},scales:{x:{ticks:{color:'#4a5d72',font:{size:9},autoSkip:true,maxRotation:0,maxTicksLimit:6},grid:{display:false}},y:{suggestedMin:Math.max(0,dMin-pad),suggestedMax:dMax+pad,ticks:{color:'#4a5d72',font:{size:9},callback:v=>'$'+(v/1000).toFixed(1)+'k'},grid:{color:'rgba(255,255,255,0.04)'}}}}});
       registerChart('nw-chart',nwChart);fitChart(nwChart);
     }
   }
@@ -14106,7 +14213,33 @@ function buildAnWealth(){
     return;
   }
 
-  el.innerHTML=compCard+splitCard+allocCard+goalsCard+contribCard;
+  // ── Liabilities (folded in from the retired Net Worth tab) ──
+  const debts=S.debts||[];
+  const liab=(typeof totalDebt==='function')?totalDebt():debts.reduce((a,d)=>a+(d.bal||0),0);
+  const trueNW=nw-liab;
+  let liabCard='';
+  if(debts.length){
+    liabCard=`<div class="an-card">
+      <div class="an-card-t">Liabilities</div>
+      ${debts.map(d=>`<div class="an-txn-row">
+        <div style="min-width:0"><div class="an-txn-payee">${(typeof DEBT_ICONS!=='undefined'?(DEBT_ICONS[d.type]||'📋'):'📋')} ${escapeHtml(d.name)}</div><div class="an-txn-date">${(d.type||'').toUpperCase()}${d.rate?' · '+d.rate+'% p.a.':''}</div></div>
+        <div class="an-txn-amt" style="color:var(--r)">-${fmtDI(d.bal)}</div>
+      </div>`).join('')}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;margin-top:6px;border-top:0.5px solid var(--bdr)">
+        <span style="font-size:12px;font-weight:700;color:var(--t)">True net worth (after debts)</span>
+        <span style="font-size:15px;font-weight:800;color:${trueNW>=0?'var(--acc)':'var(--r)'}">${fmtD(trueNW)}</span>
+      </div>
+      <button class="btn btn-ghost btn-sm btn-full" style="margin-top:10px" onclick="openDebtModal()">+ Add liability</button>
+    </div>`;
+  }else{
+    liabCard=`<div class="an-card">
+      <div class="an-card-t">Liabilities</div>
+      <div style="text-align:center;padding:10px;color:var(--acc);font-size:12px">✅ Debt-free — no liabilities tracked</div>
+      <button class="btn btn-ghost btn-sm btn-full" style="margin-top:6px" onclick="openDebtModal()">+ Add a liability</button>
+    </div>`;
+  }
+
+  el.innerHTML=compCard+splitCard+allocCard+goalsCard+contribCard+liabCard;
 }
 
 function buildAnHabits(){
@@ -17895,6 +18028,7 @@ function buildSettingsPage(){
   if(!S.uiPrefs)S.uiPrefs={reduceMotion:false,compact:false};
   const tgRm=document.getElementById('tg-reduce-motion');if(tgRm)tgRm.classList.toggle('on',!!S.uiPrefs.reduceMotion);
   const tgH=document.getElementById('tg-haptics');if(tgH)tgH.classList.toggle('on',!(S.uiPrefs&&S.uiPrefs.noHaptics));
+  const tgCi=document.getElementById('tg-checkin');if(tgCi)tgCi.classList.toggle('on',!(S.uiPrefs&&S.uiPrefs.noCheckInPrompt));
   const tgC=document.getElementById('tg-compact');if(tgC)tgC.classList.toggle('on',!!S.uiPrefs.compact);
   const tgCtx=document.getElementById('tg-ctx');if(tgCtx)tgCtx.classList.toggle('on',!!S.uiPrefs.ctxPanel);
   // Version + changelog
@@ -17919,6 +18053,12 @@ function toggleHaptics(){
   save();
   if(!S.uiPrefs.noHaptics&&typeof haptic==='function')haptic([15,40,15]); // confirm it works
   buildSettingsPage();
+}
+// v2.8.7 — daily check-in prompt toggle (stored as opt-OUT)
+function toggleCheckInPrompt(){
+  if(!S.uiPrefs)S.uiPrefs={};
+  S.uiPrefs.noCheckInPrompt=!S.uiPrefs.noCheckInPrompt;
+  save();buildSettingsPage();
 }
 function updateFmpKeyStatus(){
   const el=document.getElementById('fmp-key-status');if(!el)return;
@@ -18168,9 +18308,9 @@ function saveDebt(){
   if(!S.debts)S.debts=[];
   S.debts.push({id:uid(),name,bal,type,rate});
   ['debt-name','debt-bal','debt-rate'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  closeModal('debt-modal');save();buildDebtsPage();if(currentPg==='dash')buildDash();showToast('Liability added');
+  closeModal('debt-modal');save();buildDebtsPage();if(currentPg==='dash')buildDash();if(currentPg==='analytics'&&(S.analyticsSection||'overview')==='wealth'&&typeof buildAnWealth==='function')buildAnWealth();showToast('Liability added');
 }
-function deleteDebt(id){S.debts=(S.debts||[]).filter(d=>d.id!==id);save();buildDebtsPage();}
+function deleteDebt(id){S.debts=(S.debts||[]).filter(d=>d.id!==id);save();buildDebtsPage();if(currentPg==='analytics'&&(S.analyticsSection||'overview')==='wealth'&&typeof buildAnWealth==='function')buildAnWealth();}
 function totalDebt(){return(S.debts||[]).reduce((a,d)=>a+d.bal,0);}
 function buildDebtsPage(){
   if(!S.debts)S.debts=[];
