@@ -511,13 +511,13 @@ body.reduce-motion .skeleton{background:rgba(255,255,255,.04)}
    viewport. We must override animation:none here or the fixed layout collapses. */
 .ai-pg.on{
   position:fixed;
-  top:calc(var(--hdr-h,60px) + var(--st));
+  top:var(--st);
   left:0;right:0;
   bottom:0;
   display:flex!important;
   flex-direction:column;
   background:var(--bg);
-  z-index:50;
+  z-index:60;
   height:auto;
   overflow:hidden;
   padding:0!important;
@@ -759,7 +759,11 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .an-tile{background:var(--glass);border:0.5px solid var(--bdr);border-radius:12px;padding:11px 12px;cursor:pointer;transition:border-color var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out);text-align:left;font-family:var(--sans)}
 .an-tile:active{transform:scale(.98)}
 .an-tile-l{font-size:10px;color:var(--t3);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.an-tile-v{font-size:19px;font-weight:800;color:var(--t);font-variant-numeric:tabular-nums;line-height:1.15}
+.an-tile-v{font-size:19px;font-weight:800;color:var(--t);font-variant-numeric:tabular-nums;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.an-tile{min-width:0}
+.an-card{overflow:hidden}
+.an-card svg{max-width:100%}
+.an-tile-foot{min-width:0}
 .an-tile-foot{display:flex;align-items:center;justify-content:space-between;margin-top:5px;gap:6px}
 .an-tile-d{font-size:10px;font-weight:600;white-space:nowrap}
 /* Flow bar */
@@ -2375,9 +2379,28 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.8.5';
+const APP_VERSION='2.8.6';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.8.6',
+    date:'2026-07-27',
+    title:'Friction log fixes — round one',
+    sections:{
+      features:[],
+      improvements:[
+        'Budget "Total income" now shows a JOBS › hint and taps through to the Jobs page — income is driven by your jobs, not the sliders, and this makes that clear',
+        'The AI advisor now opens flush to the top of the screen, so its back bar sits at the very top instead of below a gap',
+        'The month progress card now reads "week X of 4" instead of "of 5" — months are treated as four weeks'
+      ],
+      fixes:[
+        '🐛 **You can now enter 0 as a balance.** Liabilities (and balance fields generally) rejected a value of 0 because the check treated zero as "empty". A paid-off liability you still want to track now saves correctly',
+        '🐛 **Goal edits are more robust.** Editing a goal\'s saved amount — including setting it to 0 — now saves reliably, with a guard against a rare case where the save button could silently fail',
+        '🐛 **The round-up toggle now responds immediately.** Toggling round-ups on the Goals page updated the wrong page behind the scenes, so you had to switch tabs to see it register. It now updates in place',
+        '🐛 **Analytics charts and bars now stay inside their cards.** Long numbers, sparklines, flow bars, and the trend line could spill past their containers — everything is now clipped to fit, and the trend chart\'s end points no longer clip at the edges'
+      ]
+    }
+  },
   {
     v:'2.8.5',
     date:'2026-07-23',
@@ -6045,7 +6068,9 @@ function computeWeekProgress(){
   const year=now.getFullYear(),month=now.getMonth();
   const daysInMonth=new Date(year,month+1,0).getDate();
   const dayOfMonth=now.getDate();
-  const weeks=Math.ceil(daysInMonth/7);
+  // v2.8.6 — months are treated as 4 weeks (round, not ceil) so it reads "of 4"
+  // rather than the technically-true-but-confusing "of 5" for 29-31 day months.
+  const weeks=Math.max(4,Math.round(daysInMonth/7));
   const currentWeek=Math.min(weeks,Math.ceil(dayOfMonth/7));
   // How far into the current week we are (0-1)
   const daysIntoWeek=((dayOfMonth-1)%7)+1;
@@ -7981,7 +8006,10 @@ function toggleRoundups(on){
   S.roundupEnabled=!!on;
   if(on&&!S.roundupEnabledAt)S.roundupEnabledAt=today();
   save();
-  if(typeof buildSettingsPage==='function')buildSettingsPage();
+  // v2.8.6 — re-render wherever the round-up control actually lives
+  if(typeof buildRoundupCard==='function')buildRoundupCard();
+  if(currentPg==='goals'&&typeof buildGoalsPage==='function')buildGoalsPage();
+  else if(currentPg==='settings'&&typeof buildSettingsPage==='function')buildSettingsPage();
 }
 function setRoundupGoal(goalId){
   S.roundupGoalId=goalId||null;save();
@@ -10039,7 +10067,7 @@ function upAll(){
   ['kmart','rent','spend','goals','invest'].forEach(id=>{const el=document.getElementById('sl-'+id);if(!el)return;S.sliders[id]=parseInt(el.value)||0;const out=document.getElementById('out-'+id);if(out)out.textContent='$'+S.sliders[id].toLocaleString();});
   const sl=S.sliders,income=monthIncome(),spendMo=sl.spend*4.33,totalOut=spendMo+sl.rent+sl.goals+sl.invest,left=income-totalOut;
   const bm=document.getElementById('bud-metrics');
-  if(bm)bm.innerHTML=`<div class="met"><div class="ml">Total income</div><div class="mv col-acc">${fmtDI(income)}</div></div><div class="met"><div class="ml">Total committed</div><div class="mv">${fmtDI(totalOut)}</div></div><div class="met"><div class="ml">Investing</div><div class="mv col-b">${fmtDI(sl.invest)}</div></div><div class="met"><div class="ml">Unallocated</div><div class="mv" style="color:${left>=0?'var(--acc)':'var(--r)'}">${fmtDI(left)}</div></div>`;
+  if(bm)bm.innerHTML=`<div class="met" onclick="showPgFromMore('jobs')" style="cursor:pointer"><div class="ml">Total income <span style="font-size:8px;color:var(--t3)">JOBS ›</span></div><div class="mv col-acc">${fmtDI(income)}</div></div><div class="met"><div class="ml">Total committed</div><div class="mv">${fmtDI(totalOut)}</div></div><div class="met"><div class="ml">Investing</div><div class="mv col-b">${fmtDI(sl.invest)}</div></div><div class="met"><div class="ml">Unallocated</div><div class="mv" style="color:${left>=0?'var(--acc)':'var(--r)'}">${fmtDI(left)}</div></div>`;
   const ba=document.getElementById('bud-alloc');
   if(ba)ba.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:12px">${[['Rent',sl.rent,''],['Personal spend',Math.round(spendMo),fmtDI(sl.spend)+'/wk'],['Goal savings',sl.goals,''],['Investments',sl.invest,'',true]].map(([l,v,s,ac])=>`<tr><td style="padding:7px 0;border-bottom:1px solid var(--bdr);color:${ac?'var(--acc)':'var(--t)'};font-weight:${ac?700:500}">${l}${s?` <span style="font-size:9px;color:var(--t3)">${s}</span>`:''}</td><td style="padding:7px 0;border-bottom:1px solid var(--bdr);text-align:right;color:${ac?'var(--acc)':'var(--t)'}">${fmtDI(v)}</td></tr>`).join('')}<tr><td style="padding:7px 0;font-weight:700;color:var(--t)">Unallocated</td><td style="padding:7px 0;text-align:right;font-weight:700;color:${left>=0?'var(--acc)':'var(--r)'}">${fmtDI(left)}</td></tr></table>`;
   const al=document.getElementById('bud-alert');
@@ -12093,14 +12121,18 @@ function openEditGoalModal(id){
 }
 
 function submitEditGoal(id){
+  const g=goalById(id);if(!g){showToast('Goal not found');return;}
+  const draft=_newGoalDraft||{};
+  const savedRaw=document.getElementById('goal-saved').value;
+  const targetRaw=document.getElementById('goal-target').value;
   const patch={
     label:document.getElementById('goal-label').value.trim(),
-    target:+document.getElementById('goal-target').value||0,
-    saved:+document.getElementById('goal-saved').value||0,
+    target:targetRaw===''?0:(+targetRaw||0),
+    saved:savedRaw===''?0:(+savedRaw||0),      // explicit: empty or 0 both save as 0
     deadline:document.getElementById('goal-deadline').value.trim(),
     notes:document.getElementById('goal-notes').value.trim(),
-    icon:_newGoalDraft.icon,
-    color:_newGoalDraft.color
+    icon:draft.icon||g.icon,
+    color:draft.color||g.color
   };
   if(!patch.label){showToast('Goal name required');return;}
   updateGoal(id,patch);
@@ -13931,14 +13963,15 @@ function bigLineSvg(values,labels,color,height,isPct){
   const max=Math.max(...values,isPct?100:1),min=Math.min(...values,0);
   const range=(max-min)||1;
   const pad=6;
-  const dx=width/(values.length-1);
+  const xPad=4; // v2.8.6 — horizontal inset so end data points don't clip at the edges
+  const dx=(width-xPad*2)/(values.length-1);
   const pts=values.map((v,i)=>{
-    const x=i*dx;
+    const x=xPad+i*dx;
     const y=height-pad-((v-min)/range)*(height-pad*2);
     return{x,y,v};
   });
   const line=pts.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-  const area=`0,${height} `+line+` ${width},${height}`;
+  const area=`${xPad},${height} `+line+` ${width-xPad},${height}`;
   const gid='trend-'+Math.random().toString(36).slice(2,8);
   // Gridlines at 0/50/100%
   const gridY=[0.25,0.5,0.75].map(f=>{const y=pad+f*(height-pad*2);return`<line x1="0" y1="${y}" x2="${width}" y2="${y}" stroke="rgba(255,255,255,.05)" stroke-width="1"/>`;}).join('');
@@ -18130,7 +18163,8 @@ function saveDebt(){
   const bal=parseFloat(document.getElementById('debt-bal').value)||0;
   const type=document.getElementById('debt-type').value;
   const rate=parseFloat(document.getElementById('debt-rate').value)||0;
-  if(!name||!bal){alert('Enter name and balance.');return;}
+  if(!name){alert('Enter a name.');return;}
+  if(isNaN(bal)){alert('Enter a valid balance.');return;}
   if(!S.debts)S.debts=[];
   S.debts.push({id:uid(),name,bal,type,rate});
   ['debt-name','debt-bal','debt-rate'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
