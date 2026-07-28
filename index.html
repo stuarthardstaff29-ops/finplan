@@ -2,6 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<!-- v2.8.16 — Content Security Policy. Restricts network connections to the known
+     API + CDN domains, forces HTTPS (upgrades any insecure request, blocks mixed
+     content). 'unsafe-inline' is required because this is a single-file app with
+     inline scripts/styles — the domain allowlist is still the meaningful protection. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.groq.com https://financialmodelingprep.com; base-uri 'self'; form-action 'none'; upgrade-insecure-requests; block-all-mixed-content">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
 <meta name="theme-color" content="#060a0f" id="meta-theme">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -250,6 +255,9 @@ body.compact .mg{gap:7px}
 
 /* SETUP */
 #setup{position:fixed;inset:0;background:var(--bg);z-index:900;display:none;flex-direction:column;overflow:hidden}
+/* v2.8.14 — the generic sheet must sit above the setup wizard (z-index 900) so
+   sheets opened during setup (add income, holding, goal, fixed cost) are reachable */
+#generic-sheet{z-index:1000}
 .sw-hdr{padding:calc(16px + var(--st)) 20px 14px;background:var(--bg2);border-bottom:1px solid var(--bdr);flex-shrink:0}
 .sw-prog-bar{height:3px;background:var(--bg4);border-radius:2px;margin-top:12px;overflow:hidden}
 .sw-prog-fill{height:100%;background:var(--acc);border-radius:2px;transition:width .4s cubic-bezier(.4,0,.2,1)}
@@ -264,6 +272,47 @@ body.compact .mg{gap:7px}
 .sw-inp:focus{border-color:var(--acc)}
 .sw-inp::placeholder{color:var(--t3)}
 .sw-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/* v2.8.13 — new setup wizard */
+.nsw-chip{background:var(--bg3);border:1px solid var(--bdr2);border-radius:12px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;color:var(--t2);font-size:12px;font-weight:600;font-family:var(--sans);transition:all .15s;min-height:72px;justify-content:center}
+.nsw-chip.on{background:var(--accd);border-color:var(--bdr-acc);color:var(--acc)}
+.nsw-chip-sm{padding:9px 4px;min-height:56px}
+.nsw-bank-row{display:flex;flex-wrap:wrap;gap:6px}
+.nsw-bank{background:var(--bg3);border:1px solid var(--bdr2);border-radius:16px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--t2);cursor:pointer;font-family:var(--sans);transition:all .15s;min-height:34px}
+.nsw-bank.on{background:var(--accd);border-color:var(--bdr-acc);color:var(--acc)}
+.nsw-seg{flex:1;background:var(--bg3);border:1px solid var(--bdr2);border-radius:10px;padding:12px;font-size:13px;font-weight:600;color:var(--t2);cursor:pointer;font-family:var(--sans);transition:all .15s}
+.nsw-seg.on{background:var(--accd);border-color:var(--bdr-acc);color:var(--acc)}
+.sw-acct-card{background:var(--bg3);border:1px solid var(--bdr2);border-radius:12px;padding:13px}
+.sw-acct-h{font-size:13px;font-weight:700;color:var(--t);margin-bottom:10px}
+/* v2.8.14 — guided app tour */
+#app-tour{position:fixed;inset:0;z-index:1100;display:none;transition:opacity .25s ease}
+.tour-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.tour-card{position:absolute;left:50%;bottom:calc(var(--nav-h) + var(--sb) + 24px);transform:translateX(-50%);width:calc(100% - 40px);max-width:360px;background:linear-gradient(180deg,#0f1a15,#0a120e);border:0.5px solid var(--bdr-acc);border-radius:20px;padding:22px 20px;box-shadow:0 12px 40px rgba(0,0,0,.6);animation:tourIn .4s cubic-bezier(.34,1.28,.4,1)}
+@keyframes tourIn{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.tour-dots{display:flex;gap:5px;justify-content:center;margin-bottom:14px}
+.tour-dot{width:6px;height:6px;border-radius:50%;background:var(--bg5);transition:all .3s}
+.tour-dot.on{background:var(--acc);width:18px;border-radius:3px}
+.tour-icon{font-size:38px;text-align:center;margin-bottom:10px}
+.tour-title{font-size:17px;font-weight:800;color:var(--t);text-align:center;margin-bottom:8px}
+.tour-body{font-size:13px;color:var(--t2);line-height:1.6;text-align:center;margin-bottom:18px}
+.tour-actions{display:flex;gap:8px}
+/* v2.8.16 — lock gate */
+#lock-screen{position:fixed;inset:0;z-index:2000;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;transition:opacity .25s ease}
+.lock-inner{width:100%;max-width:320px;padding:20px;text-align:center}
+.lock-inner.shake{animation:lockShake .4s}
+@keyframes lockShake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+.lock-logo{font-size:44px;margin-bottom:14px}
+.lock-title{font-size:19px;font-weight:800;color:var(--t);margin-bottom:6px}
+.lock-sub{font-size:12px;color:var(--t3);margin-bottom:26px}
+.lock-dots{display:flex;gap:12px;justify-content:center;margin-bottom:14px;min-height:16px}
+.lock-dot{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--bdr-acc);transition:all .15s}
+.lock-dot.on{background:var(--acc);border-color:var(--acc)}
+.lock-error{font-size:12px;color:var(--r);min-height:18px;margin-bottom:14px}
+.lock-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:260px;margin:0 auto}
+.lock-key{aspect-ratio:1;border-radius:50%;background:var(--glass);border:0.5px solid var(--bdr);color:var(--t);font-size:22px;font-weight:600;font-family:var(--sans);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .1s;-webkit-tap-highlight-color:transparent;min-height:64px}
+.lock-key:active{background:var(--accd);transform:scale(.94)}
+.lock-del,.lock-bio{background:transparent;border:none;font-size:20px}
+/* Privacy blanking — blur the whole app when tab is hidden (app-switcher/screenshots) */
+body.hidden-blur #app{filter:blur(18px)}
 .sw-ticker-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .sw-ticker-item{background:var(--bg3);border:1px solid var(--bdr2);border-radius:var(--rad-sm);padding:11px}
 .sw-ticker-name{font-size:10px;color:var(--t3);margin-bottom:6px;display:flex;align-items:center;gap:5px}
@@ -1940,9 +1989,11 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
       <div class="card">
         <div class="ctitle"><div class="ctitle-l">Data</div></div>
         <div class="setting-row"><div><div class="setting-label">Export transactions</div><div class="setting-sub">Download as CSV</div></div><button class="btn btn-ghost btn-sm" onclick="exportCSV()">Export</button></div>
-        <div class="setting-row"><div><div class="setting-label">Download backup</div><div class="setting-sub">Full data as a JSON file</div></div><button class="btn btn-ghost btn-sm" onclick="exportBackup()">Backup</button></div>
+        <div class="setting-row"><div><div class="setting-label">Backup & restore</div><div class="setting-sub">Export, import, restore points, auto-backups</div></div><button class="btn btn-ghost btn-sm" onclick="openBackupHub()">Open</button></div>
+        <div class="setting-row"><div><div class="setting-label">Security & privacy</div><div class="setting-sub">App lock, PIN, biometrics, key encryption</div></div><button class="btn btn-ghost btn-sm" onclick="openSecurityHub()">Open</button></div>
         <div class="setting-row"><div><div class="setting-label">Storage used</div><div class="setting-sub" id="settings-storage-sub">Calculating…</div></div><div id="settings-storage-bar" style="width:70px;height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;flex-shrink:0"><div id="settings-storage-fill" style="height:100%;width:0;background:var(--acc)"></div></div></div>
         <div class="setting-row"><div><div class="setting-label">Diagnostics</div><div class="setting-sub">App info + error log</div></div><button class="btn btn-ghost btn-sm" onclick="openDiagnostics()">Open</button></div>
+        <div class="setting-row"><div><div class="setting-label">Replay app tour</div><div class="setting-sub">Quick walk-through of the main features</div></div><button class="btn btn-ghost btn-sm" onclick="startAppTour()">Start</button></div>
         <div class="setting-row"><div><div class="setting-label">Re-run setup wizard</div><div class="setting-sub">Update your starting figures</div></div><button class="btn btn-ghost btn-sm" onclick="rerunSetup()">Open</button></div>
         <div class="setting-row"><div><div class="setting-label">Clear all data</div><div class="setting-sub">Wipes everything and restarts</div></div><button class="btn btn-r btn-sm" onclick="clearAll()">Clear</button></div>
       </div>
@@ -2195,6 +2246,16 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
 // Keeps a small in-memory log the user can view + copy from Settings → diagnostics.
 // ═══════════════════════════════════════════════════════════
 window.__fpErrors=[];
+// v2.8.16 — production log hygiene. Neutralize verbose logs (log/debug/info) so no
+// data can leak through them in the shipped app, while keeping warn/error for the
+// diagnostics system. Set window.__FP_DEBUG=true in the console to restore them.
+(function(){
+  if(window.__FP_DEBUG)return;
+  const noop=function(){};
+  try{
+    ['log','debug','info','trace','table','dir'].forEach(m=>{if(console[m])console[m]=noop;});
+  }catch(e){}
+})();
 function __fpLogError(kind,msg,src,line,col,stack){
   try{
     window.__fpErrors.push({t:Date.now(),kind,msg:String(msg||'').slice(0,300),src:String(src||'').split('/').pop(),line,col,stack:String(stack||'').slice(0,600)});
@@ -2218,6 +2279,419 @@ window.addEventListener('unhandledrejection',function(e){
 function safeCall(fn,label){
   try{return fn();}
   catch(e){__fpLogError('safeCall',(label?label+': ':'')+(e.message||e),'',0,0,e.stack);return undefined;}
+}
+
+// ═══════════════════════════════════════════════════════════
+// v2.8.16 — PHASE 6: SECURITY CORE
+// Cost-free, browser-native. Web Crypto (PBKDF2 + AES-GCM) for encrypting secrets
+// at rest; WebAuthn/PIN lock gate; runtime-only key vault. Interim layer for the
+// PWA — the hardware-enclave / SQLCipher equivalents come with the future Flutter build.
+// ═══════════════════════════════════════════════════════════
+const SEC_KEYS={
+  vault:'finplan-vault',        // encrypted API keys blob {iv,salt,ct}
+  pin:'finplan-pinhash',        // PBKDF2 hash of PIN {salt,hash,iter}
+  cfg:'finplan-seccfg',         // {lockEnabled,encryptKeys,idleMs,webauthn}
+  wa:'finplan-wa-cred'          // WebAuthn credential id (base64)
+};
+// Runtime-only holder — never serialized to localStorage. Populated on unlock.
+let __vault={claude:'',groq:'',fmp:'',unlocked:false};
+
+function getSecCfg(){
+  try{return Object.assign({lockEnabled:false,encryptKeys:false,idleMs:60000,webauthn:false},JSON.parse(localStorage.getItem(SEC_KEYS.cfg))||{});}
+  catch(e){return{lockEnabled:false,encryptKeys:false,idleMs:60000,webauthn:false};}
+}
+function setSecCfg(patch){
+  const cfg=Object.assign(getSecCfg(),patch);
+  localStorage.setItem(SEC_KEYS.cfg,JSON.stringify(cfg));
+  return cfg;
+}
+
+// ── Web Crypto primitives ──
+function _buf2b64(buf){return btoa(String.fromCharCode(...new Uint8Array(buf)));}
+function _b642buf(b64){return Uint8Array.from(atob(b64),c=>c.charCodeAt(0));}
+async function _deriveKey(passphrase,salt,iter){
+  const enc=new TextEncoder();
+  const baseKey=await crypto.subtle.importKey('raw',enc.encode(passphrase),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey(
+    {name:'PBKDF2',salt,iterations:iter||150000,hash:'SHA-256'},
+    baseKey,{name:'AES-GCM',length:256},false,['encrypt','decrypt']
+  );
+}
+async function encryptWithPassphrase(plaintext,passphrase){
+  const salt=crypto.getRandomValues(new Uint8Array(16));
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const key=await _deriveKey(passphrase,salt,150000);
+  const enc=new TextEncoder();
+  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,enc.encode(plaintext));
+  return{iv:_buf2b64(iv),salt:_buf2b64(salt),ct:_buf2b64(ct),iter:150000};
+}
+async function decryptWithPassphrase(blob,passphrase){
+  const key=await _deriveKey(passphrase,_b642buf(blob.salt),blob.iter||150000);
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:_b642buf(blob.iv)},key,_b642buf(blob.ct));
+  return new TextDecoder().decode(pt);
+}
+
+// ── PIN hashing (PBKDF2, never store the PIN itself) ──
+async function hashPin(pin,saltB64){
+  const salt=saltB64?_b642buf(saltB64):crypto.getRandomValues(new Uint8Array(16));
+  const iter=200000;
+  const enc=new TextEncoder();
+  const baseKey=await crypto.subtle.importKey('raw',enc.encode(pin),'PBKDF2',false,['deriveBits']);
+  const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:iter,hash:'SHA-256'},baseKey,256);
+  return{salt:_buf2b64(salt),hash:_buf2b64(bits),iter};
+}
+async function verifyPin(pin){
+  try{
+    const stored=JSON.parse(localStorage.getItem(SEC_KEYS.pin)||'null');
+    if(!stored)return false;
+    const check=await hashPin(pin,stored.salt);
+    // constant-ish time compare
+    if(check.hash.length!==stored.hash.length)return false;
+    let diff=0;for(let i=0;i<check.hash.length;i++)diff|=check.hash.charCodeAt(i)^stored.hash.charCodeAt(i);
+    return diff===0;
+  }catch(e){return false;}
+}
+async function setPin(pin){
+  const h=await hashPin(pin);
+  localStorage.setItem(SEC_KEYS.pin,JSON.stringify(h));
+}
+function hasPin(){return !!localStorage.getItem(SEC_KEYS.pin);}
+
+// ── API key vault (encrypted at rest, decrypted into __vault on unlock) ──
+// The passphrase for the vault is the PIN. Keys never live in the main S blob.
+async function saveVault(pin){
+  const payload=JSON.stringify({claude:__vault.claude||'',groq:__vault.groq||'',fmp:__vault.fmp||''});
+  const blob=await encryptWithPassphrase(payload,pin);
+  localStorage.setItem(SEC_KEYS.vault,JSON.stringify(blob));
+}
+async function loadVault(pin){
+  const raw=localStorage.getItem(SEC_KEYS.vault);
+  if(!raw){__vault.unlocked=true;return true;} // nothing stored yet
+  try{
+    const blob=JSON.parse(raw);
+    const pt=await decryptWithPassphrase(blob,pin);
+    const obj=JSON.parse(pt);
+    __vault.claude=obj.claude||'';__vault.groq=obj.groq||'';__vault.fmp=obj.fmp||'';
+    __vault.unlocked=true;
+    return true;
+  }catch(e){return false;} // wrong PIN or corrupt
+}
+// Unified accessor used by all API call sites. Falls back to plaintext S.* when
+// encryption isn't enabled, so existing behaviour is preserved for users who
+// haven't turned security on.
+function getApiKey(which){
+  const cfg=getSecCfg();
+  if(cfg.encryptKeys&&__vault.unlocked){
+    return (which==='claude'?__vault.claude:which==='groq'?__vault.groq:__vault.fmp)||'';
+  }
+  return (which==='claude'?S.claudeApiKey:which==='groq'?S.groqApiKey:S.fmpApiKey)||'';
+}
+function setApiKeyRuntime(which,val){
+  if(which==='claude')__vault.claude=val;
+  else if(which==='groq')__vault.groq=val;
+  else __vault.fmp=val;
+}
+// Persist a key the right way based on whether encryption is enabled.
+// Encrypted: into the runtime vault + re-encrypt the vault blob (never into S).
+// Plaintext: into S as before (and clear any vault copy).
+function persistApiKey(which,val){
+  const cfg=getSecCfg();
+  if(cfg.encryptKeys&&__vault.unlocked){
+    setApiKeyRuntime(which,val);
+    const pin=window.__sessionPin;
+    if(pin){saveVault(pin);}          // re-encrypt with the session PIN
+    // ensure no plaintext copy lingers in S
+    if(which==='claude')delete S.claudeApiKey;
+    else if(which==='groq')delete S.groqApiKey;
+    else delete S.fmpApiKey;
+    save();
+  }else{
+    if(which==='claude')S.claudeApiKey=val;
+    else if(which==='groq')S.groqApiKey=val;
+    else S.fmpApiKey=val;
+    save();
+  }
+}
+// True if a key exists in whichever store is active.
+function hasApiKey(which){return !!(getApiKey(which)||'').trim();}
+
+// ═══════════════════════════════════════════════════════════
+// v2.8.16 — LOCK GATE (biometric via WebAuthn, PIN fallback)
+// ═══════════════════════════════════════════════════════════
+let __lockState={locked:false,lastActive:Date.now(),pinBuffer:''};
+window.__sessionPin=null; // held in memory only while unlocked, for re-encrypting the vault
+
+function isLockEnabled(){return getSecCfg().lockEnabled&&hasPin();}
+
+// Called on boot: if lock is on, show the gate before the app is usable.
+async function initLockGate(){
+  const cfg=getSecCfg();
+  if(!cfg.lockEnabled||!hasPin()){
+    // No lock — if keys were encrypted we still need them; but without a PIN we can't
+    // decrypt, so encryption implies a PIN. Nothing to do here.
+    return false;
+  }
+  showLockScreen();
+  return true;
+}
+
+function showLockScreen(){
+  __lockState.locked=true;
+  __lockState.pinBuffer='';
+  let el=document.getElementById('lock-screen');
+  if(!el){el=document.createElement('div');el.id='lock-screen';document.body.appendChild(el);}
+  const cfg=getSecCfg();
+  const bioAvailable=cfg.webauthn&&!!localStorage.getItem(SEC_KEYS.wa)&&!!window.PublicKeyCredential;
+  el.innerHTML=`
+    <div class="lock-inner">
+      <div class="lock-logo">🔒</div>
+      <div class="lock-title">FinPlan is locked</div>
+      <div class="lock-sub">${bioAvailable?'Use biometrics or enter your PIN':'Enter your PIN'}</div>
+      <div class="lock-dots" id="lock-dots">${[0,1,2,3,4,5].map(i=>`<span class="lock-dot" data-i="${i}"></span>`).join('')}</div>
+      <div class="lock-error" id="lock-error"></div>
+      <div class="lock-pad">
+        ${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="lock-key" onclick="lockPress('${n}')">${n}</button>`).join('')}
+        ${bioAvailable?'<button class="lock-key lock-bio" onclick="lockBiometric()">👆</button>':'<span></span>'}
+        <button class="lock-key" onclick="lockPress('0')">0</button>
+        <button class="lock-key lock-del" onclick="lockBackspace()">⌫</button>
+      </div>
+    </div>`;
+  el.style.display='flex';
+  document.body.style.overflow='hidden';
+  if(bioAvailable)setTimeout(lockBiometric,400); // auto-prompt biometric
+}
+
+function lockPress(n){
+  if(__lockState.pinBuffer.length>=6)return;
+  __lockState.pinBuffer+=n;
+  updateLockDots();
+  if(__lockState.pinBuffer.length>=4){
+    // Try after 4, but allow up to 6 — verify on each press ≥4
+    tryPinUnlock();
+  }
+}
+function lockBackspace(){__lockState.pinBuffer=__lockState.pinBuffer.slice(0,-1);updateLockDots();}
+function updateLockDots(){
+  const len=__lockState.pinBuffer.length;
+  document.querySelectorAll('#lock-dots .lock-dot').forEach((d,i)=>d.classList.toggle('on',i<len));
+}
+async function tryPinUnlock(){
+  const pin=__lockState.pinBuffer;
+  const ok=await verifyPin(pin);
+  if(ok){
+    window.__sessionPin=pin;
+    // Decrypt the vault if encryption is on
+    const cfg=getSecCfg();
+    if(cfg.encryptKeys){
+      const loaded=await loadVault(pin);
+      if(!loaded){lockFail('Could not unlock secure keys');return;}
+    }
+    unlockApp();
+  }else if(pin.length>=6){
+    lockFail('Wrong PIN');
+  }
+}
+function lockFail(msg){
+  __lockState.pinBuffer='';updateLockDots();
+  const e=document.getElementById('lock-error');
+  if(e){e.textContent=msg;setTimeout(()=>{if(e)e.textContent='';},2000);}
+  if(typeof haptic==='function')haptic([60,40,60]);
+  const inner=document.querySelector('.lock-inner');
+  if(inner){inner.classList.add('shake');setTimeout(()=>inner.classList.remove('shake'),400);}
+}
+function unlockApp(){
+  __lockState.locked=false;
+  __lockState.lastActive=Date.now();
+  const el=document.getElementById('lock-screen');
+  if(el){el.style.opacity='0';setTimeout(()=>{el.style.display='none';el.style.opacity='';},250);}
+  document.body.style.overflow='';
+}
+
+// ── WebAuthn biometric ──
+async function lockBiometric(){
+  try{
+    const credIdB64=localStorage.getItem(SEC_KEYS.wa);
+    if(!credIdB64)return;
+    const challenge=crypto.getRandomValues(new Uint8Array(32));
+    const cred=await navigator.credentials.get({publicKey:{
+      challenge,
+      allowCredentials:[{type:'public-key',id:_b642buf(credIdB64)}],
+      userVerification:'required',
+      timeout:30000
+    }});
+    if(cred){
+      // Biometric verified. But we still need the PIN to decrypt the vault, so if
+      // encryption is on we stored the PIN wrapped — retrieve it. For simplicity and
+      // safety we keep the vault keyed to the PIN; biometric unlocks the *app* only,
+      // and if encryption is on we ask for PIN once to seed the session key.
+      const cfg=getSecCfg();
+      if(cfg.encryptKeys&&!window.__sessionPin){
+        // Need PIN once to decrypt keys; biometric alone can't derive the vault key.
+        const e=document.getElementById('lock-error');
+        if(e)e.textContent='Enter PIN once to unlock secure keys';
+        return;
+      }
+      unlockApp();
+    }
+  }catch(e){
+    // user cancelled or failed — silently fall back to PIN
+  }
+}
+
+// ── Idle + lifecycle ──
+function noteActivity(){__lockState.lastActive=Date.now();}
+function checkIdleLock(){
+  if(!isLockEnabled()||__lockState.locked)return;
+  const idleMs=getSecCfg().idleMs||60000;
+  if(Date.now()-__lockState.lastActive>idleMs){
+    showLockScreen();
+  }
+}
+function initLockLifecycle(){
+  ['touchstart','mousedown','keydown','scroll'].forEach(ev=>document.addEventListener(ev,noteActivity,{passive:true}));
+  document.addEventListener('visibilitychange',()=>{
+    if(document.hidden){
+      // leaving foreground — record time; privacy blur handled by CSS on hidden
+    }else{
+      checkIdleLock(); // returning — lock if idled past threshold
+    }
+  });
+  window.addEventListener('focus',checkIdleLock);
+}
+// v2.8.16 — privacy blanking. Best-effort: blurs app content when the tab is hidden.
+// NOTE: a PWA cannot control the OS app-switcher thumbnail — that requires the native
+// (Flutter) build. This helps with some screen-capture / quick-glance cases only.
+function initPrivacyBlur(){
+  const cfg=getSecCfg();
+  if(!cfg.privacyBlur)return;
+  document.addEventListener('visibilitychange',()=>{
+    document.body.classList.toggle('hidden-blur',document.hidden);
+  });
+  window.addEventListener('blur',()=>{if(getSecCfg().privacyBlur)document.body.classList.add('hidden-blur');});
+  window.addEventListener('focus',()=>document.body.classList.remove('hidden-blur'));
+}
+
+// ── Security settings hub ──
+function openSecurityHub(){
+  const cfg=getSecCfg();
+  const pinSet=hasPin();
+  const bioReg=!!localStorage.getItem(SEC_KEYS.wa);
+  const bioSupported=!!window.PublicKeyCredential;
+  showSheet('🔐 Security & privacy',`
+    <div class="an-card">
+      <div class="an-card-t">App lock</div>
+      <div style="font-size:11px;color:var(--t2);line-height:1.55;margin-bottom:12px">Require a PIN (and optional biometrics) to open the app and after ${Math.round((cfg.idleMs||60000)/1000)}s in the background.</div>
+      <div class="setting-row" style="padding:8px 0"><div><div class="setting-label">${pinSet?'PIN is set':'Set a PIN'}</div><div class="setting-sub">4–6 digits</div></div><button class="btn btn-ghost btn-sm" onclick="startSetPin()">${pinSet?'Change':'Set PIN'}</button></div>
+      <div class="setting-row" style="padding:8px 0"><div><div class="setting-label">Lock the app</div><div class="setting-sub">${pinSet?'Require PIN on launch + idle':'Set a PIN first'}</div></div><button class="toggle-switch ${cfg.lockEnabled?'on':''}" ${pinSet?'':'disabled style=opacity:.4'} onclick="toggleAppLock()"></button></div>
+      ${bioSupported?`<div class="setting-row" style="padding:8px 0"><div><div class="setting-label">Biometric unlock</div><div class="setting-sub">${bioReg?'Registered':'Face / fingerprint'}</div></div><button class="btn btn-ghost btn-sm" ${pinSet?'':'disabled style=opacity:.4'} onclick="${bioReg?'unregisterBiometric()':'registerBiometric()'}">${bioReg?'Remove':'Enable'}</button></div>`:'<div style="font-size:10px;color:var(--t3);padding:6px 0">Biometrics not available on this device/browser.</div>'}
+    </div>
+    <div class="an-card">
+      <div class="an-card-t">API key encryption</div>
+      <div style="font-size:11px;color:var(--t2);line-height:1.55;margin-bottom:12px">Encrypt your saved API keys at rest using your PIN. They are decrypted only after you unlock. Requires a PIN.</div>
+      <div class="setting-row" style="padding:8px 0"><div><div class="setting-label">Encrypt API keys</div><div class="setting-sub">${cfg.encryptKeys?'On — keys stored encrypted':'Off — keys stored in plain text'}</div></div><button class="toggle-switch ${cfg.encryptKeys?'on':''}" ${pinSet?'':'disabled style=opacity:.4'} onclick="toggleKeyEncryption()"></button></div>
+    </div>
+    <div class="an-card">
+      <div class="an-card-t">Privacy</div>
+      <div class="setting-row" style="padding:8px 0"><div><div class="setting-label">Blur when hidden</div><div class="setting-sub">Obscures the screen when you switch away</div></div><button class="toggle-switch ${cfg.privacyBlur?'on':''}" onclick="togglePrivacyBlur()"></button></div>
+    </div>
+    <div style="font-size:10px;color:var(--t3);line-height:1.6;padding:4px 2px">
+      A note on limits: this is a web app, so it cannot mask the phone's app-switcher preview or protect a running, unlocked session as strongly as a native app. Encryption protects your stored keys against someone reading your saved data or a backup file. The full hardware-backed protection arrives when FinPlan becomes a native app.
+    </div>
+  `);
+}
+
+function startSetPin(){
+  showSheet('Set a PIN',`
+    <div class="lbl">Enter a 4–6 digit PIN</div>
+    <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" class="inp" id="pin-1" placeholder="••••" style="letter-spacing:8px;text-align:center;font-size:20px">
+    <div class="lbl" style="margin-top:12px">Confirm PIN</div>
+    <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" class="inp" id="pin-2" placeholder="••••" style="letter-spacing:8px;text-align:center;font-size:20px">
+    <div id="pin-err" style="font-size:11px;color:var(--r);min-height:16px;margin-top:8px"></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openSecurityHub()">Cancel</button>
+      <button class="btn btn-acc btn-sm" style="flex:1" onclick="confirmSetPin()">Save PIN</button>
+    </div>`);
+}
+async function confirmSetPin(){
+  const p1=document.getElementById('pin-1').value;
+  const p2=document.getElementById('pin-2').value;
+  const err=document.getElementById('pin-err');
+  if(!/^\d{4,6}$/.test(p1)){err.textContent='PIN must be 4–6 digits';return;}
+  if(p1!==p2){err.textContent='PINs do not match';return;}
+  await setPin(p1);
+  window.__sessionPin=p1;
+  // If encryption is already on, re-encrypt the vault under the new PIN
+  if(getSecCfg().encryptKeys){await saveVault(p1);}
+  showToast('✓ PIN set');
+  openSecurityHub();
+}
+
+function toggleAppLock(){
+  if(!hasPin()){showToast('Set a PIN first');return;}
+  const cfg=getSecCfg();
+  setSecCfg({lockEnabled:!cfg.lockEnabled});
+  openSecurityHub();
+}
+async function toggleKeyEncryption(){
+  if(!hasPin()){showToast('Set a PIN first');return;}
+  const cfg=getSecCfg();
+  if(!cfg.encryptKeys){
+    // Turning ON: move current plaintext keys into the vault, encrypt, wipe from S
+    const pin=window.__sessionPin;
+    if(!pin){showToast('Unlock with your PIN first');return;}
+    __vault.claude=S.claudeApiKey||'';__vault.groq=S.groqApiKey||'';__vault.fmp=S.fmpApiKey||'';
+    __vault.unlocked=true;
+    await saveVault(pin);
+    delete S.claudeApiKey;delete S.groqApiKey;delete S.fmpApiKey;
+    setSecCfg({encryptKeys:true});save();
+    showToast('✓ API keys encrypted');
+  }else{
+    // Turning OFF: decrypt back into S as plaintext
+    S.claudeApiKey=__vault.claude||'';S.groqApiKey=__vault.groq||'';S.fmpApiKey=__vault.fmp||'';
+    localStorage.removeItem(SEC_KEYS.vault);
+    setSecCfg({encryptKeys:false});save();
+    showToast('API keys no longer encrypted');
+  }
+  openSecurityHub();
+}
+function togglePrivacyBlur(){
+  const cfg=getSecCfg();
+  setSecCfg({privacyBlur:!cfg.privacyBlur});
+  if(!cfg.privacyBlur)initPrivacyBlur();
+  else document.body.classList.remove('hidden-blur');
+  openSecurityHub();
+}
+
+// ── WebAuthn registration ──
+async function registerBiometric(){
+  if(!hasPin()){showToast('Set a PIN first');return;}
+  try{
+    const challenge=crypto.getRandomValues(new Uint8Array(32));
+    const userId=crypto.getRandomValues(new Uint8Array(16));
+    const cred=await navigator.credentials.create({publicKey:{
+      challenge,
+      rp:{name:'FinPlan'},
+      user:{id:userId,name:'finplan-user',displayName:'FinPlan User'},
+      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+      authenticatorSelection:{userVerification:'required',authenticatorAttachment:'platform'},
+      timeout:30000
+    }});
+    if(cred){
+      localStorage.setItem(SEC_KEYS.wa,_buf2b64(cred.rawId));
+      setSecCfg({webauthn:true});
+      showToast('✓ Biometric unlock enabled');
+      openSecurityHub();
+    }
+  }catch(e){
+    showToast('Could not set up biometrics');
+    if(typeof __fpLogError==='function')__fpLogError('webauthn',e.message);
+  }
+}
+function unregisterBiometric(){
+  localStorage.removeItem(SEC_KEYS.wa);
+  setSecCfg({webauthn:false});
+  showToast('Biometric unlock removed');
+  openSecurityHub();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2340,6 +2814,12 @@ let S={
   assistantHistory:[],  // investment assistant chat
   portfolioStartValue:null, // for TWR baseline if no full history
   acctBalances:{westpac:600,macquarie:0},
+  // v2.8.13 — display layer for the two accounts. Internal keys stay 'westpac'/'macquarie'
+  // (referenced throughout the app); these just control how they're shown + which bank.
+  acctMeta:{
+    westpac:{name:'Everyday',bank:'Westpac',type:'everyday'},
+    macquarie:{name:'Savings',bank:'Macquarie',type:'savings'}
+  },
   sliders:{kmart:110,rent:400,spend:600,goals:1674,invest:400},
   selectedAcct:'westpac',
   txnFilter:'all',
@@ -2419,9 +2899,77 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.8.12';
+const APP_VERSION='2.8.16';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.8.16',
+    date:'2026-07-27',
+    title:'Security & privacy — Phase 6',
+    sections:{
+      features:[
+        '🔐 **App lock.** Optional PIN (4–6 digits) required to open the app and after 60 seconds in the background. Set it up in Settings → Data → Security & privacy',
+        '👆 **Biometric unlock.** On supported devices, unlock with fingerprint or face using the browser\'s built-in WebAuthn — no passwords stored, backed by your device\'s own authenticator',
+        '🔑 **API key encryption.** Your saved API keys can now be encrypted at rest with AES-256, unlocked by your PIN. When on, keys are never stored in plain text and are only decrypted in memory after you unlock',
+        '🫥 **Privacy blur.** Optionally obscure the screen when you switch away from the app'
+      ],
+      improvements:[
+        'Added a Content Security Policy that restricts network connections to only the known API and font providers, forces HTTPS, and blocks insecure/mixed content',
+        'Verbose debug logging is now disabled in the shipped app, so nothing sensitive can surface through the console',
+        'All API calls now read keys through a single secure accessor, so encryption applies everywhere consistently'
+      ],
+      fixes:[]
+    }
+  },
+  {
+    v:'2.8.15',
+    date:'2026-07-27',
+    title:'Data safety & portability — Phase 4',
+    sections:{
+      features:[
+        '💾 **Backup & restore hub** (Settings → Data → Backup & restore). One place for everything: download a full backup, export transactions as CSV, or import from a backup file to move your data to another device or recover it',
+        '📥 **Import from a file.** Restore a previously downloaded backup — with a preview of what it contains and a hold-to-confirm before it replaces anything',
+        '🕐 **Automatic daily backups.** FinPlan now quietly keeps a snapshot of your data each day (the last 7 days), stored on your device. Restore any of them from the hub if something goes wrong',
+        '📌 **Restore points.** Save a named snapshot before doing anything risky — like a big import — and roll back to it in one tap if needed. Keeps your 5 most recent'
+      ],
+      improvements:[
+        'Every restore shows a before-and-after comparison and saves your current data first, so a restore is always reversible',
+        '"Clear all data" now keeps your backups by default so an accidental wipe is recoverable — with a separate option to delete everything including backups for a true fresh start'
+      ],
+      fixes:[]
+    }
+  },
+  {
+    v:'2.8.14',
+    date:'2026-07-27',
+    title:'Setup wizard fixes + guided tour',
+    sections:{
+      features:[
+        '🎬 **Guided app tour.** A six-step walk-through of the main features now runs after setup (if you opt in), and can be replayed anytime from Settings → Data → Replay app tour'
+      ],
+      improvements:[],
+      fixes:[
+        '🐛 **Fixed all the broken setup steps.** Adding an income source, setting monthly costs, adding a holding, and adding a goal during setup did nothing — the pop-up sheets were opening behind the setup screen because of a layering issue. They now appear on top and work correctly',
+        '🐛 The "quick tour" after setup now actually runs, instead of silently doing nothing'
+      ]
+    }
+  },
+  {
+    v:'2.8.13',
+    date:'2026-07-27',
+    title:'New setup wizard (preview) — Phase 3',
+    sections:{
+      features:[
+        '🎬 **A completely rebuilt setup wizard, available to preview now.** Settings → Data → Re-run setup wizard walks you through the new 9-step flow: your goal, renamable accounts (pick any bank, name them yourself), multiple income sources with pay cycles and hours, regular monthly costs, optional investing with any tickers, savings goals, and budget targets. It is built for anyone — not hardwired to one specific setup',
+        '🏦 **Accounts can now be named.** Your two accounts (everyday + savings) can show as any bank and nickname you choose — "ING Everyday", "UBank Save", whatever fits. The change flows through the transaction, transfer, and recurring screens'
+      ],
+      improvements:[
+        'The new wizard is in preview: re-running setup uses it so you can try it end-to-end, while a brand-new install still uses the current wizard until the new one is signed off',
+        'Everything the wizard captures writes into the same data the app already uses, so income, goals, holdings, and budgets all light up immediately after setup'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'2.8.12',
     date:'2026-07-27',
@@ -4090,6 +4638,205 @@ function restoreBackup(){
 }
 
 // ═══════════════════════════════════════════════════════════
+// v2.8.15 — PHASE 4: DATA SAFETY & PORTABILITY
+// Rolling auto-backups, manual restore points, and file import.
+// ═══════════════════════════════════════════════════════════
+const AUTO_BACKUP_KEY='finplan-autobackups';   // rolling daily snapshots (last 7)
+const RESTORE_POINTS_KEY='finplan-restorepoints'; // manual named snapshots (up to 5)
+
+// A compact snapshot of everything worth preserving.
+function makeSnapshot(){
+  return {v:APP_VERSION,ts:Date.now(),state:JSON.parse(JSON.stringify(S))};
+}
+function snapshotSummary(snap){
+  const st=snap.state||{};
+  return {
+    txns:(st.transactions||[]).length,
+    goals:(st.goals||[]).length,
+    holdings:(st.holdings||[]).length,
+    nw:(()=>{try{
+      const inv=(st.holdings||[]).reduce((a,h)=>a+(h.currentValue||h.manualValue||0),0);
+      const liq=(st.acctBalances?Object.values(st.acctBalances).reduce((a,v)=>a+v,0):0);
+      return inv+liq;
+    }catch(e){return null;}})()
+  };
+}
+
+// ── Rolling daily auto-backups ──
+function runAutoBackup(){
+  try{
+    let backups=[];
+    try{backups=JSON.parse(localStorage.getItem(AUTO_BACKUP_KEY))||[];}catch(_){}
+    const todayStr=today();
+    // One per day — replace today's if it exists
+    backups=backups.filter(b=>b.day!==todayStr);
+    backups.push({day:todayStr,ts:Date.now(),v:APP_VERSION,state:JSON.parse(JSON.stringify(S))});
+    // Keep last 7 days
+    backups=backups.sort((a,b)=>a.ts-b.ts).slice(-7);
+    localStorage.setItem(AUTO_BACKUP_KEY,JSON.stringify(backups));
+  }catch(e){
+    // Auto-backup is best-effort; if storage is full, don't block the app
+    if(typeof __fpLogError==='function')__fpLogError('autobackup',e.message);
+  }
+}
+function getAutoBackups(){
+  try{return (JSON.parse(localStorage.getItem(AUTO_BACKUP_KEY))||[]).sort((a,b)=>b.ts-a.ts);}catch(e){return[];}
+}
+
+// ── Manual restore points ──
+function getRestorePoints(){
+  try{return (JSON.parse(localStorage.getItem(RESTORE_POINTS_KEY))||[]).sort((a,b)=>b.ts-a.ts);}catch(e){return[];}
+}
+function saveRestorePoint(name){
+  try{
+    let points=getRestorePoints();
+    points.unshift({id:'rp_'+Date.now().toString(36),name:name||('Restore point '+new Date().toLocaleDateString('en-AU')),ts:Date.now(),v:APP_VERSION,state:JSON.parse(JSON.stringify(S))});
+    points=points.slice(0,5); // keep 5 most recent
+    localStorage.setItem(RESTORE_POINTS_KEY,JSON.stringify(points));
+    return true;
+  }catch(e){
+    if(typeof showToast==='function')showToast('Could not save — storage may be full');
+    return false;
+  }
+}
+function deleteRestorePoint(id){
+  const points=getRestorePoints().filter(p=>p.id!==id);
+  localStorage.setItem(RESTORE_POINTS_KEY,JSON.stringify(points));
+}
+
+// ── Apply a snapshot (with a safety backup of current state first) ──
+function applySnapshot(snap){
+  if(!snap||!snap.state){showToast?.('Snapshot is empty');return;}
+  try{
+    // Safety: stash current state so a bad restore is recoverable
+    localStorage.setItem(BACKUP_KEY,JSON.stringify(S));
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(snap.state));
+    location.reload();
+  }catch(e){alert('Restore failed: '+e.message);}
+}
+
+// ── File import ──
+function importFromFile(){
+  const input=document.createElement('input');
+  input.type='file';input.accept='.json,application/json';
+  input.onchange=e=>{
+    const file=e.target.files&&e.target.files[0];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const parsed=JSON.parse(ev.target.result);
+        // Accept both {app,version,state} and a raw state object
+        const state=parsed.state||parsed;
+        if(!state||typeof state!=='object'||(!state.transactions&&!state.goals&&!state.acctBalances)){
+          showToast('That does not look like a FinPlan backup');return;
+        }
+        const summ=snapshotSummary({state});
+        showSheet('Import backup',`
+          <div style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:14px">This backup contains:</div>
+          <div class="an-drill-stat">
+            <div class="an-drill-card"><div class="an-drill-l">Transactions</div><div class="an-drill-v">${summ.txns}</div></div>
+            <div class="an-drill-card"><div class="an-drill-l">Goals</div><div class="an-drill-v">${summ.goals}</div></div>
+            <div class="an-drill-card"><div class="an-drill-l">Holdings</div><div class="an-drill-v">${summ.holdings}</div></div>
+            <div class="an-drill-card"><div class="an-drill-l">Net worth</div><div class="an-drill-v">${summ.nw!=null?fmtDI(summ.nw):'—'}</div></div>
+          </div>
+          <div class="alert alert-r" style="font-size:11px;line-height:1.5;margin:14px 0">⚠ This replaces ALL your current data. Your current data is backed up first, so you can undo via "Restore previous backup" if needed.</div>
+          <button class="btn btn-r btn-full hold-btn" id="hold-import-restore"><span>Hold to replace my data</span></button>
+          <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="closeSheet()">Cancel</button>
+        `);
+        setTimeout(()=>{
+          const btn=document.getElementById('hold-import-restore');
+          if(btn&&typeof bindHoldToConfirm==='function')bindHoldToConfirm(btn,()=>{closeSheet();applySnapshot({state});},800);
+        },60);
+      }catch(err){
+        showToast('Could not read that file');
+        if(typeof __fpLogError==='function')__fpLogError('import',err.message);
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// ── The backup & restore hub UI ──
+function openBackupHub(){
+  const autos=getAutoBackups();
+  const points=getRestorePoints();
+  const st=getStorageInfo?getStorageInfo():null;
+  const snapRow=(snap,kind)=>{
+    const summ=snapshotSummary(snap);
+    const when=new Date(snap.ts).toLocaleDateString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    const label=kind==='point'?escapeHtml(snap.name):when;
+    return `<div class="an-txn-row">
+      <div style="min-width:0"><div class="an-txn-payee">${label}</div><div class="an-txn-date">${summ.txns} txns · ${summ.goals} goals${summ.nw!=null?' · '+fmtDI(summ.nw):''}${kind==='point'?' · '+when:''}</div></div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="btn btn-ghost btn-xs" onclick='previewRestore(${JSON.stringify(kind==="point"?snap.id:snap.day)},"${kind}")'>Restore</button>
+        ${kind==='point'?`<button class="btn btn-ghost btn-xs" style="color:var(--r)" onclick="deleteRestorePointUI('${snap.id}')">✕</button>`:''}
+      </div>
+    </div>`;
+  };
+  showSheet('💾 Backup & restore',`
+    ${st?`<div style="font-size:10px;color:var(--t3);text-align:center;margin-bottom:12px">${st.usedKB}KB used · ${st.pct}% of storage</div>`:''}
+    <div class="an-card">
+      <div class="an-card-t">Export & import</div>
+      <button class="btn btn-ghost btn-sm btn-full" style="margin-bottom:6px" onclick="exportBackup()">⬇ Download full backup (JSON)</button>
+      <button class="btn btn-ghost btn-sm btn-full" style="margin-bottom:6px" onclick="exportCSV()">⬇ Export transactions (CSV)</button>
+      <button class="btn btn-ghost btn-sm btn-full" onclick="importFromFile()">⬆ Import from a backup file</button>
+    </div>
+    <div class="an-card">
+      <div class="an-card-t">Restore points</div>
+      <button class="btn btn-acc btn-sm btn-full" style="margin-bottom:10px" onclick="createRestorePointUI()">+ Save a restore point now</button>
+      ${points.length?points.map(p=>snapRow(p,'point')).join(''):'<div style="font-size:11px;color:var(--t3);text-align:center;padding:8px">No restore points yet.</div>'}
+    </div>
+    <div class="an-card">
+      <div class="an-card-t">Automatic daily backups</div>
+      ${autos.length?autos.map(a=>snapRow(a,'auto')).join(''):'<div style="font-size:11px;color:var(--t3);text-align:center;padding:8px">Backups build up as you use the app daily.</div>'}
+      <div style="font-size:10px;color:var(--t3);line-height:1.5;margin-top:8px">FinPlan keeps the last 7 days automatically, on this device.</div>
+    </div>
+    <div style="text-align:center;margin-top:8px"><button style="background:none;border:none;color:var(--t3);font-size:10px;cursor:pointer;font-family:var(--sans);text-decoration:underline" onclick="clearAllIncludingBackups()">Delete everything including backups</button></div>
+  `);
+}
+function createRestorePointUI(){
+  showSheet('Save restore point',`
+    <div class="lbl">Name (optional)</div>
+    <input type="text" class="inp" id="rp-name" placeholder="e.g. Before big import">
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openBackupHub()">Cancel</button>
+      <button class="btn btn-acc btn-sm" style="flex:1" onclick="confirmRestorePoint()">Save</button>
+    </div>`);
+}
+function confirmRestorePoint(){
+  const name=(document.getElementById('rp-name')?.value||'').trim();
+  if(saveRestorePoint(name)){showToast('✓ Restore point saved');}
+  openBackupHub();
+}
+function deleteRestorePointUI(id){
+  deleteRestorePoint(id);openBackupHub();
+}
+function previewRestore(key,kind){
+  const snap=kind==='point'?getRestorePoints().find(p=>p.id===key):getAutoBackups().find(a=>a.day===key);
+  if(!snap){showToast('Not found');return;}
+  const summ=snapshotSummary(snap);
+  const cur=snapshotSummary({state:S});
+  const when=new Date(snap.ts).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  showSheet('Restore this backup?',`
+    <div style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:14px">From ${when}. Here is how it compares to your data right now:</div>
+    <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:14px">
+      <div style="text-align:center"><div style="font-size:10px;color:var(--t3)">NOW</div><div style="font-size:15px;font-weight:700;color:var(--t)">${cur.txns}</div><div style="font-size:9px;color:var(--t3)">txns</div></div>
+      <div style="color:var(--t3)">→</div>
+      <div style="text-align:center"><div style="font-size:10px;color:var(--acc)">BACKUP</div><div style="font-size:15px;font-weight:700;color:var(--acc)">${summ.txns}</div><div style="font-size:9px;color:var(--t3)">txns</div></div>
+    </div>
+    <div class="alert alert-r" style="font-size:11px;line-height:1.5;margin-bottom:14px">This replaces your current data. Your current state is saved first so you can undo.</div>
+    <button class="btn btn-r btn-full hold-btn" id="hold-restore-snap"><span>Hold to restore</span></button>
+    <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="openBackupHub()">Cancel</button>
+  `);
+  setTimeout(()=>{
+    const btn=document.getElementById('hold-restore-snap');
+    if(btn&&typeof bindHoldToConfirm==='function')bindHoldToConfirm(btn,()=>applySnapshot(snap),800);
+  },60);
+}
+
+// ═══════════════════════════════════════════════════════════
 // THEME & MODE
 // ═══════════════════════════════════════════════════════════
 function applyTheme(idx){
@@ -4257,6 +5004,50 @@ function activeHoldings(){return (S.holdings||[]).filter(h=>holdingValue(h)>0||(
 // (via invalidateComputeCache, hooked into save + refreshAll). Values are identical —
 // just computed once per generation instead of dozens of times.
 let __computeGen=0;
+// v2.8.13 — account display helpers. Everything user-facing reads through these
+// so the two internal accounts can show as any bank/name the person chose at setup.
+function ensureAcctMeta(){
+  if(!S.acctMeta)S.acctMeta={};
+  if(!S.acctMeta.westpac)S.acctMeta.westpac={name:'Everyday',bank:'Westpac',type:'everyday'};
+  if(!S.acctMeta.macquarie)S.acctMeta.macquarie={name:'Savings',bank:'Macquarie',type:'savings'};
+  return S.acctMeta;
+}
+// Full display name, e.g. "ING Everyday" or just "Everyday" if bank matches or is blank
+function acctLabel(key){
+  ensureAcctMeta();
+  const m=S.acctMeta[key]||{};
+  const name=m.name||(key==='westpac'?'Everyday':'Savings');
+  return name;
+}
+// Bank name only, e.g. "ING", "UBank"
+function acctBank(key){
+  ensureAcctMeta();
+  return (S.acctMeta[key]||{}).bank||(key==='westpac'?'Westpac':'Macquarie');
+}
+// "Bank · Name" full descriptor for detail views
+function acctFullLabel(key){
+  const bank=acctBank(key),name=acctLabel(key);
+  return bank&&bank.toLowerCase()!==name.toLowerCase()?`${bank} ${name}`:name;
+}
+// v2.8.13 — update every account dropdown + label in the DOM to the custom names.
+// Values stay 'westpac'/'macquarie'; only the visible text changes.
+function refreshAcctLabels(){
+  ensureAcctMeta();
+  const wLabel=acctFullLabel('westpac'),mLabel=acctFullLabel('macquarie');
+  // Dropdown options across all modals
+  ['txn-acct','tr-from','tr-to','rec-acct'].forEach(selId=>{
+    const sel=document.getElementById(selId);if(!sel)return;
+    Array.from(sel.options).forEach(opt=>{
+      if(opt.value==='westpac')opt.textContent=wLabel;
+      else if(opt.value==='macquarie')opt.textContent=mLabel;
+    });
+  });
+  // Any element tagged with data-acct-label gets its text set
+  document.querySelectorAll('[data-acct-label]').forEach(el=>{
+    const k=el.getAttribute('data-acct-label');
+    el.textContent=acctFullLabel(k);
+  });
+}
 let __balCache={gen:-1,map:{}};
 let __portCache={gen:-1,total:null,cost:null};
 function invalidateComputeCache(){__computeGen++;}
@@ -4402,7 +5193,543 @@ function swSave(){
 }
 function swNext(){swSave();if(swStep<SW.length-1){swStep++;renderSW();}else{S.setupDone=true;save();launchApp();}}
 function swBack(){if(swStep>0){swStep--;renderSW();}}
-function rerunSetup(){closeMore();swStep=0;renderSW();document.getElementById('setup').style.display='flex';}
+function rerunSetup(){closeMore();startNewSetup();}
+
+// ═══════════════════════════════════════════════════════════
+// v2.8.13 — NEW SETUP WIZARD (Path B)
+// Generic, thorough onboarding that works for anyone — renamable accounts,
+// flexible income, optional investing, blank-slate goals. Writes to the exact
+// data shapes the app already reads. Reuses the #setup shell + its controls.
+// ═══════════════════════════════════════════════════════════
+let nswStep=0;
+let nswDraft=null;
+
+function nswInitDraft(){
+  ensureAcctMeta();
+  return {
+    primaryGoal:null,
+    accounts:{
+      everyday:{bank:S.acctMeta.westpac.bank||'Westpac',name:S.acctMeta.westpac.name||'Everyday',bal:S.acctBalances.westpac||0},
+      savings:{bank:S.acctMeta.macquarie.bank||'Macquarie',name:S.acctMeta.macquarie.name||'Savings',bal:S.acctBalances.macquarie||0}
+    },
+    incomes:[],          // {type,employer,amount,cycle,hours}
+    fixedCosts:[],       // {label,amount}
+    invests:false,
+    broker:null,
+    holdings:[],         // {ticker,value}
+    goals:[],            // {label,target,deadline}
+    weeklySpend:S.sliders.spend||300,
+    monthlyGoalSave:S.sliders.goals||0,
+    monthlyInvest:S.sliders.invest||0,
+    wantsTour:true
+  };
+}
+
+const NSW_STEPS=[
+  {lbl:'Welcome',       title:'Welcome to FinPlan',       render:nswWelcome},
+  {lbl:'Your goal',     title:'What are you working toward?',render:nswGoal},
+  {lbl:'Accounts',      title:'Your accounts',            render:nswAccounts},
+  {lbl:'Income',        title:'How you earn',             render:nswIncome},
+  {lbl:'Fixed costs',   title:'Regular monthly costs',    render:nswFixed},
+  {lbl:'Investing',     title:'Investing',                render:nswInvest},
+  {lbl:'Goals',         title:'Your savings goals',       render:nswGoals},
+  {lbl:'Budget',        title:'Your weekly budget',       render:nswBudget},
+  {lbl:'Finish',        title:'You are all set',          render:nswFinish}
+];
+
+function startNewSetup(){
+  nswDraft=nswInitDraft();
+  nswStep=0;
+  const setup=document.getElementById('setup');
+  setup.style.display='flex';
+  setup.setAttribute('data-wizard','new');
+  nswRender();
+}
+
+function nswRender(){
+  const s=NSW_STEPS[nswStep];
+  document.getElementById('sw-lbl').textContent=`Step ${nswStep+1} of ${NSW_STEPS.length} · ${s.lbl}`;
+  document.getElementById('sw-title').textContent=s.title;
+  document.getElementById('sw-prog').style.width=((nswStep+1)/NSW_STEPS.length*100)+'%';
+  const backBtn=document.getElementById('sw-back');
+  backBtn.style.display=nswStep>0?'inline-flex':'none';
+  backBtn.setAttribute('onclick','nswBack()');
+  const nextBtn=document.getElementById('sw-next');
+  nextBtn.textContent=nswStep===NSW_STEPS.length-1?'Launch FinPlan →':'Continue →';
+  nextBtn.setAttribute('onclick','nswNext()');
+  document.getElementById('sw-body').innerHTML='';
+  s.render();
+}
+
+function nswNext(){
+  if(!nswCommitStep())return; // validation can block
+  if(nswStep<NSW_STEPS.length-1){nswStep++;nswRender();}
+  else nswComplete();
+}
+function nswBack(){nswCommitStep(true);if(nswStep>0){nswStep--;nswRender();}}
+
+// ── Step 1: Welcome ──
+function nswWelcome(){
+  document.getElementById('sw-body').innerHTML=`
+    <div style="text-align:center;padding:16px 0 8px">
+      <div style="width:72px;height:72px;margin:0 auto 16px;border-radius:20px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:34px;font-weight:800;color:#001a13">F</div>
+      <div style="font-size:16px;font-weight:700;color:var(--t);margin-bottom:10px">Let us set up your money</div>
+    </div>
+    <p style="font-size:13px;color:var(--t2);line-height:1.65;margin-bottom:14px">This takes about 3 minutes. The more you tell us now, the more useful FinPlan is from day one — but you can change anything later.</p>
+    <div class="sw-info">🔒 Everything stays on this device. Nothing is sent anywhere unless you turn on the AI features.</div>`;
+}
+
+// ── Step 2: Primary goal ──
+const NSW_GOALS=[
+  {id:'uni',icon:'🎓',label:'University fund'},
+  {id:'moveout',icon:'🏠',label:'Move out'},
+  {id:'house',icon:'🔑',label:'House deposit'},
+  {id:'car',icon:'🚗',label:'Buy a car'},
+  {id:'emergency',icon:'🛟',label:'Emergency fund'},
+  {id:'freedom',icon:'🕊️',label:'Freedom fund'},
+  {id:'travel',icon:'✈️',label:'Travel'},
+  {id:'track',icon:'📊',label:'Just tracking'}
+];
+function nswGoal(){
+  document.getElementById('sw-body').innerHTML=`
+    <p style="font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:16px">Pick the big one. We will start a goal for it — you can add more later.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      ${NSW_GOALS.map(g=>`<button class="nsw-chip ${nswDraft.primaryGoal===g.id?'on':''}" onclick="nswPickGoal('${g.id}')">
+        <span style="font-size:22px">${g.icon}</span><span>${g.label}</span>
+      </button>`).join('')}
+    </div>`;
+}
+function nswPickGoal(id){nswDraft.primaryGoal=id;nswGoal();}
+
+// ── Step 3: Accounts ──
+const NSW_BANKS=['CBA','Westpac','ANZ','NAB','ING','UBank','Macquarie','Bendigo','Bankwest','Up','Other'];
+function nswAccounts(){
+  const d=nswDraft.accounts;
+  const bankChips=(which,current)=>NSW_BANKS.map(b=>`<button class="nsw-bank ${current===b?'on':''}" onclick="nswSetBank('${which}','${b}')">${b}</button>`).join('');
+  document.getElementById('sw-body').innerHTML=`
+    <p style="font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:14px">FinPlan works with two accounts: one for everyday spending, one for savings. Name them however you like.</p>
+    <div class="sw-acct-card">
+      <div class="sw-acct-h">💳 Everyday account <span style="color:var(--t3);font-weight:400">— day-to-day spending</span></div>
+      <div class="sw-lbl">Bank</div>
+      <div class="nsw-bank-row">${bankChips('everyday',d.everyday.bank)}</div>
+      ${d.everyday.bank==='Other'?`<input type="text" class="sw-inp" id="nsw-ev-bank" placeholder="Bank name" value="${escapeAttr(d.everyday.customBank||'')}" oninput="nswDraft.accounts.everyday.customBank=this.value">`:''}
+      <div class="sw-row" style="margin-top:8px">
+        <div class="sw-field"><div class="sw-lbl">Nickname</div><input type="text" class="sw-inp" id="nsw-ev-name" value="${escapeAttr(d.everyday.name)}" placeholder="Everyday"></div>
+        <div class="sw-field"><div class="sw-lbl">Balance now $</div><input type="number" class="sw-inp" id="nsw-ev-bal" value="${d.everyday.bal||''}" placeholder="0"></div>
+      </div>
+    </div>
+    <div class="sw-acct-card" style="margin-top:10px">
+      <div class="sw-acct-h">🏦 Savings account <span style="color:var(--t3);font-weight:400">— where savings grow</span></div>
+      <div class="sw-lbl">Bank</div>
+      <div class="nsw-bank-row">${bankChips('savings',d.savings.bank)}</div>
+      ${d.savings.bank==='Other'?`<input type="text" class="sw-inp" id="nsw-sv-bank" placeholder="Bank name" value="${escapeAttr(d.savings.customBank||'')}" oninput="nswDraft.accounts.savings.customBank=this.value">`:''}
+      <div class="sw-row" style="margin-top:8px">
+        <div class="sw-field"><div class="sw-lbl">Nickname</div><input type="text" class="sw-inp" id="nsw-sv-name" value="${escapeAttr(d.savings.name)}" placeholder="Savings"></div>
+        <div class="sw-field"><div class="sw-lbl">Balance now $</div><input type="number" class="sw-inp" id="nsw-sv-bal" value="${d.savings.bal||''}" placeholder="0"></div>
+      </div>
+    </div>`;
+}
+function nswSetBank(which,bank){
+  // Capture any typed fields before re-render
+  nswCaptureAccounts();
+  nswDraft.accounts[which].bank=bank;
+  nswAccounts();
+}
+function nswCaptureAccounts(){
+  const g=id=>document.getElementById(id);
+  if(g('nsw-ev-name'))nswDraft.accounts.everyday.name=g('nsw-ev-name').value.trim()||'Everyday';
+  if(g('nsw-ev-bal'))nswDraft.accounts.everyday.bal=parseFloat(g('nsw-ev-bal').value)||0;
+  if(g('nsw-sv-name'))nswDraft.accounts.savings.name=g('nsw-sv-name').value.trim()||'Savings';
+  if(g('nsw-sv-bal'))nswDraft.accounts.savings.bal=parseFloat(g('nsw-sv-bal').value)||0;
+  if(g('nsw-ev-bank'))nswDraft.accounts.everyday.customBank=g('nsw-ev-bank').value.trim();
+  if(g('nsw-sv-bank'))nswDraft.accounts.savings.customBank=g('nsw-sv-bank').value.trim();
+}
+
+// ── Step 4: Income ──
+const NSW_INCOME_TYPES=[
+  {id:'full-time',icon:'💼',label:'Full-time job'},
+  {id:'part-time',icon:'🕐',label:'Part-time job'},
+  {id:'casual',icon:'📋',label:'Casual / shifts'},
+  {id:'gig',icon:'🛵',label:'Gig / delivery'},
+  {id:'self',icon:'🧑‍💻',label:'Self-employed'},
+  {id:'other',icon:'💰',label:'Other'}
+];
+function nswIncome(){
+  const list=nswDraft.incomes;
+  document.getElementById('sw-body').innerHTML=`
+    <p style="font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:14px">Add each way you earn money. This powers your budget, income tracking, and pay reliability. Skip if you have none right now.</p>
+    <div id="nsw-income-list">${list.length?list.map((inc,i)=>nswIncomeRow(inc,i)).join(''):'<div style="text-align:center;color:var(--t3);font-size:12px;padding:14px">No income sources yet.</div>'}</div>
+    <button class="btn btn-ghost btn-sm btn-full" style="margin-top:10px" onclick="nswAddIncome()">+ Add income source</button>`;
+}
+function nswIncomeRow(inc,i){
+  const t=NSW_INCOME_TYPES.find(x=>x.id===inc.type)||{icon:'💰',label:inc.type};
+  const cycleL={weekly:'/wk',fortnightly:'/fn',monthly:'/mo',irregular:' irregular'}[inc.cycle]||'';
+  return `<div class="sw-acct-card" style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px">
+    <div style="min-width:0"><div style="font-size:13px;color:var(--t);font-weight:600">${t.icon} ${escapeHtml(inc.employer||t.label)}</div><div style="font-size:11px;color:var(--t3)">${fmtDI(inc.amount||0)}${cycleL}${inc.hours?` · ${inc.hours}h/wk`:''}</div></div>
+    <button class="btn btn-ghost btn-xs" style="color:var(--r);flex-shrink:0" onclick="nswRemoveIncome(${i})">Remove</button>
+  </div>`;
+}
+function nswAddIncome(){
+  nswOpenIncomeEditor();
+}
+function nswRemoveIncome(i){nswDraft.incomes.splice(i,1);nswIncome();}
+function nswOpenIncomeEditor(){
+  const typeChips=NSW_INCOME_TYPES.map(t=>`<button class="nsw-chip nsw-chip-sm" data-inc-type="${t.id}" onclick="nswSelIncType('${t.id}')"><span style="font-size:18px">${t.icon}</span><span style="font-size:10px">${t.label}</span></button>`).join('');
+  showSheet('Add income source',`
+    <div class="sw-lbl">Type</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px" id="nsw-inc-types">${typeChips}</div>
+    <div class="sw-lbl">Employer / name</div>
+    <input type="text" class="inp" id="nsw-inc-emp" placeholder="e.g. Woolworths, or leave blank">
+    <div class="sw-row">
+      <div class="sw-field"><div class="sw-lbl">Amount $</div><input type="number" class="inp" id="nsw-inc-amt" placeholder="0"></div>
+      <div class="sw-field"><div class="sw-lbl">How often</div><select class="inp" id="nsw-inc-cycle"><option value="weekly">Weekly</option><option value="fortnightly">Fortnightly</option><option value="monthly" selected>Monthly</option><option value="irregular">Irregular</option></select></div>
+    </div>
+    <div class="sw-lbl">Hours per week (optional — enables hourly rate)</div>
+    <input type="number" class="inp" id="nsw-inc-hours" placeholder="e.g. 20">
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeSheet()">Cancel</button>
+      <button class="btn btn-acc btn-sm" style="flex:1" onclick="nswSaveIncome()">Add</button>
+    </div>`);
+  window.__nswIncType='casual';
+  setTimeout(()=>nswSelIncType('casual'),30);
+}
+function nswSelIncType(id){
+  window.__nswIncType=id;
+  document.querySelectorAll('#nsw-inc-types [data-inc-type]').forEach(el=>el.classList.toggle('on',el.getAttribute('data-inc-type')===id));
+}
+function nswSaveIncome(){
+  const amt=parseFloat(document.getElementById('nsw-inc-amt').value)||0;
+  const inc={
+    type:window.__nswIncType||'casual',
+    employer:document.getElementById('nsw-inc-emp').value.trim(),
+    amount:amt,
+    cycle:document.getElementById('nsw-inc-cycle').value,
+    hours:parseFloat(document.getElementById('nsw-inc-hours').value)||null
+  };
+  nswDraft.incomes.push(inc);
+  closeSheet();nswIncome();
+}
+
+// ── Step 5: Fixed costs ──
+const NSW_FIXED=[
+  {label:'Rent / board',icon:'🏠'},{label:'Phone',icon:'📱'},{label:'Subscriptions',icon:'📺'},
+  {label:'Transport',icon:'🚌'},{label:'Insurance',icon:'🛡️'},{label:'Gym',icon:'💪'},
+  {label:'Internet',icon:'🌐'},{label:'Utilities',icon:'💡'}
+];
+function nswFixed(){
+  document.getElementById('sw-body').innerHTML=`
+    <p style="font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:14px">What do you pay most months that barely changes? Tap to add — you can set the amount for each. Skip anything that does not apply.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      ${NSW_FIXED.map(f=>{
+        const existing=nswDraft.fixedCosts.find(x=>x.label===f.label);
+        return `<button class="nsw-chip ${existing?'on':''}" onclick="nswToggleFixed('${escapeAttr(f.label)}','${f.icon}')">
+          <span style="font-size:20px">${f.icon}</span><span>${f.label}</span>${existing?`<span style="font-size:10px;color:var(--acc)">${fmtDI(existing.amount)}</span>`:''}
+        </button>`;
+      }).join('')}
+    </div>
+    <div style="font-size:11px;color:var(--t3);margin-top:12px;text-align:center">Tap an item to set its monthly amount</div>`;
+}
+function nswToggleFixed(label,icon){
+  const existing=nswDraft.fixedCosts.findIndex(x=>x.label===label);
+  if(existing>=0){
+    // Tapping an active one re-opens to edit or remove
+    nswOpenFixedEditor(label,icon,nswDraft.fixedCosts[existing].amount,existing);
+  }else{
+    nswOpenFixedEditor(label,icon,'',-1);
+  }
+}
+function nswOpenFixedEditor(label,icon,amount,idx){
+  showSheet(`${icon} ${label}`,`
+    <div class="sw-lbl">Monthly amount $</div>
+    <input type="number" class="inp" id="nsw-fixed-amt" value="${amount||''}" placeholder="0" autofocus>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      ${idx>=0?`<button class="btn btn-ghost btn-sm" style="flex:1;color:var(--r)" onclick="nswRemoveFixed(${idx})">Remove</button>`:`<button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeSheet()">Cancel</button>`}
+      <button class="btn btn-acc btn-sm" style="flex:1" onclick="nswSaveFixed('${escapeAttr(label)}',${idx})">Save</button>
+    </div>`);
+}
+function nswSaveFixed(label,idx){
+  const amt=parseFloat(document.getElementById('nsw-fixed-amt').value)||0;
+  if(amt<=0){showToast('Enter an amount');return;}
+  if(idx>=0)nswDraft.fixedCosts[idx].amount=amt;
+  else nswDraft.fixedCosts.push({label,amount:amt});
+  closeSheet();nswFixed();
+}
+function nswRemoveFixed(idx){nswDraft.fixedCosts.splice(idx,1);closeSheet();nswFixed();}
+
+// ── Step 6: Investing ──
+const NSW_BROKERS=['CMC Invest','Stake','Pearler','Superhero','SelfWealth','CommSec','Other'];
+function nswInvest(){
+  const d=nswDraft;
+  document.getElementById('sw-body').innerHTML=`
+    <p style="font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:14px">Do you invest in shares or ETFs?</p>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button class="nsw-seg ${d.invests===true?'on':''}" onclick="nswSetInvest(true)">Yes, I invest</button>
+      <button class="nsw-seg ${d.invests===false&&d.investAnswered?'on':''}" onclick="nswSetInvest(false)">Not right now</button>
+    </div>
+    ${d.invests?`
+      <div class="sw-lbl">Broker</div>
+      <div class="nsw-bank-row" style="margin-bottom:14px">${NSW_BROKERS.map(b=>`<button class="nsw-bank ${d.broker===b?'on':''}" onclick="nswSetBroker('${b}')">${b}</button>`).join('')}</div>
+      <div class="sw-lbl">Holdings</div>
+      <div id="nsw-holdings-list">${d.holdings.length?d.holdings.map((h,i)=>`<div class="sw-acct-card" style="margin-bottom:6px;display:flex;justify-content:space-between;align-items:center"><div><span style="font-weight:700;color:var(--t)">${escapeHtml(h.ticker)}</span> <span style="color:var(--t3);font-size:11px">${fmtDI(h.value)}</span></div><button class="btn btn-ghost btn-xs" style="color:var(--r)" onclick="nswRemoveHolding(${i})">✕</button></div>`).join(''):'<div style="font-size:11px;color:var(--t3);padding:8px">No holdings added yet.</div>'}</div>
+      <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="nswAddHolding()">+ Add holding</button>
+    `:d.investAnswered?'<div class="sw-info">No problem — the investing features stay tucked away until you are ready. You can add holdings anytime.</div>':''}`;
+}
+function nswSetInvest(v){nswDraft.invests=v;nswDraft.investAnswered=true;nswInvest();}
+function nswSetBroker(b){nswDraft.broker=b;nswInvest();}
+function nswAddHolding(){
+  showSheet('Add holding',`
+    <div class="sw-lbl">Ticker / name</div>
+    <input type="text" class="inp" id="nsw-h-ticker" placeholder="e.g. VOO, VAS, IVV" style="text-transform:uppercase">
+    <div class="sw-lbl">Current value $</div>
+    <input type="number" class="inp" id="nsw-h-value" placeholder="0">
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeSheet()">Cancel</button>
+      <button class="btn btn-acc btn-sm" style="flex:1" onclick="nswSaveHolding()">Add</button>
+    </div>`);
+}
+function nswSaveHolding(){
+  const ticker=(document.getElementById('nsw-h-ticker').value||'').trim().toUpperCase();
+  const value=parseFloat(document.getElementById('nsw-h-value').value)||0;
+  if(!ticker){showToast('Enter a ticker');return;}
+  nswDraft.holdings.push({ticker,value});
+  closeSheet();nswInvest();
+}
+function nswRemoveHolding(i){nswDraft.holdings.splice(i,1);nswInvest();}
+
+// ── Step 7: Goals ──
+function nswGoals(){
+  // Seed a goal from the primary-goal answer on first visit
+  if(!nswDraft._goalsSeeded){
+    nswDraft._goalsSeeded=true;
+    const pg=NSW_GOALS.find(g=>g.id===nswDraft.primaryGoal);
+    if(pg&&pg.id!=='track')nswDraft.goals.push({label:pg.label,icon:pg.icon,target:0,deadline:''});
+  }
+  document.getElementById('sw-body').innerHTML=`
+    <p style="font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:14px">Set a target for what you are saving toward. Add as many as you like — or none.</p>
+    <div id="nsw-goals-list">${nswDraft.goals.length?nswDraft.goals.map((g,i)=>`
+      <div class="sw-acct-card" style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:13px;font-weight:600;color:var(--t)">${g.icon||'🎯'} ${escapeHtml(g.label)}</div><button class="btn btn-ghost btn-xs" style="color:var(--r)" onclick="nswRemoveGoal(${i})">Remove</button></div>
+        <div class="sw-row">
+          <div class="sw-field"><div class="sw-lbl">Target $</div><input type="number" class="sw-inp" value="${g.target||''}" placeholder="0" oninput="nswDraft.goals[${i}].target=parseFloat(this.value)||0"></div>
+          <div class="sw-field"><div class="sw-lbl">By when</div><input type="text" class="sw-inp" value="${escapeAttr(g.deadline||'')}" placeholder="e.g. Jan 2028" oninput="nswDraft.goals[${i}].deadline=this.value"></div>
+        </div>
+      </div>`).join(''):'<div style="text-align:center;color:var(--t3);font-size:12px;padding:14px">No goals yet.</div>'}</div>
+    <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="nswAddGoal()">+ Add a goal</button>`;
+}
+function nswAddGoal(){
+  showSheet('Add goal',`
+    <div class="sw-lbl">What are you saving for?</div>
+    <input type="text" class="inp" id="nsw-g-label" placeholder="e.g. New laptop">
+    <div class="sw-row">
+      <div class="sw-field"><div class="sw-lbl">Target $</div><input type="number" class="inp" id="nsw-g-target" placeholder="0"></div>
+      <div class="sw-field"><div class="sw-lbl">By when</div><input type="text" class="inp" id="nsw-g-deadline" placeholder="Jan 2028"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeSheet()">Cancel</button>
+      <button class="btn btn-acc btn-sm" style="flex:1" onclick="nswSaveGoal()">Add</button>
+    </div>`);
+}
+function nswSaveGoal(){
+  const label=document.getElementById('nsw-g-label').value.trim();
+  if(!label){showToast('Give it a name');return;}
+  nswDraft.goals.push({label,icon:'🎯',target:parseFloat(document.getElementById('nsw-g-target').value)||0,deadline:document.getElementById('nsw-g-deadline').value.trim()});
+  closeSheet();nswGoals();
+}
+function nswRemoveGoal(i){nswDraft.goals.splice(i,1);nswGoals();}
+
+// ── Step 8: Budget ──
+function nswBudget(){
+  const d=nswDraft;
+  document.getElementById('sw-body').innerHTML=`
+    <p style="font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:16px">Rough targets to start — you can fine-tune these anytime in the Budget tab.</p>
+    <div class="sw-field"><div class="sw-lbl">Personal spending per week $</div><input type="number" class="sw-inp" id="nsw-b-spend" value="${d.weeklySpend||''}" placeholder="300"></div>
+    <div class="sw-row">
+      <div class="sw-field"><div class="sw-lbl">Save to goals / month $</div><input type="number" class="sw-inp" id="nsw-b-goals" value="${d.monthlyGoalSave||''}" placeholder="0"></div>
+      <div class="sw-field"><div class="sw-lbl">Invest / month $</div><input type="number" class="sw-inp" id="nsw-b-invest" value="${d.monthlyInvest||''}" placeholder="0"></div>
+    </div>
+    <div class="sw-info" style="margin-top:12px">These set your budget targets. Green means on track, red means over — you will see it on the Budget tab.</div>`;
+}
+
+// ── Step 9: Finish ──
+function nswFinish(){
+  const d=nswDraft;
+  const incomeCount=d.incomes.length;
+  const goalCount=d.goals.length;
+  document.getElementById('sw-body').innerHTML=`
+    <div style="text-align:center;padding:10px 0">
+      <div style="font-size:46px;margin-bottom:10px">🎉</div>
+      <div style="font-size:16px;font-weight:700;color:var(--t);margin-bottom:6px">Ready to go</div>
+    </div>
+    <div class="sw-acct-card" style="margin-bottom:12px">
+      <div style="font-size:12px;color:var(--t2);line-height:2">
+        ✓ ${acctBankName(d.accounts.everyday)} + ${acctBankName(d.accounts.savings)} accounts<br>
+        ✓ ${incomeCount} income source${incomeCount===1?'':'s'}<br>
+        ✓ ${d.fixedCosts.length} fixed cost${d.fixedCosts.length===1?'':'s'}<br>
+        ✓ ${d.invests?d.holdings.length+' holdings':'Investing set aside for now'}<br>
+        ✓ ${goalCount} goal${goalCount===1?'':'s'}
+      </div>
+    </div>
+    <div class="sw-lbl">AI features (optional)</div>
+    <p style="font-size:11px;color:var(--t3);line-height:1.55;margin-bottom:10px">FinPlan can write plain-English insights about your money using AI. It needs an API key, works without one, and you can add it later in Settings.</p>
+    <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--t2);cursor:pointer;margin-bottom:14px">
+      <input type="checkbox" id="nsw-tour" checked style="width:16px;height:16px"> Show me a quick tour after setup
+    </label>`;
+}
+function acctBankName(a){
+  const bank=a.bank==='Other'?(a.customBank||'Bank'):a.bank;
+  return bank;
+}
+
+// ── Commit current step's inputs into the draft ──
+function nswCommitStep(silent){
+  const step=NSW_STEPS[nswStep].lbl;
+  if(step==='Accounts'){
+    nswCaptureAccounts();
+  }else if(step==='Budget'){
+    const g=id=>document.getElementById(id);
+    if(g('nsw-b-spend'))nswDraft.weeklySpend=parseFloat(g('nsw-b-spend').value)||0;
+    if(g('nsw-b-goals'))nswDraft.monthlyGoalSave=parseFloat(g('nsw-b-goals').value)||0;
+    if(g('nsw-b-invest'))nswDraft.monthlyInvest=parseFloat(g('nsw-b-invest').value)||0;
+  }else if(step==='Finish'){
+    const t=document.getElementById('nsw-tour');if(t)nswDraft.wantsTour=t.checked;
+  }
+  return true;
+}
+
+// ── Write the draft into real app state ──
+function nswComplete(){
+  const d=nswDraft;
+  nswCommitStep();
+  // 1. Accounts — labels + balances
+  ensureAcctMeta();
+  const evBank=d.accounts.everyday.bank==='Other'?(d.accounts.everyday.customBank||'Bank'):d.accounts.everyday.bank;
+  const svBank=d.accounts.savings.bank==='Other'?(d.accounts.savings.customBank||'Bank'):d.accounts.savings.bank;
+  S.acctMeta.westpac={name:d.accounts.everyday.name||'Everyday',bank:evBank,type:'everyday'};
+  S.acctMeta.macquarie={name:d.accounts.savings.name||'Savings',bank:svBank,type:'savings'};
+  S.acctBalances={westpac:d.accounts.everyday.bal||0,macquarie:d.accounts.savings.bal||0};
+  // 2. Income → S.jobs
+  S.jobs=d.incomes.map((inc,i)=>{
+    const cycleToFields={};
+    const amt=inc.amount||0;
+    if(inc.cycle==='monthly')cycleToFields.netMonthly=amt;
+    else if(inc.cycle==='weekly'){cycleToFields.grossWeekly=amt;cycleToFields.netMonthly=Math.round(amt*52/12);}
+    else if(inc.cycle==='fortnightly'){cycleToFields.netMonthly=Math.round(amt*26/12);}
+    else cycleToFields.netMonthly=amt; // irregular — treat entered as monthly-ish
+    return {
+      id:i===0?'primary':'income'+i,
+      label:inc.employer||NSW_INCOME_TYPES.find(t=>t.id===inc.type)?.label||'Income',
+      employer:inc.employer||'',
+      type:inc.type,
+      grossAnnual:0,
+      netMonthly:cycleToFields.netMonthly||0,
+      grossWeekly:cycleToFields.grossWeekly||0,
+      payFrequency:inc.cycle,
+      keywords:inc.employer?[inc.employer.toLowerCase()]:[],
+      hoursPerWeek:inc.hours||null,
+      active:true,
+      notes:'',
+      startDate:null
+    };
+  });
+  // 3. Fixed costs → recurring (so they hit the budget)
+  if(d.fixedCosts.length){
+    if(!S.recurring)S.recurring=[];
+    d.fixedCosts.forEach(f=>{
+      S.recurring.push({id:uid(),name:f.label,amt:f.amount,dir:'out',day:1,cat:nswGuessCat(f.label),acct:'westpac',active:true});
+    });
+  }
+  // 4. Holdings
+  if(d.invests&&d.holdings.length){
+    S.holdings=d.holdings.map(h=>({id:uid(),ticker:h.ticker,units:0,avgPrice:0,currentValue:h.value,manualValue:h.value}));
+    if(d.broker)S.broker=d.broker;
+  }
+  // 5. Goals
+  if(d.goals.length){
+    S.goals=d.goals.map(g=>({
+      id:uid(),label:g.label,icon:g.icon||'🎯',target:g.target||0,saved:0,
+      deadline:g.deadline||'',color:'#00e599',priority:'medium',log:[],customMilestones:[],type:'savings',createdAt:Date.now()
+    }));
+    if(typeof syncGCFG==='function')syncGCFG();
+  }
+  // 6. Budget sliders
+  S.sliders=Object.assign({},S.sliders,{
+    spend:d.weeklySpend||0,
+    goals:d.monthlyGoalSave||0,
+    invest:d.monthlyInvest||0
+  });
+  // 7. Mark done
+  S.setupDone=true;
+  S.setupVersion='v2-new';
+  if(typeof invalidateComputeCache==='function')invalidateComputeCache();
+  save();
+  // Close wizard, launch
+  document.getElementById('setup').style.display='none';
+  document.getElementById('setup').removeAttribute('data-wizard');
+  launchApp();
+  if(typeof refreshAcctLabels==='function')refreshAcctLabels();
+  if(d.wantsTour&&typeof startAppTour==='function')setTimeout(startAppTour,700);
+  else showToast('✓ All set — welcome to FinPlan');
+}
+function nswGuessCat(label){
+  const l=label.toLowerCase();
+  if(l.includes('rent')||l.includes('board'))return 'rent';
+  if(l.includes('phone')||l.includes('internet')||l.includes('utilit'))return 'bills';
+  if(l.includes('sub')||l.includes('gym'))return 'subscriptions';
+  if(l.includes('transport'))return 'transport';
+  if(l.includes('insurance'))return 'bills';
+  return 'bills';
+}
+
+// v2.8.14 — guided app tour shown after setup (or from Settings).
+const APP_TOUR=[
+  {icon:'📊',title:'Your dashboard',body:'This is home base. Your net worth, recent activity, and the things that need attention all live here. Tap any card to dig in.',pg:'dash'},
+  {icon:'🎯',title:'Goals',body:'Track everything you are saving toward. Add money, set milestones, and watch your progress rings fill up.',pg:'goals'},
+  {icon:'📈',title:'Analytics',body:'Six deep sections — spending, income, trends, wealth, habits. This is where you see everything about your money.',pg:'analytics'},
+  {icon:'🤖',title:'AI Advisor',body:'Ask questions about your finances in plain English, or get an Autopilot briefing. Optional — needs an API key in Settings.',pg:'ai'},
+  {icon:'➕',title:'Log as you go',body:'The + button adds a transaction anywhere. Or import a bank CSV from the Accounts page to bring in lots at once.',pg:'dash'},
+  {icon:'🎉',title:'That is the tour',body:'Everything is editable and nothing is locked in. Explore, and check Settings anytime to adjust. Welcome aboard.',pg:'dash'}
+];
+let __tourStep=0;
+function startAppTour(){
+  __tourStep=0;
+  let el=document.getElementById('app-tour');
+  if(!el){
+    el=document.createElement('div');el.id='app-tour';
+    document.body.appendChild(el);
+  }
+  renderTourStep();
+}
+function renderTourStep(){
+  const el=document.getElementById('app-tour');if(!el)return;
+  const s=APP_TOUR[__tourStep];
+  // Navigate to the relevant page behind the tour card
+  if(s.pg&&typeof showPg==='function'){
+    const navBtn=document.querySelector(`.nb[data-pg="${s.pg}"]`);
+    try{showPg(s.pg,navBtn);}catch(e){}
+  }
+  const isLast=__tourStep===APP_TOUR.length-1;
+  el.innerHTML=`
+    <div class="tour-backdrop" onclick="endAppTour()"></div>
+    <div class="tour-card">
+      <div class="tour-dots">${APP_TOUR.map((_,i)=>`<span class="tour-dot ${i===__tourStep?'on':''}"></span>`).join('')}</div>
+      <div class="tour-icon">${s.icon}</div>
+      <div class="tour-title">${s.title}</div>
+      <div class="tour-body">${s.body}</div>
+      <div class="tour-actions">
+        ${!isLast?'<button class="btn btn-ghost btn-sm" onclick="endAppTour()">Skip</button>':''}
+        <button class="btn btn-acc btn-sm" style="flex:1" onclick="${isLast?'endAppTour()':'nextTourStep()'}">${isLast?'Start using FinPlan':'Next →'}</button>
+      </div>
+    </div>`;
+  el.style.display='block';
+}
+function nextTourStep(){if(__tourStep<APP_TOUR.length-1){__tourStep++;renderTourStep();}else endAppTour();}
+function endAppTour(){
+  const el=document.getElementById('app-tour');
+  if(el){el.style.opacity='0';setTimeout(()=>{el.style.display='none';el.style.opacity='';},250);}
+  S.tourSeen=true;save();
+}
+
+
 
 // ═══════════════════════════════════════════════════════════
 // LAUNCH
@@ -4981,8 +6308,8 @@ function hideSuccessMoment(){
 // data does travel to Groq but is not stored on any server we control.
 
 function openReceiptScanner(){
-  const hasClaude=(S.claudeApiKey||'').trim().startsWith('sk-ant-');
-  const hasGroq=(S.groqApiKey||'').trim().startsWith('gsk_');
+  const hasClaude=(getApiKey('claude')||'').trim().startsWith('sk-ant-');
+  const hasGroq=(getApiKey('groq')||'').trim().startsWith('gsk_');
   if(!hasClaude&&!hasGroq){
     if(confirm('The scanner needs a Claude or Groq API key. Open Settings to add one?'))showPgFromMore('settings');
     return;
@@ -5080,8 +6407,8 @@ function downscaleImage(file,maxDim){
 
 async function callReceiptOCR(dataUrl,mode){
   mode=mode||'receipt';
-  const claudeKey=(S.claudeApiKey||'').trim();
-  const groqKey=(S.groqApiKey||'').trim();
+  const claudeKey=(getApiKey('claude')||'').trim();
+  const groqKey=(getApiKey('groq')||'').trim();
   const useClaude=claudeKey.startsWith('sk-ant-');
   // Build the category list from the user's actual categories
   const cats=(typeof allCats==='function')?allCats().map(c=>c.id):['food','fuel','transport','subscriptions','utilities','shopping','entertainment','health','other'];
@@ -6879,7 +8206,7 @@ function renameConversation(id){
 async function autoTitleConversation(id){
   const c=S.aiConversations.find(x=>x.id===id);
   if(!c||c.title!=='New chat'||c.messages.length<2)return;
-  const key=(S.groqApiKey||'').trim();
+  const key=(getApiKey('groq')||'').trim();
   if(!key.startsWith('gsk_'))return;
   const firstUser=c.messages.find(m=>m.role==='user');
   const firstAssistant=c.messages.find(m=>m.role==='assistant');
@@ -8742,7 +10069,7 @@ function buildAutopilotCard(){
       <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openWeeklyBriefing()">📅 Week in review</button>
       <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openRebalancePlan()">📊 Rebalance</button>
     </div>
-    ${S.claudeApiKey||S.groqApiKey?`<div class="ap-narrate" id="ap-narrate-slot">
+    ${(getApiKey("claude")||getApiKey("groq"))?`<div class="ap-narrate" id="ap-narrate-slot">
       <button class="btn btn-outline btn-sm btn-full" onclick="narrateAutopilot()" id="ap-narrate-btn">✦ Get AI briefing on these</button>
     </div>`:''}
   </div>`;
@@ -8771,7 +10098,7 @@ function openAutopilotFull(){
   showSheet('AI Autopilot · all insights',`
     <div style="font-size:11px;color:var(--t2);line-height:1.55;margin-bottom:12px">Everything the Autopilot noticed across your goals, spending, cashflow, portfolio, and savings — ranked by importance.</div>
     ${html}
-    ${S.claudeApiKey||S.groqApiKey?`<button class="btn btn-acc btn-sm btn-full" style="margin-top:14px" onclick="narrateAutopilot(true)">✦ Get an AI briefing on all of this</button>`:''}
+    ${(getApiKey("claude")||getApiKey("groq"))?`<button class="btn btn-acc btn-sm btn-full" style="margin-top:14px" onclick="narrateAutopilot(true)">✦ Get an AI briefing on all of this</button>`:''}
   `);
 }
 
@@ -8781,8 +10108,8 @@ async function narrateAutopilot(inSheet){
   let insights=[];
   try{insights=computeInsights();}catch(e){}
   if(!insights.length){showToast('Nothing to brief on right now');return;}
-  const claudeKey=(S.claudeApiKey||'').trim();
-  const groqKey=(S.groqApiKey||'').trim();
+  const claudeKey=(getApiKey('claude')||'').trim();
+  const groqKey=(getApiKey('groq')||'').trim();
   const useClaude=!!claudeKey;
   if(!claudeKey&&!groqKey){
     showToast('Add an API key in Settings for AI briefings');
@@ -8930,7 +10257,7 @@ function openWeeklyBriefing(){
       <div style="font-size:11.5px;color:var(--t2);line-height:1.5">${b.focus.body}</div>
       ${b.focus.action?`<button class="btn btn-acc btn-xs" style="margin-top:9px" onclick="closeSheet();${b.focus.action.fn}">${b.focus.action.label}</button>`:''}
     </div>`:''}
-    ${S.claudeApiKey||S.groqApiKey?`<button class="btn btn-outline btn-sm btn-full" onclick="narrateWeekly()" id="weekly-narrate-btn">✦ Get AI take on my week</button><div id="weekly-narrate-slot"></div>`:''}
+    ${(getApiKey("claude")||getApiKey("groq"))?`<button class="btn btn-outline btn-sm btn-full" onclick="narrateWeekly()" id="weekly-narrate-btn">✦ Get AI take on my week</button><div id="weekly-narrate-slot"></div>`:''}
     <div style="font-size:10px;color:var(--t3);text-align:center;margin-top:12px;line-height:1.5">Tip: check this every Sunday to stay on top of your money.</div>
   `);
 }
@@ -8938,8 +10265,8 @@ function openWeeklyBriefing(){
 // AI narration of the weekly briefing
 async function narrateWeekly(){
   const b=computeWeeklyBriefing();
-  const claudeKey=(S.claudeApiKey||'').trim();
-  const groqKey=(S.groqApiKey||'').trim();
+  const claudeKey=(getApiKey('claude')||'').trim();
+  const groqKey=(getApiKey('groq')||'').trim();
   if(!claudeKey&&!groqKey){showToast('Add an API key in Settings');return;}
   if(typeof setBtnLoading==='function')setBtnLoading('weekly-narrate-btn',true);
   const facts=[
@@ -10057,6 +11384,8 @@ function launchApp(){
   if(typeof processAutoContributeRules==='function')processAutoContributeRules();
   if(typeof maybeFireInsightNotif==='function')setTimeout(maybeFireInsightNotif,3000);
   if(typeof updateFeedbackFabCount==='function')updateFeedbackFabCount();
+  if(typeof refreshAcctLabels==='function')refreshAcctLabels();
+  if(typeof runAutoBackup==='function')runAutoBackup();
   if(typeof ensureAiConversations==='function')ensureAiConversations();
   if(typeof autoDailyCheckIn==='function')autoDailyCheckIn();
   if(typeof maybeShowCheckInPrompt==='function')setTimeout(maybeShowCheckInPrompt,900);
@@ -10383,6 +11712,7 @@ function buildBudgetActual(){
 let txnDir='out';
 function openTxnModal(editId){
   S.editingTxnId=editId||null;
+  if(typeof refreshAcctLabels==='function')refreshAcctLabels();
   const cats=allCats().filter(c=>c.type!=='transfer');
   document.getElementById('txn-cat').innerHTML=cats.map(c=>`<option value="${c.id}">${c.icon} ${c.label}</option>`).join('');
   document.getElementById('txn-date').value=today();
@@ -11645,7 +12975,7 @@ function buildInsightsPage(){
         </div>
       </div>`;
     }).join('')}
-    ${S.groqApiKey?`<div class="card acc-b"><div class="ctitle"><div class="ctitle-l">🤖 AI enrichment</div></div><div style="font-size:11px;color:var(--t2);line-height:1.55;margin-bottom:10px">Ask the AI advisor for deeper analysis of what's shown above.</div><button class="btn btn-acc btn-sm btn-full" onclick="askAiFromInsights()">Get AI take on these insights</button></div>`:''}`;
+    ${getApiKey("groq")?`<div class="card acc-b"><div class="ctitle"><div class="ctitle-l">🤖 AI enrichment</div></div><div style="font-size:11px;color:var(--t2);line-height:1.55;margin-bottom:10px">Ask the AI advisor for deeper analysis of what's shown above.</div><button class="btn btn-acc btn-sm btn-full" onclick="askAiFromInsights()">Get AI take on these insights</button></div>`:''}`;
 }
 
 function askAiFromInsights(){
@@ -11673,7 +13003,7 @@ function tickerDivSchedule(ticker){
 // LIVE PRICE DIAGNOSTIC (Round 2 / Priority #4c)
 // ═══════════════════════════════════════════════════════════
 async function testFmpConnection(){
-  const key=(S.fmpApiKey||'').trim();
+  const key=(getApiKey('fmp')||'').trim();
   const el=document.getElementById('fmp-test-out');
   if(!key){if(el)el.innerHTML='<span style="color:var(--r)">No key set. Paste one above first.</span>';return;}
   if(el)el.innerHTML='<span style="color:var(--t3)">Testing…</span>';
@@ -12730,7 +14060,7 @@ function buildAiWelcome(){
   const messages=activeConv?activeConv.messages:(S.aiHistory||[]);
   const msgs=document.getElementById('ai-msgs');
   const chips=document.getElementById('ai-chips');
-  const hasKey=S.groqApiKey&&S.groqApiKey.startsWith('gsk_');
+  const hasKey=getApiKey('groq')&&getApiKey('groq').startsWith('gsk_');
   // v2.7.21 — header is ALWAYS shown when there's an API key configured, so the
   // user always has a Back button and a way to open conversations / start a new one.
   const msgCount=messages.length;
@@ -13168,7 +14498,7 @@ async function sendAiMsg(){
   if(!txt)return;
 
   // Check API key is set
-  const apiKey=S.groqApiKey||'';
+  const apiKey=getApiKey('groq')||'';
   if(!apiKey||apiKey==='YOUR_GROQ_KEY_HERE'){
     appendMsg('ai','⚙️ **Setup needed:** To use the AI advisor, go to **More → Settings** and enter your free Groq API key. Get one in 2 minutes at groq.com — it\'s completely free.');
     return;
@@ -15068,7 +16398,7 @@ function removeFromWatchlist(idx){
 }
 async function refreshWatchlistPrice(idx){
   const w=ensureWatchlist();const it=w[idx];if(!it)return;
-  const key=(S.fmpApiKey||'').trim();
+  const key=(getApiKey('fmp')||'').trim();
   if(!key){alert('Add an FMP API key in Settings to fetch prices.');return;}
   const symbol=it.market==='ASX'?`${it.ticker}.AX`:it.ticker;
   try{
@@ -15556,7 +16886,7 @@ function toggleBenchmark(k){
 
 // Fetch benchmark % return for the same period as the user's portfolio using ETF proxies via FMP.
 async function autoFetchBenchmarkReturns(){
-  const key=(S.fmpApiKey||'').trim();
+  const key=(getApiKey('fmp')||'').trim();
   if(!key){
     if(confirm('Auto-fetch needs your FMP API key. Open Settings?'))showPgFromMore('settings');
     return;
@@ -17380,7 +18710,7 @@ function handleShotFile(e){
 }
 async function scanScreenshot(){
   if(!shotBase64){alert('Upload a screenshot first.');return;}
-  const apiKey=S.groqApiKey||'';
+  const apiKey=getApiKey('groq')||'';
   if(!apiKey||!apiKey.startsWith('gsk_')){alert('Add your Groq API key in Settings first.');return;}
   const btn=document.getElementById('shot-scan-btn');btn.disabled=true;btn.textContent='Scanning…';
   try{
@@ -17427,7 +18757,7 @@ async function scanScreenshot(){
 // LIVE PRICES (optional, Financial Modeling Prep)
 // ═══════════════════════════════════════════════════════════
 async function refreshPrices(){
-  const key=(S.fmpApiKey||'').trim();
+  const key=(getApiKey('fmp')||'').trim();
   if(!key){
     if(confirm('Market prices need a free Financial Modeling Prep API key. Open Settings to add one?'))showPgFromMore('settings');
     return;
@@ -17542,7 +18872,7 @@ const ASSISTANT_QUICK=[
 function buildAssistantWelcome(){
   const msgs=document.getElementById('assistant-msgs');if(!msgs)return;
   const chips=document.getElementById('assistant-chips');
-  const hasKey=S.groqApiKey&&S.groqApiKey.startsWith('gsk_');
+  const hasKey=getApiKey('groq')&&getApiKey('groq').startsWith('gsk_');
   msgs.innerHTML=`<div class="ai-welcome">
     <div class="ai-welcome-ico">${hasKey?'📊':'⚙️'}</div>
     <div class="ai-welcome-title">${hasKey?'Investment Assistant':'Setup required'}</div>
@@ -17591,7 +18921,7 @@ function portfolioContextForAI(){
 async function sendAssistantMsg(){
   const inp=document.getElementById('assistant-inp');
   const txt=inp.value.trim();if(!txt)return;
-  const apiKey=S.groqApiKey||'';
+  const apiKey=getApiKey('groq')||'';
   if(!apiKey||!apiKey.startsWith('gsk_')){appendAssistantMsg('ai','⚙️ Add your Groq API key in **More → Settings** to use the assistant.');return;}
   inp.value='';inp.style.height='auto';
   document.getElementById('assistant-send-btn').disabled=true;
@@ -18314,15 +19644,15 @@ function buildSettingsPage(){
   if(typeof buildLearnedRulesCard==='function')buildLearnedRulesCard();
   // Populate Groq key field
   const keyInp=document.getElementById('groq-key-inp');
-  if(keyInp)keyInp.value=S.groqApiKey||'';
+  if(keyInp)keyInp.value=getApiKey('groq')||'';
   updateGroqKeyStatus();
   const claudeInp=document.getElementById('claude-key-inp');
-  if(claudeInp)claudeInp.value=S.claudeApiKey||'';
+  if(claudeInp)claudeInp.value=getApiKey('claude')||'';
   if(typeof updateClaudeKeyStatus==='function')updateClaudeKeyStatus();
   const tgNotif=document.getElementById('tg-autopilot-notifs');
   if(tgNotif)tgNotif.classList.toggle('on',!!S.autopilotNotifs);
   const fmpInp=document.getElementById('fmp-key-inp');
-  if(fmpInp)fmpInp.value=S.fmpApiKey||'';
+  if(fmpInp)fmpInp.value=getApiKey('fmp')||'';
   updateFmpKeyStatus();
   updateFxStatus();
   // UI preference toggles
@@ -18410,19 +19740,19 @@ function copyDiagnostics(){
 }
 function updateFmpKeyStatus(){
   const el=document.getElementById('fmp-key-status');if(!el)return;
-  if(S.fmpApiKey&&S.fmpApiKey.length>5)el.innerHTML='<span style="color:var(--acc)">✅ Key saved — live prices enabled</span>';
+  if(getApiKey('fmp')&&getApiKey('fmp').length>5)el.innerHTML='<span style="color:var(--acc)">✅ Key saved — live prices enabled</span>';
   else el.innerHTML='<span style="color:var(--t3)">No key — using imported/manual values</span>';
 }
 function saveFmpKey(){
   const val=document.getElementById('fmp-key-inp')?.value.trim()||'';
-  S.fmpApiKey=val;save();updateFmpKeyStatus();showToast(val?'FMP key saved ✓':'FMP key cleared');
+  persistApiKey('fmp',val);updateFmpKeyStatus();showToast(val?'FMP key saved ✓':'FMP key cleared');
 }
 function toggleFmpVis(){const inp=document.getElementById('fmp-key-inp');if(!inp)return;inp.type=inp.type==='password'?'text':'password';}
 function updateGroqKeyStatus(){
   const el=document.getElementById('groq-key-status');if(!el)return;
-  if(S.groqApiKey&&S.groqApiKey.startsWith('gsk_')){
+  if(getApiKey('groq')&&getApiKey('groq').startsWith('gsk_')){
     el.innerHTML='<span style="color:var(--acc)">✅ Key saved — AI Advisor is active</span>';
-  } else if(S.groqApiKey){
+  } else if(getApiKey('groq')){
     el.innerHTML='<span style="color:var(--y)">⚠️ Key saved but looks unusual — Groq keys start with gsk_</span>';
   } else {
     el.innerHTML='<span style="color:var(--t3)">No key set — get one free at console.groq.com</span>';
@@ -18431,7 +19761,7 @@ function updateGroqKeyStatus(){
 function saveGroqKey(){
   const val=document.getElementById('groq-key-inp')?.value.trim()||'';
   if(!val){showToast('Enter your Groq API key first');return;}
-  S.groqApiKey=val;save();updateGroqKeyStatus();showToast('API key saved ✓');
+  persistApiKey('groq',val);updateGroqKeyStatus();showToast('API key saved ✓');
 }
 function toggleKeyVis(){
   const inp=document.getElementById('groq-key-inp');if(!inp)return;
@@ -18440,9 +19770,9 @@ function toggleKeyVis(){
 // v2.7.33 — Claude key for AI Autopilot briefings
 function updateClaudeKeyStatus(){
   const el=document.getElementById('claude-key-status');if(!el)return;
-  if(S.claudeApiKey&&S.claudeApiKey.startsWith('sk-ant-')){
+  if(getApiKey('claude')&&getApiKey('claude').startsWith('sk-ant-')){
     el.innerHTML='<span style="color:var(--acc)">✅ Key saved — Autopilot briefings use Claude</span>';
-  }else if(S.claudeApiKey){
+  }else if(getApiKey('claude')){
     el.innerHTML='<span style="color:var(--y)">⚠️ Key saved but looks unusual — Claude keys start with sk-ant-</span>';
   }else{
     el.innerHTML='<span style="color:var(--t3)">Optional — Autopilot works without it. Briefings fall back to Groq.</span>';
@@ -18451,7 +19781,7 @@ function updateClaudeKeyStatus(){
 function saveClaudeKey(){
   const val=document.getElementById('claude-key-inp')?.value.trim()||'';
   if(!val){showToast('Enter your Claude API key first');return;}
-  S.claudeApiKey=val;save();updateClaudeKeyStatus();showToast('Claude key saved ✓');
+  persistApiKey('claude',val);updateClaudeKeyStatus();showToast('Claude key saved ✓');
 }
 function toggleClaudeKeyVis(){
   const inp=document.getElementById('claude-key-inp');if(!inp)return;
@@ -18511,8 +19841,19 @@ function exportCSV(){
 // DATA OPS
 // ═══════════════════════════════════════════════════════════
 function clearAll(){
-  if(!confirm('Delete ALL data? This cannot be undone.'))return;
+  const hasBackups=(getAutoBackups().length+getRestorePoints().length)>0;
+  const msg=hasBackups
+    ? 'Delete all your current data and restart?\n\nYour automatic backups and restore points will be KEPT, so you can recover from Settings → Backup & restore if this was a mistake.'
+    : 'Delete ALL data and restart? This cannot be undone.';
+  if(!confirm(msg))return;
+  // Wipe live data but preserve the backup keys as a safety net
   [STORAGE_KEY,BACKUP_KEY,META_KEY,...LEGACY_KEYS].forEach(k=>localStorage.removeItem(k));
+  location.reload();
+}
+// Full nuke — wipes data AND all backups. Offered separately for a true fresh start.
+function clearAllIncludingBackups(){
+  if(!confirm('Permanently delete EVERYTHING including all backups and restore points? This truly cannot be undone.'))return;
+  [STORAGE_KEY,BACKUP_KEY,META_KEY,AUTO_BACKUP_KEY,RESTORE_POINTS_KEY,...LEGACY_KEYS].forEach(k=>localStorage.removeItem(k));
   location.reload();
 }
 
@@ -18962,7 +20303,14 @@ applyTheme(S.themeIdx||0);applyMode(S.mode||'dark');
   function finish(){
     const sp=document.getElementById('splash');
     sp.style.transition='opacity .5s ease';sp.style.opacity='0';
-    setTimeout(()=>{sp.style.display='none';if(!S.setupDone){showSetup();}else{launchApp();}},reduce?200:480);
+    setTimeout(()=>{
+      sp.style.display='none';
+      if(!S.setupDone){showSetup();}else{launchApp();}
+      // v2.8.16 — security: init lifecycle, then gate behind lock if enabled
+      if(typeof initLockLifecycle==='function')initLockLifecycle();
+      if(typeof initPrivacyBlur==='function')initPrivacyBlur();
+      if(typeof initLockGate==='function')setTimeout(initLockGate,60);
+    },reduce?200:480);
   }
   setTimeout(tick,startDelay);
 })();
