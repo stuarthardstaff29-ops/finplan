@@ -659,7 +659,11 @@ body.reduce-motion .skeleton{background:rgba(255,255,255,.04)}
 .inp-hint{font-size:10px;color:var(--t3);margin-top:-6px;margin-bottom:10px;padding:0 2px}
 .inp-hint.error{color:var(--r)}
 select.inp{cursor:pointer;font-family:var(--sans);background-image:linear-gradient(45deg,transparent 50%,var(--t3) 50%),linear-gradient(135deg,var(--t3) 50%,transparent 50%);background-position:calc(100% - 18px) 18px,calc(100% - 13px) 18px;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:34px}
-.lbl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.10em;margin-bottom:6px;font-weight:600}
+.lbl{font-size:10px;color:var(--t2);text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px;font-weight:500;font-family:var(--mono)}
+/* v2.9.4 — REDESIGN: editorial amount input (big serif, centered) for txn/transfer */
+#txn-amt,#tr-amt{font-family:var(--serif);font-size:38px;font-weight:400;text-align:center;letter-spacing:-1px;color:var(--hero-cream);padding:8px 14px 12px;background:transparent;border:none;border-bottom:1px solid var(--bdr2);border-radius:0;margin-bottom:6px}
+#txn-amt:focus,#tr-amt:focus{border-bottom-color:var(--acc);box-shadow:none}
+#txn-amt::placeholder,#tr-amt::placeholder{color:var(--t4);font-size:38px}
 .inp-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 /* BUTTONS — v2.7.18 V4 polish */
 .btn{padding:12px 20px;border-radius:14px;border:0.5px solid transparent;cursor:pointer;font-size:13px;font-weight:600;font-family:var(--sans);transition:transform var(--dur-fast) var(--ease-out),background var(--dur-fast) var(--ease-out),border-color var(--dur-fast) var(--ease-out),box-shadow var(--dur-fast) var(--ease-out);letter-spacing:-.1px;position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:6px;line-height:1;min-height:44px}
@@ -708,11 +712,11 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .modal-close:active{transform:scale(.94)}
 
 /* TOGGLE */
-.tog{display:flex;background:var(--bg3);border-radius:var(--rad);padding:4px;margin-bottom:12px;gap:2px;border:1px solid var(--bdr)}
-.tog-b{flex:1;padding:8px 4px;text-align:center;border:none;background:transparent;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--sans);color:var(--t3);transition:all .2s;letter-spacing:.01em}
-.tog-b.on{background:var(--bg5);color:var(--t);box-shadow:var(--sh-sm)}
-.tog-b.g.on{color:var(--acc);background:var(--accd)}
-.tog-b.r.on{color:var(--r);background:var(--rd)}
+.tog{display:flex;background:var(--bg3);border-radius:14px;padding:4px;margin-bottom:14px;gap:2px;border:1px solid var(--bdr)}
+.tog-b{flex:1;padding:9px 4px;text-align:center;border:none;background:transparent;border-radius:10px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--sans);color:var(--t2);transition:all .2s;letter-spacing:.01em}
+.tog-b.on{background:var(--acc);color:var(--user-bubble-t);box-shadow:none}
+.tog-b.r.on{background:var(--r);color:#fff}
+.tog-b.g.on{background:var(--acc);color:var(--user-bubble-t)}
 
 /* TRANSACTIONS */
 .txn{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--bdr);transition:background .15s}
@@ -2148,7 +2152,9 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
   <div class="tog"><button class="tog-b r on" id="dir-out" onclick="setDir('out')">Out</button><button class="tog-b g" id="dir-in" onclick="setDir('in')">In</button><button class="tog-b" id="dir-transfer" onclick="setDir('transfer')">Transfer</button></div>
   <!-- Standard txn fields -->
   <div id="txn-standard-fields">
-    <div class="inp-row"><div><label class="lbl">Amount $</label><input type="number" class="inp" id="txn-amt" placeholder="0.00" min="0" step="0.01"></div><div><label class="lbl">Date</label><input type="date" class="inp" id="txn-date"></div></div>
+    <label class="lbl" style="text-align:center;display:block">Amount</label>
+    <input type="number" class="inp" id="txn-amt" placeholder="0" min="0" step="0.01">
+    <label class="lbl">Date</label><input type="date" class="inp" id="txn-date">
     <label class="lbl">Payee / description</label><input type="text" class="inp" id="txn-payee" placeholder="e.g. Woolworths" oninput="onPayeeInput(event)" onblur="hidePayeeSuggestions()" autocomplete="off">
     <div id="payee-suggestions" class="payee-suggestions" style="display:none"></div>
     <label class="lbl">Category</label><select class="inp" id="txn-cat"></select>
@@ -2161,7 +2167,9 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
       <div><label class="lbl">From account</label><select class="inp" id="tr-from"><option value="westpac">Westpac</option><option value="macquarie">Macquarie</option></select></div>
       <div><label class="lbl">To account</label><select class="inp" id="tr-to"><option value="macquarie">Macquarie</option><option value="westpac">Westpac</option></select></div>
     </div>
-    <div class="inp-row"><div><label class="lbl">Amount $</label><input type="number" class="inp" id="tr-amt" placeholder="0.00" min="0" step="0.01"></div><div><label class="lbl">Date</label><input type="date" class="inp" id="tr-date"></div></div>
+    <label class="lbl" style="text-align:center;display:block">Amount</label>
+    <input type="number" class="inp" id="tr-amt" placeholder="0" min="0" step="0.01">
+    <label class="lbl">Date</label><input type="date" class="inp" id="tr-date">
     <label class="lbl">Note / reason (optional)</label><input type="text" class="inp" id="tr-note" placeholder="e.g. Move to savings">
     <div class="alert alert-b" style="margin-top:4px;font-size:11px">Transfers move money between your accounts. They don't count as income or spending.</div>
   </div>
@@ -2942,9 +2950,24 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.9.3';
+const APP_VERSION='2.9.4';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.9.4',
+    date:'2026-07-28',
+    title:'New look — Add transaction & transfer',
+    sections:{
+      features:[
+        '➕ **Redesigned add-transaction form.** The amount is now a large editorial serif figure front and centre, the Out / In / Transfer switch uses clean solid segments, and every field label uses the new mono style — matching the design'
+      ],
+      improvements:[
+        'The same treatment carries across the transfer form',
+        'Field labels throughout the forms adopt the editorial mono style'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'2.9.3',
     date:'2026-07-28',
