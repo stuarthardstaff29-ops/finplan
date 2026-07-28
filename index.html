@@ -14,59 +14,69 @@
 <title>FinPlan</title>
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Syne:wght@600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 :root{
-  /* v2.7.9 — V4 design system tokens */
-  --acc:#00e599;--acc2:#00c98a;--acc-glow:#00e599;
-  --accd:rgba(0,229,153,.10);--accd2:rgba(0,229,153,.22);--accd3:rgba(0,229,153,.35);
-  /* Base — dark green-tinted near-black */
-  --bg:#0a120e;--bg-grad:#0a120e;
-  --bg2:#0d1310;--bg3:#101815;--bg4:#141c18;--bg5:#1a231e;--bg6:#232d27;
+  /* v2.9.0 — REDESIGN: Editorial Contrast (dark) tokens, mapped onto the existing
+     variable names so every component reskins for free. Light mode = Calm Cream. */
+  --acc:#8ee0b8;--acc2:#6fce9f;--acc-glow:#8ee0b8;
+  --accd:rgba(142,224,184,.10);--accd2:rgba(142,224,184,.20);--accd3:rgba(142,224,184,.32);
+  /* Base — editorial near-black green */
+  --bg:#0e120f;--bg-grad:#0e120f;
+  --bg2:#121713;--bg3:#151b17;--bg4:#1a221d;--bg5:#202a24;--bg6:#2a352e;
   /* Text — warm cream on dark */
-  --t:#f0f4f0;--t2:#7a9a8a;--t3:#5a8a6a;--t4:#3a5a4a;
-  /* Semantic — softer, warmer than before */
-  --b:#5aaa90;--bd:rgba(90,170,144,.10);--bd2:rgba(90,170,144,.22);
-  --y:#f0a030;--yd:rgba(240,160,48,.10);--yd2:rgba(240,160,48,.22);
-  --r:#e56a5a;--rd:rgba(229,106,90,.10);--rd2:rgba(229,106,90,.22);
+  --t:#f4f1e8;--t2:rgba(236,235,228,.55);--t3:rgba(236,235,228,.42);--t4:rgba(236,235,228,.28);
+  /* Semantic */
+  --b:#8ee0b8;--bd:rgba(142,224,184,.10);--bd2:rgba(142,224,184,.22);
+  --y:#f0c86e;--yd:rgba(240,200,110,.10);--yd2:rgba(240,200,110,.22);
+  --r:#e59f8a;--rd:rgba(229,159,138,.10);--rd2:rgba(229,159,138,.22);
   --p:#a090f0;--pd:rgba(160,144,240,.10);
-  --o:#f0a060;--od:rgba(240,160,96,.10);
-  /* Borders — hairline with mint tint on cards */
-  --bdr:rgba(255,255,255,.05);--bdr2:rgba(255,255,255,.09);--bdr3:rgba(255,255,255,.16);
-  --bdr-acc:rgba(0,229,153,.08);--bdr-acc2:rgba(0,229,153,.15);
-  /* Glass surface treatment */
-  --glass:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015));
-  --glass-strong:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
-  --glow-mint:radial-gradient(circle at 20% 30%,rgba(0,229,153,.06) 0%,transparent 65%);
-  --glow-info:radial-gradient(circle at 20% 30%,rgba(90,170,144,.06) 0%,transparent 65%);
-  --glow-warn:radial-gradient(circle at 20% 30%,rgba(240,160,48,.06) 0%,transparent 65%);
-  --rad-xs:8px;--rad-sm:12px;--rad:18px;--rad-lg:22px;--rad-xl:28px;--rad-2xl:32px;
+  --o:#f0c86e;--od:rgba(240,200,110,.10);
+  /* Borders — editorial hairlines */
+  --bdr:rgba(255,255,255,.06);--bdr2:rgba(255,255,255,.09);--bdr3:rgba(255,255,255,.16);
+  --bdr-acc:rgba(142,224,184,.10);--bdr-acc2:rgba(142,224,184,.18);
+  /* Surfaces — flatter, editorial (less glassy) */
+  --glass:rgba(255,255,255,.04);
+  --glass-strong:rgba(255,255,255,.055);
+  --glow-mint:radial-gradient(circle at 20% 30%,rgba(142,224,184,.05) 0%,transparent 65%);
+  --glow-info:radial-gradient(circle at 20% 30%,rgba(142,224,184,.05) 0%,transparent 65%);
+  --glow-warn:radial-gradient(circle at 20% 30%,rgba(240,200,110,.05) 0%,transparent 65%);
+  --rad-xs:8px;--rad-sm:12px;--rad:16px;--rad-lg:20px;--rad-xl:24px;--rad-2xl:28px;
   --mono:'JetBrains Mono','IBM Plex Mono',monospace;
   --sans:'Inter',system-ui,-apple-system,sans-serif;
   --display:'Inter',system-ui,-apple-system,sans-serif;
+  --serif:'Instrument Serif',Georgia,serif;   /* v2.9.0 — editorial hero numerals */
+  --hero-cream:#f4f1e8;
   --sb:env(safe-area-inset-bottom,0px);--st:env(safe-area-inset-top,0px);
   --hdr-h:60px;--nav-h:60px;
   --sh-sm:0 1px 2px rgba(0,0,0,.35);
   --sh-md:0 4px 20px rgba(0,0,0,.45);
   --sh-lg:0 12px 40px rgba(0,0,0,.55);
-  --sh-glow:0 0 30px rgba(0,229,153,.22);
-  /* Motion tokens */
+  --sh-glow:0 0 30px rgba(142,224,184,.18);
   --ease-out:cubic-bezier(.32,.72,0,1);
   --dur-fast:150ms;--dur-base:250ms;--dur-slow:400ms;
 }
 body.light{
-  --bg:#f4f7f4;--bg-grad:#f4f7f4;
-  --bg2:#ffffff;--bg3:#f0f4f0;--bg4:#e8ede8;--bg5:#dde4de;--bg6:#c8d0c8;
-  --t:#0a120e;--t2:#4a6a5a;--t3:#7a9a8a;--t4:#c8d4c8;
-  --bdr:rgba(10,18,14,.06);--bdr2:rgba(10,18,14,.12);--bdr3:rgba(10,18,14,.20);
-  --bdr-acc:rgba(0,201,138,.16);--bdr-acc2:rgba(0,201,138,.28);
-  --glass:linear-gradient(180deg,rgba(255,255,255,.6),rgba(255,255,255,.3));
-  --glass-strong:linear-gradient(180deg,rgba(255,255,255,.8),rgba(255,255,255,.5));
-  --sh-sm:0 1px 3px rgba(10,18,14,.08);
-  --sh-md:0 4px 12px rgba(10,18,14,.10);
-  --sh-lg:0 12px 32px rgba(10,18,14,.14);
+  /* Calm Cream */
+  --acc:#2d7a55;--acc2:#3a7a5c;--acc-glow:#2d7a55;
+  --accd:rgba(45,122,85,.10);--accd2:rgba(45,122,85,.18);--accd3:rgba(45,122,85,.28);
+  --bg:#f4f1e8;--bg-grad:#f4f1e8;
+  --bg2:#ffffff;--bg3:#eee9db;--bg4:#e8e2d2;--bg5:#ddd6c4;--bg6:#c8c0ac;
+  --t:#1a1f1c;--t2:rgba(10,30,20,.55);--t3:rgba(10,30,20,.42);--t4:rgba(10,30,20,.25);
+  --b:#2d7a55;--bd:rgba(45,122,85,.10);--bd2:rgba(45,122,85,.22);
+  --y:#d4a340;--yd:rgba(212,163,64,.10);--yd2:rgba(212,163,64,.22);
+  --r:#c9634a;--rd:rgba(201,99,74,.10);--rd2:rgba(201,99,74,.22);
+  --bdr:rgba(10,30,20,.06);--bdr2:rgba(10,30,20,.12);--bdr3:rgba(10,30,20,.20);
+  --bdr-acc:rgba(45,122,85,.16);--bdr-acc2:rgba(45,122,85,.28);
+  --glass:#ffffff;
+  --glass-strong:#ffffff;
+  --glow-mint:radial-gradient(circle at 20% 30%,rgba(45,122,85,.05) 0%,transparent 65%);
+  --hero-cream:#0a120e;
+  --sh-sm:0 1px 3px rgba(10,30,20,.06);
+  --sh-md:0 4px 14px rgba(10,30,20,.08);
+  --sh-lg:0 12px 32px rgba(10,30,20,.12);
 }
 html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--t);font-family:var(--sans);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 body{display:flex;flex-direction:column;position:fixed;width:100%;height:100%;background:var(--bg-grad)}
@@ -602,13 +612,12 @@ body.reduce-motion .skeleton{background:rgba(255,255,255,.04)}
 .tg{background:var(--accd);color:var(--acc)}.tb{background:var(--bd);color:var(--b)}.ty{background:var(--yd);color:var(--y)}.tr{background:var(--rd);color:var(--r)}.tp{background:var(--pd);color:var(--p)}
 
 /* HERO */
-.hero{background:var(--glass);border:0.5px solid var(--bdr-acc2);border-radius:var(--rad-lg);padding:22px 22px 24px;margin-bottom:18px;position:relative;overflow:hidden}
-.hero::before{content:'';position:absolute;inset:0;background:var(--glow-mint);pointer-events:none;border-radius:inherit;animation:heroGlow 6s ease-in-out infinite}
-.hero::after{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(0,229,153,.10) 0%,transparent 70%);pointer-events:none;animation:heroGlow2 8s ease-in-out infinite}
-@keyframes heroGlow2{0%,100%{opacity:.5;transform:translate(0,0)}50%{opacity:.9;transform:translate(-10px,4px)}}
-.hero-l{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.16em;margin-bottom:8px;font-weight:600;position:relative;z-index:1}
-.hero-v{font-size:34px;font-weight:700;color:var(--t);letter-spacing:-1.4px;line-height:1.05;position:relative;z-index:1;font-variant-numeric:tabular-nums}
-.hero-s{font-size:12px;color:var(--t2);margin-top:8px;position:relative;z-index:1;font-weight:500}
+/* v2.9.0 — REDESIGN: editorial hero. Flat surface, serif hero numeral, mono eyebrow. */
+.hero{background:transparent;border:none;border-bottom:1px solid var(--bdr);border-radius:0;padding:6px 2px 22px;margin-bottom:18px;position:relative;overflow:visible}
+.hero::before,.hero::after{display:none}
+.hero-l{font-size:10px;color:var(--acc);text-transform:uppercase;letter-spacing:.14em;margin-bottom:12px;font-weight:500;font-family:var(--mono);position:relative;z-index:1}
+.hero-v{font-family:var(--serif);font-size:52px;font-weight:400;color:var(--hero-cream);letter-spacing:-2px;line-height:.98;position:relative;z-index:1;font-variant-numeric:tabular-nums}
+.hero-s{font-size:12px;color:var(--t2);margin-top:14px;position:relative;z-index:1;font-weight:400;line-height:1.5}
 .tag-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px;position:relative;z-index:1}
 
 /* v2.7.9 — TODAY BRIEFING (icon-badge with connecting timeline) */
@@ -2698,7 +2707,7 @@ function unregisterBiometric(){
 // CONSTANTS & THEMES
 // ═══════════════════════════════════════════════════════════
 const THEMES=[
-  {name:'Teal',acc:'#00d4a0',acc2:'#00b589',accd:'rgba(0,229,153,.12)',accd2:'rgba(0,229,153,.22)'},
+  {name:'Mint',acc:'#8ee0b8',acc2:'#6fce9f',accd:'rgba(142,224,184,.12)',accd2:'rgba(142,224,184,.22)',accLight:'#2d7a55',acc2Light:'#3a7a5c',accdLight:'rgba(45,122,85,.12)',accd2Light:'rgba(45,122,85,.20)'},
   {name:'Blue',acc:'#4da6ff',acc2:'#2d8fff',accd:'rgba(77,166,255,.12)',accd2:'rgba(77,166,255,.22)'},
   {name:'Purple',acc:'#a07ef5',acc2:'#8460f0',accd:'rgba(160,126,245,.12)',accd2:'rgba(160,126,245,.22)'},
   {name:'Coral',acc:'#ff7c40',acc2:'#e8632a',accd:'rgba(255,124,64,.12)',accd2:'rgba(255,124,64,.22)'},
@@ -2899,9 +2908,25 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.8.16';
+const APP_VERSION='2.9.0';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.9.0',
+    date:'2026-07-27',
+    title:'New look — the redesign begins (Cream + Editorial)',
+    sections:{
+      features:[
+        '🎨 **A brand-new visual system.** FinPlan now uses two paired designs: Calm Cream in light mode (warm, editorial, airy) and Editorial Contrast in dark mode (deep green-black with serif hero numbers and mint accents). Flip light/dark in Settings to switch between them',
+        '✒️ **Editorial hero numbers.** Your net worth and key figures now render in Instrument Serif — the big, elegant numerals from the design — with a mint accent and a clean mono label'
+      ],
+      improvements:[
+        'The whole app palette moved to the new mint-and-cream system in one coordinated pass, so every screen picks up the new colours consistently',
+        'The default accent is now the design mint; the accent picker still lets you change it'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'2.8.16',
     date:'2026-07-27',
@@ -4843,16 +4868,22 @@ function applyTheme(idx){
   S.themeIdx=idx;
   const t=THEMES[idx]||THEMES[0];
   const r=document.documentElement.style;
-  r.setProperty('--acc',t.acc);r.setProperty('--acc2',t.acc2);
-  r.setProperty('--accd',t.accd);r.setProperty('--accd2',t.accd2);
-  document.getElementById('meta-theme').content=S.mode==='dark'?'#060a0f':'#f0f2f5';
+  // v2.9.0 — mode-aware accent: cream (light) uses the darker mint variants where present
+  const light=S.mode==='light';
+  r.setProperty('--acc',light&&t.accLight?t.accLight:t.acc);
+  r.setProperty('--acc2',light&&t.acc2Light?t.acc2Light:t.acc2);
+  r.setProperty('--accd',light&&t.accdLight?t.accdLight:t.accd);
+  r.setProperty('--accd2',light&&t.accd2Light?t.accd2Light:t.accd2);
+  const mt=document.getElementById('meta-theme');if(mt)mt.content=S.mode==='dark'?'#0e120f':'#f4f1e8';
 }
 function applyMode(mode){
   S.mode=mode;
   document.body.classList.toggle('light',mode==='light');
-  document.getElementById('meta-theme').content=mode==='dark'?'#060a0f':'#f0f2f5';
+  const mt=document.getElementById('meta-theme');if(mt)mt.content=mode==='dark'?'#0e120f':'#f4f1e8';
   document.getElementById('mode-dark')?.classList.toggle('active',mode==='dark');
   document.getElementById('mode-light')?.classList.toggle('active',mode==='light');
+  // v2.9.0 — re-apply theme so the accent picks the correct light/dark variant
+  if(typeof applyTheme==='function')applyTheme(S.themeIdx||0);
 }
 function setMode(mode){applyMode(mode);save();}
 function buildThemeGrid(){
