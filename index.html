@@ -40,6 +40,8 @@
   /* Surfaces — flatter, editorial (less glassy) */
   --glass:rgba(255,255,255,.04);
   --glass-strong:rgba(255,255,255,.055);
+  --popover:linear-gradient(180deg,#141a16,#0e120f);   /* v2.9.2 — modal/sheet/popup surface */
+  --popover-solid:#141a16;
   --glow-mint:radial-gradient(circle at 20% 30%,rgba(142,224,184,.05) 0%,transparent 65%);
   --glow-info:radial-gradient(circle at 20% 30%,rgba(142,224,184,.05) 0%,transparent 65%);
   --glow-warn:radial-gradient(circle at 20% 30%,rgba(240,200,110,.05) 0%,transparent 65%);
@@ -72,6 +74,8 @@ body.light{
   --bdr-acc:rgba(45,122,85,.16);--bdr-acc2:rgba(45,122,85,.28);
   --glass:#ffffff;
   --glass-strong:#ffffff;
+  --popover:#ffffff;   /* v2.9.2 — cream light popups are white */
+  --popover-solid:#ffffff;
   --glow-mint:radial-gradient(circle at 20% 30%,rgba(45,122,85,.05) 0%,transparent 65%);
   --hero-cream:#0a120e;
   --sh-sm:0 1px 3px rgba(10,30,20,.06);
@@ -296,7 +300,7 @@ body.compact .mg{gap:7px}
 /* v2.8.14 — guided app tour */
 #app-tour{position:fixed;inset:0;z-index:1100;display:none;transition:opacity .25s ease}
 .tour-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
-.tour-card{position:absolute;left:50%;bottom:calc(var(--nav-h) + var(--sb) + 24px);transform:translateX(-50%);width:calc(100% - 40px);max-width:360px;background:linear-gradient(180deg,#0f1a15,#0a120e);border:0.5px solid var(--bdr-acc);border-radius:20px;padding:22px 20px;box-shadow:0 12px 40px rgba(0,0,0,.6);animation:tourIn .4s cubic-bezier(.34,1.28,.4,1)}
+.tour-card{position:absolute;left:50%;bottom:calc(var(--nav-h) + var(--sb) + 24px);transform:translateX(-50%);width:calc(100% - 40px);max-width:360px;background:var(--popover);border:0.5px solid var(--bdr-acc);border-radius:20px;padding:22px 20px;box-shadow:0 12px 40px rgba(0,0,0,.6);animation:tourIn .4s cubic-bezier(.34,1.28,.4,1)}
 @keyframes tourIn{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 .tour-dots{display:flex;gap:5px;justify-content:center;margin-bottom:14px}
 .tour-dot{width:6px;height:6px;border-radius:50%;background:var(--bg5);transition:all .3s}
@@ -691,7 +695,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 /* MODAL — v2.7.18 V4 polish */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.68);z-index:500;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity var(--dur-base) var(--ease-out);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 .overlay.open{opacity:1;pointer-events:all}
-.modal{background:linear-gradient(180deg,#0f1a15,#0a120e);border-radius:22px 22px 0 0;padding:22px 18px 18px;padding-bottom:calc(22px + var(--sb));width:100%;max-height:92vh;overflow-y:auto;transform:translateY(40px);transition:transform .42s cubic-bezier(.34,1.28,.4,1);border-top:0.5px solid var(--bdr-acc);box-shadow:0 -8px 32px rgba(0,0,0,.5)}
+.modal{background:var(--popover);border-radius:22px 22px 0 0;padding:22px 18px 18px;padding-bottom:calc(22px + var(--sb));width:100%;max-height:92vh;overflow-y:auto;transform:translateY(40px);transition:transform .42s cubic-bezier(.34,1.28,.4,1);border-top:0.5px solid var(--bdr-acc);box-shadow:0 -8px 32px rgba(0,0,0,.5)}
 .overlay.open .modal{transform:translateY(0)}
 .modal-handle{width:36px;height:4px;background:rgba(255,255,255,.10);border-radius:2px;margin:0 auto 18px;transition:background var(--dur-fast) var(--ease-out)}
 .modal-handle:active{background:rgba(255,255,255,.25)}
@@ -2935,9 +2939,21 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.9.1';
+const APP_VERSION='2.9.2';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.9.2',
+    date:'2026-07-27',
+    title:'Fix — unreadable popups in light mode',
+    sections:{
+      features:[],
+      improvements:[],
+      fixes:[
+        '🐛 **Fixed popups being unreadable in light mode.** After the redesign, pop-ups (What\'s New, Customise, add transaction, and every other modal, plus the app tour) kept a dark background while the text turned dark too — so text was nearly invisible against it. Pop-ups now use a white surface in Cream light mode and the dark surface in Editorial dark mode, so text is clearly readable in both'
+      ]
+    }
+  },
   {
     v:'2.9.1',
     date:'2026-07-27',
