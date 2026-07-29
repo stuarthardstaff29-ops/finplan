@@ -181,7 +181,7 @@ body.reduce-motion .spl-ring-arc,body.reduce-motion .spl-orb,body.reduce-motion 
 /* Hero section: circular icon, uppercase label, title, big amount, status pill */
 .detail-hero-wrap{text-align:center;padding:14px 12px 26px}
 .detail-hero-icon{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 20px;border:1px solid transparent}
-.detail-hero-label{font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.16em;margin-bottom:12px;font-weight:600}
+.detail-hero-label{font-size:10px;color:var(--acc);text-transform:uppercase;letter-spacing:.14em;margin-bottom:12px;font-weight:500;font-family:var(--mono)}
 .detail-hero-title{font-size:22px;font-weight:700;color:var(--t);letter-spacing:-.4px;margin-bottom:16px;line-height:1.2}
 .detail-hero-amt{font-size:46px;font-weight:400;font-family:var(--serif);color:var(--hero-cream);letter-spacing:-1.6px;line-height:1;margin-bottom:14px}
 .detail-hero-sub{font-size:12px;color:var(--t2);margin-top:6px}
@@ -239,7 +239,7 @@ body.reduce-motion .spl-ring-arc,body.reduce-motion .spl-orb,body.reduce-motion 
 .success-inner{text-align:center;padding:24px;max-width:320px;transform:scale(.9);transition:transform .35s cubic-bezier(.2,0,.2,1) .05s}
 .success-moment.open .success-inner{transform:scale(1)}
 .success-icon{width:96px;height:96px;border-radius:50%;background:var(--accd2);border:2px solid var(--acc);color:var(--acc);display:flex;align-items:center;justify-content:center;font-size:42px;margin:0 auto 22px;box-shadow:0 0 60px var(--accd3),inset 0 0 40px var(--accd)}
-.success-title{font-size:22px;font-weight:700;color:var(--t);letter-spacing:-.4px;margin-bottom:8px}
+.success-title{font-size:26px;font-weight:400;font-family:var(--serif);color:var(--hero-cream);letter-spacing:-.5px;margin-bottom:8px}
 .success-subtitle{font-size:14px;color:var(--t2);margin-bottom:6px;line-height:1.5}
 .success-detail{font-size:12px;color:var(--acc);font-family:var(--mono);font-weight:600;margin-top:10px}
 .wn-title{font-family:var(--display);font-size:24px;font-weight:800;color:var(--t);letter-spacing:-.5px;margin-bottom:18px;line-height:1.1}
@@ -317,7 +317,7 @@ body.compact .mg{gap:7px}
 .lock-inner.shake{animation:lockShake .4s}
 @keyframes lockShake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
 .lock-logo{font-size:44px;margin-bottom:14px}
-.lock-title{font-size:19px;font-weight:800;color:var(--t);margin-bottom:6px}
+.lock-title{font-size:24px;font-weight:400;font-family:var(--serif);color:var(--hero-cream);margin-bottom:6px;letter-spacing:-.5px}
 .lock-sub{font-size:12px;color:var(--t3);margin-bottom:26px}
 .lock-dots{display:flex;gap:12px;justify-content:center;margin-bottom:14px;min-height:16px}
 .lock-dot{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--bdr-acc);transition:all .15s}
@@ -339,8 +339,8 @@ body.hidden-blur #app{filter:blur(18px)}
 .hdr{background:rgba(0,0,0,.7);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-bottom:0.5px solid var(--bdr);padding:14px 18px;padding-top:calc(14px + var(--st));display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:relative;z-index:50;overflow:hidden;max-height:calc(var(--hdr-h) + var(--st) + 30px);opacity:1;transition:max-height .38s cubic-bezier(.4,0,.2,1),opacity .28s var(--ease-out),padding-top .38s cubic-bezier(.4,0,.2,1),padding-bottom .38s cubic-bezier(.4,0,.2,1),border-bottom-width .28s var(--ease-out)}
 body.hdr-hidden .hdr{max-height:0;opacity:0;padding-top:0;padding-bottom:0;border-bottom-width:0}
 body.light .hdr{background:rgba(255,255,255,.8)}
-.hdr-logo{font-size:19px;font-weight:800;color:var(--acc);letter-spacing:-1px;font-family:var(--display);display:flex;align-items:baseline;gap:1px}
-.hdr-logo em{color:var(--t3);font-style:normal;font-weight:600;font-size:14px;letter-spacing:0}
+.hdr-logo{font-size:24px;font-weight:400;color:var(--hero-cream);letter-spacing:-.5px;font-family:var(--serif);display:flex;align-items:baseline;gap:2px}
+.hdr-logo em{color:var(--acc);font-style:italic;font-weight:400;font-size:24px;letter-spacing:-.5px}
 .hdr-actions{display:flex;align-items:center;gap:6px}
 .hdr-btn{background:none;border:none;cursor:pointer;color:var(--t2);display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;transition:all .18s}
 .hdr-version{background:rgba(0,229,153,.06);border:0.5px solid rgba(0,229,153,.15);color:var(--acc);cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.03em;padding:5px 8px;border-radius:8px;font-family:var(--sans,system-ui);font-variant-numeric:tabular-nums;transition:all .18s;margin-right:2px}
@@ -600,7 +600,7 @@ body.reduce-motion .skeleton{background:rgba(255,255,255,.04)}
 .card.hero::before{content:'';position:absolute;inset:0;background:var(--glow-mint);pointer-events:none;border-radius:inherit;animation:heroGlow 6s ease-in-out infinite}
 .card.hero>*{position:relative;z-index:1}
 @keyframes heroGlow{0%,100%{opacity:.7}50%{opacity:1}}
-.ctitle{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.14em;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.ctitle{font-size:10px;font-weight:500;color:var(--acc);text-transform:uppercase;letter-spacing:.12em;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;font-family:var(--mono)}
 .ctitle-l{display:flex;align-items:center;gap:8px}
 .ctitle svg{width:14px;height:14px;stroke:var(--acc);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
@@ -2950,9 +2950,26 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.9.5';
+const APP_VERSION='3.0.0';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'3.0.0',
+    date:'2026-07-28',
+    title:'FinPlan 3.0 — the redesign is complete',
+    sections:{
+      features:[
+        '🎉 **A whole new FinPlan.** The redesign is finished across every screen. Two paired looks — Calm Cream in light mode and Editorial Contrast in dark mode — with elegant serif hero numbers, clean mono labels, and the mint accent throughout',
+        '🔒 **Polished finishing touches.** The lock screen, success celebrations, detail views, settings, and the app header all now carry the editorial look, tying the whole app together'
+      ],
+      improvements:[
+        'The FinPlan wordmark now uses the editorial serif',
+        'Card and section titles across the app use the consistent mono label style',
+        'This release caps a six-part redesign: foundation, dashboard, accounts, goals, analytics, AI advisor, transactions, budget, and every polish surface'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'2.9.5',
     date:'2026-07-28',
