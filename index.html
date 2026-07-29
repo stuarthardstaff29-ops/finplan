@@ -171,6 +171,60 @@ body.reduce-motion .spl-ring-arc,body.reduce-motion .spl-orb,body.reduce-motion 
 
 /* ═══════════ DETAIL VIEW (v2.3.0) ═══════════ */
 .detail-view{position:fixed;inset:0;background:var(--bg);z-index:400;transform:translateX(100%);transition:transform .32s cubic-bezier(.2,0,.2,1);display:flex;flex-direction:column}
+/* v3.0.4 — REDESIGN: full-screen search (Power flows 4c) */
+.search-view{position:fixed;inset:0;background:var(--bg);z-index:450;display:none;flex-direction:column;padding-top:calc(var(--st) + 8px)}
+/* v3.0.5 — REDESIGN: dedicated transfer screen (Power flows 4d) */
+.transfer-view{position:fixed;inset:0;background:var(--bg);z-index:450;display:none;flex-direction:column;padding-top:calc(var(--st) + 8px)}
+.transfer-view.on{display:flex}
+.ed-tr-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 18px 4px}
+.ed-tr-close{width:32px;height:32px;border-radius:50%;background:var(--glass);border:0.5px solid var(--bdr);color:var(--t);font-size:14px;cursor:pointer}
+.ed-tr-title{font:600 13px var(--sans);color:var(--t2)}
+.ed-tr-scroll{flex:1;overflow-y:auto;padding:8px 20px calc(var(--sb) + 20px)}
+.ed-tr-amt-wrap{text-align:center;padding:20px 0 28px;display:flex;align-items:flex-start;justify-content:center}
+.ed-tr-cur{font:400 32px var(--serif);color:var(--t3);margin-top:8px;margin-right:2px}
+#ed-tr-amt{font:400 58px var(--serif);color:var(--hero-cream);letter-spacing:-2px;background:none;border:none;outline:none;text-align:center;width:auto;max-width:60vw;padding:0;line-height:1}
+#ed-tr-amt::placeholder{color:var(--t4)}
+.ed-tr-card{background:var(--glass);border:0.5px solid var(--bdr);border-radius:16px;padding:2px 16px;margin-bottom:12px;position:relative}
+.ed-tr-row{display:flex;align-items:center;gap:11px;padding:14px 0;border-bottom:0.5px solid var(--bdr);cursor:pointer}
+.ed-tr-row.ed-tr-last{border-bottom:none}
+.ed-tr-lbl{font:500 9px var(--mono);color:var(--t2);text-transform:uppercase;letter-spacing:.1em;width:34px}
+.ed-tr-ico{width:30px;height:30px;border-radius:9px;background:var(--accd);display:flex;align-items:center;justify-content:center;font-size:14px}
+.ed-tr-mid{flex:1;min-width:0}
+.ed-tr-name{display:block;font:600 12.5px var(--sans);color:var(--t)}
+.ed-tr-bal{display:block;font:500 10.5px var(--sans);color:var(--t2);margin-top:1px}
+.ed-tr-chev{color:var(--t3);font-size:16px}
+.ed-tr-swap{position:absolute;right:20px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--bdr2);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--acc);cursor:pointer;z-index:1}
+.ed-tr-when{background:var(--glass);border:0.5px solid var(--bdr);border-radius:16px;padding:13px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.ed-tr-when-l{font:500 11px var(--sans);color:var(--t2)}
+.ed-tr-date{background:none;border:none;color:var(--t);font:600 12px var(--sans);outline:none;text-align:right}
+.ed-tr-btn{width:100%;background:var(--acc);color:var(--user-bubble-t);border:none;border-radius:16px;padding:15px;font:700 13px var(--sans);cursor:pointer;transition:opacity var(--dur-fast)}
+.ed-tr-btn.disabled{opacity:.4;cursor:default}
+.search-view.on{display:flex}
+.search-top{display:flex;align-items:center;gap:10px;padding:8px 18px 10px}
+.ed-searchbox{flex:1;background:var(--glass);border:0.5px solid var(--bdr);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:9px}
+.ed-search-mag{color:var(--t3);font-size:15px}
+.ed-searchbox input{flex:1;background:none;border:none;outline:none;color:var(--t);font:500 13px var(--sans)}
+.ed-searchbox input::placeholder{color:var(--t3)}
+.ed-search-x{color:var(--t3);font-size:12px;cursor:pointer}
+.ed-search-cancel{background:none;border:none;color:var(--acc);font:600 13px var(--sans);cursor:pointer;padding:4px}
+.ed-search-chips{display:flex;gap:6px;padding:0 18px 12px;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch}
+.ed-search-chips::-webkit-scrollbar{display:none}
+.ed-chip{padding:7px 12px;border-radius:16px;font:600 10.5px var(--sans);white-space:nowrap;cursor:pointer;flex-shrink:0;border:0.5px solid transparent}
+.ed-chip.on{background:var(--acc);color:var(--user-bubble-t)}
+.ed-chip.off{background:var(--glass);color:var(--t2);border-color:var(--bdr)}
+.ed-search-scroll{flex:1;overflow-y:auto;padding:4px 18px calc(var(--sb) + 20px)}
+.ed-search-stats{background:var(--glass);border:0.5px solid var(--bdr);border-radius:14px;padding:14px 16px;display:flex;gap:22px;margin-bottom:14px}
+.ed-ss-l{font:500 9px var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--t3)}
+.ed-ss-v{font:400 22px var(--serif);color:var(--hero-cream);margin-top:2px;line-height:1}
+.ed-sr{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid var(--bdr);cursor:pointer}
+.ed-sr-ico{width:34px;height:34px;border-radius:10px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.ed-sr-body{flex:1;min-width:0}
+.ed-sr-t{font:600 12.5px var(--sans);color:var(--t);display:flex;justify-content:space-between;gap:8px}
+.ed-sr-amt{font:500 12px var(--mono);flex-shrink:0}
+.ed-sr-amt.pos{color:var(--acc)}
+.ed-sr-s{font:500 10.5px var(--sans);color:var(--t2);margin-top:2px}
+.ed-search-empty{text-align:center;padding:60px 20px;color:var(--t3);font:500 12px var(--sans);line-height:1.7}
+.ed-search-empty-ico{font-size:34px;margin-bottom:12px;opacity:.5}
 .detail-view.open{transform:translateX(0)}
 .detail-header{padding:calc(14px + var(--st)) 18px 8px;flex-shrink:0}
 .detail-back{background:none;border:none;color:var(--t2);font-size:14px;font-weight:500;font-family:var(--sans);display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 4px;letter-spacing:-.2px}
@@ -1428,6 +1482,9 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
     <div class="hdr-actions">
       <div class="hdr-dot"></div>
       <button id="hdr-version" class="hdr-version" onclick="forceRefreshApp()" title="Version — tap to force refresh"></button>
+      <button class="hdr-btn" onclick="openSearch()" title="Search transactions">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
       <button class="hdr-btn" onclick="exportCSV()" title="Export CSV">
         <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       </button>
@@ -2140,6 +2197,7 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
     <button class="more-tile" id="more-kmart" onclick="showPgFromMore('kmart')"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Shifts</button>
     <button class="more-tile" id="more-payday" onclick="showPgFromMore('payday')"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="12" cy="14.5" r="1.5"/></svg>Pay day</button>
     <button class="more-tile" id="more-recurring" onclick="showPgFromMore('recurring')"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Recurring</button>
+    <button class="more-tile" id="more-subscriptions" onclick="showPgFromMore('subscriptions')"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>Subs</button>
     <button class="more-tile" id="more-scenario" onclick="showPgFromMore('scenario')"><svg viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0H5a2 2 0 0 1-2-2v-4m6 6h10a2 2 0 0 0 2-2v-4"/></svg>What-if</button>
     <button class="more-tile" id="more-insights" onclick="showPgFromMore('insights')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Insights</button>
     <button class="more-tile" id="more-health" onclick="showPgFromMore('health')"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Health</button>
@@ -2311,6 +2369,54 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
   </div>
   <div class="detail-scroll" id="detail-scroll">
     <div class="detail-body" id="detail-body"></div>
+  </div>
+</div>
+
+<!-- v3.0.4 — SEARCH SCREEN (Power flows 4c) -->
+<div class="search-view" id="search-view">
+  <div class="search-top">
+    <div class="ed-searchbox">
+      <span class="ed-search-mag">⌕</span>
+      <input type="text" id="ed-search-inp" placeholder="Search transactions…" oninput="runSearch()" autocomplete="off">
+      <span class="ed-search-x" id="ed-search-clear" onclick="clearSearchInput()" style="display:none">✕</span>
+    </div>
+    <button class="ed-search-cancel" onclick="closeSearch()">Cancel</button>
+  </div>
+  <div class="ed-search-chips" id="ed-search-chips"></div>
+  <div class="ed-search-scroll" id="ed-search-scroll"></div>
+</div>
+
+<!-- v3.0.5 — TRANSFER SCREEN (Power flows 4d) -->
+<div class="transfer-view" id="transfer-view">
+  <div class="ed-tr-hdr">
+    <button class="ed-tr-close" onclick="closeTransferScreen()">✕</button>
+    <span class="ed-tr-title">Transfer</span>
+    <span style="width:32px"></span>
+  </div>
+  <div class="ed-tr-scroll">
+    <div class="ed-tr-amt-wrap">
+      <span class="ed-tr-cur">$</span><input type="number" id="ed-tr-amt" placeholder="0" min="0" step="0.01" oninput="updateTransferPreview()" autocomplete="off">
+    </div>
+    <div class="ed-tr-card">
+      <div class="ed-tr-row" onclick="cycleTransferAcct('from')">
+        <span class="ed-tr-lbl">From</span>
+        <span class="ed-tr-ico">🏦</span>
+        <span class="ed-tr-mid"><span class="ed-tr-name" id="ed-tr-from-name">—</span><span class="ed-tr-bal" id="ed-tr-from-bal">—</span></span>
+        <span class="ed-tr-chev">›</span>
+      </div>
+      <div class="ed-tr-swap" onclick="swapTransferAccts()"><span>⇅</span></div>
+      <div class="ed-tr-row ed-tr-last" onclick="cycleTransferAcct('to')">
+        <span class="ed-tr-lbl">To</span>
+        <span class="ed-tr-ico">💰</span>
+        <span class="ed-tr-mid"><span class="ed-tr-name" id="ed-tr-to-name">—</span><span class="ed-tr-bal" id="ed-tr-to-bal">—</span></span>
+        <span class="ed-tr-chev">›</span>
+      </div>
+    </div>
+    <div class="ed-tr-when">
+      <span class="ed-tr-when-l">When</span>
+      <input type="date" id="ed-tr-date" class="ed-tr-date">
+    </div>
+    <button class="ed-tr-btn" id="ed-tr-btn" onclick="confirmTransferScreen()">Enter an amount</button>
   </div>
 </div>
 
@@ -2980,9 +3086,52 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='3.0.2';
+const APP_VERSION='3.0.5';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'3.0.5',
+    date:'2026-07-28',
+    title:'Power flows — Transfer (the set is complete)',
+    sections:{
+      features:[
+        '💸 **Dedicated transfer screen.** Moving money between your accounts now has its own screen from the design: a large serif amount, From and To account cards, and — the nice touch — a live preview of what each balance becomes (e.g. $8,600 → $9,100)',
+        '🎉 **Power flows complete.** This finishes the four-screen set you approved: transaction detail, subscriptions, search, and transfer'
+      ],
+      improvements:[
+        'The transfer screen shows real balances and warns if an amount exceeds the source account',
+        'A quick swap button flips the From and To accounts'
+      ],
+      fixes:[]
+    }
+  },
+  {
+    v:'3.0.4',
+    date:'2026-07-28',
+    title:'Power flows — Search',
+    sections:{
+      features:[
+        '🔍 **New search screen.** Tap the search icon in the top bar to open a full search: type a merchant, category, or note, and filter by timeframe (last 30/90 days, this year) or category with a tap',
+        '📊 **Search stats.** Every search shows a live summary card — total spent, number of results, and average — in the editorial serif, so you can answer questions like "how much on coffee last month" at a glance'
+      ],
+      improvements:[
+        'Tap any search result to jump straight to its transaction detail'
+      ],
+      fixes:[]
+    }
+  },
+  {
+    v:'3.0.3',
+    date:'2026-07-28',
+    title:'Fix — Subscriptions tab is now reachable',
+    sections:{
+      features:[],
+      improvements:[],
+      fixes:[
+        '🐛 **Added the missing Subscriptions tile.** The redesigned Subscriptions page existed but had no button in the More sheet to open it — you had to know it was there. There is now a Subs tile in the More menu (next to Recurring)'
+      ]
+    }
+  },
   {
     v:'3.0.2',
     date:'2026-07-28',
@@ -12026,6 +12175,12 @@ function openTxnModal(editId){
   openModal('txn-modal');
 }
 function setDir(d){
+  // v3.0.5 — Transfer now opens its own dedicated screen
+  if(d==='transfer'){
+    closeModal('txn-modal');
+    setTimeout(()=>openTransferScreen(),200);
+    return;
+  }
   txnDir=d;
   document.getElementById('dir-out').classList.toggle('on',d==='out');
   document.getElementById('dir-in').classList.toggle('on',d==='in');
@@ -12076,6 +12231,62 @@ function saveTransfer(){
   showToast('Transfer recorded: '+fmtD(amount));
 }
 function deleteTransfer(id){if(!confirm('Delete this transfer?'))return;S.transfers=(S.transfers||[]).filter(t=>t.id!==id);save();refreshAll({snapshotNW:true});}
+
+// v3.0.5 — Dedicated transfer screen (Power flows 4d)
+let __trState={from:'westpac',to:'macquarie'};
+function openTransferScreen(){
+  // default: from everyday to savings
+  __trState={from:'westpac',to:'macquarie'};
+  const v=document.getElementById('transfer-view');v.classList.add('on');
+  const amt=document.getElementById('ed-tr-amt');if(amt)amt.value='';
+  const dt=document.getElementById('ed-tr-date');if(dt)dt.value=today();
+  renderTransferAccts();updateTransferPreview();
+  setTimeout(()=>amt&&amt.focus(),150);
+}
+function closeTransferScreen(){document.getElementById('transfer-view')?.classList.remove('on');}
+function renderTransferAccts(){
+  const lbl=k=>(typeof acctFullLabel==='function')?acctFullLabel(k):k;
+  const fn=document.getElementById('ed-tr-from-name'),tn=document.getElementById('ed-tr-to-name');
+  if(fn)fn.textContent=lbl(__trState.from);
+  if(tn)tn.textContent=lbl(__trState.to);
+  updateTransferPreview();
+}
+function swapTransferAccts(){const t=__trState.from;__trState.from=__trState.to;__trState.to=t;renderTransferAccts();}
+function cycleTransferAcct(which){
+  // Only two accounts — tapping either row swaps which is source/dest
+  swapTransferAccts();
+}
+function updateTransferPreview(){
+  const amt=parseFloat(document.getElementById('ed-tr-amt')?.value)||0;
+  const fromBal=calcBal(__trState.from),toBal=calcBal(__trState.to);
+  const fBalEl=document.getElementById('ed-tr-from-bal'),tBalEl=document.getElementById('ed-tr-to-bal');
+  if(fBalEl){
+    fBalEl.textContent=amt>0?`${fmtD(fromBal)} → ${fmtD(fromBal-amt)}`:fmtD(fromBal);
+    fBalEl.style.color=(amt>fromBal)?'var(--r)':'var(--t2)';
+  }
+  if(tBalEl){
+    tBalEl.textContent=amt>0?`${fmtD(toBal)} → ${fmtD(toBal+amt)}`:fmtD(toBal);
+    tBalEl.style.color=amt>0?'var(--acc)':'var(--t2)';
+  }
+  const btn=document.getElementById('ed-tr-btn');
+  if(btn){
+    if(amt<=0){btn.textContent='Enter an amount';btn.disabled=true;btn.classList.add('disabled');}
+    else if(amt>fromBal){btn.textContent='Not enough in that account';btn.disabled=true;btn.classList.add('disabled');}
+    else{btn.textContent=`Transfer ${fmtD(amt)}`;btn.disabled=false;btn.classList.remove('disabled');}
+  }
+}
+function confirmTransferScreen(){
+  const amount=parseFloat(document.getElementById('ed-tr-amt')?.value)||0;
+  const date=document.getElementById('ed-tr-date')?.value||today();
+  if(__trState.from===__trState.to){showToast('Pick two different accounts');return;}
+  if(amount<=0){showToast('Enter an amount');return;}
+  if(amount>calcBal(__trState.from)){showToast('Not enough in that account');return;}
+  if(!S.transfers)S.transfers=[];
+  S.transfers.unshift({id:uid(),kind:'transfer',fromAcct:__trState.from,toAcct:__trState.to,amount,date,note:''});
+  save();refreshAll({snapshotNW:true});
+  closeTransferScreen();
+  showToast('✓ Transfer recorded: '+fmtD(amount));
+}
 function deleteTxn(id){if(!confirm('Delete?'))return;S.transactions=S.transactions.filter(t=>t.id!==id);save();refreshAll({snapshotNW:true});}
 
 // ═══════════════════════════════════════════════════════════
@@ -12499,6 +12710,99 @@ function buildFilterRow(){
   document.getElementById('txn-chips').innerHTML=filters.map(f=>`<div class="chip${S.txnFilter===f.id?' on':''}" onclick="setTxnFilter('${f.id}')">${f.l}${f.badge?`<span class="chip-badge">${f.badge}</span>`:''}</div>`).join('');
 }
 function setTxnFilter(f){S.txnFilter=f;buildFilterRow();buildTxnList();}
+// v3.0.4 — Full-screen search (Power flows 4c)
+let __searchState={q:'',cat:null,period:'all'};
+function openSearch(){
+  __searchState={q:'',cat:null,period:'all'};
+  const v=document.getElementById('search-view');
+  v.classList.add('on');
+  const inp=document.getElementById('ed-search-inp');
+  if(inp){inp.value='';setTimeout(()=>inp.focus(),120);}
+  renderSearchChips();
+  runSearch();
+}
+function closeSearch(){document.getElementById('search-view')?.classList.remove('on');}
+function clearSearchInput(){
+  const inp=document.getElementById('ed-search-inp');
+  if(inp){inp.value='';__searchState.q='';runSearch();inp.focus();}
+}
+function renderSearchChips(){
+  const el=document.getElementById('ed-search-chips');if(!el)return;
+  const cm=cmap();
+  // Build category chips from categories actually present in transactions
+  const usedCats=[...new Set((S.transactions||[]).map(t=>t.cat))].filter(Boolean);
+  const catChips=usedCats.slice(0,8).map(cid=>{
+    const c=cm[cid]||{label:cid,icon:''};
+    const on=__searchState.cat===cid;
+    return`<button class="ed-chip ${on?'on':'off'}" onclick="toggleSearchCat('${cid}')">${c.icon} ${escapeHtml(c.label)}</button>`;
+  }).join('');
+  const periods=[['30d','Last 30d'],['90d','Last 90d'],['ytd','This year']];
+  const periodChips=periods.map(([p,lbl])=>{
+    const on=__searchState.period===p;
+    return`<button class="ed-chip ${on?'on':'off'}" onclick="toggleSearchPeriod('${p}')">${lbl}</button>`;
+  }).join('');
+  el.innerHTML=periodChips+catChips;
+}
+function toggleSearchCat(cid){__searchState.cat=__searchState.cat===cid?null:cid;renderSearchChips();runSearch();}
+function toggleSearchPeriod(p){__searchState.period=__searchState.period===p?'all':p;renderSearchChips();runSearch();}
+function searchMatchesPeriod(dateStr){
+  if(__searchState.period==='all')return true;
+  const d=new Date(dateStr+'T12:00:00');const now=new Date();
+  if(__searchState.period==='30d')return (now-d)/(864e5)<=30;
+  if(__searchState.period==='90d')return (now-d)/(864e5)<=90;
+  if(__searchState.period==='ytd')return d.getFullYear()===now.getFullYear();
+  return true;
+}
+function runSearch(){
+  const cm=cmap();
+  const inp=document.getElementById('ed-search-inp');
+  __searchState.q=(inp?.value||'').toLowerCase().trim();
+  const clr=document.getElementById('ed-search-clear');
+  if(clr)clr.style.display=__searchState.q?'block':'none';
+  const scroll=document.getElementById('ed-search-scroll');if(!scroll)return;
+  // Filter
+  let results=(S.transactions||[]).filter(t=>{
+    if(__searchState.cat&&t.cat!==__searchState.cat)return false;
+    if(!searchMatchesPeriod(t.date))return false;
+    if(__searchState.q){
+      const hay=`${t.payee||''} ${(cm[t.cat]?.label)||t.cat||''} ${t.note||''}`.toLowerCase();
+      if(!hay.includes(__searchState.q))return false;
+    }
+    return true;
+  }).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const hasFilter=__searchState.q||__searchState.cat||__searchState.period!=='all';
+  if(!hasFilter){
+    scroll.innerHTML=`<div class="ed-search-empty"><div class="ed-search-empty-ico">⌕</div><div>Search by merchant, category, or note.<br>Add filters above to narrow it down.</div></div>`;
+    return;
+  }
+  // Stats
+  const spent=results.filter(t=>t.dir==='out').reduce((a,t)=>a+t.amt,0);
+  const visits=results.length;
+  const avg=visits>0?spent/results.filter(t=>t.dir==='out').length||0:0;
+  const statsCard=`<div class="ed-search-stats">
+    <div><div class="ed-ss-l">Spent</div><div class="ed-ss-v">${fmtD(spent)}</div></div>
+    <div><div class="ed-ss-l">Results</div><div class="ed-ss-v">${visits}</div></div>
+    <div><div class="ed-ss-l">Avg</div><div class="ed-ss-v">${visits>0?fmtD(avg||0):'—'}</div></div>
+  </div>`;
+  if(!results.length){
+    scroll.innerHTML=statsCard+`<div class="ed-search-empty"><div>No transactions match.</div></div>`;
+    return;
+  }
+  const rows=results.slice(0,50).map(t=>{
+    const c=cm[t.cat]||{label:t.cat,icon:'•',col:'var(--acc)'};
+    const sign=t.dir==='in'?'+':'−';
+    const amtCls=t.dir==='in'?'ed-sr-amt pos':'ed-sr-amt';
+    return`<div class="ed-sr" onclick="closeSearch();setTimeout(()=>openTxnDetail('${t.id}'),120)">
+      <div class="ed-sr-ico">${c.icon}</div>
+      <div class="ed-sr-body">
+        <div class="ed-sr-t">${escapeHtml(t.payee||c.label)}<span class="${amtCls}">${sign}${fmtD(t.amt)}</span></div>
+        <div class="ed-sr-s">${fmtDate(t.date)} · ${escapeHtml(c.label)}</div>
+      </div>
+    </div>`;
+  }).join('');
+  scroll.innerHTML=statsCard+rows;
+}
+
 function buildTxnList(){
   const cm=cmap();const q=(document.getElementById('txn-search')?.value||'').toLowerCase();
   // Standard transactions for this account
