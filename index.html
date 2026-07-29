@@ -183,7 +183,7 @@ body.reduce-motion .spl-ring-arc,body.reduce-motion .spl-orb,body.reduce-motion 
 .detail-hero-icon{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 20px;border:1px solid transparent}
 .detail-hero-label{font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.16em;margin-bottom:12px;font-weight:600}
 .detail-hero-title{font-size:22px;font-weight:700;color:var(--t);letter-spacing:-.4px;margin-bottom:16px;line-height:1.2}
-.detail-hero-amt{font-size:38px;font-weight:700;color:var(--t);letter-spacing:-1.2px;line-height:1;margin-bottom:14px}
+.detail-hero-amt{font-size:46px;font-weight:400;font-family:var(--serif);color:var(--hero-cream);letter-spacing:-1.6px;line-height:1;margin-bottom:14px}
 .detail-hero-sub{font-size:12px;color:var(--t2);margin-top:6px}
 .detail-hero-status{display:flex;justify-content:center;margin-top:2px}
 
@@ -1193,14 +1193,14 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
 .div-import-sub{font-size:10px;color:var(--t2);margin-top:2px}
 /* v2.7.16 — V4 BUDGET PAGE */
 .bud-week-card{background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad-lg);padding:18px;margin-bottom:12px}
-.bud-week-label{font-size:10px;color:var(--t3);letter-spacing:.14em;font-weight:600;text-transform:uppercase;margin-bottom:12px}
+.bud-week-label{font-size:10px;color:var(--acc);letter-spacing:.12em;font-weight:500;text-transform:uppercase;margin-bottom:12px;font-family:var(--mono)}
 .bud-week-segments{display:flex;gap:5px;margin-bottom:16px}
 .bud-week-seg{flex:1;height:10px;border-radius:5px;background:rgba(255,255,255,.06);position:relative;overflow:hidden}
 .bud-week-seg-fill{position:absolute;left:0;top:0;bottom:0;background:var(--acc);border-radius:5px;transition:width var(--dur-slow) var(--ease-out)}
 .bud-week-seg-fill.partial{background:rgba(0,229,153,.5)}
 .bud-week-stats{display:flex;justify-content:space-between;gap:14px}
-.bud-week-stat-l{font-size:10px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;font-weight:600;margin-bottom:4px}
-.bud-week-stat-v{font-size:20px;font-weight:700;color:var(--t);letter-spacing:-.5px;font-variant-numeric:tabular-nums;line-height:1}
+.bud-week-stat-l{font-size:9px;color:var(--t3);letter-spacing:.1em;text-transform:uppercase;font-weight:500;margin-bottom:5px;font-family:var(--mono)}
+.bud-week-stat-v{font-size:28px;font-weight:400;font-family:var(--serif);color:var(--hero-cream);letter-spacing:-1px;font-variant-numeric:tabular-nums;line-height:1}
 .bud-week-stat-s{font-size:10px;margin-top:4px;font-weight:500}
 .bud-cat-card{display:flex;align-items:center;gap:12px;padding:14px;background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad);margin-bottom:8px;cursor:pointer;transition:border-color var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out)}
 .bud-cat-card:hover{border-color:var(--bdr-acc2)}
@@ -1219,7 +1219,7 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
 .bud-cat-fill.warn{background:var(--y)}
 .bud-cat-fill.fixed{background:var(--t2)}
 .bud-cat-right{text-align:right;flex-shrink:0}
-.bud-cat-amt{font-size:15px;font-weight:700;color:var(--t);font-variant-numeric:tabular-nums;letter-spacing:-.2px}
+.bud-cat-amt{font-size:22px;font-weight:400;font-family:var(--serif);color:var(--hero-cream);font-variant-numeric:tabular-nums;letter-spacing:-.5px}
 .bud-cat-card.over .bud-cat-amt{color:var(--y)}
 .bud-cat-limit{font-size:10px;color:var(--t3);margin-top:2px}
 .bud-cat-more{background:rgba(255,255,255,.02);border:0.5px solid rgba(255,255,255,.06);border-radius:var(--rad);padding:14px;text-align:center;font-size:11px;color:var(--t2);cursor:pointer;transition:border-color var(--dur-fast) var(--ease-out)}
@@ -2950,9 +2950,24 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.9.4';
+const APP_VERSION='2.9.5';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.9.5',
+    date:'2026-07-28',
+    title:'New look — Budget & detail views',
+    sections:{
+      features:[
+        '💷 **Redesigned budget page.** Category amounts and the weekly summary figures now use the editorial serif with mono labels, so your spending reads like the design',
+        '🔍 **Editorial detail views.** The big amount at the top of any detail view (a goal, a holding, and so on) now renders in the elegant serif'
+      ],
+      improvements:[
+        'Detail and utility pages picked up the new palette consistently'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'2.9.4',
     date:'2026-07-28',
