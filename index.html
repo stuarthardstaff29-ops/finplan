@@ -1165,6 +1165,18 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
 .debt-bal{font-size:13px;font-weight:700;color:var(--r);font-family:var(--mono)}
 /* ── SUBSCRIPTIONS ── */
 .sub-item{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--bdr)}.sub-item:last-child{border:none}
+/* v3.0.2 — REDESIGN: editorial subscriptions (Power flows 4b) */
+.ed-sub-totalcard{background:var(--glass);border:0.5px solid var(--bdr);border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.ed-sub-tl{font:500 9px var(--mono);text-transform:uppercase;letter-spacing:.12em;color:var(--t3)}
+.ed-sub-tv{font:400 26px var(--serif);color:var(--hero-cream);margin-top:2px;line-height:1}
+.ed-sub-sec{font:400 19px var(--serif);color:var(--hero-cream);padding:16px 0 8px;display:flex;justify-content:space-between;align-items:baseline}
+.ed-sub-sec em{font:500 10px var(--mono);color:var(--t3);font-style:normal;letter-spacing:.1em}
+.ed-sub{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:0.5px solid var(--bdr)}
+.ed-sub-ico{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font:700 13px var(--sans);flex-shrink:0}
+.ed-sub-body{flex:1;min-width:0}
+.ed-sub-t{font:600 12.5px var(--sans);color:var(--t);display:flex;justify-content:space-between;gap:8px}
+.ed-sub-amt{font:500 11.5px var(--mono);flex-shrink:0}
+.ed-sub-s{font:500 10.5px var(--sans);color:var(--t2);margin-top:2px}
 .sub-name{font-size:12px;font-weight:700;color:var(--t)}.sub-meta{font-size:10px;color:var(--t3);margin-top:1px}
 .sub-amt{font-size:12px;font-weight:700;color:var(--r);font-family:var(--mono)}
 /* ── DIVIDEND CALENDAR ── */
@@ -1840,7 +1852,7 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
     <div class="pg" id="pg-subscriptions">
       <div class="alert alert-b" style="margin-bottom:10px;font-size:12px;line-height:1.55">Scans your recorded transactions and identifies recurring monthly charges. Review each one.</div>
       <div class="card"><div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>Detected subscriptions</div><button class="btn btn-ghost btn-sm" onclick="scanSubs()">Rescan</button></div><div id="sub-list"></div></div>
-      <div class="card"><div class="ctitle"><div class="ctitle-l">Monthly recurring total</div></div><div id="sub-total" style="font-size:13px;color:var(--t2)"></div></div>
+      <div id="sub-total" style="display:none"></div>
     </div>
 
     <!-- DIVIDEND CALENDAR (v2.7.15 — V4 concept rebuild) -->
@@ -2968,9 +2980,24 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='3.0.1';
+const APP_VERSION='3.0.2';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'3.0.2',
+    date:'2026-07-28',
+    title:'Power flows — Subscriptions',
+    sections:{
+      features:[
+        '📱 **Redesigned subscriptions.** Detected recurring charges now show in the editorial layout: a monthly and yearly total in serif at the top, an "Active" list with brand-coloured tiles (Netflix, Spotify, and more) and estimated renewal dates, and a "Review" section that flags charges that look stale so you can decide whether to cancel'
+      ],
+      improvements:[
+        'Common services get their real brand colour and initial on the icon tile',
+        'Each subscription shows an estimated next renewal date based on your charge history'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'3.0.1',
     date:'2026-07-28',
@@ -20315,13 +20342,60 @@ function buildSubScan(){
   const el=document.getElementById('sub-list');if(!el)return;
   if(!S.subScanResults||!S.subScanResults.length){
     el.innerHTML='<div class="empty"><div class="empty-ico">🔍</div><div class="empty-txt">Tap Rescan to analyse your recorded transactions for recurring monthly charges.</div></div>';
-    const tot=document.getElementById('sub-total');if(tot)tot.innerHTML='Add transactions first, then tap Rescan.';
+    const tot=document.getElementById('sub-total');if(tot)tot.innerHTML='';
     return;
   }
-  el.innerHTML=S.subScanResults.map((s,i)=>`<div class="sub-item"><div class="txn-ico" style="background:var(--bd);width:30px;height:30px;font-size:12px;border-radius:8px">📱</div><div style="flex:1"><div class="sub-name">${s.payee}</div><div class="sub-meta">${s.dates.length}x detected · approx monthly</div></div><div style="display:flex;align-items:center;gap:7px"><div class="sub-amt">-${fmtD(s.monthlyAmt)}/mo</div><button class="txn-act" style="color:var(--acc)" onclick="markSubOk(${i})">✓ Keep</button><button class="txn-act" style="color:var(--r)" onclick="flagSub(${i})">Cancel?</button></div></div>`).join('');
-  const total=S.subScanResults.reduce((a,s)=>a+s.monthlyAmt,0);
+  const now=new Date();
+  // Enrich each result: next renewal estimate + days since last charge
+  const enriched=S.subScanResults.map(s=>{
+    const sortedDates=[...s.dates].sort();
+    const last=new Date(sortedDates[sortedDates.length-1]+'T12:00:00');
+    const daysSince=Math.round((now-last)/(1000*60*60*24));
+    const nextRenew=new Date(last);nextRenew.setDate(nextRenew.getDate()+30);
+    const renewStr=nextRenew.toLocaleDateString('en-AU',{day:'numeric',month:'short'});
+    // "unused" heuristic: last charge > 45 days ago (stopped using but still charging is different;
+    // here we surface ones that look stale/irregular for review)
+    const stale=daysSince>45;
+    return{...s,daysSince,renewStr,stale};
+  });
+  const active=enriched.filter(s=>!s.stale);
+  const review=enriched.filter(s=>s.stale);
+  const total=enriched.reduce((a,s)=>a+s.monthlyAmt,0);
+
+  const brandInfo=(payee)=>{
+    const p=payee.toLowerCase();
+    const brands={netflix:{bg:'#000',fg:'#fff',ch:'N'},spotify:{bg:'#1db954',fg:'#fff',ch:'S'},
+      youtube:{bg:'#e50914',fg:'#fff',ch:'Y'},disney:{bg:'#113ccf',fg:'#fff',ch:'D'},
+      amazon:{bg:'#ff9900',fg:'#000',ch:'A'},apple:{bg:'var(--bg4)',fg:'var(--t)',ch:''},
+      icloud:{bg:'var(--bg4)',fg:'var(--t)',ch:'☁'},adobe:{bg:'#fa0f00',fg:'#fff',ch:'A'},
+      microsoft:{bg:'#0078d4',fg:'#fff',ch:'M'},xbox:{bg:'#107c10',fg:'#fff',ch:'🎮'},
+      playstation:{bg:'#003791',fg:'#fff',ch:'P'},audible:{bg:'#f8991c',fg:'#000',ch:'A'},
+      dropbox:{bg:'#0061ff',fg:'#fff',ch:'D'},twitch:{bg:'#9146ff',fg:'#fff',ch:'T'}};
+    for(const k in brands){if(p.includes(k))return brands[k];}
+    return{bg:'var(--glass)',fg:'var(--acc)',ch:payee.charAt(0).toUpperCase(),border:true};
+  };
+  const row=(s,i,isReview)=>{
+    const b=brandInfo(s.payee);
+    const iconStyle=`background:${b.bg};color:${b.fg};${b.border?'border:0.5px solid var(--bdr2)':''}`;
+    const sub=isReview?`Last charge ${s.daysSince}d ago · ⚠`:`Renews ${s.renewStr}`;
+    return`<div class="ed-sub" ${isReview?'style="opacity:.82"':''}>
+      <div class="ed-sub-ico" style="${iconStyle}">${b.ch}</div>
+      <div class="ed-sub-body">
+        <div class="ed-sub-t" ${isReview?'style="color:var(--y)"':''}>${escapeHtml(s.payee)}<span class="ed-sub-amt">${fmtD(s.monthlyAmt)}/mo</span></div>
+        <div class="ed-sub-s">${sub}</div>
+      </div>
+    </div>`;
+  };
+  el.innerHTML=`
+    <div class="ed-sub-totalcard">
+      <div><div class="ed-sub-tl">Monthly total</div><div class="ed-sub-tv">${fmtD(total)}</div></div>
+      <div style="text-align:right"><div class="ed-sub-tl">Yearly</div><div class="ed-sub-tv" style="color:var(--acc)">${fmtD(total*12)}</div></div>
+    </div>
+    ${active.length?`<div class="ed-sub-sec">Active <em>${active.length}</em></div>${active.map((s,i)=>row(s,i,false)).join('')}`:''}
+    ${review.length?`<div class="ed-sub-sec">Review <em style="color:var(--y)">${review.length}</em></div>${review.map((s,i)=>row(s,i,true)).join('')}`:''}
+  `;
   const tot=document.getElementById('sub-total');
-  if(tot)tot.innerHTML=`Detected <strong style="color:var(--t)">${S.subScanResults.length} recurring charges</strong> totalling <strong style="color:var(--r)">${fmtD(total)}/month</strong> (${fmtD(total*12)}/year). Are they all intentional?`;
+  if(tot)tot.innerHTML='';
 }
 function markSubOk(i){showToast('Marked as intentional ✓');}
 function flagSub(i){if(S.subScanResults?.[i])showToast('Flag: cancel "'+S.subScanResults[i].payee+'" directly with the provider.');}
