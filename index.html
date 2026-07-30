@@ -1672,6 +1672,29 @@ body:not(.light) .exp9-stat{background:rgba(255,255,255,.03)}
 .acc2-rname{font:600 12.5px var(--sans);color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .acc2-rsub{font:500 10.5px var(--sans);color:var(--t2);margin-top:1px}
 .acc2-ramt{font:600 13px var(--mono);color:var(--t);font-variant-numeric:tabular-nums;flex-shrink:0}
+
+/* ═══════════════════════════════════════════════════════════
+   v3.2.0 — FOCUS HUBS
+   ═══════════════════════════════════════════════════════════ */
+.hub-wrap{display:flex;flex-direction:column;gap:8px}
+.hub-focus{background:var(--bg2);border:0.5px solid var(--bdr-acc2);border-radius:18px;padding:16px 14px;animation:hubPop .3s cubic-bezier(.16,1,.3,1)}
+body:not(.light) .hub-focus{background:rgba(255,255,255,.02)}
+.hub-focus-head{display:flex;align-items:center;gap:9px;margin-bottom:8px;padding:0 2px}
+.hub-focus-ico{font-size:16px}
+.hub-focus-name{font:600 11px var(--mono);text-transform:uppercase;letter-spacing:.12em;color:var(--acc)}
+.hub-focus-body{}
+/* the borrowed page node sits flush inside the focus body */
+.hub-focus-body .pg{padding:0!important;display:block!important}
+.hub-peek{display:flex;align-items:center;gap:11px;width:100%;background:transparent;border:0.5px solid var(--bdr);border-radius:13px;padding:14px 15px;cursor:pointer;text-align:left;opacity:.6;transition:opacity .2s ease,border-color .2s ease,transform .15s ease}
+.hub-peek:hover,.hub-peek:active{opacity:1;border-color:var(--bdr2)}
+.hub-peek:active{transform:scale(.99)}
+.hub-peek-ico{font-size:16px;flex-shrink:0;filter:grayscale(.3)}
+.hub-peek-name{font:600 13px var(--sans);color:var(--t);flex:1}
+.hub-peek-val{font:500 11.5px var(--mono);color:var(--t3);flex-shrink:0}
+@keyframes hubPop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.hub-modebar{display:flex;gap:4px;justify-content:flex-end;margin-bottom:2px}
+.hub-mode-chip{background:var(--glass);border:0.5px solid var(--bdr);border-radius:9px;padding:5px 12px;font:600 10.5px var(--sans);color:var(--t2);cursor:pointer;transition:all .15s}
+.hub-mode-chip.on{background:var(--acc);color:var(--user-bubble-t);border-color:transparent}
 </style>
 </head>
 <body>
@@ -1732,6 +1755,11 @@ body:not(.light) .exp9-stat{background:rgba(255,255,255,.03)}
   <div id="update-banner"></div>
 
   <div class="scrl" id="scrl">
+
+    <!-- v3.2.0 — FOCUS HUB PAGES -->
+    <div class="pg" id="pg-hub-spending"><div class="hub-wrap" id="hub-spending"></div></div>
+    <div class="pg" id="pg-hub-plan"><div class="hub-wrap" id="hub-plan"></div></div>
+    <div class="pg" id="pg-hub-invest"><div class="hub-wrap" id="hub-invest"></div></div>
 
     <!-- DASHBOARD -->
     <div class="pg on" id="pg-dash">
@@ -2422,13 +2450,16 @@ body:not(.light) .exp9-stat{background:rgba(255,255,255,.03)}
   </div>
 
   <nav class="bnav">
-    <button class="nb on" data-pg="dash" onclick="showPg('dash',this)" aria-label="Dashboard">
-      <svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg>Dash
+    <button class="nb on" data-pg="dash" onclick="showPg('dash',this)" aria-label="Home">
+      <svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg>Home
     </button>
-    <button class="nb" data-pg="goals" onclick="showPg('goals',this)" aria-label="Goals">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>Goals
+    <button class="nb" data-pg="hub-spending" onclick="showPg('hub-spending',this)" aria-label="Spending">
+      <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Spending
     </button>
-    <button class="nb" data-pg="invest" onclick="showPg('invest',this)" aria-label="Investments">
+    <button class="nb" data-pg="hub-plan" onclick="showPg('hub-plan',this)" aria-label="Plan">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>Plan
+    </button>
+    <button class="nb" data-pg="hub-invest" onclick="showPg('hub-invest',this)" aria-label="Invest">
       <svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><polyline points="14 7 21 7 21 14"/></svg>Invest
     </button>
     <button class="nb" id="more-btn" onclick="toggleMore()" aria-label="More">
@@ -2442,25 +2473,12 @@ body:not(.light) .exp9-stat{background:rgba(255,255,255,.03)}
 <div class="more-sheet" id="more-sheet">
   <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.09em;font-weight:700;margin-bottom:10px">More</div>
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
-    <button class="more-tile" id="more-txns" onclick="showPgFromMore('txns')"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Accounts</button>
-    <button class="more-tile" id="more-ai" onclick="showPgFromMore('ai')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Advisor</button>
-    <button class="more-tile" id="more-budget" onclick="showPgFromMore('budget')"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Budget</button>
-    <button class="more-tile" id="more-analytics" onclick="showPgFromMore('analytics')"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics</button>
     <button class="more-tile" id="more-jobs" onclick="showPgFromMore('jobs')"><svg viewBox="0 0 24 24"><path d="M20 7h-4V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM10 5h4v2h-4V5z"/></svg>Jobs</button>
-    <button class="more-tile" id="more-reports" onclick="showPgFromMore('reports')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>Reports</button>
     <button class="more-tile" id="more-kmart" onclick="showPgFromMore('kmart')"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Shifts</button>
-    <button class="more-tile" id="more-payday" onclick="showPgFromMore('payday')"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="12" cy="14.5" r="1.5"/></svg>Pay day</button>
-    <button class="more-tile" id="more-recurring" onclick="showPgFromMore('recurring')"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Recurring</button>
-    <button class="more-tile" id="more-subscriptions" onclick="showPgFromMore('subscriptions')"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>Subs</button>
-    <button class="more-tile" id="more-rules" onclick="showPgFromMore('rules')"><svg viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>Rules</button>
-    <button class="more-tile" id="more-accounts" onclick="showPgFromMore('accounts')"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Accounts</button>
-    <button class="more-tile" id="more-scenario" onclick="showPgFromMore('scenario')"><svg viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0H5a2 2 0 0 1-2-2v-4m6 6h10a2 2 0 0 0 2-2v-4"/></svg>What-if</button>
-    <button class="more-tile" id="more-insights" onclick="showPgFromMore('insights')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Insights</button>
-    <button class="more-tile" id="more-health" onclick="showPgFromMore('health')"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Health</button>
-    <button class="more-tile" id="more-sinking" onclick="showPgFromMore('sinking')"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Sinking</button>
-    <button class="more-tile" id="more-dividends" onclick="showPgFromMore('dividends')"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Divs</button>
+    <button class="more-tile" id="more-reports" onclick="showPgFromMore('reports')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Reports</button>
     <button class="more-tile" id="more-tax" onclick="showPgFromMore('tax')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>ATO Tax</button>
-    <button class="more-tile" id="more-timeline" onclick="showPgFromMore('timeline')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Timeline</button>
+    <button class="more-tile" id="more-debts" onclick="showPgFromMore('debts')"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Debts</button>
+    <button class="more-tile" id="more-ai" onclick="showPgFromMore('ai')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Advisor</button>
     <button class="more-tile" id="more-feedback" onclick="showPgFromMore('feedback')"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Log</button>
     <button class="more-tile" id="more-settings" onclick="showPgFromMore('settings')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>Settings</button>
   </div>
@@ -3370,9 +3388,41 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='3.1.9';
+const APP_VERSION='3.2.1';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'3.2.1',
+    date:'2026-07-30',
+    title:'Scroll to focus',
+    sections:{
+      features:[
+        '🎬 **Scroll to focus.** In any hub tab you can now let sections open automatically as you scroll — whichever one reaches the middle of the screen comes into focus while the others recede. A small Tap / Scroll toggle at the top of each hub lets you choose which feels better, and it remembers your choice'
+      ],
+      improvements:[
+        'Scroll focus keeps your place — the list does not jump as sections expand'
+      ],
+      fixes:[]
+    }
+  },
+  {
+    v:'3.2.0',
+    date:'2026-07-30',
+    title:'Big declutter — focus hubs',
+    sections:{
+      features:[
+        '🎯 **A calmer, focused layout.** The 20-plus items in the More menu are gone. Everything now lives in four tabs — Home, Spending, Plan, Invest — plus a short More list for utilities (Jobs, Reports, Settings, Tax, Debts, Advisor)',
+        '👁 **One thing in focus at a time.** Inside each tab, one section is fully open and live while the rest collapse to a single quiet line showing just their key number. Tap any line to bring it into focus — the app only ever asks you to look at one thing'
+      ],
+      improvements:[
+        'Spending groups your accounts, analytics, budget, recurring, subscriptions, rules and transactions',
+        'Plan groups goals, sinking funds, pay day, timeline, health, insights and what-if',
+        'Invest groups your portfolio, dividends and the advisor',
+        'Nothing was removed — every screen still exists, just organised so it is not all shouting at once'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'3.1.9',
     date:'2026-07-30',
@@ -12695,10 +12745,174 @@ function renderContextPanel(){
 // ═══════════════════════════════════════════════════════════
 let currentPg='dash';
 const MORE_PAGES=['budget','analytics','kmart','jobs','invest','timeline','settings','health','streaks','sinking','debts','subscriptions','rules','accounts','dividends','tax','assistant','payday','scenario','glance','recurring','insights','reports'];
+// ═══════════════════════════════════════════════════════════
+// v3.2.0 — FOCUS HUBS: declutter navigation.
+// Instead of 21 flat tiles, related pages are grouped into hubs.
+// Within a hub, ONE section is in focus (full size, live) and the
+// rest collapse to a single peek row. Tapping a peek row shifts
+// focus with a soft animation. Existing page builders are reused —
+// we only change how they are presented.
+// ═══════════════════════════════════════════════════════════
+const HUBS={
+  spending:{
+    label:'Spending',icon:'💸',
+    sections:[
+      {id:'accounts',name:'Accounts',icon:'🏦',peek:()=>{const nw=(calcBal('westpac')+calcBal('macquarie')+portTotal()-(S.liabilities||[]).reduce((a,d)=>a+Math.abs(d.balance||0),0));return fmtD(nw)+' net worth';},build:'buildAccounts2',container:'acc2'},
+      {id:'analytics',name:'Analytics',icon:'📊',peek:()=>fmtD(monthSpend())+' this month',build:'buildAnalytics'},
+      {id:'budget',name:'Budget',icon:'⚖️',peek:()=>fmtD((S.sliders&&S.sliders.spend)||0)+'/wk personal',build:'buildBudgetPageV4',pre:'upAll'},
+      {id:'recurring',name:'Recurring',icon:'🔁',peek:()=>{const r=(S.recurring||[]).filter(x=>x.dir!=='in');return r.length+' bills';},build:'buildRecurringPage'},
+      {id:'subscriptions',name:'Subscriptions',icon:'📱',peek:()=>{const n=(S.subScanResults||[]).length;return n?n+' found':'scan';},build:'buildSubScan'},
+      {id:'rules',name:'Rules',icon:'⚡',peek:()=>{const n=(S.customRules||[]).length;return n+' active';},build:'buildRules9'},
+      {id:'txns',name:'Transactions',icon:'📃',peek:()=>{const n=(S.transactions||[]).length;return n+' logged';},build:'buildTxnsPage'}
+    ]
+  },
+  plan:{
+    label:'Plan',icon:'🎯',
+    sections:[
+      {id:'goals',name:'Goals',icon:'🎯',peek:()=>{const g=(S.goals||[]).filter(x=>x.target>0);return g.length+' goals';},build:'buildGoalsPage'},
+      {id:'sinking',name:'Sinking funds',icon:'🪣',peek:()=>{const s=(S.sinkingFunds||S.sinking||[]).length;return s+' funds';},build:'buildSinkingPage'},
+      {id:'payday',name:'Pay day plan',icon:'💵',peek:()=>'allocation',build:'buildPaydayPage'},
+      {id:'timeline',name:'Timeline',icon:'📅',peek:()=>'net worth path',build:'buildTimeline'},
+      {id:'health',name:'Financial health',icon:'❤️',peek:()=>{const sc=(typeof lastHealthScore!=='undefined'&&lastHealthScore)?Math.round(lastHealthScore)+'/100':'score';return sc;},build:'buildHealthScore'},
+      {id:'insights',name:'Insights',icon:'✨',peek:()=>'patterns',build:'buildInsightsPage'},
+      {id:'scenario',name:'What-if',icon:'🔮',peek:()=>'simulate',build:'buildScenarioPage'}
+    ]
+  },
+  invest:{
+    label:'Invest',icon:'📈',
+    sections:[
+      {id:'invest',name:'Portfolio',icon:'📈',peek:()=>fmtD(portTotal()),build:'buildInvestPage'},
+      {id:'dividends',name:'Dividends',icon:'💰',peek:()=>'calendar',build:'buildDividendCalendar'},
+      {id:'assistant',name:'Advisor',icon:'🤖',peek:()=>'ask Finn',build:'buildAssistantWelcome'}
+    ]
+  }
+};
+let __hubFocus={spending:0,plan:0,invest:0};
+let __hubScrollMode=(typeof localStorage!=='undefined'&&localStorage.getItem('finplan-hub-mode'))||'tap';
+let __hubObserver=null;
+let __hubScrollLock=false;
+function setHubMode(mode){
+  __hubScrollMode=mode;
+  try{localStorage.setItem('finplan-hub-mode',mode);}catch(e){}
+  // rebuild current hub if we're on one
+  if(currentPg&&currentPg.startsWith('hub-'))buildHub(currentPg.slice(4));
+  showToast(mode==='scroll'?'Scroll to focus — sections open as you scroll':'Tap to focus — tap a section to open it');
+}
+function buildHub(hubKey){
+  const hub=HUBS[hubKey];if(!hub)return;
+  const host=document.getElementById('hub-'+hubKey);if(!host)return;
+  const focusIdx=__hubFocus[hubKey]||0;
+  // tear down any previous observer
+  if(__hubObserver){__hubObserver.disconnect();__hubObserver=null;}
+  host.innerHTML='';
+  // mode toggle chip at the top of every hub
+  const bar=document.createElement('div');
+  bar.className='hub-modebar';
+  bar.innerHTML=`<button class="hub-mode-chip ${__hubScrollMode==='tap'?'on':''}" onclick="setHubMode('tap')">Tap</button><button class="hub-mode-chip ${__hubScrollMode==='scroll'?'on':''}" onclick="setHubMode('scroll')">Scroll</button>`;
+  host.appendChild(bar);
+  hub.sections.forEach((sec,i)=>{
+    if(i===focusIdx){
+      const card=document.createElement('div');
+      card.className='hub-focus';
+      card.dataset.idx=i;card.dataset.hub=hubKey;
+      card.innerHTML=`<div class="hub-focus-head"><span class="hub-focus-ico">${sec.icon}</span><span class="hub-focus-name">${sec.name}</span></div><div class="hub-focus-body" id="hub-body-${hubKey}"></div>`;
+      host.appendChild(card);
+      const pgNode=document.getElementById('pg-'+sec.id);
+      const body=card.querySelector('.hub-focus-body');
+      if(pgNode){
+        if(sec.pre&&typeof window[sec.pre]==='function'){try{window[sec.pre]();}catch(e){}}
+        if(sec.build&&typeof window[sec.build]==='function'){try{window[sec.build]();}catch(e){}}
+        pgNode.classList.add('on');pgNode.style.display='block';
+        body.appendChild(pgNode);
+      }else{
+        body.innerHTML='<div style="padding:20px;color:var(--t3);font-size:12px">Section unavailable.</div>';
+      }
+    }else{
+      const peek=document.createElement('button');
+      peek.className='hub-peek';
+      peek.dataset.idx=i;peek.dataset.hub=hubKey;
+      peek.setAttribute('onclick',`focusHubSection('${hubKey}',${i})`);
+      let peekVal='';try{peekVal=sec.peek();}catch(e){peekVal='';}
+      peek.innerHTML=`<span class="hub-peek-ico">${sec.icon}</span><span class="hub-peek-name">${sec.name}</span><span class="hub-peek-val">${peekVal}</span>`;
+      host.appendChild(peek);
+    }
+  });
+  // In scroll mode, observe the peek rows: when one crosses the viewport
+  // center band, promote it to focus. Debounced via a change-only check.
+  if(__hubScrollMode==='scroll'){requestAnimationFrame(()=>attachHubObserver(hubKey));}
+}
+function attachHubObserver(hubKey){
+  const host=document.getElementById('hub-'+hubKey);if(!host)return;
+  const scroller=document.getElementById('scrl');if(!scroller)return;
+  // A center band ~ the middle third of the viewport
+  __hubObserver=new IntersectionObserver((entries)=>{
+    if(__hubScrollLock)return;
+    // find the peek whose center is closest to viewport center and is intersecting
+    let best=null,bestDist=Infinity;
+    const vCenter=window.innerHeight/2;
+    entries.forEach(en=>{
+      if(!en.isIntersecting)return;
+      const r=en.boundingClientRect;const c=r.top+r.height/2;
+      const d=Math.abs(c-vCenter);
+      if(d<bestDist){bestDist=d;best=en.target;}
+    });
+    if(best&&best.dataset&&best.dataset.idx!=null){
+      const idx=parseInt(best.dataset.idx);
+      if(idx!==(__hubFocus[hubKey]||0)){
+        __hubScrollLock=true;
+        __hubFocus[hubKey]=idx;
+        // Preserve scroll position across the rebuild so it doesn't jump
+        const prevTop=scroller.scrollTop;
+        const curSec=HUBS[hubKey].sections.find((s,j)=>document.getElementById('pg-'+s.id)&&document.getElementById('pg-'+s.id).closest('.hub-focus-body'));
+        if(curSec)restoreHubPage(hubKey,curSec);
+        buildHub(hubKey);
+        scroller.scrollTop=prevTop;
+        setTimeout(()=>{__hubScrollLock=false;},350);
+      }
+    }
+  },{root:scroller,rootMargin:'-38% 0px -38% 0px',threshold:0});
+  host.querySelectorAll('.hub-peek').forEach(p=>__hubObserver.observe(p));
+}
+function focusHubSection(hubKey,i){
+  const curIdx=__hubFocus[hubKey]||0;
+  const curSec=HUBS[hubKey].sections[curIdx];
+  restoreHubPage(hubKey,curSec);
+  __hubFocus[hubKey]=i;
+  buildHub(hubKey);
+  const host=document.getElementById('hub-'+hubKey);
+  if(host){const f=host.querySelector('.hub-focus');if(f){f.style.animation='none';requestAnimationFrame(()=>{f.style.animation='hubPop .3s cubic-bezier(.16,1,.3,1)';});}}
+}
+function restoreHubPage(hubKey,sec){
+  const pgNode=document.getElementById('pg-'+sec.id);
+  if(pgNode&&pgNode.parentElement&&pgNode.parentElement.classList.contains('hub-focus-body')){
+    pgNode.classList.remove('on');pgNode.style.display='';
+    document.getElementById('scrl').appendChild(pgNode);
+  }
+}
+function restoreAllHubPages(){
+  if(__hubObserver){__hubObserver.disconnect();__hubObserver=null;}
+  Object.keys(HUBS).forEach(hk=>{HUBS[hk].sections.forEach(sec=>restoreHubPage(hk,sec));});
+}
+
 function showPg(id,btn){
+  // v3.2.0 — when navigating away from a hub, return any borrowed page nodes home
+  if(typeof restoreAllHubPages==='function'&&(!id||!id.startsWith('hub-')))restoreAllHubPages();
   document.querySelectorAll('.pg').forEach(p=>{p.classList.remove('on');p.style.display='';});
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
   document.querySelectorAll('.more-tile').forEach(t=>t.classList.remove('active'));
+  // Hub pages
+  if(id&&id.startsWith('hub-')){
+    const hubKey=id.slice(4);
+    const pg=document.getElementById('pg-'+id);
+    if(pg)pg.classList.add('on');
+    if(btn)btn.classList.add('on');
+    document.getElementById('scrl').scrollTop=0;
+    currentPg=id;
+    showHdr();showNav();
+    document.body.classList.remove('on-ai-page','fab-visible');
+    buildHub(hubKey);
+    return;
+  }
   const pg=document.getElementById('pg-'+id);
   if(pg){pg.classList.add('on');}
   if(btn)btn.classList.add('on');
