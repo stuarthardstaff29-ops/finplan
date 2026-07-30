@@ -694,7 +694,7 @@ body.reduce-motion .skeleton{background:rgba(255,255,255,.04)}
 .hero{background:transparent;border:none;border-bottom:1px solid var(--bdr);border-radius:0;padding:6px 2px 22px;margin-bottom:18px;position:relative;overflow:visible}
 .hero::before,.hero::after{display:none}
 .hero-l{font-size:10px;color:var(--acc);text-transform:uppercase;letter-spacing:.14em;margin-bottom:12px;font-weight:500;font-family:var(--mono);position:relative;z-index:1}
-.hero-v{font-family:var(--serif);font-size:52px;font-weight:400;color:var(--hero-cream);letter-spacing:-2px;line-height:.98;position:relative;z-index:1;font-variant-numeric:tabular-nums}
+.hero-v{font-family:var(--serif);font-size:44px;font-weight:400;color:var(--hero-cream);letter-spacing:-1.4px;line-height:1;position:relative;z-index:1;font-variant-numeric:tabular-nums}
 .hero-s{font-size:12px;color:var(--t2);margin-top:14px;position:relative;z-index:1;font-weight:400;line-height:1.5}
 .tag-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px;position:relative;z-index:1}
 
@@ -1437,6 +1437,92 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
 .rec{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bdr)}.rec:last-child{border:none}
 .rec-i{flex:1}.rec-n{font-size:12px;font-weight:600;color:var(--t);font-family:var(--sans)}.rec-m{font-size:9px;color:var(--t3);margin-top:1px}
 .rec-a{font-size:12px;font-weight:700;color:var(--r)}
+
+/* ═══════════════════════════════════════════════════════════
+   v3.1.0 — SECTION 10B: canonical type ladder (single source of truth)
+   From the design rubric. Apply these across the app for consistent hierarchy.
+   ─ Eyebrow      Mono 10/1.2 +.14em
+   ─ Hero value   Instrument Serif 44/1 −1.4px
+   ─ Delta        Inter 500 11/1.4
+   ─ Section head Inter 600 13/1.2 −.2px
+   ─ Row title/amount  12.5px pair
+   ─ Body         Inter 400 12/1.55
+   ─ Caption      Mono 10 +.06em
+   ═══════════════════════════════════════════════════════════ */
+.t-eyebrow{font-family:var(--mono);font-size:10px;line-height:1.2;letter-spacing:.14em;text-transform:uppercase;font-weight:500;color:var(--acc)}
+.t-hero{font-family:var(--serif);font-size:44px;line-height:1;letter-spacing:-1.4px;font-weight:400;color:var(--hero-cream);font-variant-numeric:tabular-nums}
+.t-hero-sm{font-family:var(--serif);font-size:32px;line-height:1;letter-spacing:-1px;font-weight:400;color:var(--hero-cream);font-variant-numeric:tabular-nums}
+.t-delta{font-family:var(--sans);font-size:11px;line-height:1.4;font-weight:500}
+.t-delta.up{color:var(--acc)}
+.t-delta.down{color:var(--r)}
+.t-section{font-family:var(--sans);font-size:13px;line-height:1.2;letter-spacing:-.2px;font-weight:600;color:var(--t)}
+.t-rowtitle{font-family:var(--sans);font-size:12.5px;line-height:1.3;font-weight:600;color:var(--t)}
+.t-rowamt{font-family:var(--mono);font-size:12.5px;line-height:1.3;font-weight:500;color:var(--t);font-variant-numeric:tabular-nums}
+.t-body{font-family:var(--sans);font-size:12px;line-height:1.55;font-weight:400;color:var(--t2)}
+.t-caption{font-family:var(--mono);font-size:10px;line-height:1.4;letter-spacing:.06em;color:var(--t3)}
+
+/* ═══════════════════════════════════════════════════════════
+   v3.1.1 — SECTION 10A: dashboard widget library
+   Rubric tiles: rounded 20px, generous padding, badge top-right,
+   eyebrow + hero on the type ladder. Half-width pairs sit in a row.
+   ═══════════════════════════════════════════════════════════ */
+.wl{background:var(--glass);border:0.5px solid var(--bdr);border-radius:20px;padding:18px;position:relative;overflow:hidden}
+body:not(.light) .wl{background:rgba(255,255,255,.03)}
+.wl-badge{position:absolute;top:14px;right:14px;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.08em;color:var(--t4)}
+.wl-eyebrow{font-family:var(--mono);font-size:10px;line-height:1.2;letter-spacing:.14em;text-transform:uppercase;font-weight:500;color:var(--acc);margin-bottom:10px}
+.wl-hero{font-family:var(--serif);font-size:40px;line-height:1;letter-spacing:-1.4px;font-weight:400;color:var(--hero-cream);font-variant-numeric:tabular-nums}
+.wl-hero .dot{color:var(--acc)}
+.wl-sub{font-family:var(--sans);font-size:11px;line-height:1.4;font-weight:500;color:var(--t2);margin-top:8px}
+.wl-sub.up{color:var(--acc)}
+.wl-sub.down{color:var(--r)}
+/* progress bar (safe to spend / next bill) */
+.wl-bar{height:4px;background:var(--bdr2);border-radius:2px;overflow:hidden;margin-top:14px}
+.wl-bar b{display:block;height:100%;border-radius:2px;background:var(--acc)}
+/* segmented category bar (spent) */
+.wl-seg{display:flex;gap:3px;height:6px;margin-top:14px}
+.wl-seg span{border-radius:2px}
+/* goal ring inline */
+.wl-ring-row{display:flex;align-items:center;gap:16px}
+.wl-ring{width:60px;height:60px;position:relative;flex-shrink:0}
+.wl-ring svg{width:60px;height:60px;transform:rotate(-90deg)}
+.wl-ring-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:600 14px var(--sans);color:var(--t)}
+/* streak dot grid */
+.wl-dots{display:flex;flex-wrap:wrap;gap:5px;margin-top:14px;max-width:180px}
+.wl-dot{width:11px;height:11px;border-radius:3px;background:var(--bdr2)}
+.wl-dot.on{background:var(--acc)}
+/* quick actions */
+.wl-qa{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:6px}
+.wl-qa-b{aspect-ratio:1;background:var(--bg2);border:0.5px solid var(--bdr);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;font:600 9.5px var(--sans);color:var(--t)}
+body:not(.light) .wl-qa-b{background:rgba(255,255,255,.03)}
+.wl-qa-b svg{width:18px;height:18px;stroke:var(--acc);stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.wl-qa-b:active{background:var(--accd)}
+/* top categories rows */
+.wl-cat{display:flex;align-items:center;gap:10px;margin-top:10px}
+.wl-cat-n{font:600 11.5px var(--sans);color:var(--t);width:74px;flex-shrink:0}
+.wl-cat-track{flex:1;height:5px;background:var(--bdr2);border-radius:3px;overflow:hidden}
+.wl-cat-track b{display:block;height:100%;border-radius:3px}
+.wl-cat-a{font:500 11px var(--mono);color:var(--t2);width:42px;text-align:right;flex-shrink:0}
+/* in/out dual bar */
+.wl-io{display:flex;height:8px;border-radius:4px;overflow:hidden;margin:14px 0 10px}
+.wl-io-in{background:var(--acc)}
+.wl-io-out{background:var(--r)}
+.wl-io-legend{display:flex;justify-content:space-between;font:500 10px var(--mono);color:var(--t3)}
+/* finn insight card */
+.wl-finn-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.wl-finn-ico{width:22px;height:22px;border-radius:50%;background:var(--accd);color:var(--acc);display:flex;align-items:center;justify-content:center;font:700 11px var(--sans)}
+.wl-finn-name{font:600 11px var(--sans);color:var(--t)}
+.wl-finn-time{font:500 9px var(--mono);color:var(--t4);margin-left:auto}
+.wl-finn-body{font:400 12px/1.5 var(--sans);color:var(--t2)}
+.wl-finn-body b{color:var(--hero-cream);font-weight:600}
+.wl-finn-body .hot{color:var(--r);font-weight:600}
+.wl-finn-acts{display:flex;gap:8px;margin-top:12px}
+.wl-finn-btn{padding:8px 16px;border-radius:12px;font:600 11px var(--sans);cursor:pointer;border:none}
+.wl-finn-btn.p{background:var(--acc);color:var(--user-bubble-t)}
+.wl-finn-btn.s{background:var(--glass);border:0.5px solid var(--bdr);color:var(--t2)}
+/* heatmap */
+.wl-heat{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:12px}
+.wl-heat-c{aspect-ratio:1;border-radius:4px;background:var(--bdr2)}
+.wl-heat-days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:6px;font:500 8px var(--mono);color:var(--t4);text-align:center}
 </style>
 </head>
 <body>
@@ -3086,9 +3172,55 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='3.0.5';
+const APP_VERSION='3.1.2';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'3.1.2',
+    date:'2026-07-29',
+    title:'Design rubric — Graph & chart library (10C)',
+    sections:{
+      features:[
+        '📈 **Unified chart system.** Implemented the rubric\'s full graph library as one consistent set of chart types — area, bars, donut, ring, stacked bar, waterfall, target-marker bar, candlesticks, heatmap, dual line (actual vs plan), and radial — all sharing the same mint palette, mono axis labels, and hairline gridlines'
+      ],
+      improvements:[
+        'Charts are theme-aware and render crisply in both Cream and Editorial modes',
+        'This library powers the upcoming Investments redesign'
+      ],
+      fixes:[]
+    }
+  },
+  {
+    v:'3.1.1',
+    date:'2026-07-29',
+    title:'Design rubric — Dashboard widget library (10A)',
+    sections:{
+      features:[
+        '🧩 **New dashboard widgets from the rubric.** Added the full widget library — Safe to spend, Spent this month, Goal ring, Investments YTD, Next bill countdown, Savings streak, Quick actions, Top categories, In/Out, Spend heatmap, and a Finn insight card. Add any of them from the dashboard Customise menu',
+        '📆 **Spend heatmap.** A calendar view of your month showing which days you spent the most'
+      ],
+      improvements:[
+        'Every widget uses the rubric type ladder and real data from your transactions',
+        'Widgets can be mixed and matched — several support half-width so you can pair them'
+      ],
+      fixes:[]
+    }
+  },
+  {
+    v:'3.1.0',
+    date:'2026-07-29',
+    title:'Design rubric — Type ladder (10B)',
+    sections:{
+      features:[
+        '🔤 **Canonical type system.** Implemented the design rubric\'s type ladder as a single consistent set of text styles — eyebrow, hero value, delta, section head, row title/amount, body, and caption — so hierarchy is identical everywhere it\'s used'
+      ],
+      improvements:[
+        'Aligned the hero number to the rubric spec (Instrument Serif 44, −1.4px)',
+        'This is the foundation for the widget library and graph work coming next'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'3.0.5',
     date:'2026-07-28',
@@ -6124,6 +6256,165 @@ function closeDetail(){
 }
 
 // ── Sparkline SVG generator ────────────────────────────────
+// ═══════════════════════════════════════════════════════════
+// v3.1.2 — SECTION 10C: unified chart library (SVG)
+// One consistent system: mint accents, mono axis labels, hairline
+// gridlines, tabular numerals. Every chart FinPlan uses lives here so
+// styling stays identical everywhere.
+// ═══════════════════════════════════════════════════════════
+const FP_CHART={
+  // shared palette for multi-series charts (allocation, stacks)
+  palette:['#8ee0b8','#6fa8dc','#a090f0','#f0c86e','#e59f8a','#5a8a6a','#c9a0dc'],
+  axisColor:'var(--t4)',grid:'var(--bdr)',mono:"'JetBrains Mono',monospace",
+
+  // ── Area chart (net worth) ──
+  area(values,labels,opts){
+    opts=opts||{};const w=opts.width||300,h=opts.height||120,pb=20,pl=4,pr=4;
+    if(!values||values.length<2)return `<svg viewBox="0 0 ${w} ${h}"></svg>`;
+    const max=Math.max(...values),min=Math.min(...values),range=(max-min)||1;
+    const iw=w-pl-pr,ih=h-pb;
+    const dx=iw/(values.length-1);
+    const pts=values.map((v,i)=>`${(pl+i*dx).toFixed(1)},${(ih-((v-min)/range)*(ih-6)-3).toFixed(1)}`).join(' ');
+    const area=`${pl},${ih} ${pts} ${pl+iw},${ih}`;
+    const gid='fpa-'+Math.random().toString(36).slice(2,8);
+    const xl=(labels||[]).map((l,i)=>{const n=labels.length;if(n>6&&i%Math.ceil(n/6)!==0)return'';return `<text x="${(pl+i*dx).toFixed(1)}" y="${h-6}" font-size="8" font-family="${this.mono}" fill="${this.axisColor}" text-anchor="middle">${l}</text>`;}).join('');
+    return`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="width:100%;height:auto">
+      <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--acc)" stop-opacity="0.25"/><stop offset="100%" stop-color="var(--acc)" stop-opacity="0"/></linearGradient></defs>
+      <polygon points="${area}" fill="url(#${gid})"/>
+      <polyline points="${pts}" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      ${xl}</svg>`;
+  },
+
+  // ── Bar chart (saved/month) ──
+  bars(values,labels,opts){
+    opts=opts||{};const w=opts.width||300,h=opts.height||120,pb=18,gap=opts.gap||6;
+    if(!values||!values.length)return `<svg viewBox="0 0 ${w} ${h}"></svg>`;
+    const max=Math.max(...values,1),ih=h-pb;
+    const bw=(w-gap*(values.length-1))/values.length;
+    const bars=values.map((v,i)=>{
+      const bh=(v/max)*(ih-4);const x=i*(bw+gap);const hot=opts.highlightLast&&i===values.length-1;
+      return`<rect x="${x.toFixed(1)}" y="${(ih-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(2,bh).toFixed(1)}" rx="2" fill="${hot?'var(--acc)':'var(--accd3)'}"/>`;
+    }).join('');
+    const xl=(labels||[]).map((l,i)=>`<text x="${(i*(bw+gap)+bw/2).toFixed(1)}" y="${h-5}" font-size="8" font-family="${this.mono}" fill="${this.axisColor}" text-anchor="middle">${l}</text>`).join('');
+    return`<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto">${bars}${xl}</svg>`;
+  },
+
+  // ── Donut (allocation) ──
+  donut(segments,opts){
+    // segments: [{label,value,color}]
+    opts=opts||{};const size=opts.size||120,sw=opts.stroke||14,r=(size-sw)/2,cx=size/2,cy=size/2,circ=2*Math.PI*r;
+    const total=segments.reduce((a,s)=>a+s.value,0)||1;
+    let off=0;
+    const arcs=segments.map((s,i)=>{
+      const frac=s.value/total;const dash=frac*circ;
+      const el=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.color||this.palette[i%this.palette.length]}" stroke-width="${sw}" stroke-dasharray="${dash.toFixed(2)} ${(circ-dash).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 ${cx} ${cy})"/>`;
+      off+=dash;return el;
+    }).join('');
+    const center=opts.centerLabel?`<text x="${cx}" y="${cy-2}" font-size="8" font-family="${this.mono}" fill="var(--t3)" text-anchor="middle" letter-spacing="0.5">${opts.centerLabel}</text><text x="${cx}" y="${cy+12}" font-size="15" font-family="var(--serif)" fill="var(--hero-cream)" text-anchor="middle">${opts.centerValue||''}</text>`:'';
+    return`<svg viewBox="0 0 ${size} ${size}" style="width:${size}px;height:${size}px">${arcs}${center}</svg>`;
+  },
+
+  // ── Ring (goal progress, single value) ──
+  ring(pct,opts){
+    opts=opts||{};const size=opts.size||120,sw=opts.stroke||10,r=(size-sw)/2,cx=size/2,cy=size/2,circ=2*Math.PI*r;
+    const off=circ*(1-Math.min(100,pct)/100);
+    return`<svg viewBox="0 0 ${size} ${size}" style="width:${size}px;height:${size}px">
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--bdr2)" stroke-width="${sw}"/>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--acc)" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 ${cx} ${cy})"/>
+      <text x="${cx}" y="${cy+5}" font-size="18" font-weight="600" font-family="var(--sans)" fill="var(--t)" text-anchor="middle">${pct}%</text></svg>`;
+  },
+
+  // ── Stacked bar (where it went) ──
+  stack(segments,opts){
+    opts=opts||{};const w=opts.width||300,h=opts.height||10;
+    const total=segments.reduce((a,s)=>a+s.value,0)||1;let x=0;
+    const parts=segments.map((s,i)=>{const sw=(s.value/total)*w;const el=`<rect x="${x.toFixed(1)}" y="0" width="${Math.max(0,sw-1).toFixed(1)}" height="${h}" rx="2" fill="${s.color||this.palette[i%this.palette.length]}"/>`;x+=sw;return el;}).join('');
+    return`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="width:100%;height:${h}px">${parts}</svg>`;
+  },
+
+  // ── Waterfall (cash flow) ──
+  waterfall(steps,opts){
+    // steps: [{label,value}] — positive in, negative out; running balance
+    opts=opts||{};const w=opts.width||300,h=opts.height||120,pb=18,gap=8;
+    if(!steps||!steps.length)return `<svg viewBox="0 0 ${w} ${h}"></svg>`;
+    let run=0;const runs=steps.map(s=>{const start=run;run+=s.value;return{start,end:run,v:s.value};});
+    const allV=runs.flatMap(r=>[r.start,r.end]).concat(0);
+    const max=Math.max(...allV),min=Math.min(...allV),range=(max-min)||1;
+    const ih=h-pb;const bw=(w-gap*(steps.length-1))/steps.length;
+    const y=v=>ih-((v-min)/range)*(ih-4)-2;
+    const bars=runs.map((r,i)=>{
+      const x=i*(bw+gap);const top=Math.min(y(r.start),y(r.end));const bh=Math.abs(y(r.start)-y(r.end));
+      const col=r.v>=0?'var(--acc)':'var(--r)';
+      return`<rect x="${x.toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(2,bh).toFixed(1)}" rx="2" fill="${col}"/>`;
+    }).join('');
+    const xl=steps.map((s,i)=>`<text x="${(i*(bw+gap)+bw/2).toFixed(1)}" y="${h-5}" font-size="7.5" font-family="${this.mono}" fill="${this.axisColor}" text-anchor="middle">${s.label}</text>`).join('');
+    return`<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto">${bars}${xl}</svg>`;
+  },
+
+  // ── Target-marker bar (budgets) ──
+  targetBar(spent,budget,opts){
+    opts=opts||{};const w=opts.width||300,h=opts.height||8;
+    const pct=budget>0?Math.min(100,spent/budget*100):0;
+    const over=spent>budget;
+    return`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="width:100%;height:${h}px">
+      <rect x="0" y="0" width="${w}" height="${h}" rx="${h/2}" fill="var(--bdr2)"/>
+      <rect x="0" y="0" width="${(pct/100*w).toFixed(1)}" height="${h}" rx="${h/2}" fill="${over?'var(--r)':'var(--acc)'}"/>
+      <line x1="${w-1}" y1="-1" x2="${w-1}" y2="${h+1}" stroke="var(--t3)" stroke-width="2"/></svg>`;
+  },
+
+  // ── Candlesticks (price) ──
+  candles(ohlc,opts){
+    // ohlc: [{o,h,l,c}]
+    opts=opts||{};const w=opts.width||300,h=opts.height||120,pb=16,gap=3;
+    if(!ohlc||!ohlc.length)return `<svg viewBox="0 0 ${w} ${h}"></svg>`;
+    const hi=Math.max(...ohlc.map(d=>d.h)),lo=Math.min(...ohlc.map(d=>d.l)),range=(hi-lo)||1;
+    const ih=h-pb;const cw=(w-gap*(ohlc.length-1))/ohlc.length;
+    const y=v=>ih-((v-lo)/range)*(ih-4)-2;
+    const candles=ohlc.map((d,i)=>{
+      const x=i*(cw+gap)+cw/2;const up=d.c>=d.o;const col=up?'var(--acc)':'var(--r)';
+      const bodyTop=y(Math.max(d.o,d.c)),bodyH=Math.max(1,Math.abs(y(d.o)-y(d.c)));
+      return`<line x1="${x.toFixed(1)}" y1="${y(d.h).toFixed(1)}" x2="${x.toFixed(1)}" y2="${y(d.l).toFixed(1)}" stroke="${col}" stroke-width="1"/><rect x="${(x-cw/2).toFixed(1)}" y="${bodyTop.toFixed(1)}" width="${cw.toFixed(1)}" height="${bodyH.toFixed(1)}" fill="${col}" rx="1"/>`;
+    }).join('');
+    return`<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto">${candles}</svg>`;
+  },
+
+  // ── Heatmap (consistency, 26 weeks) ──
+  heatmap(values,opts){
+    // values: array of intensities 0..1, laid out in a grid
+    opts=opts||{};const cols=opts.cols||26,cell=opts.cell||9,gap=2;
+    const rows=Math.ceil(values.length/cols);
+    const w=cols*(cell+gap),h=rows*(cell+gap);
+    const cells=values.map((v,i)=>{
+      const cx=(i%cols)*(cell+gap),cy=Math.floor(i/cols)*(cell+gap);
+      const bg=v===0?'var(--bdr2)':`color-mix(in srgb, var(--acc) ${Math.round(20+v*80)}%, transparent)`;
+      return`<rect x="${cx}" y="${cy}" width="${cell}" height="${cell}" rx="2" fill="${bg}"/>`;
+    }).join('');
+    return`<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto">${cells}</svg>`;
+  },
+
+  // ── Dual line (actual vs plan) ──
+  dualLine(actual,plan,labels,opts){
+    opts=opts||{};const w=opts.width||300,h=opts.height||120,pb=18;
+    const all=actual.concat(plan);const max=Math.max(...all),min=Math.min(...all),range=(max-min)||1;
+    const ih=h-pb,dx=w/(actual.length-1);
+    const line=(arr,dash)=>{const pts=arr.map((v,i)=>`${(i*dx).toFixed(1)},${(ih-((v-min)/range)*(ih-4)-2).toFixed(1)}`).join(' ');return `<polyline points="${pts}" fill="none" stroke="var(--acc)" stroke-width="2" ${dash?'stroke-dasharray="4 3" stroke-opacity="0.5"':''} stroke-linecap="round" stroke-linejoin="round"/>`;};
+    const xl=(labels||[]).map((l,i)=>`<text x="${(i*dx).toFixed(1)}" y="${h-5}" font-size="8" font-family="${this.mono}" fill="${this.axisColor}" text-anchor="middle">${l}</text>`).join('');
+    return`<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto">${line(plan,true)}${line(actual,false)}${xl}</svg>`;
+  },
+
+  // ── Radial (category health, multi-ring) ──
+  radial(items,opts){
+    // items: [{label,pct,color}]
+    opts=opts||{};const size=opts.size||120,cx=size/2,cy=size/2;const sw=8,gap=4;
+    const rings=items.slice(0,4).map((it,i)=>{
+      const r=(size/2)-6-i*(sw+gap);if(r<sw)return'';const circ=2*Math.PI*r;const off=circ*(1-Math.min(100,it.pct)/100);
+      const col=it.color||this.palette[i%this.palette.length];
+      return`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--bdr2)" stroke-width="${sw}"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 ${cx} ${cy})"/>`;
+    }).join('');
+    return`<svg viewBox="0 0 ${size} ${size}" style="width:${size}px;height:${size}px">${rings}</svg>`;
+  }
+};
+
 function sparklineSvg(values,opts){
   opts=opts||{};
   const width=opts.width||280,height=opts.height||50;
@@ -13880,6 +14171,206 @@ const DASH_WIDGETS={
       const pad=Math.max(50,(dMax-dMin)*0.15);
       nwChart=new Chart(c,{type:'line',data:{labels,datasets:[{data,borderColor:acc,backgroundColor:grad,fill:true,tension:.18,pointRadius:nwH.length>30?0:3,pointBackgroundColor:acc,borderWidth:2.5}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:400},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'$'+c.parsed.y.toLocaleString()}}},scales:{x:{ticks:{color:'#4a5d72',font:{size:9},autoSkip:true,maxRotation:0,maxTicksLimit:6},grid:{display:false}},y:{suggestedMin:Math.max(0,dMin-pad),suggestedMax:dMax+pad,ticks:{color:'#4a5d72',font:{size:9},callback:v=>'$'+(v/1000).toFixed(1)+'k'},grid:{color:'rgba(255,255,255,0.04)'}}}}});
       registerChart('nw-chart',nwChart);fitChart(nwChart);
+    }
+  },
+
+  // ═══════════ v3.1.1 — SECTION 10A: rubric widget library ═══════════
+  // Each built to the rubric spec, on the 10B type ladder, real compute.
+  wlSafeToSpend:{
+    id:'wlSafeToSpend',label:'Safe to spend',sub:'What is left this week after bills and goals',
+    canHalfWidth:true,defaultOn:false,alwaysOn:false,
+    render(){
+      const weekBudget=(S.sliders&&S.sliders.spend)||0;
+      const wkTxns=(()=>{const d=new Date();const day=d.getDay();const monday=new Date(d);monday.setDate(d.getDate()-((day+6)%7));const ms=monday.toISOString().slice(0,10);return (S.transactions||[]).filter(t=>t.dir==='out'&&isVariableSpend(t)&&t.date>=ms);})();
+      const spent=wkTxns.reduce((a,t)=>a+t.amt,0);
+      const left=Math.max(0,weekBudget-spent);
+      const pct=weekBudget>0?Math.min(100,Math.round(spent/weekBudget*100)):0;
+      const dowLeft=7-((new Date().getDay()+6)%7);
+      return`<div class="wl-badge">10b</div>
+        <div class="wl-eyebrow">Safe to spend</div>
+        <div class="wl-hero">${fmtD(left)}</div>
+        <div class="wl-bar"><b style="width:${pct}%"></b></div>
+        <div class="wl-sub">${dowLeft} day${dowLeft===1?'':'s'} left this week</div>`;
+    }
+  },
+  wlSpentMonth:{
+    id:'wlSpentMonth',label:'Spent this month',sub:'Total out vs plan, by category',
+    canHalfWidth:true,defaultOn:false,alwaysOn:false,
+    render(){
+      const spent=monthSpend();
+      const budget=((S.sliders&&S.sliders.spend)||0)*4.33+monthFixedSpend();
+      const pctPlan=budget>0?Math.round((spent-budget)/budget*100):0;
+      const cm=cmap();
+      const byCat={};thisMonthTxns().filter(t=>t.dir==='out').forEach(t=>{byCat[t.cat]=(byCat[t.cat]||0)+t.amt;});
+      const top=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,5);
+      const tot=top.reduce((a,[,v])=>a+v,0)||1;
+      const seg=top.map(([cid,v])=>`<span style="flex:${v/tot};background:${(cm[cid]&&cm[cid].col)||'var(--acc)'}"></span>`).join('');
+      const planCls=pctPlan<=0?'up':'down';
+      const planTxt=pctPlan<=0?`${Math.abs(pctPlan)}% under plan`:`${pctPlan}% over plan`;
+      return`<div class="wl-badge">10c</div>
+        <div class="wl-eyebrow">Spent · ${new Date().toLocaleDateString('en-AU',{month:'long'})}</div>
+        <div class="wl-hero">${fmtD(spent)}</div>
+        <div class="wl-seg">${seg||'<span style="flex:1;background:var(--bdr2)"></span>'}</div>
+        <div class="wl-sub ${planCls}">${planTxt}</div>`;
+    }
+  },
+  wlGoalRing:{
+    id:'wlGoalRing',label:'Goal progress ring',sub:'Your nearest goal at a glance',
+    canHalfWidth:true,defaultOn:false,alwaysOn:false,
+    render(){
+      const goals=(S.goals||[]).filter(g=>g.target>0&&g.saved<g.target);
+      if(!goals.length)return`<div class="wl-badge">10d</div><div class="wl-eyebrow">Goal</div><div class="wl-sub" style="margin-top:14px">No active goals yet.</div>`;
+      const g=goals.sort((a,b)=>(a.target-a.saved)-(b.target-b.saved))[0];
+      const pct=Math.min(100,Math.round(g.saved/g.target*100));
+      const circ=138.2,off=circ*(1-pct/100);
+      return`<div class="wl-badge">10d</div>
+        <div class="wl-ring-row">
+          <div class="wl-ring">
+            <svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="22" fill="none" stroke="var(--bdr2)" stroke-width="5"/><circle cx="26" cy="26" r="22" fill="none" stroke="var(--acc)" stroke-width="5" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${off.toFixed(1)}"/></svg>
+            <div class="wl-ring-pct">${pct}%</div>
+          </div>
+          <div style="min-width:0">
+            <div class="wl-eyebrow" style="margin-bottom:6px">Goal</div>
+            <div class="t-section">${g.icon||''} ${escapeHtml(g.label)}</div>
+            <div class="wl-sub">${fmtD(g.saved)} / ${fmtD(g.target)}</div>
+          </div>
+        </div>`;
+    }
+  },
+  wlInvestYTD:{
+    id:'wlInvestYTD',label:'Investments YTD',sub:'Portfolio value + line spark',
+    canHalfWidth:true,defaultOn:false,alwaysOn:false,
+    render(){
+      const pt=portTotal(),pnlPct=portPnlPct();
+      const hist=(S.nwHistory||[]).slice(-16).map(h=>h.nw);
+      const spark=hist.length>1?sparklineSvg(hist,{width:260,height:44,stroke:'var(--acc)'}):'';
+      return`<div class="wl-badge">10e</div>
+        <div class="wl-eyebrow">Investments · YTD</div>
+        <div class="wl-hero">${fmtD(pt)}</div>
+        ${spark}
+        <div class="wl-sub ${pnlPct>=0?'up':'down'}">${pnlPct>=0?'▲':'▼'} ${Math.abs(pnlPct||0).toFixed(1)}%</div>`;
+    }
+  },
+  wlNextBill:{
+    id:'wlNextBill',label:'Next bill countdown',sub:'Days until your next fixed cost',
+    canHalfWidth:true,defaultOn:false,alwaysOn:false,
+    render(){
+      const recs=(S.recurring||[]).filter(r=>r.dir!=='in');
+      let nextDays=null,nextLabel='',nextAmt=0;
+      const dom=new Date().getDate();
+      recs.forEach(r=>{
+        const d=r.dueDay||1;let delta=d-dom;if(delta<0)delta+=30;
+        if(nextDays===null||delta<nextDays){nextDays=delta;nextLabel=r.label||r.name||'Bill';nextAmt=r.amount||r.amt||0;}
+      });
+      if(nextDays===null)return`<div class="wl-badge">10f</div><div class="wl-eyebrow">Next bill</div><div class="wl-sub" style="margin-top:14px">No recurring bills set.</div>`;
+      return`<div class="wl-badge">10f</div>
+        <div class="wl-eyebrow">Next bill</div>
+        <div class="wl-hero">${nextDays}<span style="font-size:16px;color:var(--t3);letter-spacing:0"> day${nextDays===1?'':'s'}</span></div>
+        <div class="wl-sub">${escapeHtml(nextLabel)} · ${fmtD(nextAmt)}</div>`;
+    }
+  },
+  wlStreak:{
+    id:'wlStreak',label:'Savings streak',sub:'Consecutive months you saved',
+    canHalfWidth:true,defaultOn:false,alwaysOn:false,
+    render(){
+      const streak=(typeof bestSavingsStreak==='function')?bestSavingsStreak():((S.goals||[]).reduce((m,g)=>Math.max(m,(typeof goalContributionStreak==='function')?goalContributionStreak(g.id):0),0));
+      const dots=Array.from({length:12},(_,i)=>`<div class="wl-dot ${i<streak?'on':''}"></div>`).join('');
+      return`<div class="wl-badge">10g</div>
+        <div class="wl-eyebrow">Savings streak</div>
+        <div class="wl-hero">${streak} <span style="font-size:26px">🔥</span></div>
+        <div class="wl-dots">${dots}</div>
+        <div class="wl-sub" style="margin-top:10px">Best this year</div>`;
+    }
+  },
+  wlQuickActions:{
+    id:'wlQuickActions',label:'Quick actions',sub:'Add · Move · Scan · Ask',
+    canHalfWidth:false,defaultOn:false,alwaysOn:false,
+    render(){
+      return`<div class="wl-badge">10i</div>
+        <div class="wl-eyebrow">Quick actions</div>
+        <div class="wl-qa">
+          <div class="wl-qa-b" onclick="openTxnModal()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add</div>
+          <div class="wl-qa-b" onclick="openTransferScreen()"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 7l-5-5-5 5"/></svg>Move</div>
+          <div class="wl-qa-b" onclick="openSearch()"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Find</div>
+          <div class="wl-qa-b" onclick="showPg('ai')"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9 9 9 0 0 0 4 7.5L6 22l4-1.5a9 9 0 0 0 2 .2 9 9 0 0 0 0-18z"/></svg>Ask</div>
+        </div>`;
+    }
+  },
+  wlTopCategories:{
+    id:'wlTopCategories',label:'Top categories',sub:'Where the money went this month',
+    canHalfWidth:false,defaultOn:false,alwaysOn:false,
+    render(){
+      const cm=cmap();
+      const byCat={};thisMonthTxns().filter(t=>t.dir==='out').forEach(t=>{byCat[t.cat]=(byCat[t.cat]||0)+t.amt;});
+      const top=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,3);
+      if(!top.length)return`<div class="wl-badge">10j</div><div class="wl-eyebrow">Top categories</div><div class="wl-sub" style="margin-top:14px">No spending yet this month.</div>`;
+      const max=top[0][1]||1;
+      const rows=top.map(([cid,v])=>{
+        const c=cm[cid]||{label:cid,col:'var(--acc)'};
+        return`<div class="wl-cat"><span class="wl-cat-n">${escapeHtml(c.label)}</span><span class="wl-cat-track"><b style="width:${Math.round(v/max*100)}%;background:${c.col}"></b></span><span class="wl-cat-a">${fmtD(v)}</span></div>`;
+      }).join('');
+      return`<div class="wl-badge">10j</div><div class="wl-eyebrow">Top categories</div>${rows}`;
+    }
+  },
+  wlInOut:{
+    id:'wlInOut',label:'In / Out',sub:'Money in vs out this month',
+    canHalfWidth:false,defaultOn:false,alwaysOn:false,
+    render(){
+      const tx=thisMonthTxns();
+      const inAmt=tx.filter(t=>t.dir==='in').reduce((a,t)=>a+t.amt,0);
+      const outAmt=tx.filter(t=>t.dir==='out').reduce((a,t)=>a+t.amt,0);
+      const tot=inAmt+outAmt||1;
+      const saveRate=inAmt>0?Math.round((inAmt-outAmt)/inAmt*100):0;
+      return`<div class="wl-badge">10l</div>
+        <div class="wl-eyebrow">In / Out · ${new Date().toLocaleDateString('en-AU',{month:'long'})}</div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:4px">
+          <div><div class="wl-sub" style="margin:0">In</div><div class="t-hero-sm">${fmtD(inAmt)}</div></div>
+          <div style="text-align:right"><div class="wl-sub" style="margin:0">Out</div><div class="t-hero-sm">${fmtD(outAmt)}</div></div>
+        </div>
+        <div class="wl-io"><div class="wl-io-in" style="flex:${inAmt/tot}"></div><div class="wl-io-out" style="flex:${outAmt/tot}"></div></div>
+        <div class="wl-io-legend"><span>Save ${Math.max(0,saveRate)}%</span><span>Spend ${Math.min(100,100-Math.max(0,saveRate))}%</span></div>`;
+    }
+  },
+  wlHeatmap:{
+    id:'wlHeatmap',label:'Spend heatmap',sub:'Daily spending intensity this month',
+    canHalfWidth:false,defaultOn:false,alwaysOn:false,
+    render(){
+      const ym=nowYM();const now=new Date();const daysInMonth=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+      const byDay={};thisMonthTxns().filter(t=>t.dir==='out').forEach(t=>{const d=parseInt((t.date||'').slice(8,10));byDay[d]=(byDay[d]||0)+t.amt;});
+      const max=Math.max(1,...Object.values(byDay));
+      const firstDow=(new Date(now.getFullYear(),now.getMonth(),1).getDay()+6)%7;
+      let cells='';
+      for(let i=0;i<firstDow;i++)cells+=`<div class="wl-heat-c" style="background:transparent"></div>`;
+      for(let d=1;d<=daysInMonth;d++){
+        const v=byDay[d]||0;const intensity=v/max;
+        const bg=v===0?'var(--bdr2)':`color-mix(in srgb, var(--acc) ${Math.round(20+intensity*80)}%, transparent)`;
+        cells+=`<div class="wl-heat-c" style="background:${bg}" title="${d}: ${fmtD(v)}"></div>`;
+      }
+      return`<div class="wl-badge">10k</div>
+        <div class="wl-eyebrow">Spend heatmap · ${new Date().toLocaleDateString('en-AU',{month:'long'})}</div>
+        <div class="wl-heat">${cells}</div>
+        <div class="wl-heat-days"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>`;
+    }
+  },
+  wlFinnInsight:{
+    id:'wlFinnInsight',label:'Finn insight',sub:'A timely nudge from your AI advisor',
+    canHalfWidth:false,defaultOn:false,alwaysOn:false,
+    render(){
+      // Real insight: biggest category vs its usual
+      const cm=cmap();const byCat={};thisMonthTxns().filter(t=>t.dir==='out').forEach(t=>{byCat[t.cat]=(byCat[t.cat]||0)+t.amt;});
+      const top=Object.entries(byCat).sort((a,b)=>b[1]-a[1])[0];
+      let body='Log a few more transactions and I will spot patterns worth flagging.';
+      if(top){
+        const c=cm[top[0]]||{label:top[0]};
+        body=`You have spent <b>${fmtD(top[1])}</b> on ${escapeHtml(c.label).toLowerCase()} this month — your biggest category. Want to set a cap?`;
+      }
+      return`<div class="wl-badge">10h</div>
+        <div class="wl-finn-row"><div class="wl-finn-ico">F</div><div class="wl-finn-name">Finn</div><div class="wl-finn-time">just now</div></div>
+        <div class="wl-finn-body">${body}</div>
+        <div class="wl-finn-acts">
+          <button class="wl-finn-btn p" onclick="showPg('budget')">Set a cap</button>
+          <button class="wl-finn-btn s" onclick="showToast('Dismissed')">Later</button>
+        </div>`;
     }
   }
 };
