@@ -389,6 +389,11 @@ body.compact .mg{gap:7px}
 .lock-inner.shake{animation:lockShake .4s}
 @keyframes lockShake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
 .lock-logo{font-size:44px;margin-bottom:14px}
+/* v3.1.7 — SECTION 6A: new FinPlan logo mark (arc + currency) */
+.fp-logo-mark{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:var(--acc);color:var(--user-bubble-t);margin-right:7px;flex-shrink:0;vertical-align:middle}
+.fp-logo-mark svg{width:17px;height:17px}
+.lock-logo-tile{width:80px;height:80px;border-radius:22px;background:var(--acc);color:var(--user-bubble-t);display:flex;align-items:center;justify-content:center;margin:0 auto 32px;box-shadow:0 16px 40px -8px rgba(10,42,28,.4)}
+.lock-logo-tile svg{width:52px;height:52px}
 .lock-title{font-size:24px;font-weight:400;font-family:var(--serif);color:var(--hero-cream);margin-bottom:6px;letter-spacing:-.5px}
 .lock-sub{font-size:12px;color:var(--t3);margin-bottom:26px}
 .lock-dots{display:flex;gap:12px;justify-content:center;margin-bottom:14px;min-height:16px}
@@ -411,7 +416,7 @@ body.hidden-blur #app{filter:blur(18px)}
 .hdr{background:rgba(0,0,0,.7);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-bottom:0.5px solid var(--bdr);padding:14px 18px;padding-top:calc(14px + var(--st));display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:relative;z-index:50;overflow:hidden;max-height:calc(var(--hdr-h) + var(--st) + 30px);opacity:1;transition:max-height .38s cubic-bezier(.4,0,.2,1),opacity .28s var(--ease-out),padding-top .38s cubic-bezier(.4,0,.2,1),padding-bottom .38s cubic-bezier(.4,0,.2,1),border-bottom-width .28s var(--ease-out)}
 body.hdr-hidden .hdr{max-height:0;opacity:0;padding-top:0;padding-bottom:0;border-bottom-width:0}
 body.light .hdr{background:rgba(255,255,255,.8)}
-.hdr-logo{font-size:24px;font-weight:400;color:var(--hero-cream);letter-spacing:-.5px;font-family:var(--serif);display:flex;align-items:baseline;gap:2px}
+.hdr-logo{font-size:24px;font-weight:400;color:var(--hero-cream);letter-spacing:-.5px;font-family:var(--serif);display:flex;align-items:center;gap:0}
 .hdr-logo em{color:var(--acc);font-style:italic;font-weight:400;font-size:24px;letter-spacing:-.5px}
 .hdr-actions{display:flex;align-items:center;gap:6px}
 .hdr-btn{background:none;border:none;cursor:pointer;color:var(--t2);display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;transition:all .18s}
@@ -1619,6 +1624,60 @@ body:not(.light) .wl-qa-b{background:rgba(255,255,255,.03)}
 .buy9-nudge-in span{font-weight:700}
 .buy9-review{width:100%;background:var(--acc);color:var(--user-bubble-t);border:none;border-radius:16px;padding:15px;font:700 13px var(--sans);cursor:pointer;transition:opacity var(--dur-fast)}
 .buy9-review.disabled{opacity:.4;cursor:default}
+
+/* ═══════════════════════════════════════════════════════════
+   v3.1.7 — SECTION 6C: Rules page
+   ═══════════════════════════════════════════════════════════ */
+.rules9-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.rules9-count{font:400 22px var(--serif);color:var(--hero-cream);margin-top:4px}
+.rules9-add{width:34px;height:34px;border-radius:11px;background:var(--acc);color:var(--user-bubble-t);border:none;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+.rules9-stat{font:400 12px/1.55 var(--sans);color:var(--t2);margin-bottom:18px}
+.rules9-stat b{color:var(--hero-cream);font-weight:600}
+.rule9{background:var(--glass);border:0.5px solid var(--bdr);border-radius:16px;padding:14px 16px;margin-bottom:10px}
+.rule9-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.rule9-name{font:600 13px var(--sans);color:var(--t)}
+.rule9-del{background:none;border:none;color:var(--t3);font-size:12px;cursor:pointer;padding:2px 4px}
+.rule9-logic{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font:500 11px var(--sans)}
+.rule9-when{color:var(--t3)}
+.rule9-kw{color:var(--t);background:var(--bg3);padding:3px 8px;border-radius:7px;font-family:var(--mono);font-size:10.5px}
+.rule9-arrow{color:var(--t3)}
+.rule9-cat{font-weight:600}
+
+/* ═══════════════════════════════════════════════════════════
+   v3.1.7 — SECTION 6D: Export / report preview
+   ═══════════════════════════════════════════════════════════ */
+.exp9-preview{background:var(--glass);border:0.5px solid var(--bdr);border-radius:20px;padding:22px 20px;margin-bottom:16px;position:relative}
+.exp9-share{position:absolute;top:18px;right:18px}
+.exp9-share button{background:var(--acc);color:var(--user-bubble-t);border:none;border-radius:10px;padding:7px 14px;font:600 11px var(--sans);cursor:pointer}
+.exp9-brand{display:flex;align-items:center;font:400 18px var(--serif);color:var(--hero-cream);margin-bottom:20px}
+.exp9-brand .fp-logo-mark{margin-right:6px}
+.exp9-rep-label{font:500 10px var(--mono);text-transform:uppercase;letter-spacing:.12em;color:var(--acc);margin-bottom:6px}
+.exp9-rep-title{font:400 26px var(--serif);color:var(--hero-cream);letter-spacing:-.5px}
+.exp9-rep-by{font:500 11px var(--sans);color:var(--t2);margin-top:4px;margin-bottom:20px}
+.exp9-stats{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.exp9-stat{background:var(--bg2);border:0.5px solid var(--bdr);border-radius:14px;padding:12px 14px}
+body:not(.light) .exp9-stat{background:rgba(255,255,255,.03)}
+.exp9-stat-l{font:500 9px var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:5px}
+.exp9-stat-v{font:400 24px var(--serif);color:var(--hero-cream);letter-spacing:-.4px;font-variant-numeric:tabular-nums}
+
+/* ═══════════════════════════════════════════════════════════
+   v3.1.8 — SECTION 2: Accounts overview (grouped net worth)
+   ═══════════════════════════════════════════════════════════ */
+.acc2-hero{padding:6px 2px 18px;border-bottom:0.5px solid var(--bdr);margin-bottom:16px}
+.acc2-nw{font:400 44px var(--serif);color:var(--hero-cream);letter-spacing:-1.4px;line-height:1;font-variant-numeric:tabular-nums}
+.acc2-delta{font:500 12px var(--sans);margin-top:10px;color:var(--t2)}
+.acc2-delta.up{color:var(--acc)}.acc2-delta.down{color:var(--r)}
+.acc2-group{margin-bottom:22px}
+.acc2-ghead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.acc2-gtitle{font:600 13px var(--sans);color:var(--t);letter-spacing:-.2px}
+.acc2-gtotal{font:500 13px var(--mono);color:var(--t2);font-variant-numeric:tabular-nums}
+.acc2-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:0.5px solid var(--bdr)}
+.acc2-row:last-child{border-bottom:none}
+.acc2-ico{width:36px;height:36px;border-radius:11px;background:var(--glass);border:0.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.acc2-rmid{flex:1;min-width:0}
+.acc2-rname{font:600 12.5px var(--sans);color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acc2-rsub{font:500 10.5px var(--sans);color:var(--t2);margin-top:1px}
+.acc2-ramt{font:600 13px var(--mono);color:var(--t);font-variant-numeric:tabular-nums;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -1660,7 +1719,7 @@ body:not(.light) .wl-qa-b{background:rgba(255,255,255,.03)}
 <!-- APP -->
 <div id="app">
   <div class="hdr">
-    <div class="hdr-logo">fin<em>plan</em></div>
+    <div class="hdr-logo"><span class="fp-logo-mark"><svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="72" fill="none" stroke="currentColor" stroke-width="14" stroke-linecap="round" stroke-dasharray="340 452" transform="rotate(-135 100 100)"/><text x="100" y="128" text-anchor="middle" font-family="Instrument Serif" font-size="90" fill="currentColor">$</text></svg></span>fin<em>plan</em></div>
     <div class="hdr-actions">
       <div class="hdr-dot"></div>
       <button id="hdr-version" class="hdr-version" onclick="forceRefreshApp()" title="Version — tap to force refresh"></button>
@@ -2093,6 +2152,26 @@ body:not(.light) .wl-qa-b{background:rgba(255,255,255,.03)}
       <div id="sub-total" style="display:none"></div>
     </div>
 
+    <!-- v3.1.8 — SECTION 2: Accounts overview -->
+    <div class="pg" id="pg-accounts">
+      <div class="acc2-hero">
+        <div class="inv9-eyebrow">Net worth</div>
+        <div class="acc2-nw" id="acc2-nw">$0</div>
+        <div class="acc2-delta" id="acc2-delta"></div>
+      </div>
+      <div id="acc2-groups"></div>
+    </div>
+
+    <!-- v3.1.7 — SECTION 6C: Rules page -->
+    <div class="pg" id="pg-rules">
+      <div class="rules9-head">
+        <div><div class="inv9-eyebrow">Rules</div><div class="rules9-count" id="rules9-count">0 active</div></div>
+        <button class="rules9-add" onclick="addRuleFromDetail()">+</button>
+      </div>
+      <div class="rules9-stat" id="rules9-stat"></div>
+      <div id="rules9-list"></div>
+    </div>
+
     <!-- DIVIDEND CALENDAR (v2.7.15 — V4 concept rebuild) -->
     <div class="pg" id="pg-dividends">
       <!-- Hero -->
@@ -2379,6 +2458,8 @@ body:not(.light) .wl-qa-b{background:rgba(255,255,255,.03)}
     <button class="more-tile" id="more-payday" onclick="showPgFromMore('payday')"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="12" cy="14.5" r="1.5"/></svg>Pay day</button>
     <button class="more-tile" id="more-recurring" onclick="showPgFromMore('recurring')"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Recurring</button>
     <button class="more-tile" id="more-subscriptions" onclick="showPgFromMore('subscriptions')"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>Subs</button>
+    <button class="more-tile" id="more-rules" onclick="showPgFromMore('rules')"><svg viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>Rules</button>
+    <button class="more-tile" id="more-accounts" onclick="showPgFromMore('accounts')"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Accounts</button>
     <button class="more-tile" id="more-scenario" onclick="showPgFromMore('scenario')"><svg viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0H5a2 2 0 0 1-2-2v-4m6 6h10a2 2 0 0 0 2-2v-4"/></svg>What-if</button>
     <button class="more-tile" id="more-insights" onclick="showPgFromMore('insights')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Insights</button>
     <button class="more-tile" id="more-health" onclick="showPgFromMore('health')"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Health</button>
@@ -2840,9 +2921,9 @@ function showLockScreen(){
   const bioAvailable=cfg.webauthn&&!!localStorage.getItem(SEC_KEYS.wa)&&!!window.PublicKeyCredential;
   el.innerHTML=`
     <div class="lock-inner">
-      <div class="lock-logo">🔒</div>
+      <div class="lock-logo-tile"><svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="72" fill="none" stroke="currentColor" stroke-width="14" stroke-linecap="round" stroke-dasharray="340 452" transform="rotate(-135 100 100)"/><text x="100" y="128" text-anchor="middle" font-family="Instrument Serif" font-size="90" fill="currentColor">$</text></svg></div>
       <div class="lock-title">FinPlan is locked</div>
-      <div class="lock-sub">${bioAvailable?'Use biometrics or enter your PIN':'Enter your PIN'}</div>
+      <div class="lock-sub">${bioAvailable?'Biometrics keep your numbers between you and Finn':'Enter your PIN'}</div>
       <div class="lock-dots" id="lock-dots">${[0,1,2,3,4,5].map(i=>`<span class="lock-dot" data-i="${i}"></span>`).join('')}</div>
       <div class="lock-error" id="lock-error"></div>
       <div class="lock-pad">
@@ -3295,9 +3376,40 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='3.1.6';
+const APP_VERSION='3.1.8';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'3.1.8',
+    date:'2026-07-29',
+    title:'Design rubric — Accounts overview (Section 2)',
+    sections:{
+      features:[
+        '🏦 **New Accounts overview.** A grouped net-worth screen (More → Accounts): your net worth in the editorial serif at the top, then Cash, Investments, and Debts each grouped with per-item balances and subtotals'
+      ],
+      improvements:[
+        'Investments show their gain %, debts show due dates, and everything rolls up into one net-worth figure',
+        'This completes the full design-rubric implementation across sections 10, 9, 6 and 2'
+      ],
+      fixes:[]
+    }
+  },
+  {
+    v:'3.1.7',
+    date:'2026-07-29',
+    title:'Design rubric — New logo, Rules, Exports (Section 6)',
+    sections:{
+      features:[
+        '✨ **New FinPlan logo.** A fresh mark — a rounded tile with a currency arc — now appears in the header and on the lock screen',
+        '⚡ **Rules page.** A dedicated Rules screen shows the auto-categorisation rules FinPlan has learned from you, each as a clean card (find it under More → Rules)',
+        '📄 **Report preview.** The Reports page now opens with a shareable monthly-summary card — your income, spend, saved, and rate — with a Share button'
+      ],
+      improvements:[
+        'The lock screen adopts the new logo and refreshed wording'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'3.1.6',
     date:'2026-07-29',
@@ -9986,6 +10098,15 @@ function buildReportsPage(){
     tyOptions.push({y,label:`${y}–${(y+1).toString().slice(2)} (FY${y+1})`});
   }
   el.innerHTML=`
+    <div class="exp9-preview">
+      <div class="exp9-share"><button onclick="shareReport9()">Share</button></div>
+      <div class="exp9-brand"><span class="fp-logo-mark" style="width:22px;height:22px;border-radius:7px"><svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="72" fill="none" stroke="currentColor" stroke-width="14" stroke-linecap="round" stroke-dasharray="340 452" transform="rotate(-135 100 100)"/><text x="100" y="128" text-anchor="middle" font-family="Instrument Serif" font-size="90" fill="currentColor">$</text></svg></span>FinPlan</div>
+      <div class="exp9-rep-label">Report · ${now.toLocaleDateString('en-AU',{month:'long',year:'numeric'})}</div>
+      <div class="exp9-rep-title">Monthly summary</div>
+      <div class="exp9-rep-by" id="exp9-by"></div>
+      <div class="exp9-stats" id="exp9-stats"></div>
+    </div>
+
     <div class="hero">
       <div class="hero-l">Reports & exports</div>
       <div class="hero-v" style="font-size:24px">📄</div>
@@ -10027,6 +10148,30 @@ function buildReportsPage(){
       </div>
     </div>
   `;
+  // v3.1.7 — populate the 6D report preview with real month figures
+  const byEl=document.getElementById('exp9-by');
+  const name=(S.profile&&S.profile.name)||S.userName||'';
+  if(byEl)byEl.textContent=`${name?name+' · ':''}${now.toLocaleDateString('en-AU',{day:'numeric',month:'long'})}`;
+  const statsEl=document.getElementById('exp9-stats');
+  if(statsEl){
+    const income=(typeof monthIncome==='function')?monthIncome():0;
+    const spent=(typeof monthSpend==='function')?monthSpend():0;
+    const saved=Math.max(0,income-spent);
+    const rate=income>0?Math.round(saved/income*100):0;
+    const stat=(l,v,c)=>`<div class="exp9-stat"><div class="exp9-stat-l">${l}</div><div class="exp9-stat-v" ${c?`style="color:${c}"`:''}>${v}</div></div>`;
+    statsEl.innerHTML=stat('Income',fmtD(income))+stat('Spent',fmtD(spent))+stat('Saved',fmtD(saved),'var(--acc)')+stat('Rate',rate+'%');
+  }
+}
+function shareReport9(){
+  const now=new Date();
+  const income=(typeof monthIncome==='function')?monthIncome():0;
+  const spent=(typeof monthSpend==='function')?monthSpend():0;
+  const saved=Math.max(0,income-spent);
+  const rate=income>0?Math.round(saved/income*100):0;
+  const txt=`FinPlan · ${now.toLocaleDateString('en-AU',{month:'long',year:'numeric'})} summary\nIncome ${fmtD(income)} · Spent ${fmtD(spent)} · Saved ${fmtD(saved)} (${rate}%)`;
+  if(navigator.share){navigator.share({title:'FinPlan monthly summary',text:txt}).catch(()=>{});}
+  else if(navigator.clipboard){navigator.clipboard.writeText(txt).then(()=>showToast('Summary copied to clipboard'));}
+  else showToast('Sharing not available on this device');
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -12527,7 +12672,7 @@ function renderContextPanel(){
 // NAV
 // ═══════════════════════════════════════════════════════════
 let currentPg='dash';
-const MORE_PAGES=['budget','analytics','kmart','jobs','invest','timeline','settings','health','streaks','sinking','debts','subscriptions','dividends','tax','assistant','payday','scenario','glance','recurring','insights','reports'];
+const MORE_PAGES=['budget','analytics','kmart','jobs','invest','timeline','settings','health','streaks','sinking','debts','subscriptions','rules','accounts','dividends','tax','assistant','payday','scenario','glance','recurring','insights','reports'];
 function showPg(id,btn){
   document.querySelectorAll('.pg').forEach(p=>{p.classList.remove('on');p.style.display='';});
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
@@ -12561,6 +12706,8 @@ function showPg(id,btn){
   if(id==='sinking')buildSinkingPage();
   if(id==='debts')buildDebtsPage();
   if(id==='subscriptions')buildSubScan();
+  if(id==='rules'&&typeof buildRules9==='function')buildRules9();
+  if(id==='accounts'&&typeof buildAccounts2==='function')buildAccounts2();
   if(id==='dividends')buildDividendCalendar();
   if(id==='tax')buildTaxSummary();
   if(id==='jobs'&&typeof buildJobsPage==='function')buildJobsPage();
@@ -19089,7 +19236,93 @@ function removeLearnedRule(idx){
   const rules=ensureCustomRules();
   if(!rules[idx])return;
   if(!confirm(`Remove learned rule for "${rules[idx].keyword}"?`))return;
-  rules.splice(idx,1);save();buildLearnedRulesCard();showToast('Rule removed');
+  rules.splice(idx,1);save();buildLearnedRulesCard();if(typeof buildRules9==='function')buildRules9();showToast('Rule removed');
+}
+
+// v3.1.7 — Section 6C: Rules page
+// v3.1.8 — Section 2: Accounts overview (grouped net worth)
+function buildAccounts2(){
+  const nwEl=document.getElementById('acc2-nw');if(!nwEl)return;
+  // Cash = account balances
+  const cashAccts=Object.keys(S.acctBalances||{}).map(k=>({
+    key:k,label:(typeof acctFullLabel==='function')?acctFullLabel(k):k,
+    bal:calcBal(k),icon:(S.acctMeta&&S.acctMeta[k]&&/savings|hisa/i.test(S.acctMeta[k].name||''))?'💰':'🏦'
+  }));
+  const cashTotal=cashAccts.reduce((a,x)=>a+x.bal,0);
+  // Investments = holdings grouped, plus portfolio total
+  const invTotal=(typeof portTotal==='function')?portTotal():0;
+  const invItems=(activeHoldings?activeHoldings():[]).map(h=>{
+    const v=holdingValue(h),pnlPct=holdingPnlPct(h);
+    return {label:h.name||h.ticker,ticker:h.ticker,val:v,pnlPct,icon:h.market==='US'?'📈':'📊'};
+  }).sort((a,b)=>b.val-a.val);
+  // Debts = liabilities
+  const debts=(S.liabilities||S.debts||[]).map(d=>({label:d.name||d.label||'Debt',bal:-(Math.abs(d.balance||d.amount||0)),due:d.dueDate||d.due||null,icon:'💳'}));
+  const debtTotal=debts.reduce((a,x)=>a+x.bal,0);
+  const netWorth=cashTotal+invTotal+debtTotal;
+  nwEl.textContent=fmtD(netWorth);
+  // Delta from net worth history
+  const deltaEl=document.getElementById('acc2-delta');
+  if(deltaEl){
+    const hist=(S.nwHistory||[]);
+    if(hist.length>=2){
+      const old=hist[Math.max(0,hist.length-7)].nw||hist[0].nw;
+      const diff=netWorth-old;const up=diff>=0;
+      deltaEl.className='acc2-delta '+(up?'up':'down');
+      deltaEl.textContent=`${up?'▲':'▼'} ${fmtD(Math.abs(diff))} recently`;
+    }else deltaEl.textContent='';
+  }
+  const groupsEl=document.getElementById('acc2-groups');
+  const rowHtml=(icon,label,sub,amt,amtColor)=>`<div class="acc2-row">
+    <div class="acc2-ico">${icon}</div>
+    <div class="acc2-rmid"><div class="acc2-rname">${escapeHtml(label)}</div>${sub?`<div class="acc2-rsub">${sub}</div>`:''}</div>
+    <div class="acc2-ramt" ${amtColor?`style="color:${amtColor}"`:''}>${amt}</div>
+  </div>`;
+  const group=(title,total,rowsHtml,totalColor)=>`<div class="acc2-group">
+    <div class="acc2-ghead"><span class="acc2-gtitle">${title}</span><span class="acc2-gtotal" ${totalColor?`style="color:${totalColor}"`:''}>${fmtD(total)}</span></div>
+    ${rowsHtml}
+  </div>`;
+  let html='';
+  if(cashAccts.length)html+=group('Cash',cashTotal,cashAccts.map(a=>rowHtml(a.icon,a.label,'',fmtD(a.bal))).join(''));
+  if(invItems.length)html+=group('Investments',invTotal,invItems.map(i=>rowHtml(i.icon,i.label,`${i.pnlPct>=0?'▲':'▼'} ${Math.abs(i.pnlPct).toFixed(1)}%`,fmtD(i.val))).join(''));
+  if(debts.length)html+=group('Debts',debtTotal,debts.map(d=>rowHtml(d.icon,d.label,d.due?`Due ${d.due}`:'',fmtD(d.bal),'var(--r)')).join(''),'var(--r)');
+  if(!html)html=`<div class="empty" style="padding:40px 20px"><div class="empty-txt">Add accounts, holdings, or debts to see your grouped net worth here.</div></div>`;
+  groupsEl.innerHTML=html;
+}
+
+function buildRules9(){
+  const el=document.getElementById('rules9-list');if(!el)return;
+  const rules=ensureCustomRules();
+  const cm=cmap();
+  const countEl=document.getElementById('rules9-count');
+  if(countEl)countEl.textContent=`${rules.length} active`;
+  // Stat line — how many auto-categorisations Finn has applied
+  const applied=(S.transactions||[]).filter(t=>t.autoTagged||t.ruleApplied).length;
+  const statEl=document.getElementById('rules9-stat');
+  if(statEl){
+    statEl.innerHTML=rules.length?`<b>Finn has applied ${applied||rules.length} rule${(applied||rules.length)===1?'':'s'}</b> from what you've taught it — categorising transactions automatically as they come in.`:'';
+  }
+  if(!rules.length){
+    el.innerHTML=`<div class="empty" style="padding:40px 20px"><div class="empty-ico">⚡</div><div class="empty-txt">No rules yet. When you recategorise an imported transaction, FinPlan offers to save it as a rule — so next time it is automatic. They will show up here.</div></div>`;
+    return;
+  }
+  el.innerHTML=rules.map((r,i)=>{
+    const c=cm[r.cat]||{icon:'📌',col:'var(--acc)',label:r.cat};
+    return`<div class="rule9">
+      <div class="rule9-top">
+        <div class="rule9-name">${escapeHtml(r.payee||r.keyword)} auto-tag</div>
+        <button class="rule9-del" onclick="removeLearnedRule(${i})">✕</button>
+      </div>
+      <div class="rule9-logic">
+        <span class="rule9-when">If payee contains</span>
+        <span class="rule9-kw">${escapeHtml(r.keyword)}</span>
+        <span class="rule9-arrow">→</span>
+        <span class="rule9-cat" style="color:${c.col}">${c.icon} ${escapeHtml(c.label)}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+function addRuleFromDetail(){
+  showSheet('Add a rule',`<div style="font-size:12px;color:var(--t2);line-height:1.6">Rules are learned automatically: open any imported transaction, change its category or payee, and FinPlan will offer to save that as a rule.<br><br>This keeps rules accurate to how <em>you</em> categorise, rather than guessing.</div><button class="btn btn-acc btn-full" style="margin-top:14px" onclick="closeSheet()">Got it</button>`);
 }
 
 // ── FEATURE 2: SUBSCRIPTION DETECTION ───────────────────────
