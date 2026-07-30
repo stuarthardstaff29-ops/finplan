@@ -1552,6 +1552,73 @@ body:not(.light) .wl-qa-b{background:rgba(255,255,255,.03)}
 .inv9-hld-val{font:600 13px var(--mono);color:var(--t);font-variant-numeric:tabular-nums}
 .inv9-hld-gain{font:500 10.5px var(--mono);margin-top:2px}
 .inv9-hld-gain.up{color:var(--acc)}.inv9-hld-gain.down{color:var(--r)}
+
+/* ═══════════════════════════════════════════════════════════
+   v3.1.4 — SECTION 9B: Holding detail
+   ═══════════════════════════════════════════════════════════ */
+.hd9-top{position:relative;padding:4px 2px 0}
+.hd9-fav{position:absolute;top:0;right:0;width:34px;height:34px;border-radius:50%;background:var(--glass);border:0.5px solid var(--bdr);color:var(--acc);font-size:16px;cursor:pointer}
+.hd9-idrow{display:flex;align-items:center;gap:12px}
+.hd9-name{font:600 15px var(--sans);color:var(--t)}
+.hd9-exch{font:500 11px var(--sans);color:var(--t2);margin-top:2px}
+.hd9-chartwrap{position:relative;margin:16px 0 6px;min-height:110px}
+.hd9-pricetag{position:absolute;top:0;right:0;background:var(--accd);color:var(--acc);font:600 11px var(--mono);padding:4px 9px;border-radius:9px;border:0.5px solid var(--bdr-acc2);z-index:1}
+.hd9-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+.hd9-stat{background:var(--glass);border:0.5px solid var(--bdr);border-radius:14px;padding:12px 14px}
+.hd9-stat-l{font:500 9px var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:5px}
+.hd9-stat-v{font:400 22px var(--serif);color:var(--hero-cream);letter-spacing:-.4px;font-variant-numeric:tabular-nums}
+.hd9-acts{display:flex;gap:10px}
+.hd9-buy{flex:1;background:var(--acc);color:var(--user-bubble-t);border:none;border-radius:14px;padding:14px;font:700 13px var(--sans);cursor:pointer}
+.hd9-sell{flex:1;background:var(--glass);color:var(--t);border:0.5px solid var(--bdr);border-radius:14px;padding:14px;font:600 13px var(--sans);cursor:pointer}
+
+/* ═══════════════════════════════════════════════════════════
+   v3.1.5 — SECTION 9C: Allocation (target vs actual)
+   ═══════════════════════════════════════════════════════════ */
+.alloc9-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.alloc9-rebalance{background:none;border:none;color:var(--acc);font:600 12px var(--sans);cursor:pointer;padding:2px 4px}
+.alloc9-headline{font:400 26px var(--serif);color:var(--hero-cream);letter-spacing:-.6px;line-height:1.1;margin-bottom:8px}
+.alloc9-insight{font:400 12px/1.55 var(--sans);color:var(--t2);margin-bottom:16px}
+.alloc9-donut{display:flex;justify-content:center;margin:8px 0 18px}
+.alloc9-rows{display:flex;flex-direction:column;gap:14px}
+.alloc9-row-top{display:flex;align-items:center;gap:9px;margin-bottom:7px}
+.alloc9-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.alloc9-name{font:600 12.5px var(--sans);color:var(--t);flex:1}
+.alloc9-pcts{font:500 12px var(--mono);color:var(--t2)}
+.alloc9-pcts b{color:var(--hero-cream);font-weight:600}
+.alloc9-track{position:relative;height:6px;background:var(--bdr2);border-radius:3px;overflow:visible}
+.alloc9-fill{height:100%;border-radius:3px}
+.alloc9-target{position:absolute;top:-2px;width:2px;height:10px;background:var(--t);border-radius:1px;transform:translateX(-1px)}
+
+/* ═══════════════════════════════════════════════════════════
+   v3.1.6 — SECTION 9D: Buy flow
+   ═══════════════════════════════════════════════════════════ */
+.buy9-view{position:fixed;inset:0;background:var(--bg);z-index:450;display:none;flex-direction:column;padding-top:calc(var(--st) + 8px)}
+.buy9-view.on{display:flex}
+.buy9-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 18px 4px}
+.buy9-title{font:600 13px var(--sans);color:var(--t2)}
+.buy9-scroll{flex:1;overflow-y:auto;padding:8px 20px calc(var(--sb) + 20px)}
+.buy9-amt-wrap{text-align:center;padding:24px 0 8px;display:flex;align-items:flex-start;justify-content:center}
+.buy9-cur{font:400 32px var(--serif);color:var(--t3);margin-top:8px;margin-right:2px}
+#buy9-amt{font:400 58px var(--serif);color:var(--hero-cream);letter-spacing:-2px;background:none;border:none;outline:none;text-align:center;width:auto;max-width:60vw;padding:0;line-height:1}
+#buy9-amt::placeholder{color:var(--t4)}
+.buy9-shares{text-align:center;font:500 12px var(--mono);color:var(--t2);margin-bottom:20px}
+.buy9-chips{display:flex;gap:8px;margin-bottom:20px}
+.buy9-chip{flex:1;background:var(--glass);border:0.5px solid var(--bdr);border-radius:12px;padding:10px;font:600 11.5px var(--sans);color:var(--t);cursor:pointer}
+.buy9-chip:active{background:var(--accd)}
+.buy9-card{background:var(--glass);border:0.5px solid var(--bdr);border-radius:16px;padding:2px 16px;margin-bottom:14px}
+.buy9-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:0.5px solid var(--bdr)}
+.buy9-row-last{border-bottom:none}
+.buy9-row-lbl{font:500 9px var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:3px}
+.buy9-row-val{font:600 12.5px var(--sans);color:var(--t)}
+.buy9-chev{color:var(--t3);font-size:16px}
+.buy9-free{font:700 10px var(--mono);color:var(--acc);letter-spacing:.05em}
+.buy9-nudge:empty{margin:0}
+.buy9-nudge-in{display:flex;align-items:flex-start;gap:8px;padding:12px 14px;border-radius:12px;font:500 11.5px/1.5 var(--sans);margin-bottom:14px}
+.buy9-nudge-in.ok{background:var(--accd);color:var(--acc)}
+.buy9-nudge-in.warn{background:var(--yd);color:var(--y)}
+.buy9-nudge-in span{font-weight:700}
+.buy9-review{width:100%;background:var(--acc);color:var(--user-bubble-t);border:none;border-radius:16px;padding:15px;font:700 13px var(--sans);cursor:pointer;transition:opacity var(--dur-fast)}
+.buy9-review.disabled{opacity:.4;cursor:default}
 </style>
 </head>
 <body>
@@ -1789,14 +1856,13 @@ body:not(.light) .wl-qa-b{background:rgba(255,255,255,.03)}
         <div id="holdings-list"></div>
       </div>
 
-      <!-- Composition / allocation -->
-      <div class="card">
-        <div class="ctitle"><div class="ctitle-l"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Allocation</div></div>
-        <div class="donut-grid">
-          <div><div class="donut-lbl">Current</div><div class="donut-cw"><canvas id="donut-cur" role="img" aria-label="Current allocation"></canvas></div><div class="dleg" id="dleg-cur"></div></div>
-          <div><div class="donut-lbl">Target</div><div class="donut-cw"><canvas id="donut-tgt" role="img" aria-label="Target allocation"></canvas></div><div class="dleg" id="dleg-tgt"></div></div>
+      <!-- Composition / allocation — v3.1.5 Section 9C -->
+      <div class="card" id="inv-alloc9-card">
+        <div class="alloc9-head">
+          <div class="inv9-eyebrow">Allocation</div>
+          <button class="alloc9-rebalance" onclick="showRebalance9()">Rebalance</button>
         </div>
-        <div id="inv-gap" style="margin-top:12px"></div>
+        <div id="inv-alloc9"></div>
       </div>
 
       <!-- v2.7.11 — Show more insights toggle -->
@@ -2535,6 +2601,34 @@ body:not(.light) .wl-qa-b{background:rgba(255,255,255,.03)}
   </div>
 </div>
 
+<!-- v3.1.6 — BUY FLOW SCREEN (Section 9D) -->
+<div class="buy9-view" id="buy9-view">
+  <div class="buy9-hdr">
+    <button class="ed-tr-close" onclick="closeBuyFlow()">✕</button>
+    <span class="buy9-title" id="buy9-title">Buy</span>
+    <span style="width:32px"></span>
+  </div>
+  <div class="buy9-scroll">
+    <div class="buy9-amt-wrap">
+      <span class="buy9-cur">$</span><input type="number" id="buy9-amt" placeholder="0" min="0" step="1" oninput="updateBuy9()" autocomplete="off">
+    </div>
+    <div class="buy9-shares" id="buy9-shares">Enter an amount</div>
+    <div class="buy9-chips">
+      <button class="buy9-chip" onclick="bumpBuy9(100)">+$100</button>
+      <button class="buy9-chip" onclick="bumpBuy9(500)">+$500</button>
+      <button class="buy9-chip" onclick="bumpBuy9(1000)">+$1k</button>
+      <button class="buy9-chip" onclick="maxBuy9()">Max</button>
+    </div>
+    <div class="buy9-card">
+      <div class="buy9-row"><div class="buy9-row-l"><div class="buy9-row-lbl">From</div><div class="buy9-row-val" id="buy9-from">Uninvested cash · $0</div></div><span class="buy9-chev">›</span></div>
+      <div class="buy9-row"><div class="buy9-row-l"><div class="buy9-row-lbl">Order type</div><div class="buy9-row-val">Market</div></div><span class="buy9-chev">›</span></div>
+      <div class="buy9-row buy9-row-last"><div class="buy9-row-l"><div class="buy9-row-lbl">Fee</div><div class="buy9-row-val">$0.00 · CMC Invest</div></div><span class="buy9-free">FREE</span></div>
+    </div>
+    <div class="buy9-nudge" id="buy9-nudge"></div>
+    <button class="buy9-review" id="buy9-review" onclick="reviewBuy9()">Enter an amount</button>
+  </div>
+</div>
+
 <!-- SUCCESS MOMENT OVERLAY -->
 <div class="success-moment" id="success-moment"></div>
 
@@ -3201,9 +3295,56 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='3.1.3';
+const APP_VERSION='3.1.6';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'3.1.6',
+    date:'2026-07-29',
+    title:'Investments redesign — Buy flow (9D) · Section 9 complete',
+    sections:{
+      features:[
+        '🛒 **New buy flow.** Tapping Buy on a holding opens a dedicated screen: a big serif amount, quick-add chips (+$100 / +$500 / +$1k / Max), a live "≈ N shares @ price" estimate, and From / Order type / Fee rows',
+        '✓ **On-plan nudge.** As you set the amount, FinPlan tells you whether the buy moves that asset class toward or away from your target',
+        '🎉 **Investments redesign complete.** Portfolio, holding detail, allocation, and buy flow are all done'
+      ],
+      improvements:[
+        'Recording a purchase updates the holding\'s units and cost basis and logs the spend',
+        'A clear reminder that FinPlan keeps your records in sync — it does not place real trades'
+      ],
+      fixes:[]
+    }
+  },
+  {
+    v:'3.1.5',
+    date:'2026-07-29',
+    title:'Investments redesign — Allocation (9C)',
+    sections:{
+      features:[
+        '🥧 **Redesigned allocation.** Your portfolio is now grouped by asset class (Equities, Bonds, Crypto, Cash) with a plain-language verdict headline like "Slightly stock-heavy", a donut showing your total, and target-vs-actual bars with a drift marker on each',
+        '⚖️ **Rebalance suggestions.** Tap Rebalance for concrete trim/add amounts to bring each asset class back toward its target'
+      ],
+      improvements:[
+        'Allocation reads by asset class instead of per-ticker, matching how you actually think about balance'
+      ],
+      fixes:[]
+    }
+  },
+  {
+    v:'3.1.4',
+    date:'2026-07-29',
+    title:'Investments redesign — Holding detail (9B)',
+    sections:{
+      features:[
+        '🔎 **Redesigned holding detail.** Tapping a holding now opens its own page: the ticker tile and exchange, market value in the editorial serif, a gain line, a price chart with a live price tag, and a clean 2×2 stats grid (avg cost, price now, shares, weight)',
+        '⭐ **Favourite a holding** with the star, and **Buy / Sell** actions right on the page'
+      ],
+      improvements:[
+        'Allocation drift, dividends, thesis notes and purchase history remain below'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'3.1.3',
     date:'2026-07-29',
@@ -17274,6 +17415,109 @@ let growthChart=null,donutCur=null,donutTgt=null,benchmarkChart=null;
 // ═══════════════════════════════════════════════════════════
 
 // ── 1. HOLDING DETAIL VIEW ─────────────────────────────────
+// v3.1.4 — 9B holding detail helpers
+function toggleHoldingFav(id){
+  const h=(S.holdings||[]).find(x=>x.id===id);
+  if(!h)return;
+  h.fav=!h.fav;save();
+  const btn=document.querySelector('.hd9-fav');if(btn)btn.textContent=h.fav?'★':'☆';
+  showToast(h.fav?'Added to favourites':'Removed from favourites');
+}
+
+// v3.1.6 — Section 9D: Buy flow screen
+let __buy9={ticker:null,price:0,cash:0};
+function openBuyFlow(ticker){openBuyFlowScreen(ticker);}
+function openBuyFlowScreen(ticker){
+  const h=(S.holdings||[]).find(x=>x.ticker===ticker);
+  __buy9.ticker=ticker;
+  __buy9.price=h&&h.lastPrice?h.lastPrice:0;
+  // uninvested cash = savings account balance (best proxy)
+  __buy9.cash=calcBal('macquarie')||0;
+  document.getElementById('buy9-title').textContent='Buy '+ticker;
+  const amt=document.getElementById('buy9-amt');if(amt)amt.value='';
+  document.getElementById('buy9-from').textContent=`Uninvested cash · ${fmtD(__buy9.cash)}`;
+  document.getElementById('buy9-view').classList.add('on');
+  updateBuy9();
+  setTimeout(()=>amt&&amt.focus(),150);
+}
+function closeBuyFlow(){document.getElementById('buy9-view')?.classList.remove('on');}
+function bumpBuy9(n){const a=document.getElementById('buy9-amt');a.value=(parseFloat(a.value)||0)+n;updateBuy9();}
+function maxBuy9(){const a=document.getElementById('buy9-amt');a.value=Math.floor(__buy9.cash);updateBuy9();}
+function updateBuy9(){
+  const amt=parseFloat(document.getElementById('buy9-amt')?.value)||0;
+  const sharesEl=document.getElementById('buy9-shares');
+  const review=document.getElementById('buy9-review');
+  const nudge=document.getElementById('buy9-nudge');
+  if(amt<=0){
+    sharesEl.textContent='Enter an amount';
+    if(review){review.textContent='Enter an amount';review.disabled=true;review.classList.add('disabled');}
+    if(nudge)nudge.innerHTML='';
+    return;
+  }
+  if(__buy9.price>0){
+    const shares=amt/__buy9.price;
+    sharesEl.innerHTML=`≈ ${shares.toFixed(4)} shares @ ${fmtD(__buy9.price)}`;
+  }else{
+    sharesEl.textContent='Price unavailable — amount only';
+  }
+  // "on plan" nudge — does this buy help the under-target asset class?
+  if(nudge){
+    let msg='';
+    try{
+      const h=(S.holdings||[]).find(x=>x.ticker===__buy9.ticker);
+      if(h&&typeof classifyHolding==='function'){
+        const cls=classifyHolding(h);const total=portTotal();
+        const byClass={};ASSET_CLASSES.forEach(c=>byClass[c.key]=0);
+        activeHoldings().forEach(x=>{byClass[classifyHolding(x)]+=holdingValue(x);});
+        const targets={...ASSET_TARGETS,...(S.assetTargets||{})};
+        const actual=total>0?byClass[cls]/total*100:0;const drift=actual-(targets[cls]||0);
+        if(drift<-2)msg=`On plan. This buy nudges ${cls.toLowerCase()} back toward target.`;
+        else if(drift>4)msg=`Heads up — you're already above target on ${cls.toLowerCase()}.`;
+      }
+    }catch(e){}
+    nudge.innerHTML=msg?`<div class="buy9-nudge-in ${msg.startsWith('On plan')?'ok':'warn'}"><span>${msg.startsWith('On plan')?'✓':'!'}</span> ${msg}</div>`:'';
+  }
+  const over=amt>__buy9.cash;
+  if(review){
+    if(over){review.textContent='More than your cash';review.disabled=true;review.classList.add('disabled');}
+    else{review.textContent='Review order';review.disabled=false;review.classList.remove('disabled');}
+  }
+}
+function reviewBuy9(){
+  const amt=parseFloat(document.getElementById('buy9-amt')?.value)||0;
+  if(amt<=0)return;
+  const shares=__buy9.price>0?amt/__buy9.price:0;
+  showSheet('Review order',`
+    <div class="detail-card">
+      <div class="detail-row"><span class="detail-label">Buy</span><span class="detail-value">${__buy9.ticker}</span></div>
+      <div class="detail-row"><span class="detail-label">Amount</span><span class="detail-value">${fmtD(amt)}</span></div>
+      ${shares>0?`<div class="detail-row"><span class="detail-label">Est. shares</span><span class="detail-value">${shares.toFixed(4)} @ ${fmtD(__buy9.price)}</span></div>`:''}
+      <div class="detail-row"><span class="detail-label">Fee</span><span class="detail-value" style="color:var(--acc)">$0.00</span></div>
+      <div class="detail-row" style="border-bottom:none"><span class="detail-label">From</span><span class="detail-value">Uninvested cash</span></div>
+    </div>
+    <div style="font-size:10px;color:var(--t3);line-height:1.5;margin:10px 0 0">FinPlan records this to your portfolio — it does not place a real trade with your broker. Place the actual order in CMC Invest, then this keeps your records in sync.</div>
+    <button class="btn btn-acc btn-full" style="margin-top:14px" onclick="confirmBuy9(${amt},${shares})">Record purchase</button>
+    <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="closeSheet()">Cancel</button>
+  `);
+}
+function confirmBuy9(amt,shares){
+  const h=(S.holdings||[]).find(x=>x.ticker===__buy9.ticker);
+  if(h){
+    // update units + cost basis
+    const addUnits=shares||0;
+    h.units=(+h.units||0)+addUnits;
+    h.cost=(+h.cost||0)+amt;
+    if(h.units>0)h.netAvgPrice=h.cost/h.units;
+  }
+  // record a transaction for the money-out
+  if(!S.transactions)S.transactions=[];
+  S.transactions.unshift({id:uid(),acct:'macquarie',dir:'out',amt:amt,cat:'investments',payee:__buy9.ticker+' purchase',date:today(),note:'Invest via buy flow'});
+  save();snapshotNW&&snapshotNW();
+  closeSheet();closeBuyFlow();
+  if(typeof buildInvestPage==='function')buildInvestPage();
+  showToast(`✓ Recorded ${fmtD(amt)} into ${__buy9.ticker}`);
+}
+
 function openHoldingDetail(holdingId){
   const h=(S.holdings||[]).find(x=>x.id===holdingId);
   if(!h){showToast('Holding not found');return;}
@@ -18129,39 +18373,85 @@ function buildBenchmarkTable(){
 function setBenchReturn(k,v){if(!S.benchmarkReturns)S.benchmarkReturns={};S.benchmarkReturns[k]=v;save();buildBenchmarkChart();buildBenchmarkTable();}
 
 // ── Composition donuts + allocation gap (from holdings) ──────
-function buildDonuts(){
-  const hs=activeHoldings();
-  const total=portTotal();
-  const cc=document.getElementById('donut-cur');if(!cc)return;
-  const labels=hs.map(h=>h.ticker);
-  const cv=hs.map(h=>total>0?+(holdingValue(h)/total*100).toFixed(1):0);
-  const palette=['#5cb1ff','#00d4a0','#b58aff','#f5b13c','#ff6b6b','#ff8c5c','#64748b','#5cb1ff'];
-  const cols=hs.map((h,i)=>TC[h.ticker]||palette[i%palette.length]);
-  if(donutCur){donutCur.destroy();donutCur=null;}
-  donutCur=new Chart(cc,{type:'doughnut',data:{labels,datasets:[{data:cv,backgroundColor:cols,borderWidth:2,borderColor:'#0d1219'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.label+': '+c.parsed+'%'}}},cutout:'62%'}});
-  registerChart('donut-cur',donutCur);fitChart(donutCur);
-  // Target donut from TPCT where tickers match, else even split
-  const tgtTickers=Object.keys(TPCT);
-  const ct=document.getElementById('donut-tgt');
-  if(ct){
-    const tv=tgtTickers.map(t=>TPCT[t]);const tcols=tgtTickers.map((t,i)=>TC[t]||palette[i%palette.length]);
-    if(donutTgt){donutTgt.destroy();donutTgt=null;}
-    donutTgt=new Chart(ct,{type:'doughnut',data:{labels:tgtTickers,datasets:[{data:tv,backgroundColor:tcols,borderWidth:2,borderColor:'#0d1219'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.label+': '+c.parsed+'%'}}},cutout:'62%'}});
-    registerChart('donut-tgt',donutTgt);fitChart(donutTgt);
-    document.getElementById('dleg-tgt').innerHTML=tgtTickers.map((t,i)=>`<div class="dleg-i"><div class="dleg-d" style="background:${tcols[i]}"></div>${t} ${tv[i]}%</div>`).join('');
-  }
-  document.getElementById('dleg-cur').innerHTML=hs.length?hs.map((h,i)=>`<div class="dleg-i"><div class="dleg-d" style="background:${cols[i]}"></div>${h.ticker} ${cv[i]}%</div>`).join(''):'<div style="font-size:10px;color:var(--t3)">No holdings</div>';
+function buildDonuts(){ buildAlloc9(); }
+function buildGapTable(){ /* merged into buildAlloc9 (9C) */ }
+
+// v3.1.5 — Section 9C: asset-class allocation (target vs actual)
+const ASSET_CLASSES=[
+  {key:'Equities',color:'#8ee0b8',match:t=>/VGS|VOO|VYM|VWRL|VUAG|IVV|A200|VAS|NDQ|SPY|QQQ|VTS|IWLD/i.test(t)},
+  {key:'Bonds',color:'#6fa8dc',match:t=>/VAF|VGB|BND|VBND|IAF|VGAD|GOVT|VETH.*BOND/i.test(t)},
+  {key:'Crypto',color:'#a090f0',match:t=>/BTC|ETH|CRYPTO|COIN|SOL|ADA/i.test(t)},
+  {key:'Cash',color:'#f0c86e',match:t=>/CASH|USD|AUD|HISA|SAVINGS/i.test(t)}
+];
+const ASSET_TARGETS={Equities:60,Bonds:20,Crypto:15,Cash:5}; // rubric defaults; overridable
+function classifyHolding(h){
+  for(const c of ASSET_CLASSES){if(c.match(h.ticker)||(h.assetType&&c.match(h.assetType)))return c.key;}
+  // default ETFs to Equities
+  return 'Equities';
 }
-function buildGapTable(){
-  const el=document.getElementById('inv-gap');if(!el)return;
-  const total=portTotal();const hs=activeHoldings();
-  if(!hs.length){el.innerHTML='<div style="font-size:11px;color:var(--t3)">Add holdings to see allocation vs target.</div>';return;}
-  el.innerHTML=`<div class="lbl" style="margin-bottom:8px">Allocation vs target</div>`+hs.map(h=>{
-    const cur=total>0?Math.round(holdingValue(h)/total*100):0;const tgt=TPCT[h.ticker];
-    if(tgt==null)return`<div class="bench-row"><div class="bench-label">${h.ticker}</div><div class="bench-val">${cur}% <span style="color:var(--t3);font-size:10px">no target</span></div></div>`;
-    const diff=cur-tgt;const badge=diff>2?`<span class="tag tr">+${diff}% over</span>`:diff<-2?`<span class="tag tg">${diff}% under</span>`:`<span class="tag tb">on target</span>`;
-    return`<div class="bench-row"><div class="bench-label">${h.ticker} — ${cur}% / ${tgt}%</div><div>${badge}</div></div>`;
+function buildAlloc9(){
+  const el=document.getElementById('inv-alloc9');if(!el)return;
+  const hs=activeHoldings();const total=portTotal();
+  if(!hs.length){el.innerHTML=`<div class="empty" style="padding:24px 0"><div class="empty-txt">Add holdings to see your allocation vs target.</div></div>`;return;}
+  // Sum by asset class
+  const byClass={};ASSET_CLASSES.forEach(c=>byClass[c.key]=0);
+  hs.forEach(h=>{byClass[classifyHolding(h)]+=holdingValue(h);});
+  const targets={...ASSET_TARGETS,...(S.assetTargets||{})};
+  const rows=ASSET_CLASSES.map(c=>{
+    const val=byClass[c.key];const actual=total>0?(val/total*100):0;const tgt=targets[c.key]||0;
+    return {key:c.key,color:c.color,val,actual,tgt,drift:actual-tgt};
+  }).filter(r=>r.val>0||r.tgt>0);
+  // Verdict headline — biggest positive drift
+  const over=rows.slice().sort((a,b)=>b.drift-a.drift)[0];
+  let headline='On target.',insight='Your mix is close to plan — nothing to do.';
+  if(over&&over.drift>=3){
+    const noun={Equities:'stock-heavy',Bonds:'bond-heavy',Crypto:'crypto-heavy',Cash:'cash-heavy'}[over.key]||'off balance';
+    headline=`Slightly ${noun}.`;
+    insight=`You're ${Math.round(over.drift)}% above target on ${over.key.toLowerCase()}. Not urgent — Finn can auto-balance on your next buy.`;
+  }
+  // Donut segments
+  const segs=rows.filter(r=>r.val>0).map(r=>({label:r.key,value:r.val,color:r.color}));
+  const totalShort=total>=1000?'$'+(total/1000).toFixed(1)+'k':fmtD(total);
+  const donut=FP_CHART.donut(segs,{size:150,stroke:18,centerLabel:'TOTAL',centerValue:totalShort});
+  const rowsHtml=rows.map(r=>{
+    const driftCol=Math.abs(r.drift)<=1?'var(--acc)':Math.abs(r.drift)<=4?'var(--y)':'var(--r)';
+    const barMax=Math.max(...rows.map(x=>Math.max(x.actual,x.tgt)),1);
+    return`<div class="alloc9-row">
+      <div class="alloc9-row-top">
+        <span class="alloc9-dot" style="background:${r.color}"></span>
+        <span class="alloc9-name">${r.key}</span>
+        <span class="alloc9-pcts"><b>${Math.round(r.actual)}%</b> <span>/ ${Math.round(r.tgt)}%</span></span>
+      </div>
+      <div class="alloc9-track">
+        <div class="alloc9-fill" style="width:${(r.actual/barMax*100).toFixed(1)}%;background:${r.color}"></div>
+        <div class="alloc9-target" style="left:${(r.tgt/barMax*100).toFixed(1)}%"></div>
+      </div>
+    </div>`;
   }).join('');
+  el.innerHTML=`
+    <div class="alloc9-headline">${headline}</div>
+    <div class="alloc9-insight">${insight}</div>
+    <div class="alloc9-donut">${donut}</div>
+    <div class="alloc9-rows">${rowsHtml}</div>`;
+}
+function showRebalance9(){
+  const hs=activeHoldings();const total=portTotal();
+  if(!hs.length){showToast('Add holdings first');return;}
+  const byClass={};ASSET_CLASSES.forEach(c=>byClass[c.key]=0);
+  hs.forEach(h=>{byClass[classifyHolding(h)]+=holdingValue(h);});
+  const targets={...ASSET_TARGETS,...(S.assetTargets||{})};
+  const moves=ASSET_CLASSES.map(c=>{
+    const actual=total>0?(byClass[c.key]/total*100):0;const drift=actual-(targets[c.key]||0);
+    const dollarMove=Math.abs(drift/100*total);
+    return {key:c.key,drift,dollarMove};
+  }).filter(m=>Math.abs(m.drift)>=2);
+  if(!moves.length){showSheet('Rebalance',`<div style="font-size:12px;color:var(--t2);line-height:1.6">Your allocation is within 2% of target across the board — no rebalancing needed right now. 👍</div><button class="btn btn-ghost btn-full" style="margin-top:14px" onclick="closeSheet()">Close</button>`);return;}
+  const rows=moves.map(m=>`<div class="detail-row"><span class="detail-label">${m.key}</span><span class="detail-value" style="color:${m.drift>0?'var(--r)':'var(--acc)'}">${m.drift>0?'Trim':'Add'} ${fmtD(m.dollarMove)}</span></div>`).join('');
+  showSheet('Rebalance suggestion',`
+    <div style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:12px">To return to your target mix, consider these moves on your next buy or sell:</div>
+    <div class="detail-card">${rows}</div>
+    <div style="font-size:10px;color:var(--t3);line-height:1.5;margin-top:10px">These are suggestions based on your target percentages, not financial advice. FinPlan doesn't place trades.</div>
+    <button class="btn btn-acc btn-full" style="margin-top:14px" onclick="closeSheet()">Got it</button>`);
 }
 
 
