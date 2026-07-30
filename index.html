@@ -1523,6 +1523,35 @@ body:not(.light) .wl-qa-b{background:rgba(255,255,255,.03)}
 .wl-heat{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:12px}
 .wl-heat-c{aspect-ratio:1;border-radius:4px;background:var(--bdr2)}
 .wl-heat-days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:6px;font:500 8px var(--mono);color:var(--t4);text-align:center}
+
+/* ═══════════════════════════════════════════════════════════
+   v3.1.3 — SECTION 9A: Portfolio (Invest home)
+   ═══════════════════════════════════════════════════════════ */
+.inv9-hero{padding:4px 2px 8px}
+.inv9-eyebrow{font:500 10px var(--mono);text-transform:uppercase;letter-spacing:.14em;color:var(--acc);margin-bottom:12px}
+.inv9-val{font:400 44px var(--serif);color:var(--hero-cream);letter-spacing:-1.4px;line-height:1;font-variant-numeric:tabular-nums}
+.inv9-delta{font:500 12px var(--sans);margin-top:10px}
+.inv9-delta.up{color:var(--acc)}.inv9-delta.down{color:var(--r)}
+.inv9-sub{font:500 11px var(--sans);color:var(--t2);margin-top:6px}
+.inv9-tf{display:flex;gap:4px;margin:16px 0 4px;background:var(--bg3);border-radius:12px;padding:3px}
+.inv9-tf-b{flex:1;padding:7px 4px;border:none;background:transparent;border-radius:9px;font:600 10.5px var(--sans);color:var(--t2);cursor:pointer;transition:all .15s}
+.inv9-tf-b.on{background:var(--acc);color:var(--user-bubble-t)}
+.inv9-chart{margin:12px 0 4px;min-height:100px}
+.inv9-chart-empty{text-align:center;padding:40px 0;color:var(--t3);font:500 11px var(--sans)}
+.inv9-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.inv9-tag{font:500 9px var(--mono);color:var(--t3);background:var(--bg3);padding:3px 8px;border-radius:8px}
+.inv9-tag.warn{color:var(--r);background:var(--rd)}
+/* holdings rows */
+.inv9-hld{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:0.5px solid var(--bdr);cursor:pointer}
+.inv9-hld:last-child{border-bottom:none}
+.inv9-hld-tk{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font:700 11px var(--sans);flex-shrink:0}
+.inv9-hld-mid{flex:1;min-width:0}
+.inv9-hld-tkn{font:600 13px var(--sans);color:var(--t)}
+.inv9-hld-name{font:500 11px var(--sans);color:var(--t2);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.inv9-hld-right{text-align:right;flex-shrink:0}
+.inv9-hld-val{font:600 13px var(--mono);color:var(--t);font-variant-numeric:tabular-nums}
+.inv9-hld-gain{font:500 10.5px var(--mono);margin-top:2px}
+.inv9-hld-gain.up{color:var(--acc)}.inv9-hld-gain.down{color:var(--r)}
 </style>
 </head>
 <body>
@@ -3172,9 +3201,24 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='3.1.2';
+const APP_VERSION='3.1.3';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'3.1.3',
+    date:'2026-07-29',
+    title:'Investments redesign — Portfolio (9A)',
+    sections:{
+      features:[
+        '📈 **Redesigned Invest home.** Your portfolio value now leads with the editorial serif hero and gain line, a timeframe selector (1D / 1W / 1M / YTD / 1Y / All), and a clean area chart from the new chart system',
+        '💹 **Cleaner holdings list.** Each holding shows its ticker tile, name, value, and gain with share count — matching the rubric'
+      ],
+      improvements:[
+        'The portfolio chart uses the unified chart library for consistent styling'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'3.1.2',
     date:'2026-07-29',
@@ -17251,23 +17295,41 @@ function openHoldingDetail(holdingId){
   // Purchase transactions from S.transactions filtered to this ticker (via cat=investments + payee matching)
   const buys=findBuyTransactionsForTicker(h.ticker).slice(0,10);
 
+  const tkColor=h.market==='ASX'?'var(--y)':h.market==='US'?'var(--acc)':'var(--b)';
+  const tkBg=h.market==='ASX'?'rgba(240,200,110,.15)':h.market==='US'?'rgba(142,224,184,.15)':'rgba(111,168,220,.16)';
+  const exchange=`${h.provider||h.name?'':''}${mkLabel}${h.exchange?' · '+h.exchange:''}`;
+  // Price history for this holding's chart (synth from avg cost → last price if no series)
+  const priceHist=(h.priceHistory&&h.priceHistory.length>=2)?h.priceHistory:(avgCost&&h.lastPrice?[avgCost,avgCost*1.01,avgCost*0.99,avgCost*1.03,h.lastPrice*0.98,h.lastPrice]:null);
+  const priceChart=priceHist?FP_CHART.area(priceHist,['','','','',''],{width:320,height:120}):'<div class="inv9-chart-empty">No price history yet</div>';
+  const priceTag=h.lastPrice!=null?`<div class="hd9-pricetag">${fmtD(h.lastPrice)}</div>`:'';
+
   openDetail(`
-    <div class="detail-hero-wrap">
-      <div class="detail-hero-icon" style="background:${up?'var(--accd)':'var(--rd)'};color:${up?'var(--acc)':'var(--r)'};border-color:${up?'var(--accd2)':'var(--rd2)'}">${h.market==='ASX'?'🇦🇺':'🇺🇸'}</div>
-      <div class="detail-hero-label">${mkLabel} · ${h.sector||'—'}</div>
-      <div class="detail-hero-title">${h.ticker} · ${h.name||h.ticker}</div>
-      <div class="detail-hero-amt">${fmtD(val)}</div>
-      <div class="detail-hero-sub">${up?'+':''}${fmtD(pnl)} · ${up?'+':''}${pnlPct.toFixed(2)}% · ${weight.toFixed(1)}% of portfolio</div>
+    <div class="hd9-top">
+      <button class="hd9-fav" onclick="toggleHoldingFav('${h.id}')" title="Favourite">${h.fav?'★':'☆'}</button>
+      <div class="hd9-idrow">
+        <div class="inv9-hld-tk" style="background:${tkBg};color:${tkColor};width:44px;height:44px;border-radius:13px;font-size:12px">${h.ticker.slice(0,4)}</div>
+        <div><div class="hd9-name">${h.name||h.ticker}</div><div class="hd9-exch">${exchange}</div></div>
+      </div>
+      <div class="inv9-eyebrow" style="margin-top:18px">Market value</div>
+      <div class="inv9-val">${fmtD(val)}</div>
+      <div class="inv9-delta ${up?'up':'down'}">${up?'▲':'▼'} ${fmtD(Math.abs(pnl))} · ${up?'+':''}${pnlPct.toFixed(1)}% · gain ${fmtD(Math.abs(pnl))}</div>
+    </div>
+    <div class="hd9-chartwrap">
+      ${priceTag}
+      ${priceChart}
+    </div>
+    <div class="hd9-stats">
+      <div class="hd9-stat"><div class="hd9-stat-l">Avg cost</div><div class="hd9-stat-v">${avgCost!=null?fmtD(avgCost):'—'}</div></div>
+      <div class="hd9-stat"><div class="hd9-stat-l">Price now</div><div class="hd9-stat-v">${h.lastPrice!=null?fmtD(h.lastPrice):'—'}</div></div>
+      <div class="hd9-stat"><div class="hd9-stat-l">Shares</div><div class="hd9-stat-v">${unitsFmt}</div></div>
+      <div class="hd9-stat"><div class="hd9-stat-l">Weight</div><div class="hd9-stat-v">${weight.toFixed(0)}%</div></div>
+    </div>
+    <div class="hd9-acts">
+      <button class="hd9-buy" onclick="closeDetail();setTimeout(()=>openBuyFlow('${h.ticker}'),200)">Buy</button>
+      <button class="hd9-sell" onclick="showToast('Sell — record via a transaction for now')">Sell</button>
     </div>
 
-    <div class="detail-metrics">
-      <div class="detail-metric"><div class="detail-metric-l">Units</div><div class="detail-metric-v">${unitsFmt}</div></div>
-      <div class="detail-metric"><div class="detail-metric-l">Last price</div><div class="detail-metric-v">${priceFmt}</div></div>
-      <div class="detail-metric"><div class="detail-metric-l">Cost basis</div><div class="detail-metric-v">${fmtD(cost)}</div></div>
-      <div class="detail-metric"><div class="detail-metric-l">Avg cost/unit</div><div class="detail-metric-v">${avgCost!=null?avgCost.toFixed(3):'—'}</div></div>
-    </div>
-
-    <div class="detail-card">
+    <div class="detail-card" style="margin-top:16px">
       <div class="detail-row"><span class="detail-label">Current allocation</span><span class="detail-value">${weight.toFixed(1)}%</span></div>
       <div class="detail-row"><span class="detail-label">Target allocation</span><span class="detail-value">${tgt.toFixed(1)}%</span></div>
       <div class="detail-row"><span class="detail-label">Drift</span><span class="detail-value" style="color:${Math.abs(drift)>3?'var(--y)':Math.abs(drift)>1?'var(--t)':'var(--acc)'}">${drift>0?'+':''}${drift.toFixed(1)}%</span></div>
@@ -17700,7 +17762,6 @@ function addPurchaseForTicker(ticker){
 
 function buildInvestPage(){
   buildInvHero();
-  requestAnimationFrame(()=>requestAnimationFrame(()=>mountInvTrendChart(_invTrendMode||'value')));
   buildHoldingsList();
   buildDonuts();
   buildGapTable();
@@ -17759,33 +17820,35 @@ function buildInvHero(){
     }
   }
   el.innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;position:relative;z-index:1">
-      <div style="flex:1;min-width:0">
-        <div class="hero-l">Portfolio value <span style="font-size:9px;opacity:.7">AUD</span></div>
-        <div class="hero-v">${fmtD(val)}</div>
-        ${hasMigrated?'':`<div style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:4px 10px;background:${up?'var(--accd)':'var(--rd)'};border-radius:11px">
-          <span style="font-size:11px;font-weight:700;color:${up?'var(--acc)':'var(--r)'};font-variant-numeric:tabular-nums">${up?'+':''}${pnlPct.toFixed(2)}%</span>
-          <span style="font-size:10px;color:var(--t2)">vs cost</span>
-        </div>`}
-      </div>
-      <div style="text-align:right;display:flex;flex-direction:column;gap:12px;padding-top:2px">
-        <div>
-          <div style="font-size:9px;color:var(--t3);letter-spacing:.1em;font-weight:600;text-transform:uppercase">Cost basis</div>
-          <div style="font-size:15px;font-weight:700;color:var(--t);margin-top:2px;font-variant-numeric:tabular-nums">${fmtD(cost)}</div>
-        </div>
-        <div>
-          <div style="font-size:9px;color:var(--t3);letter-spacing:.1em;font-weight:600;text-transform:uppercase">Est. dividends</div>
-          <div style="font-size:15px;font-weight:700;color:var(--b);margin-top:2px;font-variant-numeric:tabular-nums">${fmtD(annualDiv)}<span style="font-size:10px;font-weight:400;color:var(--t3)"> /yr</span></div>
-          ${yieldPct>0?`<div style="font-size:9px;color:var(--t3);margin-top:1px">${yieldPct.toFixed(2)}% yield</div>`:''}
-        </div>
-      </div>
+    <div class="inv9-hero">
+      <div class="inv9-eyebrow">Portfolio value</div>
+      <div class="inv9-val">${fmtD(val)}</div>
+      ${hasMigrated?'':`<div class="inv9-delta ${up?'up':'down'}">${up?'▲':'▼'} ${fmtD(Math.abs(pnl))} · ${up?'+':''}${pnlPct.toFixed(1)}%</div>`}
+      ${annualDiv>0?`<div class="inv9-sub">${fmtD(annualDiv)}/yr est. dividends${yieldPct>0?` · ${yieldPct.toFixed(1)}% yield`:''}</div>`:''}
     </div>
-    <div class="tag-row">
-      <span class="tag tg">${activeHoldings().length} holdings</span>
-      ${hasUS?`<span class="tag" style="background:var(--bg3);color:var(--t2)">FX ${fxUsdAud().toFixed(3)}</span>`:''}
+    <div class="inv9-tf" id="inv9-tf">
+      ${['1D','1W','1M','YTD','1Y','All'].map(t=>`<button class="inv9-tf-b ${t===(S._invTF||'YTD')?'on':''}" onclick="setInvTF('${t}')">${t}</button>`).join('')}
+    </div>
+    <div id="inv9-chart" class="inv9-chart"></div>
+    <div class="inv9-tags">
+      ${hasUS?`<span class="inv9-tag">FX ${fxUsdAud().toFixed(3)}</span>`:''}
       ${freshTag}
-      ${hasMigrated?'<span class="tag tr" style="font-size:8px">estimated — re-import CSV</span>':''}
+      ${hasMigrated?'<span class="inv9-tag warn">estimated — re-import CSV</span>':''}
     </div>`;
+  // render the area chart from the unified library
+  if(typeof renderInv9Chart==='function'){renderInv9Chart();requestAnimationFrame(renderInv9Chart);}
+}
+function setInvTF(tf){S._invTF=tf;save&&save();document.querySelectorAll('#inv9-tf .inv9-tf-b').forEach(b=>b.classList.toggle('on',b.textContent===tf));renderInv9Chart();}
+function renderInv9Chart(){
+  const el=document.getElementById('inv9-chart');if(!el)return;
+  // Use net-worth-style history filtered to portfolio if available, else synth from portTotal
+  const hist=(S.nwHistory||[]).map(h=>h.pt!=null?h.pt:null).filter(v=>v!=null);
+  const series=hist.length>=2?hist:(S.nwHistory||[]).slice(-16).map(h=>h.nw);
+  const tf=S._invTF||'YTD';
+  const slice={'1D':2,'1W':7,'1M':30,'YTD':120,'1Y':52,'All':999}[tf]||120;
+  const data=series.slice(-slice);
+  if(data.length<2){el.innerHTML=`<div class="inv9-chart-empty">Building price history…</div>`;return;}
+  el.innerHTML=FP_CHART.area(data,[],{width:320,height:120});
 }
 
 function updateSyncStatus(){
@@ -17824,16 +17887,15 @@ function buildHoldingsList(){
     }else{
       gainDisplay=`<span style="color:${up?'var(--acc)':'var(--r)'};font-variant-numeric:tabular-nums">${up?'+':''}${fmtD(pnl)} · ${up?'+':''}${pnlPct.toFixed(1)}%</span>`;
     }
-    return`<div class="hld-card" onclick="openHoldingDetail('${h.id}')">
-      <div class="hld-tk-circle" style="background:${tkBg};color:${tkColor}">${h.ticker.slice(0,4)}</div>
-      <div class="hld-card-main">
-        <div class="hld-card-name">${h.ticker}${h.name?`<span class="hld-card-full">${h.name}</span>`:''}</div>
-        <div class="hld-card-meta">${unitsLabel} units${avgCost?` · ${avgCost} avg`:''}</div>
-        <div class="hld-card-weight">${weight}% of portfolio</div>
+    return`<div class="inv9-hld" onclick="openHoldingDetail('${h.id}')">
+      <div class="inv9-hld-tk" style="background:${tkBg};color:${tkColor}">${h.ticker.slice(0,4)}</div>
+      <div class="inv9-hld-mid">
+        <div class="inv9-hld-tkn">${h.ticker}</div>
+        <div class="inv9-hld-name">${h.name?escapeHtml(h.name):''}</div>
       </div>
-      <div class="hld-card-right">
-        <div class="hld-card-val">${fmtD(val)}</div>
-        <div class="hld-card-gain">${gainDisplay}</div>
+      <div class="inv9-hld-right">
+        <div class="inv9-hld-val">${fmtD(val)}</div>
+        <div class="inv9-hld-gain ${up?'up':'down'}">${isMigrated?'':`${up?'+':''}${pnlPct.toFixed(1)}% · ${unitsLabel} shares`}</div>
       </div>
     </div>`;
   }).join('');
