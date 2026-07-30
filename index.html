@@ -606,20 +606,11 @@ body.ctx-showing .fab{bottom:calc(var(--nav-h) + var(--sb) + 130px);transition:b
 .more-tile svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;margin-bottom:7px}
 
 /* PAGES */
-.pg{display:none;padding:22px 18px 12px}.pg.on{display:block;animation:pgFade .32s cubic-bezier(.16,1,.3,1)}
-@keyframes pgFade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.pg.on>.card,.pg.on>.hero,.pg.on>.mg,.pg.on>.tog,.pg.on>.alert{animation:cardIn .4s cubic-bezier(.16,1,.3,1) backwards}
-.pg.on>*:nth-child(1){animation-delay:.02s}
-.pg.on>*:nth-child(2){animation-delay:.06s}
-.pg.on>*:nth-child(3){animation-delay:.10s}
-.pg.on>*:nth-child(4){animation-delay:.14s}
-.pg.on>*:nth-child(5){animation-delay:.18s}
-.pg.on>*:nth-child(6){animation-delay:.22s}
-@keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.pg.on>*:nth-child(7){animation-delay:.26s}
-.pg.on>*:nth-child(8){animation-delay:.30s}
-.pg.on>*:nth-child(9){animation-delay:.34s}
-.pg.on>*:nth-child(n+10){animation-delay:.38s}
+.pg{display:none;padding:22px 18px 12px}.pg.on{display:block;animation:pgFade .22s ease-out}
+@keyframes pgFade{from{opacity:0}to{opacity:1}}
+/* v3.1.9 — removed per-child entrance cascade: it replayed on every tab
+   switch, causing the flicker/jitter. A single quick opacity fade is calmer. */
+@keyframes cardIn{from{opacity:1}to{opacity:1}}
 /* v2.8.0 — MOTION SYSTEM */
 /* Spring button press — applies to all buttons for tactile feedback */
 .btn,.nb,.more-tile,.goal-quick-add,.tog-b,.btn-acc,.btn-ghost,.btn-outline{transition:transform var(--dur-fast) var(--ease-out),background var(--dur-fast) var(--ease-out),border-color var(--dur-fast) var(--ease-out),box-shadow var(--dur-fast) var(--ease-out)}
@@ -674,7 +665,7 @@ body.reduce-motion .skeleton{background:rgba(255,255,255,.04)}
 .card.acc-b{border-color:var(--bdr-acc2);background:var(--glass-strong)}
 /* Glass hero card with radial mint glow */
 .card.hero{border-color:var(--bdr-acc2);padding:20px;position:relative}
-.card.hero::before{content:'';position:absolute;inset:0;background:var(--glow-mint);pointer-events:none;border-radius:inherit;animation:heroGlow 6s ease-in-out infinite}
+.card.hero::before{content:'';position:absolute;inset:0;background:var(--glow-mint);pointer-events:none;border-radius:inherit;animation:heroGlow 6s ease-in-out infinite;overflow:hidden;mask-image:radial-gradient(circle at 20% 30%,#000 0%,transparent 70%);-webkit-mask-image:radial-gradient(circle at 20% 30%,#000 0%,transparent 70%)}
 .card.hero>*{position:relative;z-index:1}
 @keyframes heroGlow{0%,100%{opacity:.7}50%{opacity:1}}
 .ctitle{font-size:10px;font-weight:500;color:var(--acc);text-transform:uppercase;letter-spacing:.12em;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;font-family:var(--mono)}
@@ -867,7 +858,8 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .ai-messages{flex:1;min-height:0;overflow-y:auto;padding:14px 14px 22px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .ai-messages::-webkit-scrollbar{display:none}
 /* ── v2.7.33 — AI AUTOPILOT ── */
-.autopilot-card{background:linear-gradient(160deg,rgba(0,229,153,.07),rgba(10,18,14,.4));border:0.5px solid var(--bdr-acc2);border-radius:var(--rad-lg);padding:18px 16px;position:relative;overflow:hidden}
+.autopilot-card{background:linear-gradient(160deg,var(--accd),var(--glass));border:0.5px solid var(--bdr-acc2);border-radius:var(--rad-lg);padding:18px 16px;position:relative;overflow:hidden}
+body:not(.light) .autopilot-card{background:linear-gradient(160deg,rgba(142,224,184,.08),rgba(255,255,255,.03))}
 .autopilot-hdr{display:flex;align-items:center;gap:10px;margin-bottom:14px}
 .autopilot-badge{width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;box-shadow:0 0 16px var(--accd2)}
 .autopilot-title{font-size:14px;font-weight:800;color:var(--t);letter-spacing:-.2px}
@@ -930,9 +922,9 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 /* v2.8.9 — sticky import action bar so you never scroll to apply */
 .import-sticky-bar{position:sticky;top:0;z-index:5;display:flex;gap:8px;padding:10px 0;margin-bottom:8px;background:linear-gradient(180deg,var(--bg) 70%,transparent);backdrop-filter:blur(4px)}
 /* v2.8.3 — Spending section */
-.an-treemap{display:flex;gap:3px;height:150px;margin-bottom:4px}
+.an-treemap{display:flex;gap:3px;min-height:150px;margin-bottom:4px}
 .an-tm-col{display:flex;flex-direction:column;gap:3px;min-width:0}
-.an-tm-block{border-radius:7px;padding:8px;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer;overflow:hidden;transition:transform var(--dur-fast) var(--ease-out);min-width:0}
+.an-tm-block{border-radius:7px;padding:8px;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer;overflow:hidden;transition:transform var(--dur-fast) var(--ease-out);min-width:0;min-height:34px}
 .an-tm-block:active{transform:scale(.97)}
 .an-tm-name{font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
 .an-tm-val{font-size:12px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -1236,6 +1228,8 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
 .ed-sub-t{font:600 12.5px var(--sans);color:var(--t);display:flex;justify-content:space-between;gap:8px}
 .ed-sub-amt{font:500 11.5px var(--mono);flex-shrink:0}
 .ed-sub-s{font:500 10.5px var(--sans);color:var(--t2);margin-top:2px}
+.ed-sub-x{background:none;border:none;color:var(--t3);font-size:12px;cursor:pointer;padding:4px 6px;flex-shrink:0;align-self:center}
+.ed-sub-x:active{color:var(--r)}
 .sub-name{font-size:12px;font-weight:700;color:var(--t)}.sub-meta{font-size:10px;color:var(--t3);margin-top:1px}
 .sub-amt{font-size:12px;font-weight:700;color:var(--r);font-family:var(--mono)}
 /* ── DIVIDEND CALENDAR ── */
@@ -3376,9 +3370,29 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='3.1.8';
+const APP_VERSION='3.1.9';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'3.1.9',
+    date:'2026-07-30',
+    title:'Friction log — 8 fixes (flicker, subs, wizard, charts)',
+    sections:{
+      features:[],
+      improvements:[
+        '✨ **Much calmer app.** Removed the staggered entrance animation that replayed on every tab switch — that was the source of the flickering and jitter. Switching tabs is now a smooth, quick fade',
+        '🎨 **Autopilot widget fixed for light mode.** It no longer shows a dark panel in Calm Cream — the gradient now adapts to the theme',
+        '🧹 **Smarter subscription detection.** Now requires consistent amounts (not just monthly timing), so one-off shops with irregular amounts stop being flagged. And you can now tap ✕ on any detected item to say "not a subscription" — it won\'t come back'
+      ],
+      fixes:[
+        '🐛 **Setup wizard no longer breaks after clearing data.** It was reading data objects that don\'t exist on a fresh start; now guarded so first-run always works',
+        '🐛 **Investment graph now shows real change.** It was looking for portfolio history under the wrong field, so it always looked flat. Now it reads your saved portfolio values and overlays the live total',
+        '🐛 **Analytics treemap no longer cuts off categories at the bottom** — it grows to fit them all',
+        '🐛 **Analytics mini-graphs fixed.** The little sparklines no longer show square blobs where the line ends (a stroke-scaling artefact)',
+        '🐛 **Ambient hero glow no longer shows a visible box edge** — it now fades out smoothly with a radial mask'
+      ]
+    }
+  },
   {
     v:'3.1.8',
     date:'2026-07-29',
@@ -5970,7 +5984,15 @@ const SW=[
   {lbl:'Step 4 of 5',title:'Your savings goals',render:sw3},
   {lbl:'Step 5 of 5',title:'Income & budget',render:sw4},
 ];
-function showSetup(){document.getElementById('setup').style.display='flex';swStep=0;renderSW();}
+function showSetup(){
+  // v3.1.9 — ensure the objects the wizard reads exist. After a data clear
+  // these could be undefined, which threw and left the wizard blank/broken.
+  if(!S.acctBalances||typeof S.acctBalances!=='object')S.acctBalances={westpac:0,macquarie:0};
+  if(!S.portfolio||typeof S.portfolio!=='object')S.portfolio={};
+  if(!S.sliders||typeof S.sliders!=='object')S.sliders={kmart:110,rent:400,spend:600,goals:1674,invest:400};
+  if(!Array.isArray(S.goals))S.goals=[];
+  document.getElementById('setup').style.display='flex';swStep=0;renderSW();
+}
 function renderSW(){
   const s=SW[swStep];
   document.getElementById('sw-lbl').textContent=s.lbl;
@@ -5982,8 +6004,8 @@ function renderSW(){
   s.render();
 }
 function sw0(){document.getElementById('sw-body').innerHTML=`<div style="text-align:center;padding:20px 0 10px"><div style="font-size:52px;margin-bottom:14px">💰</div><div style="font-size:15px;font-weight:700;color:var(--t);font-family:var(--sans);margin-bottom:10px">Your financial command centre</div></div><p style="font-size:13px;color:var(--t2);line-height:1.65;margin-bottom:14px">Set up takes about 2 minutes. Enter your current figures so everything starts accurate. You can update anything at any time.</p><div class="sw-info">All data is stored only on this device. Nothing is sent anywhere except when you use the AI Advisor.</div>`;}
-function sw1(){document.getElementById('sw-body').innerHTML=`<p style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:16px">Enter the <strong>current real balance</strong> of each account. Transactions you log will be applied on top of these.</p><div class="sw-field"><div class="sw-lbl">Westpac — everyday account $</div><input type="number" class="sw-inp" id="sw-wp" placeholder="e.g. 600" value="${S.acctBalances.westpac||''}"></div><div class="sw-field"><div class="sw-lbl">Macquarie — HISA savings $</div><input type="number" class="sw-inp" id="sw-mq" placeholder="e.g. 0" value="${S.acctBalances.macquarie||''}"></div><div class="sw-info">💡 Westpac should only hold your weekly expense money. Savings accumulate in Macquarie.</div>`;}
-function sw2(){document.getElementById('sw-body').innerHTML=`<p style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:14px">Enter your current holding value for each ETF. Leave $0 if you don't hold it.</p><div class="sw-ticker-grid">${TICKERS.map(t=>`<div class="sw-ticker-item"><div class="sw-ticker-name"><div class="sw-dot" style="background:${TC[t]}"></div>${TL[t]}</div><input type="number" class="sw-inp" id="sw-${t}" placeholder="0.00" value="${Math.round((S.portfolio[t]||0)*100)/100}" style="font-size:13px;padding:8px 10px;margin:0"></div>`).join('')}</div>`;}
+function sw1(){document.getElementById('sw-body').innerHTML=`<p style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:16px">Enter the <strong>current real balance</strong> of each account. Transactions you log will be applied on top of these.</p><div class="sw-field"><div class="sw-lbl">Westpac — everyday account $</div><input type="number" class="sw-inp" id="sw-wp" placeholder="e.g. 600" value="${(S.acctBalances&&S.acctBalances.westpac)||''}"></div><div class="sw-field"><div class="sw-lbl">Macquarie — HISA savings $</div><input type="number" class="sw-inp" id="sw-mq" placeholder="e.g. 0" value="${(S.acctBalances&&S.acctBalances.macquarie)||''}"></div><div class="sw-info">💡 Westpac should only hold your weekly expense money. Savings accumulate in Macquarie.</div>`;}
+function sw2(){document.getElementById('sw-body').innerHTML=`<p style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:14px">Enter your current holding value for each ETF. Leave $0 if you don't hold it.</p><div class="sw-ticker-grid">${TICKERS.map(t=>`<div class="sw-ticker-item"><div class="sw-ticker-name"><div class="sw-dot" style="background:${TC[t]}"></div>${TL[t]}</div><input type="number" class="sw-inp" id="sw-${t}" placeholder="0.00" value="${Math.round(((S.portfolio&&S.portfolio[t])||0)*100)/100}" style="font-size:13px;padding:8px 10px;margin:0"></div>`).join('')}</div>`;}
 function sw3(){document.getElementById('sw-body').innerHTML=`<p style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:14px">How much have you already saved toward each goal?</p>${(typeof activeGoals==='function'?activeGoals():[]).map(g=>`<div class="sw-field"><div class="sw-lbl" style="display:flex;align-items:center;gap:5px"><span style="width:7px;height:7px;border-radius:50%;background:${g.color||'#00e599'}"></span>${g.label}${g.deadline?' · due '+g.deadline:' · priority'} (target ${fmtDI(g.target||0)})</div><input type="number" class="sw-inp" id="sw-goal-${g.id}" placeholder="0.00" value="${g.saved||''}"></div>`).join('')}`;}
 function sw4(){document.getElementById('sw-body').innerHTML=`<p style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:14px">Set your income and budget parameters. Adjustable anytime in the Budget tab.</p><div class="sw-field"><div class="sw-lbl">Dominos weekly avg $</div><input type="number" class="sw-inp" id="sw-kmart" value="${S.sliders.kmart}"></div><div class="sw-row"><div class="sw-field"><div class="sw-lbl">Rent / month $</div><input type="number" class="sw-inp" id="sw-rent" value="${S.sliders.rent}"></div><div class="sw-field"><div class="sw-lbl">Personal spend / week $</div><input type="number" class="sw-inp" id="sw-spend" value="${S.sliders.spend}"></div></div><div class="sw-row"><div class="sw-field"><div class="sw-lbl">Goal savings / month $</div><input type="number" class="sw-inp" id="sw-goals" value="${S.sliders.goals}"></div><div class="sw-field"><div class="sw-lbl">Monthly invest target $</div><input type="number" class="sw-inp" id="sw-invest" value="${S.sliders.invest}"></div></div>`;}
 function swSave(){
@@ -6735,7 +6757,7 @@ function sparklineSvg(values,opts){
   return`<svg class="${cls}"${sizeAttr} viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
     <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity="0.28"/><stop offset="100%" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
     <polygon points="${areaPoints}" fill="url(#${gid})"/>
-    <polyline points="${points}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="${points}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
   </svg>`;
 }
 
@@ -18232,13 +18254,24 @@ function buildInvHero(){
 function setInvTF(tf){S._invTF=tf;save&&save();document.querySelectorAll('#inv9-tf .inv9-tf-b').forEach(b=>b.classList.toggle('on',b.textContent===tf));renderInv9Chart();}
 function renderInv9Chart(){
   const el=document.getElementById('inv9-chart');if(!el)return;
-  // Use net-worth-style history filtered to portfolio if available, else synth from portTotal
-  const hist=(S.nwHistory||[]).map(h=>h.pt!=null?h.pt:null).filter(v=>v!=null);
-  const series=hist.length>=2?hist:(S.nwHistory||[]).slice(-16).map(h=>h.nw);
+  // Portfolio value over time — snapshotNW stores it under `invested`.
+  const hist=(S.nwHistory||[]).map(h=>h.invested!=null?h.invested:(h.pt!=null?h.pt:null)).filter(v=>v!=null&&v>0);
   const tf=S._invTF||'YTD';
   const slice={'1D':2,'1W':7,'1M':30,'YTD':120,'1Y':52,'All':999}[tf]||120;
-  const data=series.slice(-slice);
-  if(data.length<2){el.innerHTML=`<div class="inv9-chart-empty">Building price history…</div>`;return;}
+  let data=hist.slice(-slice);
+  // Ensure the latest point reflects the live portfolio total
+  const liveTotal=(typeof portTotal==='function')?portTotal():0;
+  if(liveTotal>0){
+    if(data.length){data=data.slice();data[data.length-1]=liveTotal;}
+    else data=[liveTotal];
+  }
+  if(data.length<2){
+    // Seed a snapshot now so history starts building, and show a flat baseline
+    if(typeof snapshotNW==='function')snapshotNW();
+    if(data.length===1){el.innerHTML=FP_CHART.area([data[0],data[0]],[],{width:320,height:120});}
+    else{el.innerHTML=`<div class="inv9-chart-empty">Building portfolio history — check back after prices update</div>`;}
+    return;
+  }
   el.innerHTML=FP_CHART.area(data,[],{width:320,height:120});
 }
 
@@ -21708,15 +21741,31 @@ function scanSubs(){
     if(!fm[k])fm[k]={payee:t.payee,amounts:[],dates:[]};
     fm[k].amounts.push(t.amt);fm[k].dates.push(t.date);
   });
+  const ignored=S.subIgnored||[];
   S.subScanResults=Object.values(fm).filter(s=>{
     if(s.dates.length<2)return false;
+    const key=s.payee.toLowerCase().trim();
+    if(ignored.includes(key))return false; // user said "not a subscription"
     const sorted=[...s.dates].sort();
     const gaps=[];
     for(let i=1;i<sorted.length;i++)gaps.push((new Date(sorted[i])-new Date(sorted[i-1]))/(1000*60*60*24));
     const avg=gaps.reduce((a,v)=>a+v,0)/gaps.length;
-    return avg>=25&&avg<=37;
-  }).map(s=>({...s,monthlyAmt:s.amounts.reduce((a,v)=>a+v,0)/s.amounts.length}));
+    // Monthly cadence
+    if(avg<25||avg>37)return false;
+    // Amount consistency — subscriptions charge (roughly) the same each time.
+    const amts=s.amounts;const mean=amts.reduce((a,v)=>a+v,0)/amts.length;
+    const maxDev=Math.max(...amts.map(a=>Math.abs(a-mean)/(mean||1)));
+    if(maxDev>0.15)return false; // amounts vary >15% → probably not a subscription
+    return true;
+  }).map(s=>({...s,key:s.payee.toLowerCase().trim(),monthlyAmt:s.amounts.reduce((a,v)=>a+v,0)/s.amounts.length}));
   save();buildSubScan();
+}
+function dismissSub(key){
+  if(!S.subIgnored)S.subIgnored=[];
+  if(!S.subIgnored.includes(key))S.subIgnored.push(key);
+  S.subScanResults=(S.subScanResults||[]).filter(s=>s.key!==key);
+  save();buildSubScan();
+  showToast('Removed — won\'t flag this as a subscription again');
 }
 function buildSubScan(){
   const el=document.getElementById('sub-list');if(!el)return;
@@ -21764,6 +21813,7 @@ function buildSubScan(){
         <div class="ed-sub-t" ${isReview?'style="color:var(--y)"':''}>${escapeHtml(s.payee)}<span class="ed-sub-amt">${fmtD(s.monthlyAmt)}/mo</span></div>
         <div class="ed-sub-s">${sub}</div>
       </div>
+      <button class="ed-sub-x" onclick="dismissSub('${(s.key||s.payee.toLowerCase().trim()).replace(/'/g,"\\'")}')" title="Not a subscription">✕</button>
     </div>`;
   };
   el.innerHTML=`
