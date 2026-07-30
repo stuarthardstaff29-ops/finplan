@@ -660,11 +660,16 @@ body.reduce-motion .skeleton{background:rgba(255,255,255,.04)}
 /* Children of the AI page must NOT get the staggered cardIn transform either */
 .ai-pg.on>*{animation:none!important;transform:none!important}
 /* CARDS */
-.card{background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad-lg);padding:20px;margin-bottom:18px;transition:border-color var(--dur-base) var(--ease-out),transform var(--dur-fast) var(--ease-out);position:relative;overflow:hidden}
+.card{background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad-lg);padding:20px;margin-bottom:18px;transition:border-color var(--dur-base) var(--ease-out),transform var(--dur-fast) var(--ease-out);position:relative;overflow:hidden;box-shadow:0 24px 60px -20px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.04);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+/* v3.2.2 — Depth material: subtle gradient, top-edge highlight, ambient warmth */
+.card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 0%,var(--bdr-acc2) 20%,var(--bdr-acc2) 80%,transparent 100%);opacity:.7;pointer-events:none}
+body:not(.light) .card{background:linear-gradient(155deg,rgba(255,255,255,.045) 0%,rgba(255,255,255,.02) 100%)}
+body.light .card{background:linear-gradient(155deg,rgba(255,255,255,.85) 0%,rgba(244,241,232,.6) 100%);box-shadow:0 20px 50px -22px rgba(10,42,28,.15),0 2px 6px rgba(10,42,28,.06),inset 0 1px 0 rgba(255,255,255,.9)}
 .card:hover{border-color:var(--bdr-acc2)}
 .card.acc-b{border-color:var(--bdr-acc2);background:var(--glass-strong)}
 /* Glass hero card with radial mint glow */
-.card.hero{border-color:var(--bdr-acc2);padding:20px;position:relative}
+.card.hero{border-color:var(--bdr-acc2);padding:20px;position:relative;box-shadow:0 32px 80px -24px rgba(0,0,0,.55),0 4px 12px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.06)}
+body.light .card.hero{box-shadow:0 28px 70px -26px rgba(10,42,28,.18),0 4px 12px rgba(10,42,28,.08),inset 0 1px 0 rgba(255,255,255,.95)}
 .card.hero::before{content:'';position:absolute;inset:0;background:var(--glow-mint);pointer-events:none;border-radius:inherit;animation:heroGlow 6s ease-in-out infinite;overflow:hidden;mask-image:radial-gradient(circle at 20% 30%,#000 0%,transparent 70%);-webkit-mask-image:radial-gradient(circle at 20% 30%,#000 0%,transparent 70%)}
 .card.hero>*{position:relative;z-index:1}
 @keyframes heroGlow{0%,100%{opacity:.7}50%{opacity:1}}
@@ -1465,8 +1470,10 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
    Rubric tiles: rounded 20px, generous padding, badge top-right,
    eyebrow + hero on the type ladder. Half-width pairs sit in a row.
    ═══════════════════════════════════════════════════════════ */
-.wl{background:var(--glass);border:0.5px solid var(--bdr);border-radius:20px;padding:18px;position:relative;overflow:hidden}
-body:not(.light) .wl{background:rgba(255,255,255,.03)}
+.wl{background:var(--glass);border:0.5px solid var(--bdr);border-radius:20px;padding:18px;position:relative;overflow:hidden;box-shadow:0 20px 50px -20px rgba(0,0,0,.45),0 2px 4px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.04);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);transition:transform var(--dur-fast) var(--ease-out),box-shadow var(--dur-base) var(--ease-out)}
+.wl::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(142,224,184,.24),transparent);opacity:.6;pointer-events:none}
+body:not(.light) .wl{background:linear-gradient(155deg,rgba(255,255,255,.04) 0%,rgba(255,255,255,.015) 100%)}
+body.light .wl{background:linear-gradient(155deg,rgba(255,255,255,.85) 0%,rgba(244,241,232,.55) 100%);box-shadow:0 16px 40px -18px rgba(10,42,28,.13),0 1px 3px rgba(10,42,28,.05),inset 0 1px 0 rgba(255,255,255,.9)}
 .wl-badge{position:absolute;top:14px;right:14px;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.08em;color:var(--t4)}
 .wl-eyebrow{font-family:var(--mono);font-size:10px;line-height:1.2;letter-spacing:.14em;text-transform:uppercase;font-weight:500;color:var(--acc);margin-bottom:10px}
 .wl-hero{font-family:var(--serif);font-size:40px;line-height:1;letter-spacing:-1.4px;font-weight:400;color:var(--hero-cream);font-variant-numeric:tabular-nums}
@@ -1695,6 +1702,15 @@ body:not(.light) .hub-focus{background:rgba(255,255,255,.02)}
 .hub-modebar{display:flex;gap:4px;justify-content:flex-end;margin-bottom:2px}
 .hub-mode-chip{background:var(--glass);border:0.5px solid var(--bdr);border-radius:9px;padding:5px 12px;font:600 10.5px var(--sans);color:var(--t2);cursor:pointer;transition:all .15s}
 .hub-mode-chip.on{background:var(--acc);color:var(--user-bubble-t);border-color:transparent}
+
+/* v3.2.2 — MOTION: hero chart animates on entry (draw + fill + endpoint pulse) */
+.fp-draw{stroke-dasharray:1000;stroke-dashoffset:1000;animation:fpDraw 1.4s cubic-bezier(.4,0,.2,1) forwards}
+.fp-fill{opacity:0;animation:fpFill 1s .8s ease-out forwards}
+.fp-dot{opacity:0;animation:fpDot 1.6s 1.4s ease-out infinite}
+@keyframes fpDraw{to{stroke-dashoffset:0}}
+@keyframes fpFill{to{opacity:1}}
+@keyframes fpDot{0%{opacity:0;r:3}30%{opacity:1;r:5}70%{opacity:1;r:5}100%{opacity:.4;r:8}}
+@media (prefers-reduced-motion:reduce){.fp-draw,.fp-fill,.fp-dot{animation:none;stroke-dashoffset:0;opacity:1}}
 </style>
 </head>
 <body>
@@ -3388,9 +3404,24 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='3.2.1';
+const APP_VERSION='3.2.2';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'3.2.2',
+    date:'2026-07-30',
+    title:'Depth & Motion — a more premium feel',
+    sections:{
+      features:[
+        '💎 **Depth on every card.** Cards and dashboard tiles now feel like real objects: a soft layered shadow underneath, a subtle gradient inside, a fine highlight along the top edge, and frosted-glass blur behind them. Same layout, more expensive material',
+        '📈 **Motion on the portfolio chart.** Opening Invest, the area chart now draws itself in, the shading fades in behind, and a soft pulsing dot lands on the latest point. Signature moment, once per open'
+      ],
+      improvements:[
+        'Everything respects your device\'s "reduce motion" setting — if you have it on, the chart just appears instantly'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'3.2.1',
     date:'2026-07-30',
@@ -6647,11 +6678,17 @@ const FP_CHART={
     const area=`${pl},${ih} ${pts} ${pl+iw},${ih}`;
     const gid='fpa-'+Math.random().toString(36).slice(2,8);
     const xl=(labels||[]).map((l,i)=>{const n=labels.length;if(n>6&&i%Math.ceil(n/6)!==0)return'';return `<text x="${(pl+i*dx).toFixed(1)}" y="${h-6}" font-size="8" font-family="${this.mono}" fill="${this.axisColor}" text-anchor="middle">${l}</text>`;}).join('');
+    // v3.2.2 — opt-in Motion classes: hero charts animate on entry (draw + fade + endpoint pulse)
+    const draw=opts.animate?'fp-draw':'';
+    const fill=opts.animate?'fp-fill':'';
+    // endpoint dot for the pulsing tip in animated mode
+    const lastPt=values.length?`${(pl+(values.length-1)*dx).toFixed(1)},${(ih-((values[values.length-1]-min)/range)*(ih-6)-3).toFixed(1)}`.split(','):null;
+    const dot=(opts.animate&&lastPt)?`<circle class="fp-dot" cx="${lastPt[0]}" cy="${lastPt[1]}" r="3.5" fill="var(--acc)"/>`:'';
     return`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="width:100%;height:auto">
       <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--acc)" stop-opacity="0.25"/><stop offset="100%" stop-color="var(--acc)" stop-opacity="0"/></linearGradient></defs>
-      <polygon points="${area}" fill="url(#${gid})"/>
-      <polyline points="${pts}" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      ${xl}</svg>`;
+      <polygon class="${fill}" points="${area}" fill="url(#${gid})"/>
+      <polyline class="${draw}" points="${pts}" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      ${dot}${xl}</svg>`;
   },
 
   // ── Bar chart (saved/month) ──
@@ -18486,7 +18523,7 @@ function renderInv9Chart(){
     else{el.innerHTML=`<div class="inv9-chart-empty">Building portfolio history — check back after prices update</div>`;}
     return;
   }
-  el.innerHTML=FP_CHART.area(data,[],{width:320,height:120});
+  el.innerHTML=FP_CHART.area(data,[],{width:320,height:120,animate:true});
 }
 
 function updateSyncStatus(){
