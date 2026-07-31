@@ -40,6 +40,9 @@
   /* Surfaces — flatter, editorial (less glassy) */
   --glass:rgba(255,255,255,.04);
   --glass-strong:rgba(255,255,255,.055);
+  --popover:linear-gradient(180deg,#141a16,#0e120f);   /* v2.9.2 — modal/sheet/popup surface */
+  --popover-solid:#141a16;
+  --user-bubble:#8ee0b8;--user-bubble-t:#0a2a1c;   /* v2.9.3 — AI chat user bubble */
   --glow-mint:radial-gradient(circle at 20% 30%,rgba(142,224,184,.05) 0%,transparent 65%);
   --glow-info:radial-gradient(circle at 20% 30%,rgba(142,224,184,.05) 0%,transparent 65%);
   --glow-warn:radial-gradient(circle at 20% 30%,rgba(240,200,110,.05) 0%,transparent 65%);
@@ -72,6 +75,9 @@ body.light{
   --bdr-acc:rgba(45,122,85,.16);--bdr-acc2:rgba(45,122,85,.28);
   --glass:#ffffff;
   --glass-strong:#ffffff;
+  --popover:#ffffff;   /* v2.9.2 — cream light popups are white */
+  --popover-solid:#ffffff;
+  --user-bubble:#0a2a1c;--user-bubble-t:#e8f4ec;   /* v2.9.3 — cream: deep-green bubble, cream text */
   --glow-mint:radial-gradient(circle at 20% 30%,rgba(45,122,85,.05) 0%,transparent 65%);
   --hero-cream:#0a120e;
   --sh-sm:0 1px 3px rgba(10,30,20,.06);
@@ -296,7 +302,7 @@ body.compact .mg{gap:7px}
 /* v2.8.14 — guided app tour */
 #app-tour{position:fixed;inset:0;z-index:1100;display:none;transition:opacity .25s ease}
 .tour-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
-.tour-card{position:absolute;left:50%;bottom:calc(var(--nav-h) + var(--sb) + 24px);transform:translateX(-50%);width:calc(100% - 40px);max-width:360px;background:linear-gradient(180deg,#0f1a15,#0a120e);border:0.5px solid var(--bdr-acc);border-radius:20px;padding:22px 20px;box-shadow:0 12px 40px rgba(0,0,0,.6);animation:tourIn .4s cubic-bezier(.34,1.28,.4,1)}
+.tour-card{position:absolute;left:50%;bottom:calc(var(--nav-h) + var(--sb) + 24px);transform:translateX(-50%);width:calc(100% - 40px);max-width:360px;background:var(--popover);border:0.5px solid var(--bdr-acc);border-radius:20px;padding:22px 20px;box-shadow:0 12px 40px rgba(0,0,0,.6);animation:tourIn .4s cubic-bezier(.34,1.28,.4,1)}
 @keyframes tourIn{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 .tour-dots{display:flex;gap:5px;justify-content:center;margin-bottom:14px}
 .tour-dot{width:6px;height:6px;border-radius:50%;background:var(--bg5);transition:all .3s}
@@ -691,7 +697,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 /* MODAL — v2.7.18 V4 polish */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.68);z-index:500;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity var(--dur-base) var(--ease-out);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 .overlay.open{opacity:1;pointer-events:all}
-.modal{background:linear-gradient(180deg,#0f1a15,#0a120e);border-radius:22px 22px 0 0;padding:22px 18px 18px;padding-bottom:calc(22px + var(--sb));width:100%;max-height:92vh;overflow-y:auto;transform:translateY(40px);transition:transform .42s cubic-bezier(.34,1.28,.4,1);border-top:0.5px solid var(--bdr-acc);box-shadow:0 -8px 32px rgba(0,0,0,.5)}
+.modal{background:var(--popover);border-radius:22px 22px 0 0;padding:22px 18px 18px;padding-bottom:calc(22px + var(--sb));width:100%;max-height:92vh;overflow-y:auto;transform:translateY(40px);transition:transform .42s cubic-bezier(.34,1.28,.4,1);border-top:0.5px solid var(--bdr-acc);box-shadow:0 -8px 32px rgba(0,0,0,.5)}
 .overlay.open .modal{transform:translateY(0)}
 .modal-handle{width:36px;height:4px;background:rgba(255,255,255,.10);border-radius:2px;margin:0 auto 18px;transition:background var(--dur-fast) var(--ease-out)}
 .modal-handle:active{background:rgba(255,255,255,.25)}
@@ -816,8 +822,8 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .an-tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
 .an-tile{background:var(--glass);border:0.5px solid var(--bdr);border-radius:12px;padding:11px 12px;cursor:pointer;transition:border-color var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out);text-align:left;font-family:var(--sans)}
 .an-tile:active{transform:scale(.98)}
-.an-tile-l{font-size:10px;color:var(--t3);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.an-tile-v{font-size:19px;font-weight:800;color:var(--t);font-variant-numeric:tabular-nums;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.an-tile-l{font-size:9px;color:var(--t3);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em}
+.an-tile-v{font-size:26px;font-weight:400;font-family:var(--serif);color:var(--hero-cream);font-variant-numeric:tabular-nums;line-height:1.05;letter-spacing:-.8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .an-tile{min-width:0}
 .an-card{overflow:hidden}
 .an-card svg{max-width:100%}
@@ -832,7 +838,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .an-flow-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
 /* Section card */
 .an-card{background:var(--glass);border:0.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:12px}
-.an-card-t{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.an-card-t{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-family:var(--mono);font-weight:500}
 .an-empty{text-align:center;padding:26px 14px;color:var(--t3);font-size:12px;line-height:1.6}
 /* Attention list */
 .an-attn{background:rgba(240,160,48,.06);border:0.5px solid rgba(240,160,48,.24);border-radius:12px;padding:12px 14px}
@@ -880,7 +886,34 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .an-txn-date{font-size:10px;color:var(--t3);margin-top:1px}
 .an-txn-amt{font-size:13px;font-weight:600;flex-shrink:0;font-variant-numeric:tabular-nums}
 /* ── v2.7.26 — V4 GOALS ── */
+/* v2.9.1 — REDESIGN: editorial account hero */
+.ed-acct-hero{padding:8px 2px 20px;border-bottom:1px solid var(--bdr);margin-bottom:14px}
+.ed-acct-eyebrow{font:500 10px var(--mono);text-transform:uppercase;letter-spacing:.14em;color:var(--acc);margin-bottom:12px}
+.ed-acct-bal{font:400 48px var(--serif);color:var(--hero-cream);letter-spacing:-1.8px;line-height:1}
+.ed-acct-strip{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:18px}
+.ed-acct-si .l{font:500 9px var(--mono);color:var(--t3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+.ed-acct-si .v{font:600 17px var(--sans);color:var(--hero-cream);letter-spacing:-.4px;font-variant-numeric:tabular-nums}
+.ed-acct-si .v.up{color:var(--acc)}
 .goal-card{display:flex;gap:14px;padding:16px;background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad-lg);margin-bottom:12px;cursor:pointer;transition:border-color var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out);position:relative;overflow:hidden}
+/* v2.9.1 — REDESIGN: editorial goal card with progress ring */
+.ed-goal{background:var(--glass);border:0.5px solid var(--bdr);border-radius:20px;padding:20px;margin-bottom:10px;cursor:pointer;position:relative;transition:border-color var(--dur-fast) var(--ease-out)}
+body:not(.light) .ed-goal{background:rgba(255,255,255,.03)}
+.ed-goal:active{border-color:var(--bdr-acc2)}
+.ed-goal.complete{border-color:var(--bdr-acc2)}
+.ed-goal-top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:14px}
+.ed-goal-eyebrow{font:500 10px var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--t2);margin-bottom:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ed-goal-amt{font:400 26px var(--serif);color:var(--hero-cream);letter-spacing:-.6px}
+.ed-goal-amt span{color:var(--t3);font-size:14px}
+.ed-goal-streak{font:600 9px var(--sans);color:var(--y);background:var(--yd);padding:2px 6px;border-radius:6px;white-space:nowrap;letter-spacing:0}
+.ed-goal-ring{width:52px;height:52px;position:relative;flex-shrink:0}
+.ed-goal-ring svg{width:52px;height:52px}
+.ed-ring-bg{stroke:var(--bdr2)}
+.ed-goal-ringpct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:600 11px var(--sans);color:var(--t)}
+.ed-goal-bar{height:4px;background:var(--bdr2);border-radius:2px;overflow:hidden}
+.ed-goal-bar b{display:block;height:100%;border-radius:2px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.ed-goal-foot{display:flex;justify-content:space-between;margin-top:10px;font:500 10.5px var(--sans);color:var(--t2)}
+.ed-goal-add{position:absolute;top:16px;right:76px;width:30px;height:30px;border-radius:9px;background:var(--accd);border:0.5px solid var(--bdr-acc2);color:var(--acc);cursor:pointer;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;line-height:1;transition:background var(--dur-fast)}
+.ed-goal-add:active{background:var(--accd2)}
 .goal-card:hover{border-color:var(--bdr-acc2)}
 .goal-card:active{transform:scale(.995)}
 .goal-card.complete{border-color:rgba(0,229,153,.35);background:linear-gradient(180deg,rgba(0,229,153,.06),rgba(255,255,255,.015))}
@@ -957,14 +990,15 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
 @keyframes mIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .msg.user{align-items:flex-end}
 .msg.ai{align-items:flex-start}
-/* User bubble — right-aligned mint tint */
-.msg.user .msg-bubble{background:rgba(0,229,153,.14);color:var(--t);border-radius:20px;border-bottom-right-radius:6px;padding:11px 16px;font-size:13px;line-height:1.55;font-family:var(--sans);max-width:82%;font-weight:400;border:0.5px solid rgba(0,229,153,.20)}
+/* User bubble — right-aligned, editorial deep-green pill */
+.msg.user .msg-bubble{background:var(--user-bubble);color:var(--user-bubble-t);border-radius:18px 18px 4px 18px;padding:11px 15px;font-size:12.5px;line-height:1.45;font-family:var(--sans);max-width:78%;font-weight:500;border:none}
 /* AI response with identity row */
 .ai-identity-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-.ai-identity-dot{width:26px;height:26px;border-radius:50%;background:rgba(0,229,153,.14);border:0.5px solid rgba(0,229,153,.30);display:flex;align-items:center;justify-content:center;color:var(--acc);font-size:13px;font-weight:700;flex-shrink:0}
-.ai-identity-label{font-size:10px;color:var(--t3);letter-spacing:.04em;font-weight:500}
-.msg.ai .msg-bubble{background:var(--glass);color:rgba(240,244,240,.90);border-radius:18px;border-bottom-left-radius:6px;padding:15px 17px;font-size:13.5px;line-height:1.72;font-family:var(--sans);max-width:calc(100% - 8px);margin-left:34px;border:0.5px solid var(--bdr);font-weight:400;letter-spacing:.005em}
-.msg.ai .msg-bubble strong{color:var(--t);font-weight:600}
+.ai-identity-dot{width:26px;height:26px;border-radius:50%;background:var(--accd);border:0.5px solid var(--bdr-acc2);display:flex;align-items:center;justify-content:center;color:var(--acc);font-size:13px;font-weight:700;flex-shrink:0}
+.ai-identity-label{font-size:10px;color:var(--t3);letter-spacing:.04em;font-weight:500;font-family:var(--mono);text-transform:uppercase}
+.msg.ai .msg-bubble{background:transparent;color:var(--t);border-radius:0;padding:2px 0 0 22px;font-size:12.5px;line-height:1.6;font-family:var(--sans);max-width:calc(100% - 8px);margin-left:12px;border:none;position:relative;font-weight:400}
+.msg.ai .msg-bubble::before{content:'';position:absolute;left:0;top:8px;width:6px;height:6px;border-radius:50%;background:var(--acc)}
+.msg.ai .msg-bubble strong{color:var(--hero-cream);font-weight:600}
 .msg.ai .msg-bubble em{color:var(--acc);font-style:normal;font-weight:500}
 .msg.ai .msg-bubble p{margin:0 0 10px 0}
 .msg.ai .msg-bubble p:last-child{margin-bottom:0}
@@ -1386,8 +1420,8 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
     <!-- ACCOUNTS -->
     <div class="pg" id="pg-txns">
       <div class="tog" id="acct-tog">
-        <button class="tog-b on" onclick="switchAcct('westpac',this)">Westpac</button>
-        <button class="tog-b" onclick="switchAcct('macquarie',this)">Macquarie</button>
+        <button class="tog-b on" onclick="switchAcct('westpac',this)" data-acct-label="westpac">Everyday</button>
+        <button class="tog-b" onclick="switchAcct('macquarie',this)" data-acct-label="macquarie">Savings</button>
       </div>
       <div id="acct-hero-wrap"></div>
       <div style="display:flex;gap:6px;margin-bottom:10px">
@@ -2908,9 +2942,51 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='2.9.0';
+const APP_VERSION='2.9.3';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'2.9.3',
+    date:'2026-07-28',
+    title:'New look — Analytics and AI advisor',
+    sections:{
+      features:[
+        '💬 **Redesigned AI chat.** Your questions now sit in a clean deep-green bubble, and the advisor\'s replies flow as editorial text with a small mint marker and bold key figures — matching the new design',
+        '📊 **Redesigned analytics.** Every headline figure across the six analytics sections now renders in the editorial serif with a clean mono label, so the numbers read like the reports in the design'
+      ],
+      improvements:[
+        'Analytics section titles now use the mono label style used throughout the new look'
+      ],
+      fixes:[]
+    }
+  },
+  {
+    v:'2.9.2',
+    date:'2026-07-27',
+    title:'Fix — unreadable popups in light mode',
+    sections:{
+      features:[],
+      improvements:[],
+      fixes:[
+        '🐛 **Fixed popups being unreadable in light mode.** After the redesign, pop-ups (What\'s New, Customise, add transaction, and every other modal, plus the app tour) kept a dark background while the text turned dark too — so text was nearly invisible against it. Pop-ups now use a white surface in Cream light mode and the dark surface in Editorial dark mode, so text is clearly readable in both'
+      ]
+    }
+  },
+  {
+    v:'2.9.1',
+    date:'2026-07-27',
+    title:'New look — Accounts and Goals',
+    sections:{
+      features:[
+        '🎯 **Redesigned goal cards.** Each goal now shows a circular progress ring with the percentage in the centre, the amount saved in the editorial serif, and a clean to-go and deadline line — matching the new design',
+        '🏦 **Redesigned account view.** Your account balance now leads with the big serif numeral, a mono label showing the real bank and nickname you set, and an in / out / transactions strip'
+      ],
+      improvements:[
+        'Account names throughout now reflect the bank and nickname from your setup, everywhere they appear'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'2.9.0',
     date:'2026-07-27',
@@ -12210,8 +12286,17 @@ function buildAcctHero(){
   const acct=S.selectedAcct,bal=calcBal(acct),txns=S.transactions.filter(t=>t.acct===acct);
   const totalIn=txns.filter(t=>t.dir==='in').reduce((a,t)=>a+t.amt,0);
   const totalOut=txns.filter(t=>t.dir==='out').reduce((a,t)=>a+t.amt,0);
-  const isWP=acct==='westpac';
-  document.getElementById('acct-hero-wrap').innerHTML=`<div class="acct-hero ${isWP?'wp':'mq'}"><div class="acct-bdg">${isWP?'Westpac — Everyday':'Macquarie — HISA Savings'}</div><div class="acct-bal">${fmtD(bal)}</div><div class="acct-stats"><div class="acct-si"><div class="acct-sl">Total in</div><div class="acct-sv">+${fmtDI(totalIn)}</div></div><div class="acct-si"><div class="acct-sl">Total out</div><div class="acct-sv">-${fmtDI(totalOut)}</div></div><div class="acct-si"><div class="acct-sl">Transactions</div><div class="acct-sv">${txns.length}</div></div></div><div style="margin-top:9px"><button class="btn btn-ghost btn-sm" onclick="openBalModal('${acct}')">✏ Edit starting balance</button></div></div>`;
+  const label=(typeof acctFullLabel==='function')?acctFullLabel(acct):(acct==='westpac'?'Everyday':'Savings');
+  document.getElementById('acct-hero-wrap').innerHTML=`<div class="ed-acct-hero">
+    <div class="ed-acct-eyebrow">${escapeHtml(label)}</div>
+    <div class="ed-acct-bal">${fmtD(bal)}</div>
+    <div class="ed-acct-strip">
+      <div class="ed-acct-si"><div class="l">In</div><div class="v up">+${fmtDI(totalIn)}</div></div>
+      <div class="ed-acct-si"><div class="l">Out</div><div class="v">−${fmtDI(totalOut)}</div></div>
+      <div class="ed-acct-si"><div class="l">Txns</div><div class="v">${txns.length}</div></div>
+    </div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:14px" onclick="openBalModal('${acct}')">✏ Edit starting balance</button>
+  </div>`;
 }
 function buildFilterRow(){
   const uncatN=(typeof uncategorisedCount==='function')?uncategorisedCount():0;
@@ -13630,47 +13715,35 @@ function renderGoalCard(g){
   const remaining=Math.max(0,target-saved);
   const health=computeGoalHealth(g.id);
   const isComplete=target>0&&saved>=target;
-  let verdict='',cls='';
-  if(isComplete){verdict='<div class="goal-verdict done">Complete</div>';cls='complete';}
-  else if(health){
-    if(health.verdict==='behind'||health.verdict==='at-risk'){verdict='<div class="goal-verdict behind">Behind pace</div>';cls='behind';}
-    else if(health.verdict==='on-pace'){verdict='<div class="goal-verdict on">On pace</div>';}
-    else if(health.verdict==='ahead'){verdict='<div class="goal-verdict ahead">Ahead</div>';}
-    else if(health.verdict==='no-deadline'){verdict='<div class="goal-verdict none">No deadline</div>';}
-  }
-  let meta='';
-  if(isComplete){meta=`Goal reached — tap to celebrate 🎉`;}
+  // Ring geometry (r=22, circumference ≈ 138.2)
+  const circ=138.2;
+  const dashOffset=circ*(1-pct/100);
+  const ringColor=isComplete?'var(--acc)':(health&&(health.verdict==='behind'||health.verdict==='at-risk')?'var(--y)':'var(--acc)');
+  // Status line (right side of footer)
+  let statusRight='';
+  if(isComplete){statusRight='Reached 🎉';}
   else if(g.deadline&&health&&health.monthsRemaining!=null){
-    const monthsLeft=Math.max(0,Math.round(health.monthsRemaining));
-    meta=`Due ${g.deadline} · ${monthsLeft} month${monthsLeft===1?'':'s'} left`;
-    if(health.monthlyRequired!=null&&health.monthlyRequired>0){
-      meta+=` · need ${fmtDI(health.monthlyRequired)}/mo`;
-    }
-  }else if(g.deadline){
-    meta=`Due ${g.deadline}`;
-  }else if(g.tip){
-    meta=g.tip;
-  }else{
-    meta=`${fmtDI(remaining)} to go`;
-  }
-  // v2.7.32 — contribution streak badge
+    const verdictTxt=health.verdict==='behind'||health.verdict==='at-risk'?'behind':health.verdict==='ahead'?'ahead':'on track';
+    statusRight=`${g.deadline} · ${verdictTxt}`;
+  }else if(g.deadline){statusRight=g.deadline;}
+  else{statusRight='No deadline';}
+  const leftFoot=isComplete?'Goal reached':`${fmtDI(remaining)} to go`;
   const streak=(typeof goalContributionStreak==='function')?goalContributionStreak(g.id):0;
-  const streakBadge=streak>=2?`<span style="font-size:9px;font-weight:600;color:var(--y);background:rgba(240,160,48,.12);padding:2px 6px;border-radius:6px;white-space:nowrap">🔥 ${streak}mo</span>`:'';
-  return`<div class="goal-card ${cls}" onclick="openGoalDetail('${g.id}')">
-    <div class="goal-icon" style="background:${g.color}22;color:${g.color}">${g.icon}</div>
-    <div class="goal-main">
-      <div class="goal-title-row">
-        <div class="goal-title">${escapeHtml(g.label)}</div>
-        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">${streakBadge}${verdict}</div>
+  const streakBadge=streak>=2?`<span class="ed-goal-streak">🔥 ${streak}mo</span>`:'';
+  return`<div class="ed-goal ${isComplete?'complete':''}" onclick="openGoalDetail('${g.id}')">
+    <div class="ed-goal-top">
+      <div style="min-width:0;flex:1">
+        <div class="ed-goal-eyebrow">${g.icon} ${escapeHtml(g.label)} ${streakBadge}</div>
+        <div class="ed-goal-amt">${fmtD(saved)} <span>/ ${fmtD(target)}</span></div>
       </div>
-      <div class="goal-meta">${meta}</div>
-      <div class="goal-track"><div class="goal-fill" style="width:${pct}%;background:${g.color}"></div></div>
-      <div class="goal-nums">
-        <span class="goal-nums-l">${fmtD(saved)} of ${fmtD(target)}</span>
-        <span class="goal-nums-r">${pct}%<span class="goal-pct">${remaining>0?fmtDI(remaining)+' left':'Done'}</span></span>
+      <div class="ed-goal-ring">
+        <svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="22" class="ed-ring-bg" stroke-width="5" fill="none"/><circle cx="26" cy="26" r="22" stroke="${ringColor}" stroke-width="5" fill="none" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${dashOffset.toFixed(1)}" transform="rotate(-90 26 26)"/></svg>
+        <div class="ed-goal-ringpct">${pct}%</div>
       </div>
     </div>
-    <button class="goal-quick-add" onclick="event.stopPropagation();openQuickAddModal('${g.id}')" title="Add contribution">+</button>
+    <div class="ed-goal-bar"><b style="width:${pct}%;background:${ringColor}"></b></div>
+    <div class="ed-goal-foot"><span>${leftFoot}</span><span>${statusRight}</span></div>
+    <button class="ed-goal-add" onclick="event.stopPropagation();openQuickAddModal('${g.id}')" aria-label="Add contribution">+</button>
   </div>`;
 }
 
