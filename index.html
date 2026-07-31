@@ -522,6 +522,17 @@ body.light .rh-spoke-lbl{text-shadow:0 1px 4px rgba(255,255,255,.8);color:var(--
 .rh-arc.on .rh-spoke:nth-child(4){transition-delay:.14s}
 .rh-arc.on .rh-spoke:nth-child(5){transition-delay:.18s}
 @media (prefers-reduced-motion:reduce){.rh-spoke{transition:opacity .12s ease}.rh-arc.on .rh-spoke{transform:translate(-50%,-50%) scale(1)}.rh-arc.on .rh-spoke:nth-child(n){transition-delay:0s}}
+
+/* ═══════════════════════════════════════════════════════════
+   v3.2.4 — SECTION 12b: Opt-in focus mode
+   Crescent icon in the header. When active, whichever card is
+   nearest the viewport center is fully lit; the rest dim to ~35%.
+   ═══════════════════════════════════════════════════════════ */
+.hdr-focus-btn.on{color:var(--acc);background:var(--accd)}
+.hdr-focus-btn.on svg{filter:drop-shadow(0 0 6px color-mix(in srgb,var(--acc) 55%,transparent))}
+body.focus-mode .card,body.focus-mode .wl,body.focus-mode .hub-focus,body.focus-mode .hub-peek,body.focus-mode .rule9,body.focus-mode .acc2-group,body.focus-mode .buy9-card,body.focus-mode .exp9-preview,body.focus-mode .alloc9-row{opacity:.35;transition:opacity .35s ease,transform .35s ease}
+body.focus-mode .card.fm-lit,body.focus-mode .wl.fm-lit,body.focus-mode .hub-focus.fm-lit,body.focus-mode .hub-peek.fm-lit,body.focus-mode .rule9.fm-lit,body.focus-mode .acc2-group.fm-lit,body.focus-mode .buy9-card.fm-lit,body.focus-mode .exp9-preview.fm-lit,body.focus-mode .alloc9-row.fm-lit{opacity:1}
+@media (prefers-reduced-motion:reduce){body.focus-mode .card,body.focus-mode .wl,body.focus-mode .hub-focus,body.focus-mode .hub-peek,body.focus-mode .rule9,body.focus-mode .acc2-group,body.focus-mode .buy9-card,body.focus-mode .exp9-preview,body.focus-mode .alloc9-row{transition:none}}
 .bnav.hidden{transform:translateX(-50%) translateY(calc(100% + var(--sb) + 32px));opacity:0;pointer-events:none}
 body.light .bnav{background:rgba(255,255,255,.92)}
 /* v2.7.19 — icon-only nav with active pill */
@@ -1787,6 +1798,9 @@ body:not(.light) .hub-focus{background:rgba(255,255,255,.02)}
     <div class="hdr-actions">
       <div class="hdr-dot"></div>
       <button id="hdr-version" class="hdr-version" onclick="forceRefreshApp()" title="Version — tap to force refresh"></button>
+      <button id="hdr-focus" class="hdr-btn hdr-focus-btn" onclick="toggleFocusMode()" title="Focus mode — calm neighbours" aria-label="Toggle focus mode">
+        <svg viewBox="0 0 24 24"><path d="M20.5 12.5A8.5 8.5 0 1 1 11.5 3.5a6.5 6.5 0 0 0 9 9z"/></svg>
+      </button>
       <button class="hdr-btn" onclick="openSearch()" title="Search transactions">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       </button>
@@ -3442,9 +3456,24 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='3.2.3';
+const APP_VERSION='3.2.4';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'3.2.4',
+    date:'2026-07-30',
+    title:'Focus mode — dim the neighbours',
+    sections:{
+      features:[
+        '🌙 **Focus mode.** A small crescent icon in the top bar toggles focus. When on, whichever card is closest to the middle of your screen is fully lit — the rest gently dim to about a third. Scroll and the light follows what you are reading. Tap the crescent again to turn it off. Your choice is remembered'
+      ],
+      improvements:[
+        'Applies to every card surface — dashboard widgets, hub sections, rules, allocation rows',
+        'Respects reduced-motion settings'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'3.2.3',
     date:'2026-07-30',
@@ -12609,6 +12638,7 @@ function launchApp(){
   applyTheme(S.themeIdx||0);applyMode(S.mode||'dark');applyUiPrefs();
   // v3.2.3 — wire the radial hub (replaces bottom tab bar)
   if(typeof rhInit==='function')rhInit();
+  if(typeof restoreFocusMode==='function')restoreFocusMode();
   // Populate version indicator in header
   const vEl=document.getElementById('hdr-version');
   if(vEl)vEl.textContent='v'+APP_VERSION;
@@ -13072,6 +13102,46 @@ function rhUpdateHover(clientX,clientY){
     if(best!==-1&&navigator.vibrate)navigator.vibrate(4);
   }
 }
+// v3.2.4 — Section 12b: opt-in focus mode
+let __focusObs=null,__focusRaf=null;
+function toggleFocusMode(){
+  const on=!document.body.classList.contains('focus-mode');
+  document.body.classList.toggle('focus-mode',on);
+  document.getElementById('hdr-focus')?.classList.toggle('on',on);
+  try{localStorage.setItem('finplan-focus',on?'1':'0');}catch(e){}
+  if(on){startFocusObserver();showToast('Focus on — neighbours dimmed');}
+  else{stopFocusObserver();document.querySelectorAll('.fm-lit').forEach(el=>el.classList.remove('fm-lit'));showToast('Focus off');}
+}
+function focusModeCards(){
+  return document.querySelectorAll('.pg.on .card, .pg.on .wl, .pg.on .hub-focus, .pg.on .hub-peek, .pg.on .rule9, .pg.on .acc2-group, .pg.on .buy9-card, .pg.on .exp9-preview, .pg.on .alloc9-row');
+}
+function updateFocusLit(){
+  if(!document.body.classList.contains('focus-mode'))return;
+  const vc=window.innerHeight/2;
+  let best=null,bestDist=Infinity;
+  focusModeCards().forEach(el=>{
+    const r=el.getBoundingClientRect();
+    if(r.bottom<0||r.top>window.innerHeight)return;
+    const c=r.top+r.height/2;const d=Math.abs(c-vc);
+    if(d<bestDist){bestDist=d;best=el;}
+  });
+  document.querySelectorAll('.fm-lit').forEach(el=>{if(el!==best)el.classList.remove('fm-lit');});
+  if(best)best.classList.add('fm-lit');
+}
+function startFocusObserver(){
+  stopFocusObserver();
+  const scroller=document.getElementById('scrl');if(!scroller)return;
+  // Update on scroll (rAF-throttled) plus initial run
+  const onScroll=()=>{if(__focusRaf)return;__focusRaf=requestAnimationFrame(()=>{__focusRaf=null;updateFocusLit();});};
+  scroller.addEventListener('scroll',onScroll,{passive:true});
+  __focusObs={destroy:()=>scroller.removeEventListener('scroll',onScroll)};
+  updateFocusLit();
+}
+function stopFocusObserver(){if(__focusObs){__focusObs.destroy();__focusObs=null;}if(__focusRaf){cancelAnimationFrame(__focusRaf);__focusRaf=null;}}
+function restoreFocusMode(){
+  try{if(localStorage.getItem('finplan-focus')==='1'){document.body.classList.add('focus-mode');document.getElementById('hdr-focus')?.classList.add('on');startFocusObserver();}}catch(e){}
+}
+
 function rhInit(){
   const dot=document.getElementById('rh-dot');if(!dot)return;
   const start=(e)=>{
@@ -13142,6 +13212,7 @@ function showPg(id,btn){
     showHdr();showNav();
     document.body.classList.remove('on-ai-page','fab-visible');
     buildHub(hubKey);
+    if(typeof updateFocusLit==='function')setTimeout(updateFocusLit,200);
     return;
   }
   const pg=document.getElementById('pg-'+id);
@@ -13185,6 +13256,7 @@ function showPg(id,btn){
   if(id==='glance')buildGlancePage();
   if(id==='recurring')buildRecurringPage();
   if(id==='insights')buildInsightsPage();
+  if(typeof updateFocusLit==='function')setTimeout(updateFocusLit,200);
 }
 function toggleMore(){
   const sheet=document.getElementById('more-sheet'),ov=document.getElementById('more-overlay');
