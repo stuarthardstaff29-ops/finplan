@@ -490,7 +490,38 @@ body.light .hdr{background:rgba(255,255,255,.8)}
   a{text-decoration:none;color:#000!important}
 }
 /* v2.7.20 — Floating nav pill, concept-matching: compact, centered, floating */
-.bnav{position:fixed;bottom:calc(18px + var(--sb));left:50%;transform:translateX(-50%);background:rgba(13,15,18,.88);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border:0.5px solid rgba(255,255,255,.08);border-radius:26px;display:flex;padding:6px 8px;z-index:100;height:var(--nav-h);box-shadow:0 12px 40px rgba(0,0,0,.55),0 2px 10px rgba(0,0,0,.4);gap:4px;transition:transform var(--dur-base) var(--ease-out),opacity var(--dur-base) var(--ease-out);width:auto;max-width:calc(100% - 32px)}
+.bnav{display:none!important}
+/* v3.2.3 — SECTION 11d: Radial hub. Small dot bottom-center. Tap = add txn.
+   Long-press = arc of 5 destinations fans out. Slide + release picks one. */
+.rh-dot{position:fixed;bottom:calc(22px + var(--sb));left:50%;transform:translateX(-50%);width:52px;height:52px;border-radius:50%;background:var(--acc);color:var(--user-bubble-t);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:400;box-shadow:0 12px 32px -6px rgba(10,42,28,.45),0 4px 12px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.18);transition:transform .18s cubic-bezier(.34,1.3,.5,1),box-shadow .2s ease;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.rh-dot::before{content:'';position:absolute;inset:-14px;border-radius:50%;background:radial-gradient(circle,var(--acc) 0%,transparent 70%);opacity:.28;z-index:-1;pointer-events:none;filter:blur(6px)}
+body.light .rh-dot{box-shadow:0 12px 32px -6px rgba(45,122,85,.35),0 4px 10px rgba(45,122,85,.15),inset 0 1px 0 rgba(255,255,255,.4)}
+.rh-dot svg{width:22px;height:22px;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;fill:none;transition:transform .28s cubic-bezier(.34,1.3,.5,1)}
+.rh-dot.hold{transform:translateX(-50%) scale(1.08)}
+.rh-dot.hold svg{transform:rotate(45deg);opacity:.6}
+.rh-dot.hidden{transform:translateX(-50%) translateY(calc(100% + 40px));opacity:0;pointer-events:none}
+/* Backdrop dim + centered radial glow behind the arc */
+.rh-backdrop{position:fixed;inset:0;background:radial-gradient(circle at 50% calc(100% - 100px),rgba(142,224,184,.14) 0%,rgba(0,0,0,.42) 60%);opacity:0;pointer-events:none;z-index:395;transition:opacity .28s ease;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+body.light .rh-backdrop{background:radial-gradient(circle at 50% calc(100% - 100px),rgba(45,122,85,.16) 0%,rgba(20,30,25,.28) 60%)}
+.rh-backdrop.on{opacity:1;pointer-events:auto}
+/* Arc container: each spoke is absolutely positioned */
+.rh-arc{position:fixed;bottom:calc(48px + var(--sb));left:50%;transform:translateX(-50%);width:0;height:0;z-index:399;pointer-events:none}
+.rh-spoke{position:absolute;transform:translate(-50%,-50%) scale(.5);opacity:0;pointer-events:none;transition:transform .32s cubic-bezier(.34,1.3,.5,1),opacity .22s ease}
+.rh-arc.on .rh-spoke{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+.rh-spoke-btn{display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:none;cursor:pointer;padding:0;color:var(--t);font-family:var(--sans);-webkit-tap-highlight-color:transparent}
+.rh-spoke-ico{width:48px;height:48px;border-radius:50%;background:var(--glass);border:0.5px solid var(--bdr-acc2);display:flex;align-items:center;justify-content:center;font-size:19px;box-shadow:0 8px 20px -6px rgba(0,0,0,.4),0 2px 6px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.06);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);transition:transform .18s ease,border-color .18s ease,box-shadow .2s ease}
+body.light .rh-spoke-ico{background:linear-gradient(155deg,rgba(255,255,255,.9) 0%,rgba(244,241,232,.7) 100%);box-shadow:0 8px 20px -6px rgba(10,42,28,.18),0 2px 4px rgba(10,42,28,.08),inset 0 1px 0 rgba(255,255,255,.95)}
+.rh-spoke-lbl{font-size:10.5px;font-weight:600;color:var(--t);text-shadow:0 1px 6px rgba(0,0,0,.6);letter-spacing:-.1px}
+body.light .rh-spoke-lbl{text-shadow:0 1px 4px rgba(255,255,255,.8);color:var(--t)}
+.rh-spoke.hover .rh-spoke-ico{background:var(--acc);color:var(--user-bubble-t);border-color:var(--acc);transform:scale(1.12)}
+.rh-spoke.hover .rh-spoke-lbl{color:var(--acc)}
+/* Staggered fan-out timing per spoke — each opens ~50ms after the last */
+.rh-arc.on .rh-spoke:nth-child(1){transition-delay:.02s}
+.rh-arc.on .rh-spoke:nth-child(2){transition-delay:.06s}
+.rh-arc.on .rh-spoke:nth-child(3){transition-delay:.10s}
+.rh-arc.on .rh-spoke:nth-child(4){transition-delay:.14s}
+.rh-arc.on .rh-spoke:nth-child(5){transition-delay:.18s}
+@media (prefers-reduced-motion:reduce){.rh-spoke{transition:opacity .12s ease}.rh-arc.on .rh-spoke{transform:translate(-50%,-50%) scale(1)}.rh-arc.on .rh-spoke:nth-child(n){transition-delay:0s}}
 .bnav.hidden{transform:translateX(-50%) translateY(calc(100% + var(--sb) + 32px));opacity:0;pointer-events:none}
 body.light .bnav{background:rgba(255,255,255,.92)}
 /* v2.7.19 — icon-only nav with active pill */
@@ -2482,6 +2513,13 @@ body:not(.light) .hub-focus{background:rgba(255,255,255,.02)}
       <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>More
     </button>
   </nav>
+
+  <!-- v3.2.3 — SECTION 11d: Radial hub (replaces the tab bar) -->
+  <div class="rh-backdrop" id="rh-backdrop" onclick="rhClose()"></div>
+  <div class="rh-arc" id="rh-arc"></div>
+  <button class="rh-dot" id="rh-dot" aria-label="Add or navigate">
+    <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </button>
 </div>
 
 <!-- MORE SHEET -->
@@ -3404,9 +3442,26 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='3.2.2';
+const APP_VERSION='3.2.3';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'3.2.3',
+    date:'2026-07-30',
+    title:'Radial hub — the tab bar is gone',
+    sections:{
+      features:[
+        '🎯 **Radial navigation hub.** The bottom tab bar is replaced by a single soft mint dot. **Tap** it to quickly add a transaction. **Hold** it and five destinations fan out in a calm arc above your thumb — Home, Spending, Plan, Invest, Ask Finn. Slide to whichever you want and release. Release outside the arc to cancel',
+        '✨ **Backglow and depth.** The dot sits in its own radial glow, and each destination pill has the frosted-glass Depth material so the whole thing feels lit-from-above'
+      ],
+      improvements:[
+        'Icons animate outward with staggered spring timing so it flows rather than pops',
+        'Everything respects reduced-motion settings',
+        'A gentle haptic tap on open and as you slide over each destination (on devices that support it)'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'3.2.2',
     date:'2026-07-30',
@@ -12552,6 +12607,8 @@ function launchApp(){
   document.getElementById('setup').style.display='none';
   const app=document.getElementById('app');app.style.display='flex';
   applyTheme(S.themeIdx||0);applyMode(S.mode||'dark');applyUiPrefs();
+  // v3.2.3 — wire the radial hub (replaces bottom tab bar)
+  if(typeof rhInit==='function')rhInit();
   // Populate version indicator in header
   const vEl=document.getElementById('hdr-version');
   if(vEl)vEl.textContent='v'+APP_VERSION;
@@ -12929,6 +12986,143 @@ function restoreHubPage(hubKey,sec){
 function restoreAllHubPages(){
   if(__hubObserver){__hubObserver.disconnect();__hubObserver=null;}
   Object.keys(HUBS).forEach(hk=>{HUBS[hk].sections.forEach(sec=>restoreHubPage(hk,sec));});
+}
+
+// ═══════════════════════════════════════════════════════════
+// v3.2.3 — SECTION 11d: Radial hub navigation
+// The dot at bottom-center is the ONLY navigation surface.
+// TAP (<350ms) → openTxnModal() : quick add transaction
+// LONG-PRESS (≥350ms) → arc of 5 destinations fans out. Slide finger
+// over one to hover, release to pick. Release outside → close.
+// ═══════════════════════════════════════════════════════════
+const RH_SPOKES=[
+  {id:'dash',name:'Home',icon:'🏠'},
+  {id:'hub-spending',name:'Spending',icon:'💸'},
+  {id:'hub-plan',name:'Plan',icon:'🎯'},
+  {id:'hub-invest',name:'Invest',icon:'📈'},
+  {id:'ai',name:'Ask Finn',icon:'✨'}
+];
+let __rh={pressTs:0,timer:null,open:false,hoverIdx:-1,positions:[]};
+function rhBuildSpokes(){
+  const arc=document.getElementById('rh-arc');if(!arc)return;
+  arc.innerHTML='';
+  // Fan out over a semicircle from -160° to -20° (arc above the dot, thumb-friendly)
+  // Radius scales with viewport width but has a comfortable min/max
+  const n=RH_SPOKES.length;
+  const w=Math.min(window.innerWidth||390,500);
+  const radius=Math.max(115,Math.min(140,w*0.36));
+  const startDeg=-160,endDeg=-20;
+  __rh.positions=[];
+  RH_SPOKES.forEach((s,i)=>{
+    const deg=startDeg+(endDeg-startDeg)*(i/(n-1));
+    const rad=deg*Math.PI/180;
+    const x=Math.cos(rad)*radius,y=Math.sin(rad)*radius;
+    __rh.positions.push({x,y});
+    const el=document.createElement('div');
+    el.className='rh-spoke';
+    el.style.left=x+'px';el.style.top=y+'px';
+    el.innerHTML=`<button class="rh-spoke-btn" data-idx="${i}"><span class="rh-spoke-ico">${s.icon}</span><span class="rh-spoke-lbl">${s.name}</span></button>`;
+    arc.appendChild(el);
+  });
+}
+function rhOpen(){
+  if(__rh.open)return;
+  rhBuildSpokes();
+  __rh.open=true;
+  document.getElementById('rh-backdrop').classList.add('on');
+  document.getElementById('rh-arc').classList.add('on');
+  document.getElementById('rh-dot').classList.add('hold');
+  // Light haptic on open (harmless if unsupported)
+  if(navigator.vibrate)navigator.vibrate(8);
+}
+function rhClose(){
+  if(!__rh.open)return;
+  __rh.open=false;
+  document.getElementById('rh-backdrop').classList.remove('on');
+  document.getElementById('rh-arc').classList.remove('on');
+  document.getElementById('rh-dot').classList.remove('hold');
+  __rh.hoverIdx=-1;
+  document.querySelectorAll('.rh-spoke').forEach(s=>s.classList.remove('hover'));
+}
+function rhPick(idx){
+  const s=RH_SPOKES[idx];if(!s)return;
+  rhClose();
+  setTimeout(()=>{
+    if(s.id==='ai'){showPg('ai',null);}
+    else{showPg(s.id,null);}
+  },140);
+}
+function rhUpdateHover(clientX,clientY){
+  if(!__rh.open||!__rh.positions.length)return;
+  // Compute position relative to the dot center
+  const dot=document.getElementById('rh-dot').getBoundingClientRect();
+  const cx=dot.left+dot.width/2, cy=dot.top+dot.height/2 - 20; // arc anchor is 20px above the dot center
+  const dx=clientX-cx, dy=clientY-cy;
+  // Only consider a hover if the finger has left a small dead-zone around the dot
+  const dist=Math.hypot(dx,dy);
+  if(dist<50){if(__rh.hoverIdx!==-1){__rh.hoverIdx=-1;document.querySelectorAll('.rh-spoke').forEach(s=>s.classList.remove('hover'));}return;}
+  // Find nearest spoke by angle
+  let best=-1,bestD=Infinity;
+  __rh.positions.forEach((p,i)=>{const d=Math.hypot(p.x-dx,p.y-dy);if(d<bestD){bestD=d;best=i;}});
+  // Require the finger to be reasonably close to that spoke (within ~90px)
+  if(bestD>90)best=-1;
+  if(best!==__rh.hoverIdx){
+    __rh.hoverIdx=best;
+    document.querySelectorAll('.rh-spoke').forEach((s,i)=>s.classList.toggle('hover',i===best));
+    if(best!==-1&&navigator.vibrate)navigator.vibrate(4);
+  }
+}
+function rhInit(){
+  const dot=document.getElementById('rh-dot');if(!dot)return;
+  const start=(e)=>{
+    e.preventDefault();
+    const t=e.touches?e.touches[0]:e;
+    __rh.pressTs=Date.now();
+    __rh.startX=t.clientX;__rh.startY=t.clientY;
+    __rh.movedFar=false;
+    clearTimeout(__rh.timer);
+    __rh.timer=setTimeout(()=>{
+      // long-press threshold
+      if(!__rh.open)rhOpen();
+    },350);
+  };
+  const move=(e)=>{
+    if(!__rh.open&&__rh.pressTs){
+      // If they moved a lot before the long-press fires, cancel the timer
+      const t=e.touches?e.touches[0]:e;
+      const d=Math.hypot(t.clientX-__rh.startX,t.clientY-__rh.startY);
+      if(d>14){clearTimeout(__rh.timer);__rh.timer=null;__rh.movedFar=true;}
+      return;
+    }
+    if(__rh.open){
+      e.preventDefault();
+      const t=e.touches?e.touches[0]:e;
+      rhUpdateHover(t.clientX,t.clientY);
+    }
+  };
+  const end=(e)=>{
+    clearTimeout(__rh.timer);__rh.timer=null;
+    const elapsed=Date.now()-__rh.pressTs;
+    if(__rh.open){
+      // Sliding release: if hovering a spoke → pick it, else close
+      if(__rh.hoverIdx>-1){rhPick(__rh.hoverIdx);}
+      else{rhClose();}
+    }else if(elapsed<350&&!__rh.movedFar){
+      // Quick tap → add transaction
+      if(typeof openTxnModal==='function')openTxnModal();
+    }
+    __rh.pressTs=0;
+  };
+  dot.addEventListener('touchstart',start,{passive:false});
+  dot.addEventListener('touchmove',move,{passive:false});
+  dot.addEventListener('touchend',end);
+  dot.addEventListener('touchcancel',()=>{clearTimeout(__rh.timer);rhClose();__rh.pressTs=0;});
+  // Mouse fallback (desktop testing)
+  dot.addEventListener('mousedown',start);
+  window.addEventListener('mousemove',(e)=>{if(__rh.pressTs)move(e);});
+  window.addEventListener('mouseup',(e)=>{if(__rh.pressTs)end(e);});
+  // Rebuild positions on resize so the arc scales with viewport
+  window.addEventListener('resize',()=>{if(__rh.open)rhBuildSpokes();});
 }
 
 function showPg(id,btn){
