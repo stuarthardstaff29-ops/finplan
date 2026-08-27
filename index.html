@@ -490,7 +490,49 @@ body.light .hdr{background:rgba(255,255,255,.8)}
   a{text-decoration:none;color:#000!important}
 }
 /* v2.7.20 — Floating nav pill, concept-matching: compact, centered, floating */
-.bnav{position:fixed;bottom:calc(18px + var(--sb));left:50%;transform:translateX(-50%);background:rgba(13,15,18,.88);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border:0.5px solid rgba(255,255,255,.08);border-radius:26px;display:flex;padding:6px 8px;z-index:100;height:var(--nav-h);box-shadow:0 12px 40px rgba(0,0,0,.55),0 2px 10px rgba(0,0,0,.4);gap:4px;transition:transform var(--dur-base) var(--ease-out),opacity var(--dur-base) var(--ease-out);width:auto;max-width:calc(100% - 32px)}
+.bnav{display:none!important}
+/* v3.2.3 — SECTION 11d: Radial hub. Small dot bottom-center. Tap = add txn.
+   Long-press = arc of 5 destinations fans out. Slide + release picks one. */
+.rh-dot{position:fixed;bottom:calc(22px + var(--sb));left:50%;transform:translateX(-50%);width:52px;height:52px;border-radius:50%;background:var(--acc);color:var(--user-bubble-t);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:400;box-shadow:0 12px 32px -6px rgba(10,42,28,.45),0 4px 12px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.18);transition:transform .18s cubic-bezier(.34,1.3,.5,1),box-shadow .2s ease;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.rh-dot::before{content:'';position:absolute;inset:-14px;border-radius:50%;background:radial-gradient(circle,var(--acc) 0%,transparent 70%);opacity:.28;z-index:-1;pointer-events:none;filter:blur(6px)}
+body.light .rh-dot{box-shadow:0 12px 32px -6px rgba(45,122,85,.35),0 4px 10px rgba(45,122,85,.15),inset 0 1px 0 rgba(255,255,255,.4)}
+.rh-dot svg{width:22px;height:22px;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;fill:none;transition:transform .28s cubic-bezier(.34,1.3,.5,1)}
+.rh-dot.hold{transform:translateX(-50%) scale(1.08)}
+.rh-dot.hold svg{transform:rotate(45deg);opacity:.6}
+.rh-dot.hidden{transform:translateX(-50%) translateY(calc(100% + 40px));opacity:0;pointer-events:none}
+/* Backdrop dim + centered radial glow behind the arc */
+.rh-backdrop{position:fixed;inset:0;background:radial-gradient(circle at 50% calc(100% - 100px),rgba(142,224,184,.14) 0%,rgba(0,0,0,.42) 60%);opacity:0;pointer-events:none;z-index:395;transition:opacity .28s ease;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+body.light .rh-backdrop{background:radial-gradient(circle at 50% calc(100% - 100px),rgba(45,122,85,.16) 0%,rgba(20,30,25,.28) 60%)}
+.rh-backdrop.on{opacity:1;pointer-events:auto}
+/* Arc container: each spoke is absolutely positioned */
+.rh-arc{position:fixed;bottom:calc(48px + var(--sb));left:50%;transform:translateX(-50%);width:0;height:0;z-index:399;pointer-events:none}
+.rh-spoke{position:absolute;transform:translate(-50%,-50%) scale(.5);opacity:0;pointer-events:none;transition:transform .32s cubic-bezier(.34,1.3,.5,1),opacity .22s ease}
+.rh-arc.on .rh-spoke{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+.rh-spoke-btn{display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:none;cursor:pointer;padding:0;color:var(--t);font-family:var(--sans);-webkit-tap-highlight-color:transparent}
+.rh-spoke-ico{width:48px;height:48px;border-radius:50%;background:var(--glass);border:0.5px solid var(--bdr-acc2);display:flex;align-items:center;justify-content:center;font-size:19px;box-shadow:0 8px 20px -6px rgba(0,0,0,.4),0 2px 6px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.06);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);transition:transform .18s ease,border-color .18s ease,box-shadow .2s ease}
+body.light .rh-spoke-ico{background:linear-gradient(155deg,rgba(255,255,255,.9) 0%,rgba(244,241,232,.7) 100%);box-shadow:0 8px 20px -6px rgba(10,42,28,.18),0 2px 4px rgba(10,42,28,.08),inset 0 1px 0 rgba(255,255,255,.95)}
+.rh-spoke-lbl{font-size:10.5px;font-weight:600;color:var(--t);text-shadow:0 1px 6px rgba(0,0,0,.6);letter-spacing:-.1px}
+body.light .rh-spoke-lbl{text-shadow:0 1px 4px rgba(255,255,255,.8);color:var(--t)}
+.rh-spoke.hover .rh-spoke-ico{background:var(--acc);color:var(--user-bubble-t);border-color:var(--acc);transform:scale(1.12)}
+.rh-spoke.hover .rh-spoke-lbl{color:var(--acc)}
+/* Staggered fan-out timing per spoke — each opens ~50ms after the last */
+.rh-arc.on .rh-spoke:nth-child(1){transition-delay:.02s}
+.rh-arc.on .rh-spoke:nth-child(2){transition-delay:.06s}
+.rh-arc.on .rh-spoke:nth-child(3){transition-delay:.10s}
+.rh-arc.on .rh-spoke:nth-child(4){transition-delay:.14s}
+.rh-arc.on .rh-spoke:nth-child(5){transition-delay:.18s}
+@media (prefers-reduced-motion:reduce){.rh-spoke{transition:opacity .12s ease}.rh-arc.on .rh-spoke{transform:translate(-50%,-50%) scale(1)}.rh-arc.on .rh-spoke:nth-child(n){transition-delay:0s}}
+
+/* ═══════════════════════════════════════════════════════════
+   v3.2.4 — SECTION 12b: Opt-in focus mode
+   Crescent icon in the header. When active, whichever card is
+   nearest the viewport center is fully lit; the rest dim to ~35%.
+   ═══════════════════════════════════════════════════════════ */
+.hdr-focus-btn.on{color:var(--acc);background:var(--accd)}
+.hdr-focus-btn.on svg{filter:drop-shadow(0 0 6px color-mix(in srgb,var(--acc) 55%,transparent))}
+body.focus-mode .card,body.focus-mode .wl,body.focus-mode .hub-focus,body.focus-mode .hub-peek,body.focus-mode .rule9,body.focus-mode .acc2-group,body.focus-mode .buy9-card,body.focus-mode .exp9-preview,body.focus-mode .alloc9-row{opacity:.35;transition:opacity .35s ease,transform .35s ease}
+body.focus-mode .card.fm-lit,body.focus-mode .wl.fm-lit,body.focus-mode .hub-focus.fm-lit,body.focus-mode .hub-peek.fm-lit,body.focus-mode .rule9.fm-lit,body.focus-mode .acc2-group.fm-lit,body.focus-mode .buy9-card.fm-lit,body.focus-mode .exp9-preview.fm-lit,body.focus-mode .alloc9-row.fm-lit{opacity:1}
+@media (prefers-reduced-motion:reduce){body.focus-mode .card,body.focus-mode .wl,body.focus-mode .hub-focus,body.focus-mode .hub-peek,body.focus-mode .rule9,body.focus-mode .acc2-group,body.focus-mode .buy9-card,body.focus-mode .exp9-preview,body.focus-mode .alloc9-row{transition:none}}
 .bnav.hidden{transform:translateX(-50%) translateY(calc(100% + var(--sb) + 32px));opacity:0;pointer-events:none}
 body.light .bnav{background:rgba(255,255,255,.92)}
 /* v2.7.19 — icon-only nav with active pill */
@@ -660,11 +702,16 @@ body.reduce-motion .skeleton{background:rgba(255,255,255,.04)}
 /* Children of the AI page must NOT get the staggered cardIn transform either */
 .ai-pg.on>*{animation:none!important;transform:none!important}
 /* CARDS */
-.card{background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad-lg);padding:20px;margin-bottom:18px;transition:border-color var(--dur-base) var(--ease-out),transform var(--dur-fast) var(--ease-out);position:relative;overflow:hidden}
+.card{background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad-lg);padding:20px;margin-bottom:18px;transition:border-color var(--dur-base) var(--ease-out),transform var(--dur-fast) var(--ease-out);position:relative;overflow:hidden;box-shadow:0 24px 60px -20px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.04);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+/* v3.2.2 — Depth material: subtle gradient, top-edge highlight, ambient warmth */
+.card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 0%,var(--bdr-acc2) 20%,var(--bdr-acc2) 80%,transparent 100%);opacity:.7;pointer-events:none}
+body:not(.light) .card{background:linear-gradient(155deg,rgba(255,255,255,.045) 0%,rgba(255,255,255,.02) 100%)}
+body.light .card{background:linear-gradient(155deg,rgba(255,255,255,.85) 0%,rgba(244,241,232,.6) 100%);box-shadow:0 20px 50px -22px rgba(10,42,28,.15),0 2px 6px rgba(10,42,28,.06),inset 0 1px 0 rgba(255,255,255,.9)}
 .card:hover{border-color:var(--bdr-acc2)}
 .card.acc-b{border-color:var(--bdr-acc2);background:var(--glass-strong)}
 /* Glass hero card with radial mint glow */
-.card.hero{border-color:var(--bdr-acc2);padding:20px;position:relative}
+.card.hero{border-color:var(--bdr-acc2);padding:20px;position:relative;box-shadow:0 32px 80px -24px rgba(0,0,0,.55),0 4px 12px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.06)}
+body.light .card.hero{box-shadow:0 28px 70px -26px rgba(10,42,28,.18),0 4px 12px rgba(10,42,28,.08),inset 0 1px 0 rgba(255,255,255,.95)}
 .card.hero::before{content:'';position:absolute;inset:0;background:var(--glow-mint);pointer-events:none;border-radius:inherit;animation:heroGlow 6s ease-in-out infinite;overflow:hidden;mask-image:radial-gradient(circle at 20% 30%,#000 0%,transparent 70%);-webkit-mask-image:radial-gradient(circle at 20% 30%,#000 0%,transparent 70%)}
 .card.hero>*{position:relative;z-index:1}
 @keyframes heroGlow{0%,100%{opacity:.7}50%{opacity:1}}
@@ -1465,8 +1512,10 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
    Rubric tiles: rounded 20px, generous padding, badge top-right,
    eyebrow + hero on the type ladder. Half-width pairs sit in a row.
    ═══════════════════════════════════════════════════════════ */
-.wl{background:var(--glass);border:0.5px solid var(--bdr);border-radius:20px;padding:18px;position:relative;overflow:hidden}
-body:not(.light) .wl{background:rgba(255,255,255,.03)}
+.wl{background:var(--glass);border:0.5px solid var(--bdr);border-radius:20px;padding:18px;position:relative;overflow:hidden;box-shadow:0 20px 50px -20px rgba(0,0,0,.45),0 2px 4px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.04);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);transition:transform var(--dur-fast) var(--ease-out),box-shadow var(--dur-base) var(--ease-out)}
+.wl::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(142,224,184,.24),transparent);opacity:.6;pointer-events:none}
+body:not(.light) .wl{background:linear-gradient(155deg,rgba(255,255,255,.04) 0%,rgba(255,255,255,.015) 100%)}
+body.light .wl{background:linear-gradient(155deg,rgba(255,255,255,.85) 0%,rgba(244,241,232,.55) 100%);box-shadow:0 16px 40px -18px rgba(10,42,28,.13),0 1px 3px rgba(10,42,28,.05),inset 0 1px 0 rgba(255,255,255,.9)}
 .wl-badge{position:absolute;top:14px;right:14px;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.08em;color:var(--t4)}
 .wl-eyebrow{font-family:var(--mono);font-size:10px;line-height:1.2;letter-spacing:.14em;text-transform:uppercase;font-weight:500;color:var(--acc);margin-bottom:10px}
 .wl-hero{font-family:var(--serif);font-size:40px;line-height:1;letter-spacing:-1.4px;font-weight:400;color:var(--hero-cream);font-variant-numeric:tabular-nums}
@@ -1695,6 +1744,15 @@ body:not(.light) .hub-focus{background:rgba(255,255,255,.02)}
 .hub-modebar{display:flex;gap:4px;justify-content:flex-end;margin-bottom:2px}
 .hub-mode-chip{background:var(--glass);border:0.5px solid var(--bdr);border-radius:9px;padding:5px 12px;font:600 10.5px var(--sans);color:var(--t2);cursor:pointer;transition:all .15s}
 .hub-mode-chip.on{background:var(--acc);color:var(--user-bubble-t);border-color:transparent}
+
+/* v3.2.2 — MOTION: hero chart animates on entry (draw + fill + endpoint pulse) */
+.fp-draw{stroke-dasharray:1000;stroke-dashoffset:1000;animation:fpDraw 1.4s cubic-bezier(.4,0,.2,1) forwards}
+.fp-fill{opacity:0;animation:fpFill 1s .8s ease-out forwards}
+.fp-dot{opacity:0;animation:fpDot 1.6s 1.4s ease-out infinite}
+@keyframes fpDraw{to{stroke-dashoffset:0}}
+@keyframes fpFill{to{opacity:1}}
+@keyframes fpDot{0%{opacity:0;r:3}30%{opacity:1;r:5}70%{opacity:1;r:5}100%{opacity:.4;r:8}}
+@media (prefers-reduced-motion:reduce){.fp-draw,.fp-fill,.fp-dot{animation:none;stroke-dashoffset:0;opacity:1}}
 </style>
 </head>
 <body>
@@ -1740,6 +1798,9 @@ body:not(.light) .hub-focus{background:rgba(255,255,255,.02)}
     <div class="hdr-actions">
       <div class="hdr-dot"></div>
       <button id="hdr-version" class="hdr-version" onclick="forceRefreshApp()" title="Version — tap to force refresh"></button>
+      <button id="hdr-focus" class="hdr-btn hdr-focus-btn" onclick="toggleFocusMode()" title="Focus mode — calm neighbours" aria-label="Toggle focus mode">
+        <svg viewBox="0 0 24 24"><path d="M20.5 12.5A8.5 8.5 0 1 1 11.5 3.5a6.5 6.5 0 0 0 9 9z"/></svg>
+      </button>
       <button class="hdr-btn" onclick="openSearch()" title="Search transactions">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       </button>
@@ -2466,6 +2527,13 @@ body:not(.light) .hub-focus{background:rgba(255,255,255,.02)}
       <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>More
     </button>
   </nav>
+
+  <!-- v3.2.3 — SECTION 11d: Radial hub (replaces the tab bar) -->
+  <div class="rh-backdrop" id="rh-backdrop" onclick="rhClose()"></div>
+  <div class="rh-arc" id="rh-arc"></div>
+  <button class="rh-dot" id="rh-dot" aria-label="Add or navigate">
+    <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </button>
 </div>
 
 <!-- MORE SHEET -->
@@ -3388,9 +3456,56 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='3.2.1';
+const APP_VERSION='3.2.4';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
+  {
+    v:'3.2.4',
+    date:'2026-07-30',
+    title:'Focus mode — dim the neighbours',
+    sections:{
+      features:[
+        '🌙 **Focus mode.** A small crescent icon in the top bar toggles focus. When on, whichever card is closest to the middle of your screen is fully lit — the rest gently dim to about a third. Scroll and the light follows what you are reading. Tap the crescent again to turn it off. Your choice is remembered'
+      ],
+      improvements:[
+        'Applies to every card surface — dashboard widgets, hub sections, rules, allocation rows',
+        'Respects reduced-motion settings'
+      ],
+      fixes:[]
+    }
+  },
+  {
+    v:'3.2.3',
+    date:'2026-07-30',
+    title:'Radial hub — the tab bar is gone',
+    sections:{
+      features:[
+        '🎯 **Radial navigation hub.** The bottom tab bar is replaced by a single soft mint dot. **Tap** it to quickly add a transaction. **Hold** it and five destinations fan out in a calm arc above your thumb — Home, Spending, Plan, Invest, Ask Finn. Slide to whichever you want and release. Release outside the arc to cancel',
+        '✨ **Backglow and depth.** The dot sits in its own radial glow, and each destination pill has the frosted-glass Depth material so the whole thing feels lit-from-above'
+      ],
+      improvements:[
+        'Icons animate outward with staggered spring timing so it flows rather than pops',
+        'Everything respects reduced-motion settings',
+        'A gentle haptic tap on open and as you slide over each destination (on devices that support it)'
+      ],
+      fixes:[]
+    }
+  },
+  {
+    v:'3.2.2',
+    date:'2026-07-30',
+    title:'Depth & Motion — a more premium feel',
+    sections:{
+      features:[
+        '💎 **Depth on every card.** Cards and dashboard tiles now feel like real objects: a soft layered shadow underneath, a subtle gradient inside, a fine highlight along the top edge, and frosted-glass blur behind them. Same layout, more expensive material',
+        '📈 **Motion on the portfolio chart.** Opening Invest, the area chart now draws itself in, the shading fades in behind, and a soft pulsing dot lands on the latest point. Signature moment, once per open'
+      ],
+      improvements:[
+        'Everything respects your device\'s "reduce motion" setting — if you have it on, the chart just appears instantly'
+      ],
+      fixes:[]
+    }
+  },
   {
     v:'3.2.1',
     date:'2026-07-30',
@@ -6647,11 +6762,17 @@ const FP_CHART={
     const area=`${pl},${ih} ${pts} ${pl+iw},${ih}`;
     const gid='fpa-'+Math.random().toString(36).slice(2,8);
     const xl=(labels||[]).map((l,i)=>{const n=labels.length;if(n>6&&i%Math.ceil(n/6)!==0)return'';return `<text x="${(pl+i*dx).toFixed(1)}" y="${h-6}" font-size="8" font-family="${this.mono}" fill="${this.axisColor}" text-anchor="middle">${l}</text>`;}).join('');
+    // v3.2.2 — opt-in Motion classes: hero charts animate on entry (draw + fade + endpoint pulse)
+    const draw=opts.animate?'fp-draw':'';
+    const fill=opts.animate?'fp-fill':'';
+    // endpoint dot for the pulsing tip in animated mode
+    const lastPt=values.length?`${(pl+(values.length-1)*dx).toFixed(1)},${(ih-((values[values.length-1]-min)/range)*(ih-6)-3).toFixed(1)}`.split(','):null;
+    const dot=(opts.animate&&lastPt)?`<circle class="fp-dot" cx="${lastPt[0]}" cy="${lastPt[1]}" r="3.5" fill="var(--acc)"/>`:'';
     return`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="width:100%;height:auto">
       <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--acc)" stop-opacity="0.25"/><stop offset="100%" stop-color="var(--acc)" stop-opacity="0"/></linearGradient></defs>
-      <polygon points="${area}" fill="url(#${gid})"/>
-      <polyline points="${pts}" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      ${xl}</svg>`;
+      <polygon class="${fill}" points="${area}" fill="url(#${gid})"/>
+      <polyline class="${draw}" points="${pts}" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      ${dot}${xl}</svg>`;
   },
 
   // ── Bar chart (saved/month) ──
@@ -12515,6 +12636,9 @@ function launchApp(){
   document.getElementById('setup').style.display='none';
   const app=document.getElementById('app');app.style.display='flex';
   applyTheme(S.themeIdx||0);applyMode(S.mode||'dark');applyUiPrefs();
+  // v3.2.3 — wire the radial hub (replaces bottom tab bar)
+  if(typeof rhInit==='function')rhInit();
+  if(typeof restoreFocusMode==='function')restoreFocusMode();
   // Populate version indicator in header
   const vEl=document.getElementById('hdr-version');
   if(vEl)vEl.textContent='v'+APP_VERSION;
@@ -12894,6 +13018,183 @@ function restoreAllHubPages(){
   Object.keys(HUBS).forEach(hk=>{HUBS[hk].sections.forEach(sec=>restoreHubPage(hk,sec));});
 }
 
+// ═══════════════════════════════════════════════════════════
+// v3.2.3 — SECTION 11d: Radial hub navigation
+// The dot at bottom-center is the ONLY navigation surface.
+// TAP (<350ms) → openTxnModal() : quick add transaction
+// LONG-PRESS (≥350ms) → arc of 5 destinations fans out. Slide finger
+// over one to hover, release to pick. Release outside → close.
+// ═══════════════════════════════════════════════════════════
+const RH_SPOKES=[
+  {id:'dash',name:'Home',icon:'🏠'},
+  {id:'hub-spending',name:'Spending',icon:'💸'},
+  {id:'hub-plan',name:'Plan',icon:'🎯'},
+  {id:'hub-invest',name:'Invest',icon:'📈'},
+  {id:'ai',name:'Ask Finn',icon:'✨'}
+];
+let __rh={pressTs:0,timer:null,open:false,hoverIdx:-1,positions:[]};
+function rhBuildSpokes(){
+  const arc=document.getElementById('rh-arc');if(!arc)return;
+  arc.innerHTML='';
+  // Fan out over a semicircle from -160° to -20° (arc above the dot, thumb-friendly)
+  // Radius scales with viewport width but has a comfortable min/max
+  const n=RH_SPOKES.length;
+  const w=Math.min(window.innerWidth||390,500);
+  const radius=Math.max(115,Math.min(140,w*0.36));
+  const startDeg=-160,endDeg=-20;
+  __rh.positions=[];
+  RH_SPOKES.forEach((s,i)=>{
+    const deg=startDeg+(endDeg-startDeg)*(i/(n-1));
+    const rad=deg*Math.PI/180;
+    const x=Math.cos(rad)*radius,y=Math.sin(rad)*radius;
+    __rh.positions.push({x,y});
+    const el=document.createElement('div');
+    el.className='rh-spoke';
+    el.style.left=x+'px';el.style.top=y+'px';
+    el.innerHTML=`<button class="rh-spoke-btn" data-idx="${i}"><span class="rh-spoke-ico">${s.icon}</span><span class="rh-spoke-lbl">${s.name}</span></button>`;
+    arc.appendChild(el);
+  });
+}
+function rhOpen(){
+  if(__rh.open)return;
+  rhBuildSpokes();
+  __rh.open=true;
+  document.getElementById('rh-backdrop').classList.add('on');
+  document.getElementById('rh-arc').classList.add('on');
+  document.getElementById('rh-dot').classList.add('hold');
+  // Light haptic on open (harmless if unsupported)
+  if(navigator.vibrate)navigator.vibrate(8);
+}
+function rhClose(){
+  if(!__rh.open)return;
+  __rh.open=false;
+  document.getElementById('rh-backdrop').classList.remove('on');
+  document.getElementById('rh-arc').classList.remove('on');
+  document.getElementById('rh-dot').classList.remove('hold');
+  __rh.hoverIdx=-1;
+  document.querySelectorAll('.rh-spoke').forEach(s=>s.classList.remove('hover'));
+}
+function rhPick(idx){
+  const s=RH_SPOKES[idx];if(!s)return;
+  rhClose();
+  setTimeout(()=>{
+    if(s.id==='ai'){showPg('ai',null);}
+    else{showPg(s.id,null);}
+  },140);
+}
+function rhUpdateHover(clientX,clientY){
+  if(!__rh.open||!__rh.positions.length)return;
+  // Compute position relative to the dot center
+  const dot=document.getElementById('rh-dot').getBoundingClientRect();
+  const cx=dot.left+dot.width/2, cy=dot.top+dot.height/2 - 20; // arc anchor is 20px above the dot center
+  const dx=clientX-cx, dy=clientY-cy;
+  // Only consider a hover if the finger has left a small dead-zone around the dot
+  const dist=Math.hypot(dx,dy);
+  if(dist<50){if(__rh.hoverIdx!==-1){__rh.hoverIdx=-1;document.querySelectorAll('.rh-spoke').forEach(s=>s.classList.remove('hover'));}return;}
+  // Find nearest spoke by angle
+  let best=-1,bestD=Infinity;
+  __rh.positions.forEach((p,i)=>{const d=Math.hypot(p.x-dx,p.y-dy);if(d<bestD){bestD=d;best=i;}});
+  // Require the finger to be reasonably close to that spoke (within ~90px)
+  if(bestD>90)best=-1;
+  if(best!==__rh.hoverIdx){
+    __rh.hoverIdx=best;
+    document.querySelectorAll('.rh-spoke').forEach((s,i)=>s.classList.toggle('hover',i===best));
+    if(best!==-1&&navigator.vibrate)navigator.vibrate(4);
+  }
+}
+// v3.2.4 — Section 12b: opt-in focus mode
+let __focusObs=null,__focusRaf=null;
+function toggleFocusMode(){
+  const on=!document.body.classList.contains('focus-mode');
+  document.body.classList.toggle('focus-mode',on);
+  document.getElementById('hdr-focus')?.classList.toggle('on',on);
+  try{localStorage.setItem('finplan-focus',on?'1':'0');}catch(e){}
+  if(on){startFocusObserver();showToast('Focus on — neighbours dimmed');}
+  else{stopFocusObserver();document.querySelectorAll('.fm-lit').forEach(el=>el.classList.remove('fm-lit'));showToast('Focus off');}
+}
+function focusModeCards(){
+  return document.querySelectorAll('.pg.on .card, .pg.on .wl, .pg.on .hub-focus, .pg.on .hub-peek, .pg.on .rule9, .pg.on .acc2-group, .pg.on .buy9-card, .pg.on .exp9-preview, .pg.on .alloc9-row');
+}
+function updateFocusLit(){
+  if(!document.body.classList.contains('focus-mode'))return;
+  const vc=window.innerHeight/2;
+  let best=null,bestDist=Infinity;
+  focusModeCards().forEach(el=>{
+    const r=el.getBoundingClientRect();
+    if(r.bottom<0||r.top>window.innerHeight)return;
+    const c=r.top+r.height/2;const d=Math.abs(c-vc);
+    if(d<bestDist){bestDist=d;best=el;}
+  });
+  document.querySelectorAll('.fm-lit').forEach(el=>{if(el!==best)el.classList.remove('fm-lit');});
+  if(best)best.classList.add('fm-lit');
+}
+function startFocusObserver(){
+  stopFocusObserver();
+  const scroller=document.getElementById('scrl');if(!scroller)return;
+  // Update on scroll (rAF-throttled) plus initial run
+  const onScroll=()=>{if(__focusRaf)return;__focusRaf=requestAnimationFrame(()=>{__focusRaf=null;updateFocusLit();});};
+  scroller.addEventListener('scroll',onScroll,{passive:true});
+  __focusObs={destroy:()=>scroller.removeEventListener('scroll',onScroll)};
+  updateFocusLit();
+}
+function stopFocusObserver(){if(__focusObs){__focusObs.destroy();__focusObs=null;}if(__focusRaf){cancelAnimationFrame(__focusRaf);__focusRaf=null;}}
+function restoreFocusMode(){
+  try{if(localStorage.getItem('finplan-focus')==='1'){document.body.classList.add('focus-mode');document.getElementById('hdr-focus')?.classList.add('on');startFocusObserver();}}catch(e){}
+}
+
+function rhInit(){
+  const dot=document.getElementById('rh-dot');if(!dot)return;
+  const start=(e)=>{
+    e.preventDefault();
+    const t=e.touches?e.touches[0]:e;
+    __rh.pressTs=Date.now();
+    __rh.startX=t.clientX;__rh.startY=t.clientY;
+    __rh.movedFar=false;
+    clearTimeout(__rh.timer);
+    __rh.timer=setTimeout(()=>{
+      // long-press threshold
+      if(!__rh.open)rhOpen();
+    },350);
+  };
+  const move=(e)=>{
+    if(!__rh.open&&__rh.pressTs){
+      // If they moved a lot before the long-press fires, cancel the timer
+      const t=e.touches?e.touches[0]:e;
+      const d=Math.hypot(t.clientX-__rh.startX,t.clientY-__rh.startY);
+      if(d>14){clearTimeout(__rh.timer);__rh.timer=null;__rh.movedFar=true;}
+      return;
+    }
+    if(__rh.open){
+      e.preventDefault();
+      const t=e.touches?e.touches[0]:e;
+      rhUpdateHover(t.clientX,t.clientY);
+    }
+  };
+  const end=(e)=>{
+    clearTimeout(__rh.timer);__rh.timer=null;
+    const elapsed=Date.now()-__rh.pressTs;
+    if(__rh.open){
+      // Sliding release: if hovering a spoke → pick it, else close
+      if(__rh.hoverIdx>-1){rhPick(__rh.hoverIdx);}
+      else{rhClose();}
+    }else if(elapsed<350&&!__rh.movedFar){
+      // Quick tap → add transaction
+      if(typeof openTxnModal==='function')openTxnModal();
+    }
+    __rh.pressTs=0;
+  };
+  dot.addEventListener('touchstart',start,{passive:false});
+  dot.addEventListener('touchmove',move,{passive:false});
+  dot.addEventListener('touchend',end);
+  dot.addEventListener('touchcancel',()=>{clearTimeout(__rh.timer);rhClose();__rh.pressTs=0;});
+  // Mouse fallback (desktop testing)
+  dot.addEventListener('mousedown',start);
+  window.addEventListener('mousemove',(e)=>{if(__rh.pressTs)move(e);});
+  window.addEventListener('mouseup',(e)=>{if(__rh.pressTs)end(e);});
+  // Rebuild positions on resize so the arc scales with viewport
+  window.addEventListener('resize',()=>{if(__rh.open)rhBuildSpokes();});
+}
+
 function showPg(id,btn){
   // v3.2.0 — when navigating away from a hub, return any borrowed page nodes home
   if(typeof restoreAllHubPages==='function'&&(!id||!id.startsWith('hub-')))restoreAllHubPages();
@@ -12911,6 +13212,7 @@ function showPg(id,btn){
     showHdr();showNav();
     document.body.classList.remove('on-ai-page','fab-visible');
     buildHub(hubKey);
+    if(typeof updateFocusLit==='function')setTimeout(updateFocusLit,200);
     return;
   }
   const pg=document.getElementById('pg-'+id);
@@ -12954,6 +13256,7 @@ function showPg(id,btn){
   if(id==='glance')buildGlancePage();
   if(id==='recurring')buildRecurringPage();
   if(id==='insights')buildInsightsPage();
+  if(typeof updateFocusLit==='function')setTimeout(updateFocusLit,200);
 }
 function toggleMore(){
   const sheet=document.getElementById('more-sheet'),ov=document.getElementById('more-overlay');
@@ -18486,7 +18789,7 @@ function renderInv9Chart(){
     else{el.innerHTML=`<div class="inv9-chart-empty">Building portfolio history — check back after prices update</div>`;}
     return;
   }
-  el.innerHTML=FP_CHART.area(data,[],{width:320,height:120});
+  el.innerHTML=FP_CHART.area(data,[],{width:320,height:120,animate:true});
 }
 
 function updateSyncStatus(){
