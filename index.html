@@ -489,8 +489,17 @@ body.light .hdr{background:rgba(255,255,255,.8)}
   .rep-hdr{page-break-after:avoid}
   a{text-decoration:none;color:#000!important}
 }
-/* v2.7.20 — Floating nav pill, concept-matching: compact, centered, floating */
-.bnav{display:none!important}
+/* Steady State v4.0.0 — clean fixed 5-tab bottom nav */
+.ss-bnav{position:fixed;bottom:0;left:0;right:0;display:flex;align-items:center;justify-content:space-around;background:var(--navbg,rgba(12,28,20,.9));backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border-top:0.5px solid var(--bdr);padding:8px 6px calc(8px + var(--sb));z-index:200}
+.ss-bnav .nb{flex:1;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font:600 9.5px var(--sans);color:var(--t3);padding:4px 2px;transition:color .15s;-webkit-tap-highlight-color:transparent}
+.ss-bnav .nb svg{width:22px;height:22px;stroke:currentColor;stroke-width:1.9;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.ss-bnav .nb.on{color:var(--acc)}
+.ss-bnav .nb:active{transform:scale(.94)}
+/* center add button */
+.ss-nb-add{flex:0 0 auto!important}
+.ss-add-circle{width:46px;height:46px;border-radius:50%;background:var(--acc);color:var(--user-bubble-t);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px -6px var(--glowsh,rgba(45,122,85,.5)),inset 0 1px 0 rgba(255,255,255,.2);margin-top:-4px}
+.ss-add-circle svg{width:24px;height:24px;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round}
+.ss-nb-add:active .ss-add-circle{transform:scale(.92)}
 /* v3.2.3 — SECTION 11d: Radial hub. Small dot bottom-center. Tap = add txn.
    Long-press = arc of 5 destinations fans out. Slide + release picks one. */
 .rh-dot{position:fixed;bottom:calc(22px + var(--sb));left:50%;transform:translateX(-50%);width:52px;height:52px;border-radius:50%;background:var(--acc);color:var(--user-bubble-t);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:400;box-shadow:0 12px 32px -6px rgba(10,42,28,.45),0 4px 12px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.18);transition:transform .18s cubic-bezier(.34,1.3,.5,1),box-shadow .2s ease;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
@@ -1710,6 +1719,31 @@ body:not(.light) .exp9-stat{background:rgba(255,255,255,.03)}
 .acc2-nw{font:400 44px var(--serif);color:var(--hero-cream);letter-spacing:-1.4px;line-height:1;font-variant-numeric:tabular-nums}
 .acc2-delta{font:500 12px var(--sans);margin-top:10px;color:var(--t2)}
 .acc2-delta.up{color:var(--acc)}.acc2-delta.down{color:var(--r)}
+/* Steady State v4.1 — money in/out flow + rich account cards */
+.accm-flow{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:22px}
+.accm-flow-card{background:var(--glass);border:0.5px solid var(--bdr);border-radius:15px;padding:13px 14px}
+.accm-flow-top{display:flex;align-items:center;gap:6px;font:600 10.5px var(--sans);color:var(--t2);text-transform:uppercase;letter-spacing:.05em}
+.accm-flow-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.accm-flow-dot.in{background:var(--acc)}
+.accm-flow-dot.out{background:var(--r)}
+.accm-flow-amt{font:400 22px var(--serif);color:var(--t);letter-spacing:-.4px;margin-top:7px;font-variant-numeric:tabular-nums}
+.accm-flow-sub{font:500 10px var(--sans);color:var(--t3);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.accm-flow-net{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;padding:11px 14px;background:var(--glass);border:0.5px solid var(--bdr);border-radius:13px}
+.accm-flow-net-l{font:600 11px var(--sans);color:var(--t2);text-transform:uppercase;letter-spacing:.05em}
+.accm-flow-net-v{font:500 15px var(--mono);font-variant-numeric:tabular-nums}
+.accm-sec-label{font:600 11px var(--sans);color:var(--t2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.accm-card{position:relative;background:var(--glass);border:0.5px solid var(--bdr);border-radius:16px;padding:15px 15px 12px;margin-bottom:10px;overflow:hidden}
+.accm-card-l{display:flex;align-items:center;gap:11px;margin-bottom:4px}
+.accm-card-ico{width:38px;height:38px;border-radius:11px;background:var(--accd);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.accm-card-meta{flex:1;min-width:0}
+.accm-card-name{font:600 14px var(--sans);color:var(--t);letter-spacing:-.2px}
+.accm-card-bank{font:500 10.5px var(--mono);color:var(--t3);margin-top:2px;text-transform:uppercase;letter-spacing:.04em}
+.accm-card-r{display:flex;justify-content:space-between;align-items:baseline;margin-top:6px}
+.accm-card-bal{font:400 24px var(--serif);color:var(--t);letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.accm-card-chg{font:500 11px var(--mono);font-variant-numeric:tabular-nums}
+.accm-card-chg.up{color:var(--acc)}.accm-card-chg.down{color:var(--r)}
+.accm-card-spark{margin-top:10px;height:32px;opacity:.85}
+.accm-card-spark svg{width:100%;height:32px;display:block}
 .acc2-group{margin-bottom:22px}
 .acc2-ghead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
 .acc2-gtitle{font:600 13px var(--sans);color:var(--t);letter-spacing:-.2px}
@@ -1798,9 +1832,6 @@ body:not(.light) .hub-focus{background:rgba(255,255,255,.02)}
     <div class="hdr-actions">
       <div class="hdr-dot"></div>
       <button id="hdr-version" class="hdr-version" onclick="forceRefreshApp()" title="Version — tap to force refresh"></button>
-      <button id="hdr-focus" class="hdr-btn hdr-focus-btn" onclick="toggleFocusMode()" title="Focus mode — calm neighbours" aria-label="Toggle focus mode">
-        <svg viewBox="0 0 24 24"><path d="M20.5 12.5A8.5 8.5 0 1 1 11.5 3.5a6.5 6.5 0 0 0 9 9z"/></svg>
-      </button>
       <button class="hdr-btn" onclick="openSearch()" title="Search transactions">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       </button>
@@ -1809,6 +1840,9 @@ body:not(.light) .hub-focus{background:rgba(255,255,255,.02)}
       </button>
       <button class="hdr-btn" onclick="showPgFromMore('settings')" title="Settings">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+      <button class="hdr-btn" onclick="toggleMore()" title="More" aria-label="More">
+        <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>
       </button>
     </div>
   </div>
@@ -2238,11 +2272,15 @@ body:not(.light) .hub-focus{background:rgba(255,255,255,.02)}
     <!-- v3.1.8 — SECTION 2: Accounts overview -->
     <div class="pg" id="pg-accounts">
       <div class="acc2-hero">
-        <div class="inv9-eyebrow">Net worth</div>
+        <div class="inv9-eyebrow">Total balance</div>
         <div class="acc2-nw" id="acc2-nw">$0</div>
         <div class="acc2-delta" id="acc2-delta"></div>
       </div>
-      <div id="acc2-groups"></div>
+      <!-- Money in / out this month -->
+      <div class="accm-flow" id="accm-flow"></div>
+      <!-- Rich per-account cards -->
+      <div class="accm-sec-label">Your accounts</div>
+      <div id="accm-cards"></div>
     </div>
 
     <!-- v3.1.7 — SECTION 6C: Rules page -->
@@ -2510,30 +2548,27 @@ body:not(.light) .hub-focus{background:rgba(255,255,255,.02)}
     <div class="ctx-rows" id="ctx-rows"></div>
   </div>
 
-  <nav class="bnav">
+  <!-- Steady State v4.0.0 — clean 5-tab bottom nav -->
+  <nav class="bnav ss-bnav">
     <button class="nb on" data-pg="dash" onclick="showPg('dash',this)" aria-label="Home">
       <svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg>Home
     </button>
-    <button class="nb" data-pg="hub-spending" onclick="showPg('hub-spending',this)" aria-label="Spending">
-      <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Spending
+    <button class="nb" data-pg="accounts" onclick="showPg('accounts',this)" aria-label="Accounts">
+      <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Accounts
     </button>
-    <button class="nb" data-pg="hub-plan" onclick="showPg('hub-plan',this)" aria-label="Plan">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>Plan
+    <button class="nb ss-nb-add" onclick="openTxnModal()" aria-label="Add transaction">
+      <span class="ss-add-circle"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
     </button>
-    <button class="nb" data-pg="hub-invest" onclick="showPg('hub-invest',this)" aria-label="Invest">
-      <svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><polyline points="14 7 21 7 21 14"/></svg>Invest
+    <button class="nb" data-pg="budget" onclick="showPg('budget',this)" aria-label="Budget">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Budget
     </button>
-    <button class="nb" id="more-btn" onclick="toggleMore()" aria-label="More">
-      <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>More
+    <button class="nb" data-pg="goals" onclick="showPg('goals',this)" aria-label="Goals">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>Goals
+    </button>
+    <button class="nb" data-pg="analytics" onclick="showPg('analytics',this)" aria-label="Stats">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Stats
     </button>
   </nav>
-
-  <!-- v3.2.3 — SECTION 11d: Radial hub (replaces the tab bar) -->
-  <div class="rh-backdrop" id="rh-backdrop" onclick="rhClose()"></div>
-  <div class="rh-arc" id="rh-arc"></div>
-  <button class="rh-dot" id="rh-dot" aria-label="Add or navigate">
-    <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-  </button>
 </div>
 
 <!-- MORE SHEET -->
@@ -2541,13 +2576,13 @@ body:not(.light) .hub-focus{background:rgba(255,255,255,.02)}
 <div class="more-sheet" id="more-sheet">
   <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.09em;font-weight:700;margin-bottom:10px">More</div>
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
-    <button class="more-tile" id="more-jobs" onclick="showPgFromMore('jobs')"><svg viewBox="0 0 24 24"><path d="M20 7h-4V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM10 5h4v2h-4V5z"/></svg>Jobs</button>
+    <button class="more-tile" id="more-txns" onclick="showPgFromMore('txns')"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Transactions</button>
+    <button class="more-tile" id="more-recurring" onclick="showPgFromMore('recurring')"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Recurring</button>
+    <button class="more-tile" id="more-rules" onclick="showPgFromMore('rules')"><svg viewBox="0 0 24 24"><path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07"/></svg>Rules</button>
+    <button class="more-tile" id="more-jobs" onclick="showPgFromMore('jobs')"><svg viewBox="0 0 24 24"><path d="M20 7h-4V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM10 5h4v2h-4V5z"/></svg>Income</button>
     <button class="more-tile" id="more-kmart" onclick="showPgFromMore('kmart')"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Shifts</button>
     <button class="more-tile" id="more-reports" onclick="showPgFromMore('reports')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Reports</button>
-    <button class="more-tile" id="more-tax" onclick="showPgFromMore('tax')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>ATO Tax</button>
     <button class="more-tile" id="more-debts" onclick="showPgFromMore('debts')"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Debts</button>
-    <button class="more-tile" id="more-ai" onclick="showPgFromMore('ai')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Advisor</button>
-    <button class="more-tile" id="more-feedback" onclick="showPgFromMore('feedback')"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Log</button>
     <button class="more-tile" id="more-settings" onclick="showPgFromMore('settings')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>Settings</button>
   </div>
 </div>
@@ -3456,7 +3491,7 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='3.2.4';
+const APP_VERSION='4.1.0';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
   {
@@ -12637,8 +12672,7 @@ function launchApp(){
   const app=document.getElementById('app');app.style.display='flex';
   applyTheme(S.themeIdx||0);applyMode(S.mode||'dark');applyUiPrefs();
   // v3.2.3 — wire the radial hub (replaces bottom tab bar)
-  if(typeof rhInit==='function')rhInit();
-  if(typeof restoreFocusMode==='function')restoreFocusMode();
+  /* Steady State — radial hub & focus mode removed; using clean 5-tab nav */
   // Populate version indicator in header
   const vEl=document.getElementById('hdr-version');
   if(vEl)vEl.textContent='v'+APP_VERSION;
@@ -13262,13 +13296,13 @@ function toggleMore(){
   const sheet=document.getElementById('more-sheet'),ov=document.getElementById('more-overlay');
   const open=sheet.style.display==='block';
   if(open){closeMore();}
-  else{sheet.style.display='block';ov.style.display='block';requestAnimationFrame(()=>{sheet.style.transform='translateY(0)';sheet.style.opacity='1';});document.getElementById('more-btn').classList.add('on');}
+  else{sheet.style.display='block';ov.style.display='block';requestAnimationFrame(()=>{sheet.style.transform='translateY(0)';sheet.style.opacity='1';});document.getElementById('more-btn')?.classList.add('on');}
 }
 function closeMore(){
   const sheet=document.getElementById('more-sheet'),ov=document.getElementById('more-overlay');
   sheet.style.transform='translateY(20px)';sheet.style.opacity='0';
   setTimeout(()=>{sheet.style.display='none';ov.style.display='none';},220);
-  if(!MORE_PAGES.includes(currentPg))document.getElementById('more-btn').classList.remove('on');
+  if(!MORE_PAGES.includes(currentPg))document.getElementById('more-btn')?.classList.remove('on');
 }
 function showPgFromMore(id){
   closeMore();
@@ -19793,50 +19827,125 @@ function removeLearnedRule(idx){
 // v3.1.8 — Section 2: Accounts overview (grouped net worth)
 function buildAccounts2(){
   const nwEl=document.getElementById('acc2-nw');if(!nwEl)return;
-  // Cash = account balances
-  const cashAccts=Object.keys(S.acctBalances||{}).map(k=>({
-    key:k,label:(typeof acctFullLabel==='function')?acctFullLabel(k):k,
-    bal:calcBal(k),icon:(S.acctMeta&&S.acctMeta[k]&&/savings|hisa/i.test(S.acctMeta[k].name||''))?'💰':'🏦'
-  }));
+  // ── Cash accounts only (Steady State: investments/debts live elsewhere) ──
+  const cashAccts=Object.keys(S.acctBalances||{}).map(k=>{
+    const meta=(S.acctMeta&&S.acctMeta[k])||{};
+    const isSav=/savings|hisa|saver/i.test((meta.name||'')+(k||''));
+    return {
+      key:k,
+      label:(typeof acctFullLabel==='function')?acctFullLabel(k):k,
+      type:meta.name||(isSav?'Savings':'Everyday'),
+      bank:meta.bank||'',
+      bal:calcBal(k),
+      icon:isSav?'💰':'🏦'
+    };
+  });
   const cashTotal=cashAccts.reduce((a,x)=>a+x.bal,0);
-  // Investments = holdings grouped, plus portfolio total
-  const invTotal=(typeof portTotal==='function')?portTotal():0;
-  const invItems=(activeHoldings?activeHoldings():[]).map(h=>{
-    const v=holdingValue(h),pnlPct=holdingPnlPct(h);
-    return {label:h.name||h.ticker,ticker:h.ticker,val:v,pnlPct,icon:h.market==='US'?'📈':'📊'};
-  }).sort((a,b)=>b.val-a.val);
-  // Debts = liabilities
-  const debts=(S.liabilities||S.debts||[]).map(d=>({label:d.name||d.label||'Debt',bal:-(Math.abs(d.balance||d.amount||0)),due:d.dueDate||d.due||null,icon:'💳'}));
-  const debtTotal=debts.reduce((a,x)=>a+x.bal,0);
-  const netWorth=cashTotal+invTotal+debtTotal;
-  nwEl.textContent=fmtD(netWorth);
-  // Delta from net worth history
+  nwEl.textContent=fmtD(cashTotal);
+
+  // ── Delta (recent change in total cash) ──
   const deltaEl=document.getElementById('acc2-delta');
   if(deltaEl){
     const hist=(S.nwHistory||[]);
     if(hist.length>=2){
-      const old=hist[Math.max(0,hist.length-7)].nw||hist[0].nw;
-      const diff=netWorth-old;const up=diff>=0;
-      deltaEl.className='acc2-delta '+(up?'up':'down');
-      deltaEl.textContent=`${up?'▲':'▼'} ${fmtD(Math.abs(diff))} recently`;
-    }else deltaEl.textContent='';
+      const prev=hist[Math.max(0,hist.length-7)];
+      const oldLiquid=(prev.liquid!=null)?prev.liquid:null;
+      if(oldLiquid!=null){
+        const diff=cashTotal-oldLiquid;const up=diff>=0;
+        deltaEl.className='acc2-delta '+(up?'up':'down');
+        deltaEl.textContent=`${up?'▲':'▼'} ${fmtD(Math.abs(diff))} · last 7 days`;
+      }else deltaEl.textContent=`Across ${cashAccts.length} account${cashAccts.length===1?'':'s'}`;
+    }else deltaEl.textContent=`Across ${cashAccts.length} account${cashAccts.length===1?'':'s'}`;
   }
-  const groupsEl=document.getElementById('acc2-groups');
-  const rowHtml=(icon,label,sub,amt,amtColor)=>`<div class="acc2-row">
-    <div class="acc2-ico">${icon}</div>
-    <div class="acc2-rmid"><div class="acc2-rname">${escapeHtml(label)}</div>${sub?`<div class="acc2-rsub">${sub}</div>`:''}</div>
-    <div class="acc2-ramt" ${amtColor?`style="color:${amtColor}"`:''}>${amt}</div>
-  </div>`;
-  const group=(title,total,rowsHtml,totalColor)=>`<div class="acc2-group">
-    <div class="acc2-ghead"><span class="acc2-gtitle">${title}</span><span class="acc2-gtotal" ${totalColor?`style="color:${totalColor}"`:''}>${fmtD(total)}</span></div>
-    ${rowsHtml}
-  </div>`;
-  let html='';
-  if(cashAccts.length)html+=group('Cash',cashTotal,cashAccts.map(a=>rowHtml(a.icon,a.label,'',fmtD(a.bal))).join(''));
-  if(invItems.length)html+=group('Investments',invTotal,invItems.map(i=>rowHtml(i.icon,i.label,`${i.pnlPct>=0?'▲':'▼'} ${Math.abs(i.pnlPct).toFixed(1)}%`,fmtD(i.val))).join(''));
-  if(debts.length)html+=group('Debts',debtTotal,debts.map(d=>rowHtml(d.icon,d.label,d.due?`Due ${d.due}`:'',fmtD(d.bal),'var(--r)')).join(''),'var(--r)');
-  if(!html)html=`<div class="empty" style="padding:40px 20px"><div class="empty-txt">Add accounts, holdings, or debts to see your grouped net worth here.</div></div>`;
-  groupsEl.innerHTML=html;
+
+  // ── Money in / Money out this month ──
+  const flowEl=document.getElementById('accm-flow');
+  if(flowEl){
+    const mtxns=(typeof thisMonthTxns==='function')?thisMonthTxns():[];
+    const ins=mtxns.filter(t=>t.dir==='in');
+    const outs=mtxns.filter(t=>t.dir==='out');
+    const inTotal=ins.reduce((a,t)=>a+Math.abs(t.amt||0),0);
+    const outTotal=outs.reduce((a,t)=>a+Math.abs(t.amt||0),0);
+    const net=inTotal-outTotal;
+    // Top income source
+    const inBySource={};ins.forEach(t=>{const p=t.payee||'Other';inBySource[p]=(inBySource[p]||0)+Math.abs(t.amt||0);});
+    const topSource=Object.entries(inBySource).sort((a,b)=>b[1]-a[1])[0];
+    // Top spending category
+    const outByCat={};outs.forEach(t=>{const c=t.cat||'other';outByCat[c]=(outByCat[c]||0)+Math.abs(t.amt||0);});
+    const topCat=Object.entries(outByCat).sort((a,b)=>b[1]-a[1])[0];
+    const cm=(typeof cmap==='function')?cmap():{};
+    const topCatLabel=topCat?((cm[topCat[0]]&&cm[topCat[0]].label)||topCat[0]):'—';
+    const netColor=net>=0?'var(--acc)':'var(--r)';
+    flowEl.innerHTML=`
+      <div class="accm-flow-card">
+        <div class="accm-flow-top"><span class="accm-flow-dot in"></span>Money in</div>
+        <div class="accm-flow-amt">${fmtD(inTotal)}</div>
+        <div class="accm-flow-sub">${topSource?('Top: '+escapeHtml(topSource[0])):(ins.length+' this month')}</div>
+      </div>
+      <div class="accm-flow-card">
+        <div class="accm-flow-top"><span class="accm-flow-dot out"></span>Money out</div>
+        <div class="accm-flow-amt">${fmtD(outTotal)}</div>
+        <div class="accm-flow-sub">${outs.length} txns · Top: ${escapeHtml(topCatLabel)}</div>
+      </div>
+      <div class="accm-flow-net">
+        <span class="accm-flow-net-l">Net this month</span>
+        <span class="accm-flow-net-v" style="color:${netColor}">${net>=0?'+':'−'}${fmtD(Math.abs(net))}</span>
+      </div>`;
+  }
+
+  // ── Rich per-account cards ──
+  const cardsEl=document.getElementById('accm-cards');
+  if(cardsEl){
+    if(!cashAccts.length){
+      cardsEl.innerHTML=`<div class="empty" style="padding:40px 20px"><div class="empty-txt">No accounts yet. Add one in Settings to track your balances here.</div></div>`;
+      return;
+    }
+    cardsEl.innerHTML=cashAccts.map(a=>{
+      // 30-day change: compare current balance to balance 30 days ago,
+      // derived from transactions on this account in the last 30 days.
+      const now=new Date();
+      const cutoff=new Date(now.getTime()-30*864e5);
+      const acctTxns=(S.transactions||[]).filter(t=>t.acct===a.key&&t.date);
+      let flow30=0;
+      acctTxns.forEach(t=>{
+        const d=new Date(t.date);
+        if(d>=cutoff){flow30+=(t.dir==='in'?1:-1)*Math.abs(t.amt||0);}
+      });
+      const up=flow30>=0;
+      // Sparkline: running balance over the last ~12 data points
+      const spark=buildAccountSparkline(a.key,a.bal);
+      return `<div class="accm-card">
+        <div class="accm-card-l">
+          <div class="accm-card-ico">${a.icon}</div>
+          <div class="accm-card-meta">
+            <div class="accm-card-name">${escapeHtml(a.type)}</div>
+            <div class="accm-card-bank">${escapeHtml(a.bank||a.label)}${a.bank?' · AUD':''}</div>
+          </div>
+        </div>
+        <div class="accm-card-r">
+          <div class="accm-card-bal">${fmtD(a.bal)}</div>
+          ${acctTxns.length?`<div class="accm-card-chg ${up?'up':'down'}">${up?'▲':'▼'} ${fmtD(Math.abs(flow30))} · 30d</div>`:''}
+        </div>
+        ${spark?`<div class="accm-card-spark">${spark}</div>`:''}
+      </div>`;
+    }).join('');
+  }
+}
+
+// Build a sparkline of running balance for an account, ending at current balance.
+function buildAccountSparkline(acctKey,currentBal){
+  const txns=(S.transactions||[]).filter(t=>t.acct===acctKey&&t.date).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  if(txns.length<2)return '';
+  // Work backwards from current balance to reconstruct the balance after each txn
+  const points=[];let running=currentBal;
+  points.push(running);
+  for(let i=txns.length-1;i>=0&&points.length<14;i--){
+    const t=txns[i];
+    running-=(t.dir==='in'?1:-1)*Math.abs(t.amt||0);
+    points.unshift(running);
+  }
+  if(points.length<2)return '';
+  return (typeof sparklineSvg==='function')?sparklineSvg(points,{width:200,height:32,inline:true}):'';
 }
 
 function buildRules9(){
