@@ -3503,7 +3503,7 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='4.4.0';
+const APP_VERSION='4.5.0';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
   {
@@ -5980,7 +5980,16 @@ function setBtnLoading(btnOrId,loading=true){
     return()=>{};
   }
 }
-function fmtDate(ds){if(!ds)return'';return new Date(ds+'T12:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short'});}
+function fmtDate(ds){
+  if(!ds)return'';
+  // Accept Date objects (e.g. goal projections) as well as 'YYYY-MM-DD' strings
+  let d;
+  if(ds instanceof Date){d=ds;}
+  else if(typeof ds==='string'){d=new Date(ds.length<=10?ds+'T12:00:00':ds);}
+  else{d=new Date(ds);}
+  if(isNaN(d.getTime()))return'';
+  return d.toLocaleDateString('en-AU',{day:'numeric',month:'short'});
+}
 // ── Holdings model helpers (v3) ──────────────────────────────
 // A holding's current value = units * lastPrice (falls back to stored currentValue).
 // ── Currency: US holdings priced in USD, convert to AUD. ASX already AUD. ──
@@ -9910,9 +9919,9 @@ function saveJobEdits(id){
   }
   if(grossWeeklyEl){
     const v=parseFloat(grossWeeklyEl.value);
-    if(!isNaN(v)&&v>0){updates.grossWeekly=v;updates.grossAnnual=v*52;updates.netMonthly=Math.round(calcNetAnnual(v*52)/12);}
-    // Sync to sliders for backward compat with existing payday logic
-    if(!isNaN(v)&&v>0&&id==='dominos'){if(!S.sliders)S.sliders={};S.sliders.dominos=v;S.sliders.kmart=v;}
+    if(!isNaN(v)&&v>=0){updates.grossWeekly=v;updates.grossAnnual=v*52;updates.netMonthly=Math.round(calcNetAnnual(v*52)/12);}
+    // Sync to sliders for backward compat with existing payday logic (0 allowed)
+    if(!isNaN(v)&&v>=0&&id==='dominos'){if(!S.sliders)S.sliders={};S.sliders.dominos=v;S.sliders.kmart=v;}
   }
   if(hourlyEl){const v=parseFloat(hourlyEl.value);if(!isNaN(v)&&v>0)updates.grossHourly=v;}
   if(hoursEl){const v=parseFloat(hoursEl.value);if(!isNaN(v)&&v>0)updates.hoursPerWeek=v;}
@@ -10533,6 +10542,14 @@ function onDividendsChanged(){
 // Preserves saved balances, contribution logs, milestones, deadlines.
 function ensureGoalsMigrated(){
   if(!Array.isArray(S.goals))S.goals=[];
+  // v4.5 — guarantee every goal has an icon and colour so the UI never
+  // renders "undefined" before a goal name.
+  const GOAL_COLORS=['#8ee0b8','#4da6ff','#f0a030','#e56a5a','#b98ee0','#00d4a0'];
+  S.goals.forEach((g,i)=>{
+    if(!g.icon)g.icon='🎯';
+    if(!g.color)g.color=GOAL_COLORS[i%GOAL_COLORS.length];
+    if(!Array.isArray(g.log))g.log=[];
+  });
   if(S.goalsMigrated){
     syncGCFG();
     // v2.7.30 — REBUILD S.goalState from current S.goals on every launch so any
@@ -17427,10 +17444,21 @@ function buildAnIncome(){
 
   // Attribute each income transaction to a job via keywords
   function attributeToJob(txn){
+    // 1. Explicit tag wins (user assigned this txn to a job)
+    if(txn.jobId&&jobs.some(j=>j.id===txn.jobId))return txn.jobId;
+    // 2. Keyword match
     const hay=((txn.payee||'')+' '+(txn.note||'')+' '+(txn.narrative||'')).toLowerCase();
     for(const j of jobs){
       const kws=j.keywords||[];
       if(kws.some(k=>k&&hay.includes(k.toLowerCase())))return j.id;
+    }
+    // 3. Smart fallback: if a single full-time job exists, attribute large
+    //    recurring income (≥ 60% of its expected monthly pay) to it. This
+    //    catches salary paid under a payee like "Payroll" that has no keyword.
+    const ft=jobs.find(j=>j.id==='fulltime')||jobs.find(j=>/full.?time/i.test(j.label||''));
+    if(ft){
+      const ftMonthly=ft.netMonthly>0?ft.netMonthly:(ft.grossAnnual>0?ft.grossAnnual/12:0);
+      if(ftMonthly>0&&(txn.amt||0)>=ftMonthly*0.6)return ft.id;
     }
     return null;
   }
