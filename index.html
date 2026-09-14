@@ -1808,8 +1808,8 @@ body:not(.light) .hub-focus{background:rgba(255,255,255,.02)}
   <div class="spl-tag">Building your financial picture</div>
   <div class="spl-steps" id="spl-steps">
     <div class="spl-step" data-step="0"><span class="spl-step-dot"></span><span class="spl-step-lbl">Loading accounts</span></div>
-    <div class="spl-step" data-step="1"><span class="spl-step-dot"></span><span class="spl-step-lbl">Syncing goals &amp; portfolio</span></div>
-    <div class="spl-step" data-step="2"><span class="spl-step-dot"></span><span class="spl-step-lbl">Running Autopilot insights</span></div>
+    <div class="spl-step" data-step="1"><span class="spl-step-dot"></span><span class="spl-step-lbl">Loading transactions</span></div>
+    <div class="spl-step" data-step="2"><span class="spl-step-dot"></span><span class="spl-step-lbl">Preparing your budget</span></div>
   </div>
   <div class="spl-bar-wrap"><div class="spl-bar"></div></div>
 </div>
@@ -1840,9 +1840,6 @@ body:not(.light) .hub-focus{background:rgba(255,255,255,.02)}
       </button>
       <button class="hdr-btn" onclick="exportCSV()" title="Export CSV">
         <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      </button>
-      <button class="hdr-btn" onclick="showPgFromMore('settings')" title="Settings">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
       <button class="hdr-btn" onclick="toggleMore()" title="More" aria-label="More">
         <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>
@@ -3504,7 +3501,7 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='4.2.0';
+const APP_VERSION='4.3.0';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
   {
@@ -9815,7 +9812,7 @@ function renderJobCard(j){
     <div class="ctitle">
       <div class="ctitle-l">
         <span style="font-size:16px">${isFullTime?'💼':'🍕'}</span>
-        ${j.label}
+        ${j.label||j.name||'Job'}
         <span style="font-size:10px;color:var(--t3);font-weight:400;margin-left:4px;text-transform:none;letter-spacing:0">${j.employer||''}</span>
       </div>
       <button class="btn btn-ghost btn-sm" onclick="openEditJobModal('${j.id}')" style="font-size:10px;padding:4px 8px">Edit</button>
@@ -9830,12 +9827,12 @@ function renderJobCard(j){
       <div><strong style="color:var(--t)">Medicare levy</strong> ${fmtDI(levy)} <span style="color:var(--t3)">(${(AU_MEDICARE_LEVY*100).toFixed(0)}%)</span></div>
       <div style="padding-top:6px;margin-top:6px;border-top:1px solid var(--bdr)"><strong style="color:var(--acc)">Take-home annual</strong> ${fmtDI(gross-tax-levy)}</div>
     </div>`:''}
-    ${ytd>0?`<div style="font-size:11px;color:var(--t2);margin-bottom:8px"><strong style="color:var(--t)">${fmtDI(ytd)}</strong> received this year from ${j.label}</div>`:''}
+    ${ytd>0?`<div style="font-size:11px;color:var(--t2);margin-bottom:8px"><strong style="color:var(--t)">${fmtDI(ytd)}</strong> received this year from ${j.label||j.name||'Job'}</div>`:''}
     ${recentPays.length?`<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Recent pays</div>
     ${recentPays.map(t=>`<div class="detail-txn-row" style="cursor:pointer" onclick="openTxnDetail('${t.id}')">
       <div style="font-size:11px;color:var(--t)">${fmtDate(t.date)}<div style="font-size:10px;color:var(--t3)">${t.payee}</div></div>
       <div style="font-size:13px;font-weight:600;color:var(--acc);font-family:var(--mono)">+${fmtD(t.amt)}</div>
-    </div>`).join('')}`:'<div style="font-size:11px;color:var(--t3);padding:6px 0">No recent pays detected. Bank rules match on: '+j.keywords.join(', ')+'</div>'}
+    </div>`).join('')}`:'<div style="font-size:11px;color:var(--t3);padding:6px 0">No recent pays detected.'+((j.keywords&&j.keywords.length)?' Bank rules match on: '+j.keywords.join(', '):'')+'</div>'}
     ${j.notes?`<div style="font-size:10px;color:var(--t3);margin-top:8px;font-style:italic">${j.notes}</div>`:''}
   </div>`;
 }
@@ -9844,7 +9841,7 @@ function renderJobCard(j){
 function openEditJobModal(id){
   const j=getJob(id);if(!j)return;
   const isSalaried=j.type==='full-time';
-  showSheet(`Edit ${j.label}`,`
+  showSheet(`Edit ${j.label||j.name||'Job'}`,`
     <label class="lbl">Employer name</label>
     <input type="text" class="inp" id="jb-employer" value="${(j.employer||'').replace(/"/g,'&quot;')}">
     <label class="lbl">Display label</label>
@@ -10195,7 +10192,7 @@ function buildTaxYearReport(startYear){
       <table class="rep-table">
         <thead><tr><th>Job</th><th>Employer</th><th>Pays</th><th>Total</th></tr></thead>
         <tbody>${jobBreakdown.map(j=>`<tr>
-          <td>${j.label}</td><td>${j.employer||''}</td><td>${j.count}</td>
+          <td>${j.label||j.name||'Job'}</td><td>${j.employer||''}</td><td>${j.count}</td>
           <td style="text-align:right;font-family:var(--mono)">${fmtDI(j.amount)}</td>
         </tr>`).join('')}</tbody>
       </table>
@@ -10444,6 +10441,7 @@ const PAGE_BUILDERS={
   dividends:()=>typeof buildDividendCalendar==='function'&&buildDividendCalendar(),
   tax:()=>typeof buildTaxSummary==='function'&&buildTaxSummary(),
   payday:()=>typeof buildPaydayPage==='function'&&buildPaydayPage(),
+  accounts:()=>typeof buildAccounts2==='function'&&buildAccounts2(),
   scenario:()=>typeof buildScenarioPage==='function'&&buildScenarioPage(),
   glance:()=>typeof buildGlancePage==='function'&&buildGlancePage(),
   insights:()=>typeof buildInsights==='function'&&buildInsights(),
@@ -11228,7 +11226,7 @@ function computeBriefingItems(){
     const bal=calcBal(a);
     const pendOut=(S.pendingTxns||[]).filter(p=>p.acct===a).reduce((s,p)=>s+(p.dir==='in'?-p.amount:p.amount),0);
     if(pendOut>0&&bal<pendOut){
-      items.push({pri:0,tone:'alert',icon:'⚠',text:`${a==='westpac'?'Westpac':'Macquarie'} short by ${fmtD(pendOut-bal)} for pending debits`,action:"showPg('txns',document.querySelectorAll('.nb')[1])"});
+      items.push({pri:0,tone:'alert',icon:'⚠',text:`${a==='westpac'?'Westpac':'Macquarie'} short by ${fmtD(pendOut-bal)} for pending debits`,action:"showPg('accounts',document.querySelectorAll('.nb')[1])"});
     }
   });
 
@@ -11282,7 +11280,7 @@ function computeBriefingItems(){
       const next=soon[0];
       const daysAway=Math.ceil((new Date(next.date+'T12:00:00')-now)/(1000*60*60*24));
       const when=daysAway<=7?`${daysAway} day${daysAway===1?'':'s'}`:`${Math.round(daysAway/7)} weeks`;
-      items.push({pri:3,tone:'info',icon:'💎',text:`${next.ticker} dividend in ${when} · ~${fmtD(next.amount)}${next.hasHistory?'':' (est.)'}`,action:"showPgFromMore('dividends')"});
+      items.push({pri:3,tone:'info',icon:'💎',text:`${next.ticker} dividend in ${when} · ~${fmtD(next.amount)}${next.hasHistory?'':' (est.)'}`,action:"showPg('accounts',null)"});
     }
   }
 
@@ -11300,11 +11298,11 @@ function computeBriefingItems(){
   if(cost>0&&total>cost){
     const gainPct=(total-cost)/cost*100;
     if(gainPct>=3){
-      items.push({pri:5,tone:'ok',icon:'📈',text:`Portfolio up ${gainPct.toFixed(1)}% vs cost (+${fmtD(total-cost)})`,action:"showPgFromMore('invest')"});
+      items.push({pri:5,tone:'ok',icon:'📈',text:`Portfolio up ${gainPct.toFixed(1)}% vs cost (+${fmtD(total-cost)})`,action:"showPg('accounts',null)"});
     }
   }else if(cost>0&&total<cost*0.95){
     const lossPct=(cost-total)/cost*100;
-    items.push({pri:3,tone:'warning',icon:'📉',text:`Portfolio down ${lossPct.toFixed(1)}% vs cost (${fmtD(total-cost)})`,action:"showPgFromMore('invest')"});
+    items.push({pri:3,tone:'warning',icon:'📉',text:`Portfolio down ${lossPct.toFixed(1)}% vs cost (${fmtD(total-cost)})`,action:"showPg('accounts',null)"});
   }
   // Near a net worth milestone
   const nw=(typeof portTotal==='function'&&typeof calcBal==='function')?(portTotal()+calcBal('westpac')+calcBal('macquarie')):0;
@@ -11657,7 +11655,7 @@ function renderRebalancePlan(){
   if(!plan||!plan.plan.length){el.innerHTML=`<div style="font-size:12px;color:var(--t3);text-align:center;padding:16px">${budget>0?'Your allocation is already balanced — split new money by your target percentages.':'Enter an amount to see the plan.'}</div>`;return;}
   el.innerHTML=`
     <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Suggested buys</div>
-    ${plan.plan.map(m=>`<div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-top:0.5px solid var(--bdr)">
+    ${(plan.plan||[]).map(m=>`<div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-top:0.5px solid var(--bdr)">
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:600;color:var(--t)">${m.label}</div>
         <div style="font-size:10px;color:var(--t3);margin-top:1px">${Math.round(m.curPct)}% → ${m.targetPct}% target</div>
@@ -11666,7 +11664,7 @@ function renderRebalancePlan(){
     </div>`).join('')}
     <div style="display:flex;justify-content:space-between;padding:11px 0;border-top:0.5px solid var(--bdr2);margin-top:4px">
       <span style="font-size:12px;font-weight:700;color:var(--t)">Total</span>
-      <span style="font-size:14px;font-weight:700;color:var(--t)">${fmtD(plan.plan.reduce((a,m)=>a+m.buy,0))}</span>
+      <span style="font-size:14px;font-weight:700;color:var(--t)">${fmtD((plan.plan||[]).reduce((a,m)=>a+m.buy,0))}</span>
     </div>
     <div style="font-size:10px;color:var(--t3);line-height:1.5;margin-top:10px">This moves you toward your targets using only new contributions. After investing, log the buys in the Investments tab to keep your allocation accurate.</div>
   `;
@@ -13638,24 +13636,32 @@ function switchAcct(acct,btn){S.selectedAcct=acct;document.querySelectorAll('#ac
 let _bulkMode=false;
 let _bulkSelection=new Set();
 
+// v4.3 — rebuild whichever transaction list is currently on screen.
+// The merged Accounts page uses buildAccTxnList; the (hidden) txns page uses buildTxnList.
+function rebuildActiveTxnList(){
+  if(currentPg==='accounts'&&typeof buildAccTxnList==='function'){buildAccTxnList();return;}
+  if(typeof buildTxnList==='function')buildTxnList();
+}
+function updateBulkToggleBtns(){
+  const lbl=_bulkMode?'✕ Done':'☑ Select';
+  ['bulk-toggle-btn','acc-bulk-toggle-btn'].forEach(id=>{const b=document.getElementById(id);if(b)b.innerHTML=lbl;});
+}
 function toggleBulkMode(){
   _bulkMode=!_bulkMode;
   if(!_bulkMode)_bulkSelection.clear();
-  buildTxnList();
+  rebuildActiveTxnList();
   updateBulkActionBar();
-  // Also update the button label
-  const btn=document.getElementById('bulk-toggle-btn');
-  if(btn)btn.innerHTML=_bulkMode?'✕ Done':'☑ Select';
+  updateBulkToggleBtns();
 }
 function toggleTxnInSelection(id){
   if(_bulkSelection.has(id))_bulkSelection.delete(id);
   else _bulkSelection.add(id);
-  buildTxnList();
+  rebuildActiveTxnList();
   updateBulkActionBar();
 }
 function clearBulkSelection(){
   _bulkSelection.clear();
-  buildTxnList();
+  rebuildActiveTxnList();
   updateBulkActionBar();
 }
 function selectAllVisible(){
@@ -13664,7 +13670,7 @@ function selectAllVisible(){
     const id=el.getAttribute('data-txn-id');
     if(id)_bulkSelection.add(id);
   });
-  buildTxnList();
+  rebuildActiveTxnList();
   updateBulkActionBar();
 }
 function updateBulkActionBar(){
@@ -13720,8 +13726,8 @@ function applyBulkCategory(catId){
   });
   save();snapshotNW();closeSheet();
   _bulkSelection.clear();_bulkMode=false;
-  buildTxnList();updateBulkActionBar();
-  const btn=document.getElementById('bulk-toggle-btn');if(btn)btn.innerHTML='☑ Select';
+  rebuildActiveTxnList();updateBulkActionBar();
+  updateBulkToggleBtns();
   refreshAfterChange();
   showToast(`${changed} transaction${changed===1?'':'s'} moved to ${c.icon} ${c.label}`);
   // Batch offer to learn rules
@@ -13755,8 +13761,8 @@ function bulkDeleteSelected(){
   S.transactions=(S.transactions||[]).filter(t=>!ids.has(t.id));
   _bulkSelection.clear();_bulkMode=false;
   save();snapshotNW();
-  buildTxnList();updateBulkActionBar();
-  const btn=document.getElementById('bulk-toggle-btn');if(btn)btn.innerHTML='☑ Select';
+  rebuildActiveTxnList();updateBulkActionBar();
+  updateBulkToggleBtns();
   refreshAfterChange();
   showToast(`Deleted ${n} transaction${n===1?'':'s'}`);
 }
@@ -14583,9 +14589,15 @@ function budgetTargets(){
   };
 }
 function monthlyIncomeEstimate(){
-  // Estimated monthly income for both sources combined.
-  const ft=(S.sliders?.income)||4069; // full-time monthly (from budget)
-  const km=((S.sliders?.kmart)||0)*52/12; // kmart weekly → monthly
+  // v4.3 — single source of truth: use monthIncome() (from S.jobs), the same
+  // figure the Budget and Dashboard use. Falls back to sliders only if jobs
+  // aren't set up yet, so payday allocations match the rest of the app.
+  if(typeof monthIncome==='function'){
+    const mi=monthIncome();
+    if(mi>0)return mi;
+  }
+  const ft=(S.sliders?.income)||4069; // legacy fallback
+  const km=((S.sliders?.kmart)||0)*52/12;
   return ft+km;
 }
 
@@ -14694,8 +14706,8 @@ function sinkingMonthlyNeed(sf){
   return rem/12;
 }
 function suggestedSinkingPct(sf,sourceKey){
-  // Full-time monthly income share for this source
-  const incFT=(S.sliders?.income)||4069;
+  // Full-time monthly income share for this source (v4.3: consistent with monthIncome)
+  const incFT=(typeof monthIncome==='function'&&monthIncome()>0)?monthIncome():((S.sliders?.income)||4069);
   const incKM=((S.sliders?.kmart)||0)*52/12;
   const sourceIncome=sourceKey==='fulltime'?incFT:incKM;
   if(sourceIncome<=0)return 0;
@@ -14787,14 +14799,14 @@ function buildInsightsPage(){
   const pnl=(typeof portPnl==='function')?portPnl():0;
   const pnlPct=(typeof portPnlPct==='function')?portPnlPct():0;
   if(Math.abs(pnl)>200){
-    groups.investments.push({pri:3,icon:pnl>=0?'📈':'📉',title:pnl>=0?'Portfolio in profit':'Portfolio down',body:`Total unrealised P&L: ${pnl>=0?'+':''}${fmtD(pnl)} (${pnl>=0?'+':''}${pnlPct.toFixed(2)}%). Long-term investors ignore short-term dips — stay the course.`,action:"showPgFromMore('invest')"});
+    groups.investments.push({pri:3,icon:pnl>=0?'📈':'📉',title:pnl>=0?'Portfolio in profit':'Portfolio down',body:`Total unrealised P&L: ${pnl>=0?'+':''}${fmtD(pnl)} (${pnl>=0?'+':''}${pnlPct.toFixed(2)}%). Long-term investors ignore short-term dips — stay the course.`,action:"showPg('accounts',null)"});
   }
   // Live prices stale check
   const hs=S.holdings||[];
   const anyLive=hs.some(h=>h.liveUpdated);
   const oldestLive=hs.map(h=>h.liveUpdated).filter(Boolean).sort()[0];
   if(hs.length>0&&(!anyLive||(oldestLive&&Date.now()-oldestLive>7*24*3600*1000))){
-    groups.investments.push({pri:3,icon:'⏱️',title:'EOD prices stale',body:`Portfolio hasn't been refreshed recently. Hit "Refresh prices" on the Invest page for latest end-of-day close.`,action:"showPgFromMore('invest')"});
+    groups.investments.push({pri:3,icon:'⏱️',title:'EOD prices stale',body:`Portfolio hasn't been refreshed recently. Hit "Refresh prices" on the Invest page for latest end-of-day close.`,action:"showPg('accounts',null)"});
   }
 
   // ── Goals ──
@@ -15019,10 +15031,10 @@ const DASH_WIDGETS={
     canHalfWidth:false,defaultOn:false,alwaysOn:false,
     render(){return`<div class="dash-jump">
       <button class="jump-chip" onclick="showPgFromMore('budget')">📊 Budget</button>
-      <button class="jump-chip" onclick="showPgFromMore('invest')">📈 Invest</button>
+      <button class="jump-chip" onclick="showPg('accounts',document.querySelector('[data-pg=accounts]'))">🏦 Accounts</button>
       <button class="jump-chip" onclick="showPg('goals',document.querySelector('[data-pg=goals]'))">🎯 Goals</button>
       <button class="jump-chip" onclick="showPgFromMore('recurring')">🔁 Recurring</button>
-      <button class="jump-chip" onclick="showPgFromMore('insights')">✨ Insights</button>
+      <button class="jump-chip" onclick="showPgFromMore('payday')">💵 Allocate</button>
     </div>`;}
   },
   westpac:{
@@ -15098,7 +15110,7 @@ const DASH_WIDGETS={
     render(){
       const cm=cmap();const recent=S.transactions.slice(0,5);
       const body=recent.length?recent.map(t=>{const c=cm[t.cat]||{icon:'📌',col:'#7d8fa3',label:'Other'};return`<div class="txn" onclick="openTxnDetail('${t.id}')" style="cursor:pointer"><div class="txn-ico" style="background:${c.col}22;width:28px;height:28px;font-size:12px;border-radius:7px">${c.icon}</div><div class="txn-mid"><div class="txn-p" style="font-size:12px">${t.payee}</div><div class="txn-m">${c.label}</div></div><div class="txn-r"><div class="txn-a ${t.dir}" style="font-size:11px">${t.dir==='out'?'-':'+'}${fmtD(t.amt)}</div><div class="txn-d">${fmtDate(t.date)}</div></div></div>`;}).join(''):`<div class="empty"><div class="empty-ico">📭</div><div class="empty-txt">No transactions yet.</div></div>`;
-      return`<div class="card"><div class="ctitle"><div class="ctitle-l">Recent</div><button class="btn btn-ghost btn-sm" onclick="showPg('txns',document.querySelector('[data-pg=txns]'))">All</button></div>${body}</div>`;
+      return`<div class="card"><div class="ctitle"><div class="ctitle-l">Recent</div><button class="btn btn-ghost btn-sm" onclick="showPg('accounts',document.querySelector('[data-pg=accounts]'))">All</button></div>${body}</div>`;
     }
   },
   nwChart:{
@@ -15265,7 +15277,7 @@ const DASH_WIDGETS={
           <div class="wl-qa-b" onclick="openTxnModal()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add</div>
           <div class="wl-qa-b" onclick="openTransferScreen()"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 7l-5-5-5 5"/></svg>Move</div>
           <div class="wl-qa-b" onclick="openSearch()"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Find</div>
-          <div class="wl-qa-b" onclick="showPg('ai')"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9 9 9 0 0 0 4 7.5L6 22l4-1.5a9 9 0 0 0 2 .2 9 9 0 0 0 0-18z"/></svg>Ask</div>
+          <div class="wl-qa-b" onclick="showPgFromMore('payday')"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Allocate</div>
         </div>`;
     }
   },
@@ -21470,7 +21482,7 @@ function buildSourceCard(sourceKey){
         </div>
       `}
       <div style="font-size:10px;color:var(--t3);border-top:1px solid var(--bdr);padding-top:8px;line-height:1.5">
-        Plan: ${src.plan.map(p=>p.label+' '+p.pct+'%').join(' · ')}
+        Plan: ${(src.plan||[]).map(p=>p.label+' '+p.pct+'%').join(' · ')}
       </div>
     </div>`;
 }
@@ -21546,7 +21558,7 @@ function openDistributeFlow(txnId){
   const sourceKey=classifyIncome(txn);
   const src=S.paydaySources?.[sourceKey];if(!src){showToast('No matching income source');return;}
   const allocs=computeAllocations(sourceKey,txn.amt);
-  const totalPct=src.plan.reduce((a,p)=>a+p.pct,0);
+  const totalPct=(src.plan||[]).reduce((a,p)=>a+p.pct,0);
   const totalAlloc=allocs.reduce((a,p)=>a+p.amount,0);
   const remaining=txn.amt-totalAlloc;
   const accent=sourceKey==='fulltime'?'var(--b)':'var(--y)';
@@ -21711,7 +21723,7 @@ function openSourceSettings(sourceKey){
   const sinkingList=(S.sinkingFunds||[]).filter(s=>s.target>s.saved);
   const inPlanRefs=new Set(src.plan.filter(p=>p.type==='sinking').map(p=>p.ref));
   const unaddedSinking=sinkingList.filter(s=>!inPlanRefs.has(s.id));
-  const totalPct=src.plan.reduce((a,p)=>a+p.pct,0);
+  const totalPct=(src.plan||[]).reduce((a,p)=>a+p.pct,0);
   showSheet(`${src.label} — distribution plan`,`
     <div style="font-size:12px;color:var(--t2);line-height:1.55;margin-bottom:12px">
       Edit how each ${src.label} pay should be split. Percentages should total 100%. Add or remove categories as your budget changes.
@@ -21725,7 +21737,7 @@ function openSourceSettings(sourceKey){
     <div style="font-size:10px;color:var(--t3);margin-bottom:10px">Income transactions with these words in the payee or note are routed to this source.</div>
     <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Current plan (${totalPct}%)</div>
     <div id="plan-rows">
-      ${src.plan.map((p,i)=>renderPlanRow(p,i)).join('')}
+      ${(src.plan||[]).map((p,i)=>renderPlanRow(p,i)).join('')}
     </div>
     <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
       <button class="btn btn-ghost btn-sm" onclick="addPlanRow('${sourceKey}','spending','Spending money')">+ Spending</button>
