@@ -429,7 +429,7 @@ body.light .hdr{background:rgba(255,255,255,.8)}
 .hdr-dot{width:7px;height:7px;border-radius:50%;background:var(--acc);box-shadow:0 0 8px var(--acc);animation:pulse 2.4s infinite}
 @keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 12px var(--acc)}50%{opacity:.5;box-shadow:0 0 4px var(--acc)}}
 
-.scrl{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--nav-h) + var(--sb) + 28px);scrollbar-width:none}
+.scrl{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--nav-h) + var(--sb) + 28px);scrollbar-width:none;overscroll-behavior-y:contain}
 .scrl::-webkit-scrollbar{display:none}
 
 /* BOTTOM NAV — see v2.7.20 rewrite below */
@@ -711,17 +711,17 @@ body.reduce-motion .skeleton{background:rgba(255,255,255,.04)}
 /* Children of the AI page must NOT get the staggered cardIn transform either */
 .ai-pg.on>*{animation:none!important;transform:none!important}
 /* CARDS */
-.card{background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad-lg);padding:20px;margin-bottom:18px;transition:border-color var(--dur-base) var(--ease-out),transform var(--dur-fast) var(--ease-out);position:relative;overflow:hidden;box-shadow:0 24px 60px -20px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.04);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.card{background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad-lg);padding:20px;margin-bottom:18px;transition:border-color var(--dur-base) var(--ease-out),transform var(--dur-fast) var(--ease-out);position:relative;overflow:hidden;box-shadow:0 8px 24px -12px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.04);contain:content}
 /* v3.2.2 — Depth material: subtle gradient, top-edge highlight, ambient warmth */
 .card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 0%,var(--bdr-acc2) 20%,var(--bdr-acc2) 80%,transparent 100%);opacity:.7;pointer-events:none}
 body:not(.light) .card{background:linear-gradient(155deg,rgba(255,255,255,.045) 0%,rgba(255,255,255,.02) 100%)}
-body.light .card{background:linear-gradient(155deg,rgba(255,255,255,.85) 0%,rgba(244,241,232,.6) 100%);box-shadow:0 20px 50px -22px rgba(10,42,28,.15),0 2px 6px rgba(10,42,28,.06),inset 0 1px 0 rgba(255,255,255,.9)}
+body.light .card{background:linear-gradient(155deg,rgba(255,255,255,.9) 0%,rgba(244,241,232,.7) 100%);box-shadow:0 6px 18px -10px rgba(10,42,28,.12),inset 0 1px 0 rgba(255,255,255,.9)}
 .card:hover{border-color:var(--bdr-acc2)}
 .card.acc-b{border-color:var(--bdr-acc2);background:var(--glass-strong)}
 /* Glass hero card with radial mint glow */
 .card.hero{border-color:var(--bdr-acc2);padding:20px;position:relative;box-shadow:0 32px 80px -24px rgba(0,0,0,.55),0 4px 12px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.06)}
 body.light .card.hero{box-shadow:0 28px 70px -26px rgba(10,42,28,.18),0 4px 12px rgba(10,42,28,.08),inset 0 1px 0 rgba(255,255,255,.95)}
-.card.hero::before{content:'';position:absolute;inset:0;background:var(--glow-mint);pointer-events:none;border-radius:inherit;animation:heroGlow 6s ease-in-out infinite;overflow:hidden;mask-image:radial-gradient(circle at 20% 30%,#000 0%,transparent 70%);-webkit-mask-image:radial-gradient(circle at 20% 30%,#000 0%,transparent 70%)}
+.card.hero::before{content:'';position:absolute;inset:0;background:var(--glow-mint);pointer-events:none;border-radius:inherit;opacity:.85;overflow:hidden;mask-image:radial-gradient(circle at 20% 30%,#000 0%,transparent 70%);-webkit-mask-image:radial-gradient(circle at 20% 30%,#000 0%,transparent 70%)}
 .card.hero>*{position:relative;z-index:1}
 @keyframes heroGlow{0%,100%{opacity:.7}50%{opacity:1}}
 .ctitle{font-size:10px;font-weight:500;color:var(--acc);text-transform:uppercase;letter-spacing:.12em;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;font-family:var(--mono)}
@@ -1521,10 +1521,10 @@ body.on-ai-page .bnav{transform:translateX(-50%) translateY(calc(100% + var(--sb
    Rubric tiles: rounded 20px, generous padding, badge top-right,
    eyebrow + hero on the type ladder. Half-width pairs sit in a row.
    ═══════════════════════════════════════════════════════════ */
-.wl{background:var(--glass);border:0.5px solid var(--bdr);border-radius:20px;padding:18px;position:relative;overflow:hidden;box-shadow:0 20px 50px -20px rgba(0,0,0,.45),0 2px 4px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.04);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);transition:transform var(--dur-fast) var(--ease-out),box-shadow var(--dur-base) var(--ease-out)}
+.wl{background:var(--glass);border:0.5px solid var(--bdr);border-radius:20px;padding:18px;position:relative;overflow:hidden;box-shadow:0 6px 18px -10px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04);transition:transform var(--dur-fast) var(--ease-out)}
 .wl::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(142,224,184,.24),transparent);opacity:.6;pointer-events:none}
 body:not(.light) .wl{background:linear-gradient(155deg,rgba(255,255,255,.04) 0%,rgba(255,255,255,.015) 100%)}
-body.light .wl{background:linear-gradient(155deg,rgba(255,255,255,.85) 0%,rgba(244,241,232,.55) 100%);box-shadow:0 16px 40px -18px rgba(10,42,28,.13),0 1px 3px rgba(10,42,28,.05),inset 0 1px 0 rgba(255,255,255,.9)}
+body.light .wl{background:linear-gradient(155deg,rgba(255,255,255,.9) 0%,rgba(244,241,232,.6) 100%);box-shadow:0 5px 14px -9px rgba(10,42,28,.1),inset 0 1px 0 rgba(255,255,255,.9)}
 .wl-badge{position:absolute;top:14px;right:14px;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.08em;color:var(--t4)}
 .wl-eyebrow{font-family:var(--mono);font-size:10px;line-height:1.2;letter-spacing:.14em;text-transform:uppercase;font-weight:500;color:var(--acc);margin-bottom:10px}
 .wl-hero{font-family:var(--serif);font-size:40px;line-height:1;letter-spacing:-1.4px;font-weight:400;color:var(--hero-cream);font-variant-numeric:tabular-nums}
@@ -1736,6 +1736,8 @@ body:not(.light) .exp9-stat{background:rgba(255,255,255,.03)}
 .accm-card-l{display:flex;align-items:center;gap:11px;margin-bottom:4px}
 .accm-card-ico{width:38px;height:38px;border-radius:11px;background:var(--accd);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
 .accm-card-meta{flex:1;min-width:0}
+.accm-card-edit{font:600 10px var(--sans);color:var(--t3);flex-shrink:0;align-self:center;opacity:.7}
+.accm-card:active{transform:scale(.99);transition:transform .12s}
 .accm-card-name{font:600 14px var(--sans);color:var(--t);letter-spacing:-.2px}
 .accm-card-bank{font:500 10.5px var(--mono);color:var(--t3);margin-top:2px;text-transform:uppercase;letter-spacing:.04em}
 .accm-card-r{display:flex;justify-content:space-between;align-items:baseline;margin-top:6px}
@@ -3501,7 +3503,7 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='4.3.0';
+const APP_VERSION='4.4.0';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
   {
@@ -14049,21 +14051,21 @@ function buildTxnList(){
       const dirLabel=it._outgoing?'to '+otherLabel:'from '+otherLabel;
       const sign=it._outgoing?'-':'+';
       const col=it._outgoing?'out':'in';
-      return`<div class="txn fadein"><div class="txn-ico" style="background:var(--bg5)">↔</div><div class="txn-mid"><div class="txn-p">Transfer ${dirLabel}</div><div class="txn-m"><span class="tag tp">TRANSFER</span>${it.note?it.note:'Account transfer'}</div><div class="txn-acts"><button class="txn-act" onclick="deleteTransfer('${it.id}')">Delete</button></div></div><div class="txn-r"><div class="txn-a ${col}">${sign}${fmtD(it.amount)}</div><div class="txn-d">${fmtDate(it.date)}</div></div></div>`;
+      return`<div class="txn"><div class="txn-ico" style="background:var(--bg5)">↔</div><div class="txn-mid"><div class="txn-p">Transfer ${dirLabel}</div><div class="txn-m"><span class="tag tp">TRANSFER</span>${it.note?it.note:'Account transfer'}</div><div class="txn-acts"><button class="txn-act" onclick="deleteTransfer('${it.id}')">Delete</button></div></div><div class="txn-r"><div class="txn-a ${col}">${sign}${fmtD(it.amount)}</div><div class="txn-d">${fmtDate(it.date)}</div></div></div>`;
     }
     const c=cm[it.cat]||cm.other||{icon:'📌',col:'#7d8fa3',label:'Other'};
     const typeTag=c.type==='fixed'?'<span class="tag tb" style="margin-left:4px">FIXED</span>':'';
     // Bulk mode: swap open-detail for toggle-selection; add checkbox
     if(_bulkMode){
       const sel=_bulkSelection.has(it.id);
-      return`<div class="txn txn-selectable ${sel?'selected':''} fadein" data-txn-selectable="1" data-txn-id="${it.id}" onclick="toggleTxnInSelection('${it.id}')">
+      return`<div class="txn txn-selectable ${sel?'selected':''}" data-txn-selectable="1" data-txn-id="${it.id}" onclick="toggleTxnInSelection('${it.id}')">
         <div class="txn-check ${sel?'on':''}">${sel?'✓':''}</div>
         <div class="txn-ico" style="background:${c.col}22">${c.icon}</div>
         <div class="txn-mid"><div class="txn-p">${it.payee}</div><div class="txn-m"><span class="tag ${it.dir==='in'?'tg':'tr'}">${it.dir==='in'?'IN':'OUT'}</span>${c.label}</div></div>
         <div class="txn-r"><div class="txn-a ${it.dir}">${it.dir==='out'?'-':'+'}${fmtD(it.amt)}</div><div class="txn-d">${fmtDate(it.date)}</div></div>
       </div>`;
     }
-    return`<div class="txn fadein" onclick="openTxnDetail('${it.id}')" style="cursor:pointer"><div class="txn-ico" style="background:${c.col}22">${c.icon}</div><div class="txn-mid"><div class="txn-p">${it.payee}</div><div class="txn-m"><span class="tag ${it.dir==='in'?'tg':'tr'}">${it.dir==='in'?'IN':'OUT'}</span>${c.label}${typeTag}${it.note?` · ${it.note}`:''}</div><div class="txn-acts"><button class="txn-act" onclick="event.stopPropagation();openTxnModal('${it.id}')">Edit</button><button class="txn-act" onclick="event.stopPropagation();deleteTxn('${it.id}')">Delete</button></div></div><div class="txn-r"><div class="txn-a ${it.dir}">${it.dir==='out'?'-':'+'}${fmtD(it.amt)}</div><div class="txn-d">${fmtDate(it.date)}</div></div></div>`;
+    return`<div class="txn" onclick="openTxnDetail('${it.id}')" style="cursor:pointer"><div class="txn-ico" style="background:${c.col}22">${c.icon}</div><div class="txn-mid"><div class="txn-p">${it.payee}</div><div class="txn-m"><span class="tag ${it.dir==='in'?'tg':'tr'}">${it.dir==='in'?'IN':'OUT'}</span>${c.label}${typeTag}${it.note?` · ${it.note}`:''}</div><div class="txn-acts"><button class="txn-act" onclick="event.stopPropagation();openTxnModal('${it.id}')">Edit</button><button class="txn-act" onclick="event.stopPropagation();deleteTxn('${it.id}')">Delete</button></div></div><div class="txn-r"><div class="txn-a ${it.dir}">${it.dir==='out'?'-':'+'}${fmtD(it.amt)}</div><div class="txn-d">${fmtDate(it.date)}</div></div></div>`;
   }).join('')}</div>`;
 }
 function buildRecList(){const el=document.getElementById('rec-list');if(!el)return;const cm=cmap();const recs=S.recurring.filter(r=>r.acct===S.selectedAcct);if(!recs.length){el.innerHTML=`<div class="empty"><div class="empty-ico">🔁</div><div class="empty-txt">No recurring bills yet.</div></div>`;return;}el.innerHTML=recs.map(r=>{const c=cm[r.cat]||{icon:'📌',col:'#7d8fa3',label:'Other'};return`<div class="rec"><div class="txn-ico" style="background:${c.col}22;width:28px;height:28px;font-size:12px;border-radius:7px">${c.icon}</div><div class="rec-i"><div class="rec-n">${r.name}</div><div class="rec-m">Day ${r.day} · ${c.label}</div></div><div style="display:flex;align-items:center;gap:6px"><div class="rec-a">-${fmtD(r.amt)}</div><button class="txn-act" onclick="deleteRecurring('${r.id}')">×</button></div></div>`;}).join('');}
@@ -14105,21 +14107,21 @@ function buildAccTxnList(){
   el.innerHTML=`<div class="card">${items.map(it=>{
     if(it._type==='transfer'){
       const fromL=acctName(it.fromAcct),toL=acctName(it.toAcct);
-      return`<div class="txn fadein"><div class="txn-ico" style="background:var(--bg5)">↔</div><div class="txn-mid"><div class="txn-p">Transfer ${fromL} → ${toL}</div><div class="txn-m"><span class="tag tp">TRANSFER</span>${it.note?escapeHtml(it.note):'Account transfer'}</div><div class="txn-acts"><button class="txn-act" onclick="deleteTransfer('${it.id}')">Delete</button></div></div><div class="txn-r"><div class="txn-a">${fmtD(it.amount)}</div><div class="txn-d">${fmtDate(it.date)}</div></div></div>`;
+      return`<div class="txn"><div class="txn-ico" style="background:var(--bg5)">↔</div><div class="txn-mid"><div class="txn-p">Transfer ${fromL} → ${toL}</div><div class="txn-m"><span class="tag tp">TRANSFER</span>${it.note?escapeHtml(it.note):'Account transfer'}</div><div class="txn-acts"><button class="txn-act" onclick="deleteTransfer('${it.id}')">Delete</button></div></div><div class="txn-r"><div class="txn-a">${fmtD(it.amount)}</div><div class="txn-d">${fmtDate(it.date)}</div></div></div>`;
     }
     const c=cm[it.cat]||cm.other||{icon:'📌',col:'#7d8fa3',label:'Other'};
     const typeTag=c.type==='fixed'?'<span class="tag tb" style="margin-left:4px">FIXED</span>':'';
     const acctTag=`<span class="acc-txn-acct">${acctName(it.acct)}</span>`;
     if(_bulkMode){
       const sel=_bulkSelection.has(it.id);
-      return`<div class="txn txn-selectable ${sel?'selected':''} fadein" data-txn-selectable="1" data-txn-id="${it.id}" onclick="toggleTxnInSelection('${it.id}')">
+      return`<div class="txn txn-selectable ${sel?'selected':''}" data-txn-selectable="1" data-txn-id="${it.id}" onclick="toggleTxnInSelection('${it.id}')">
         <div class="txn-check ${sel?'on':''}">${sel?'✓':''}</div>
         <div class="txn-ico" style="background:${c.col}22">${c.icon}</div>
         <div class="txn-mid"><div class="txn-p">${escapeHtml(it.payee||c.label)}</div><div class="txn-m"><span class="tag ${it.dir==='in'?'tg':'tr'}">${it.dir==='in'?'IN':'OUT'}</span>${escapeHtml(c.label)} ${acctTag}</div></div>
         <div class="txn-r"><div class="txn-a ${it.dir}">${it.dir==='out'?'-':'+'}${fmtD(it.amt)}</div><div class="txn-d">${fmtDate(it.date)}</div></div>
       </div>`;
     }
-    return`<div class="txn fadein" onclick="openTxnDetail('${it.id}')" style="cursor:pointer"><div class="txn-ico" style="background:${c.col}22">${c.icon}</div><div class="txn-mid"><div class="txn-p">${escapeHtml(it.payee||c.label)}</div><div class="txn-m"><span class="tag ${it.dir==='in'?'tg':'tr'}">${it.dir==='in'?'IN':'OUT'}</span>${escapeHtml(c.label)}${typeTag} ${acctTag}${it.note?` · ${escapeHtml(it.note)}`:''}</div><div class="txn-acts"><button class="txn-act" onclick="event.stopPropagation();openTxnModal('${it.id}')">Edit</button><button class="txn-act" onclick="event.stopPropagation();deleteTxn('${it.id}')">Delete</button></div></div><div class="txn-r"><div class="txn-a ${it.dir}">${it.dir==='out'?'-':'+'}${fmtD(it.amt)}</div><div class="txn-d">${fmtDate(it.date)}</div></div></div>`;
+    return`<div class="txn" onclick="openTxnDetail('${it.id}')" style="cursor:pointer"><div class="txn-ico" style="background:${c.col}22">${c.icon}</div><div class="txn-mid"><div class="txn-p">${escapeHtml(it.payee||c.label)}</div><div class="txn-m"><span class="tag ${it.dir==='in'?'tg':'tr'}">${it.dir==='in'?'IN':'OUT'}</span>${escapeHtml(c.label)}${typeTag} ${acctTag}${it.note?` · ${escapeHtml(it.note)}`:''}</div><div class="txn-acts"><button class="txn-act" onclick="event.stopPropagation();openTxnModal('${it.id}')">Edit</button><button class="txn-act" onclick="event.stopPropagation();deleteTxn('${it.id}')">Delete</button></div></div><div class="txn-r"><div class="txn-a ${it.dir}">${it.dir==='out'?'-':'+'}${fmtD(it.amt)}</div><div class="txn-d">${fmtDate(it.date)}</div></div></div>`;
   }).join('')}</div>`;
 }
 
@@ -19994,13 +19996,14 @@ function buildAccounts2(){
       const up=flow30>=0;
       // Sparkline: running balance over the last ~12 data points
       const spark=buildAccountSparkline(a.key,a.bal);
-      return `<div class="accm-card">
+      return `<div class="accm-card" onclick="openBalModal('${a.key}')" style="cursor:pointer">
         <div class="accm-card-l">
           <div class="accm-card-ico">${a.icon}</div>
           <div class="accm-card-meta">
             <div class="accm-card-name">${escapeHtml(a.type)}</div>
             <div class="accm-card-bank">${escapeHtml(a.bank||a.label)}${a.bank?' · AUD':''}</div>
           </div>
+          <span class="accm-card-edit">Edit ›</span>
         </div>
         <div class="accm-card-r">
           <div class="accm-card-bal">${fmtD(a.bal)}</div>
