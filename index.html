@@ -1857,6 +1857,13 @@ body.light{--b-spend:#2d7a55;--b-save:#2a78d6;--b-sink:#7c4dcc}
 .bud-cat-chips{display:flex;flex-wrap:wrap;gap:6px}
 .bud-cat-chip{background:var(--bg3);border:0.5px solid var(--bdr);border-radius:8px;padding:6px 10px;font-size:11.5px;color:var(--t2);cursor:pointer;font-family:var(--sans)}
 .bud-cat-chip.on{background:var(--accd);border-color:var(--bdr-acc2);color:var(--acc)}
+.bud-reassign-list{display:flex;flex-direction:column;gap:6px}
+.bud-reassign-row{display:flex;align-items:center;gap:10px;width:100%;background:var(--bg3);border:0.5px solid var(--bdr);border-radius:10px;padding:11px 13px;font-size:13px;color:var(--t);cursor:pointer;font-family:var(--sans)}
+.bud-reassign-row.on{background:var(--accd);border-color:var(--bdr-acc2)}
+.bud-reassign-row:active{transform:scale(.99)}
+.bud-quick{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.bud-quick-btn{flex:1;min-width:0;background:var(--glass);border:0.5px solid var(--bdr);border-radius:9px;padding:8px 6px;font-size:11px;color:var(--t2);cursor:pointer;font-family:var(--sans);white-space:nowrap}
+.bud-quick-btn:active{transform:scale(.96)}
 </style>
 </head>
 <body>
@@ -3537,7 +3544,7 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='5.0.0';
+const APP_VERSION='5.1.0';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
   {
@@ -7081,24 +7088,19 @@ function openTxnDetail(txnId){
 
   const amtColor=t.dir==='in'?'var(--acc)':'var(--t)';
   const amtSign=t.dir==='in'?'+':'-';
-  // v3.0.1 — Budget impact: this category's month-to-date share of the monthly
-  // variable budget, before and after this transaction (only meaningful for spend).
-  let budgetImpactRow='';
-  if(t.dir==='out'){
-    const monthKey=(t.date||'').slice(0,7);
-    const catMonthTxns=(S.transactions||[]).filter(x=>x.dir==='out'&&x.cat===t.cat&&(x.date||'').slice(0,7)===monthKey);
-    const catSpentAfter=catMonthTxns.reduce((a,x)=>a+x.amt,0);
-    const catSpentBefore=catSpentAfter-t.amt;
-    const weekSpendBudget=(S.sliders&&S.sliders.spend)||0;
-    const monthlyVarBudget=weekSpendBudget*4.33;
-    if(monthlyVarBudget>0){
-      const pctBefore=Math.round(catSpentBefore/monthlyVarBudget*100);
-      const pctAfter=Math.round(catSpentAfter/monthlyVarBudget*100);
-      budgetImpactRow=`<div class="ed-tdrow"><span class="ed-tdk">Budget impact</span><span class="ed-tdmono">${pctBefore}% → ${pctAfter}%</span></div>`;
-    }
-  }
   const notesVal=t.note?escapeHtml(t.note):'Add…';
   const notesCls=t.note?'ed-tdv':'ed-tdmuted';
+  // v5.0 — which envelope does this spend draw from? (override or auto-match)
+  let envelopeRow='';
+  if(t.dir==='out'&&S.budget&&Array.isArray(S.budget.envelopes)){
+    const drawEnv=(()=>{
+      if(t.envId)return S.budget.envelopes.find(e=>e.id===t.envId);
+      return S.budget.envelopes.find(e=>(e.catMatch||[]).includes(t.cat));
+    })();
+    const label=drawEnv?`${drawEnv.icon||'📦'} ${escapeHtml(drawEnv.name)}`:'Not budgeted';
+    const tag=t.envId?' <span style="font-size:9px;color:var(--t3)">(manual)</span>':'';
+    envelopeRow=`<div class="ed-tdrow" onclick="openEnvelopeReassign('${t.id}')" style="cursor:pointer"><span class="ed-tdk">Draws from</span><span class="ed-tdv">${label}${tag} ›</span></div>`;
+  }
   openDetail(`
     <div class="ed-td-hero">
       <div class="ed-td-ico">${c.icon}</div>
@@ -7110,7 +7112,7 @@ function openTxnDetail(txnId){
     <div class="ed-td-card">
       <div class="ed-tdrow"><span class="ed-tdk">Payee</span><span class="ed-tdv">${escapeHtml(t.payee||'—')}</span></div>
       <div class="ed-tdrow"><span class="ed-tdk">Category</span><span class="ed-tdv">${c.icon} ${c.label}</span></div>
-      ${budgetImpactRow}
+      ${envelopeRow}
       <div class="ed-tdrow ed-td-last" onclick="closeDetail();setTimeout(()=>openTxnModal('${t.id}'),200)"><span class="ed-tdk">Notes</span><span class="${notesCls}">${notesVal}</span></div>
     </div>
 
@@ -9357,12 +9359,17 @@ function buildBudgetOverview(){
 function buildBudgetNudge(){
   const el=document.getElementById('bud-nudge');if(!el)return;
   const avail=availableToAllocate();
+  const b=S.budget;
+  const hasSavings=b.envelopes.some(e=>e.kind==='savings');
   if(avail>1){
     el.innerHTML=`<button class="bud-nudge bud-nudge-avail" onclick="openAllocateRemaining()">
       <i class="ti ti-arrow-down-circle" aria-hidden="true"></i>
       <span>You have <strong>${fmtDI(avail)}</strong> still to allocate</span>
       <span class="bud-nudge-cta">Allocate ›</span>
-    </button>`;
+    </button>
+    ${hasSavings?`<div class="bud-quick">
+      <button class="bud-quick-btn" onclick="allocRemainingToSavings()">↳ Put ${fmtDI(avail)} into Savings</button>
+    </div>`:''}`;
   }else if(avail<-1){
     el.innerHTML=`<div class="bud-nudge bud-nudge-over">
       <i class="ti ti-alert-triangle" aria-hidden="true"></i>
@@ -9374,6 +9381,19 @@ function buildBudgetNudge(){
       <span>Every dollar allocated</span>
     </div>`;
   }
+}
+function allocRemainingToSavings(){
+  ensureBudget();
+  const avail=availableToAllocate();if(avail<=0)return;
+  const sav=S.budget.envelopes.find(e=>e.kind==='savings');
+  if(!sav)return;
+  sav.alloc=sav.alloc||{mode:'$',value:0};
+  // if it's on %, convert to $ first so we can add a flat amount
+  if(sav.alloc.mode==='%')sav.alloc.value=resolveAlloc(sav.alloc,budgetIncome());
+  sav.alloc.mode='$';
+  sav.alloc.value=Math.round((sav.alloc.value||0)+avail);
+  save();buildBudgetPageV4();
+  showToast('Remaining moved to Savings');
 }
 
 function buildBudgetGroups(){
@@ -9449,11 +9469,12 @@ function sinkingRow(sf){
   const target=sf.target||0;
   const rem=Math.max(0,target-saved);
   const p=target>0?Math.min(100,saved/target*100):0;
+  const reached=target>0&&saved>=target;
   return`<div class="bud-env">
     <div class="bud-env-top">
       <span class="bud-env-ico">${sf.icon||'🎯'}</span>
       <div style="flex:1;min-width:0" onclick="editSinking('${sf.id}')">
-        <div class="bud-env-name">${escapeHtml(sf.name)}</div>
+        <div class="bud-env-name">${escapeHtml(sf.name)}${reached?' <span style="font-size:9px;color:var(--acc);font-weight:700">✓ FUNDED</span>':''}</div>
         <div class="bud-sink-meta">${fmtDI(saved)}${target>0?' of '+fmtDI(target):''}${sf.deadline?' · '+escapeHtml(sf.deadline):''}${target>0&&rem>0?' · '+fmtDI(rem)+' to go':''}</div>
       </div>
       <div class="bud-alloc-input">
@@ -9461,7 +9482,7 @@ function sinkingRow(sf){
         <input type="text" inputmode="decimal" value="${dollars}" onchange="setSinkingAlloc('${sf.id}',this.value)" onfocus="this.select()">
       </div>
     </div>
-    ${target>0?`<div class="bud-env-bar-row"><div class="bud-env-bar"><div style="width:${p}%;background:var(--b-sink)"></div></div><button class="bud-env-x" onclick="deleteSinking('${sf.id}')" title="Remove">✕</button></div>`:`<div style="text-align:right"><button class="bud-env-x" onclick="deleteSinking('${sf.id}')" title="Remove">✕</button></div>`}
+    ${target>0?`<div class="bud-env-bar-row"><div class="bud-env-bar"><div style="width:${p}%;background:${reached?'var(--acc)':'var(--b-sink)'}"></div></div><button class="bud-env-x" onclick="deleteSinking('${sf.id}')" title="Remove">✕</button></div>`:`<div style="text-align:right"><button class="bud-env-x" onclick="deleteSinking('${sf.id}')" title="Remove">✕</button></div>`}
   </div>`;
 }
 
@@ -9544,6 +9565,38 @@ function openAllocateRemaining(){
 }
 
 // Category-match editor (name, icon, which categories draw from this envelope)
+function openEnvelopeReassign(txnId){
+  ensureBudget();
+  const t=(S.transactions||[]).find(x=>x.id===txnId);if(!t)return;
+  const envs=S.budget.envelopes.filter(e=>e.kind==='spending');
+  const autoEnv=envs.find(e=>(e.catMatch||[]).includes(t.cat));
+  const rows=envs.map(e=>{
+    const isCur=(t.envId?t.envId===e.id:(!t.envId&&autoEnv&&autoEnv.id===e.id));
+    const isAuto=autoEnv&&autoEnv.id===e.id;
+    return`<button class="bud-reassign-row ${isCur?'on':''}" onclick="reassignTxnEnvelope('${txnId}','${e.id}')">
+      <span class="bud-env-ico">${e.icon||'📦'}</span>
+      <span style="flex:1;text-align:left">${escapeHtml(e.name)}${isAuto?' <span style="font-size:9px;color:var(--t3)">auto</span>':''}</span>
+      ${isCur?'<span style="color:var(--acc)">✓</span>':''}
+    </button>`;
+  }).join('');
+  const html=`<div class="modal-hdr"><div class="modal-title">Which envelope?</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div style="font-size:12px;color:var(--t2);margin-bottom:12px">This spend of ${fmtD(t.amt)} draws down whichever envelope you pick.</div>
+    <div class="bud-reassign-list">
+      ${rows||'<div class="bud-empty-row">No spending envelopes yet. Add some in the Budget tab.</div>'}
+      ${t.envId?`<button class="bud-reassign-row" onclick="reassignTxnEnvelope('${txnId}','')"><span class="bud-env-ico">↩️</span><span style="flex:1;text-align:left">Back to automatic</span></button>`:''}
+    </div>`;
+  openModal(html);
+}
+function reassignTxnEnvelope(txnId,envId){
+  const t=(S.transactions||[]).find(x=>x.id===txnId);if(!t)return;
+  if(envId)t.envId=envId;else delete t.envId;
+  save();closeModal();
+  if(typeof refreshAll==='function')refreshAll();
+  // reopen detail to show the change
+  setTimeout(()=>{if(typeof openTxnDetail==='function')openTxnDetail(txnId);},100);
+  showToast(envId?'Moved to envelope':'Back to automatic');
+}
+
 function openEnvelopeEditor(id){
   ensureBudget();const env=S.budget.envelopes.find(e=>e.id===id);if(!env)return;
   const cats=DEFAULT_CATS.filter(c=>c.type!=='income'&&c.type!=='transfer');
