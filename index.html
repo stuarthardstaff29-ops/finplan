@@ -490,7 +490,8 @@ body.light .hdr{background:rgba(255,255,255,.8)}
   a{text-decoration:none;color:#000!important}
 }
 /* Steady State v4.0.0 — clean fixed 5-tab bottom nav */
-.ss-bnav{position:fixed;bottom:0;left:0;right:0;display:flex;align-items:flex-end;justify-content:space-between;background:var(--navbg,rgba(12,28,20,.92));backdrop-filter:blur(24px) saturate(170%);-webkit-backdrop-filter:blur(24px) saturate(170%);border-top:0.5px solid var(--bdr);padding:10px 10px calc(10px + var(--sb));z-index:200;gap:2px}
+.ss-bnav{position:fixed;bottom:0;left:0;right:0;display:flex;align-items:flex-end;justify-content:space-between;background:var(--navbg,rgba(12,28,20,.92));backdrop-filter:blur(24px) saturate(170%);-webkit-backdrop-filter:blur(24px) saturate(170%);border-top:0.5px solid var(--bdr);padding:10px 10px calc(10px + var(--sb));z-index:200;gap:2px;transition:transform .25s cubic-bezier(.4,0,.2,1)}
+.ss-bnav.hidden{transform:translateY(calc(100% + var(--sb) + 20px))}
 .ss-bnav .nb{flex:1 1 0;min-width:0;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;font:600 10.5px var(--sans);color:var(--t3);padding:5px 2px 3px;transition:color .18s;-webkit-tap-highlight-color:transparent;letter-spacing:-.1px}
 .ss-bnav .nb svg{width:24px;height:24px;stroke:currentColor;stroke-width:1.85;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .ss-bnav .nb.on{color:var(--acc)}
@@ -711,7 +712,7 @@ body.reduce-motion .skeleton{background:rgba(255,255,255,.04)}
 /* Children of the AI page must NOT get the staggered cardIn transform either */
 .ai-pg.on>*{animation:none!important;transform:none!important}
 /* CARDS */
-.card{background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad-lg);padding:20px;margin-bottom:18px;transition:border-color var(--dur-base) var(--ease-out),transform var(--dur-fast) var(--ease-out);position:relative;overflow:hidden;box-shadow:0 8px 24px -12px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.04);contain:content}
+.card{background:var(--glass);border:0.5px solid var(--bdr-acc);border-radius:var(--rad-lg);padding:20px;margin-bottom:18px;transition:border-color var(--dur-base) var(--ease-out),transform var(--dur-fast) var(--ease-out);position:relative;overflow:hidden;box-shadow:0 8px 24px -12px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.04);contain:content;content-visibility:auto;contain-intrinsic-size:auto 120px}
 /* v3.2.2 — Depth material: subtle gradient, top-edge highlight, ambient warmth */
 .card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 0%,var(--bdr-acc2) 20%,var(--bdr-acc2) 80%,transparent 100%);opacity:.7;pointer-events:none}
 body:not(.light) .card{background:linear-gradient(155deg,rgba(255,255,255,.045) 0%,rgba(255,255,255,.02) 100%)}
@@ -1792,6 +1793,70 @@ body:not(.light) .hub-focus{background:rgba(255,255,255,.02)}
 @keyframes fpFill{to{opacity:1}}
 @keyframes fpDot{0%{opacity:0;r:3}30%{opacity:1;r:5}70%{opacity:1;r:5}100%{opacity:.4;r:8}}
 @media (prefers-reduced-motion:reduce){.fp-draw,.fp-fill,.fp-dot{animation:none;stroke-dashoffset:0;opacity:1}}
+/* ═══ v5.0 ENVELOPE BUDGET ═══ */
+:root{--b-spend:#8ee0b8;--b-save:#5cb1ff;--b-sink:#c9a0ff}
+body.light{--b-spend:#2d7a55;--b-save:#2a78d6;--b-sink:#7c4dcc}
+.bud-ov{background:var(--bg2);border:0.5px solid var(--bdr);border-radius:16px;padding:18px 16px;margin-bottom:14px}
+.bud-ov-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.bud-ov-lbl{font-size:11px;color:var(--t2);margin-bottom:3px}
+.bud-ov-val{font:400 26px var(--serif);color:var(--t);letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.bud-ov-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;gap:2px;background:var(--bg4)}
+.bud-ov-bar>div{height:100%}
+.bud-ov-legend{display:flex;gap:12px;margin-top:10px;font-size:11px;color:var(--t2);flex-wrap:wrap}
+.bud-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:0}
+.bud-nudge{display:flex;align-items:center;gap:10px;width:100%;border:none;border-radius:12px;padding:13px 15px;margin-bottom:14px;font-size:13px;text-align:left;font-family:var(--sans)}
+.bud-nudge i{font-size:18px;flex-shrink:0}
+.bud-nudge span{flex:1}
+.bud-nudge strong{font-weight:700}
+.bud-nudge-avail{background:var(--accd);color:var(--acc);cursor:pointer;border:0.5px solid var(--bdr-acc2)}
+.bud-nudge-cta{flex:0!important;white-space:nowrap;font-weight:600;opacity:.85}
+.bud-nudge-over{background:rgba(224,106,90,.12);color:var(--r);border:0.5px solid rgba(224,106,90,.25)}
+.bud-nudge-done{background:var(--glass);color:var(--t2);border:0.5px solid var(--bdr)}
+.bud-grp{background:var(--bg2);border:0.5px solid var(--bdr);border-radius:14px;margin-bottom:10px;overflow:hidden}
+.bud-grp-head{display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;cursor:pointer;padding:14px 15px;text-align:left;font-family:var(--sans)}
+.bud-grp-ico{width:36px;height:36px;border-radius:10px;background:var(--glass);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.bud-grp-save .bud-grp-ico{background:rgba(92,177,255,.14)}
+.bud-grp-sink .bud-grp-ico{background:rgba(201,160,255,.14)}
+.bud-grp-meta{flex:1;min-width:0}
+.bud-grp-title{font-size:14px;font-weight:600;color:var(--t)}
+.bud-grp-sub{font-size:11px;color:var(--t3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bud-grp-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.bud-grp-total{font-size:15px;font-weight:600;color:var(--t);font-variant-numeric:tabular-nums}
+.bud-grp-right i{font-size:14px;color:var(--t3)}
+.bud-grp-body{border-top:0.5px solid var(--bdr);padding:6px 14px 10px}
+.bud-env{padding:11px 0;border-bottom:0.5px solid var(--bdr)}
+.bud-env:last-of-type{border-bottom:none}
+.bud-env-top{display:flex;align-items:center;gap:10px}
+.bud-env-ico{font-size:17px;flex-shrink:0}
+.bud-env-name{flex:1;min-width:0;font-size:13.5px;color:var(--t);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bud-sink-meta{font-size:10.5px;color:var(--t3);margin-top:1px}
+.bud-alloc-input{display:flex;align-items:center;background:var(--bg3);border:0.5px solid var(--bdr);border-radius:9px;padding:2px 4px;flex-shrink:0}
+.bud-alloc-sym{font-size:12px;color:var(--t3);padding:0 2px}
+.bud-alloc-input input{width:52px;height:28px;border:none;background:transparent;color:var(--t);font:600 14px var(--mono);text-align:right;padding:0;font-variant-numeric:tabular-nums}
+.bud-alloc-input input:focus{outline:none}
+.bud-alloc-tog{width:24px;height:24px;border:none;background:var(--glass);color:var(--t3);font-size:11px;border-radius:6px;margin-left:4px;cursor:pointer;flex-shrink:0}
+.bud-alloc-tog:active{transform:scale(.9)}
+.bud-env-bar-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+.bud-env-bar{flex:1;height:5px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.bud-env-bar>div{height:100%;border-radius:3px}
+.bud-env-bal{font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bud-env-x{width:22px;height:22px;border:none;background:none;color:var(--t3);font-size:11px;cursor:pointer;flex-shrink:0;padding:0}
+.bud-env-x:active{color:var(--r)}
+.bud-env-note{font-size:10.5px;color:var(--t3);margin-top:5px;padding-left:27px}
+.bud-add-row{display:flex;align-items:center;gap:6px;width:100%;background:none;border:none;color:var(--acc);font-size:12px;font-weight:600;padding:11px 0 4px;cursor:pointer;font-family:var(--sans)}
+.bud-add-row i{font-size:15px}
+.bud-empty-row{font-size:12px;color:var(--t3);padding:10px 0;line-height:1.5}
+.bud-firstrun{text-align:center;padding:36px 20px}
+.bud-fr-ico{font-size:44px;margin-bottom:14px}
+.bud-fr-title{font:400 24px var(--serif);color:var(--t);margin-bottom:10px}
+.bud-fr-body{font-size:13px;color:var(--t2);line-height:1.6;max-width:300px;margin:0 auto}
+.bud-ed-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.bud-ed-lbl{font-size:12px;color:var(--t2);width:100px;flex-shrink:0}
+.bud-ed-inp{flex:1;background:var(--bg3);border:0.5px solid var(--bdr);border-radius:9px;padding:9px 11px;color:var(--t);font-size:13px;font-family:var(--sans)}
+.bud-ed-inp:focus{outline:none;border-color:var(--bdr-acc)}
+.bud-cat-chips{display:flex;flex-wrap:wrap;gap:6px}
+.bud-cat-chip{background:var(--bg3);border:0.5px solid var(--bdr);border-radius:8px;padding:6px 10px;font-size:11.5px;color:var(--t2);cursor:pointer;font-family:var(--sans)}
+.bud-cat-chip.on{background:var(--accd);border-color:var(--bdr-acc2);color:var(--acc)}
 </style>
 </head>
 <body>
@@ -2172,42 +2237,11 @@ body:not(.light) .hub-focus{background:rgba(255,255,255,.02)}
 
     <!-- BUDGET -->
     <div class="pg" id="pg-budget">
-      <!-- Hero: take-home income + savings-rate ring -->
-      <div class="hero" id="bud-hero"></div>
-
-      <!-- Week X of Y progress card -->
-      <div id="bud-week"></div>
-
-      <!-- Categories -->
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:0 4px;margin:16px 0 8px">
-        <div style="font-size:10px;color:var(--t3);letter-spacing:.16em;font-weight:600;text-transform:uppercase">Categories</div>
-        <button class="btn btn-ghost btn-sm" onclick="openCategoryLimitsModal()" style="font-size:11px;color:var(--acc);padding:3px 8px">Set limits ›</button>
-      </div>
-      <div id="bud-categories"></div>
-
-      <!-- Insight card at bottom -->
-      <div id="bud-insight" style="margin-top:14px"></div>
-
-      <!-- Show detailed planner (extras) -->
-      <button class="btn btn-ghost btn-full" id="bud-extras-toggle" onclick="toggleBudExtras()" style="margin:14px 0 6px;color:var(--t2);border:0.5px dashed var(--bdr2);background:transparent">
-        <span id="bud-extras-toggle-label">Show budget planner</span>
-        <span id="bud-extras-toggle-chevron" style="margin-left:6px;display:inline-block;transition:transform var(--dur-base) var(--ease-out)">▾</span>
-      </button>
-
-      <div id="bud-extras" style="display:none">
-        <div class="card"><div class="ctitle"><div class="ctitle-l">Income</div></div><div class="sl-grp"><div class="sl-lr"><span class="sl-l">Dominos weekly earnings</span><span class="sl-v" id="out-kmart">$110</span></div><input type="range" min="0" max="400" step="5" value="110" id="sl-kmart" oninput="upAll()"></div></div>
-        <div class="card"><div class="ctitle"><div class="ctitle-l">Fixed</div></div><div class="sl-grp"><div class="sl-lr"><span class="sl-l">Rent / month</span><span class="sl-v" id="out-rent">$400</span></div><input type="range" min="0" max="800" step="50" value="400" id="sl-rent" oninput="upAll()"></div></div>
-        <div class="card"><div class="ctitle"><div class="ctitle-l">Spending</div></div><div class="sl-grp"><div class="sl-lr"><span class="sl-l">Personal spend / week</span><span class="sl-v" id="out-spend">$600</span></div><input type="range" min="0" max="1500" step="10" value="600" id="sl-spend" oninput="upAll()"></div></div>
-        <div class="card"><div class="ctitle"><div class="ctitle-l">Savings & investing</div></div>
-          <div class="sl-grp"><div class="sl-lr"><span class="sl-l">Goal savings / month</span><span class="sl-v" id="out-goals">$1,674</span></div><input type="range" min="0" max="3000" step="50" value="1674" id="sl-goals" oninput="upAll()"></div>
-          <hr class="dvdr">
-          <div class="sl-grp"><div class="sl-lr"><span class="sl-l" style="color:var(--acc)">★ Monthly investments</span><span class="sl-v col-acc" id="out-invest">$400</span></div><input type="range" min="0" max="4000" step="50" value="400" id="sl-invest" oninput="upAll()"></div>
-        </div>
-        <div class="mg" id="bud-metrics"></div>
-        <div class="card"><div class="ctitle"><div class="ctitle-l">Allocation</div></div><div id="bud-alloc"></div></div>
-        <div id="bud-alert"></div>
-        <div class="card"><div class="ctitle"><div class="ctitle-l">Actual vs budget</div></div><div id="bud-actual"></div></div>
-      </div>
+      <!-- Income-driven envelope budget (v5.0) -->
+      <div id="bud-overview"></div>
+      <div id="bud-nudge"></div>
+      <div id="bud-groups"></div>
+      <div id="bud-firstrun"></div>
     </div>
 
     <!-- TIMELINE -->
@@ -3503,7 +3537,7 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='4.5.0';
+const APP_VERSION='5.0.0';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
   {
@@ -8923,7 +8957,7 @@ function computeWeekProgress(){
   return{currentWeek,weeks,dayOfMonth,daysInMonth,weekProgress};
 }
 
-function buildBudgetHero(){
+function buildBudgetHero(){/* v5.0 legacy no-op: budget rebuilt as envelopes */return;
   const el=document.getElementById('bud-hero');if(!el)return;
   const s=computeBudgetSummary();
   // Job income breakdown
@@ -8960,7 +8994,7 @@ function buildBudgetHero(){
     </div>`;
 }
 
-function buildBudgetWeek(){
+function buildBudgetWeek(){/* v5.0 legacy no-op: budget rebuilt as envelopes */return;
   const el=document.getElementById('bud-week');if(!el)return;
   const wp=computeWeekProgress();
   const s=computeBudgetSummary();
@@ -9004,7 +9038,7 @@ function buildBudgetWeek(){
   </div>`;
 }
 
-function buildBudgetCategories(){
+function buildBudgetCategories(){/* v5.0 legacy no-op: budget rebuilt as envelopes */return;
   const el=document.getElementById('bud-categories');if(!el)return;
   const{spent,counts}=computeCategorySpending();
   const cats=cmap();
@@ -9101,7 +9135,7 @@ function expandBudCats(){
   if(moreEl)moreEl.outerHTML=rowsHtml;
 }
 
-function buildBudgetInsight(){
+function buildBudgetInsight(){/* v5.0 legacy no-op: budget rebuilt as envelopes */return;
   const el=document.getElementById('bud-insight');if(!el)return;
   const{spent}=computeCategorySpending();
   // Find biggest over-cap variable category
@@ -9178,28 +9212,400 @@ function toggleBudExtras(){
 }
 
 // Render everything on the budget page
-function buildBudgetPageV4(){
-  buildBudgetHero();
-  buildBudgetWeek();
-  buildBudgetCategories();
-  buildBudgetInsight();
-  const el=document.getElementById('bud-extras');
-  const lbl=document.getElementById('bud-extras-toggle-label');
-  const chev=document.getElementById('bud-extras-toggle-chevron');
-  if(el){
-    if(S.budExtrasOpen){
-      el.style.display='block';
-      if(lbl)lbl.textContent='Hide budget planner';
-      if(chev)chev.style.transform='rotate(180deg)';
-      upAll();
-      if(typeof buildBudgetActual==='function')buildBudgetActual();
+// ═══════════════════════════════════════════════════════════
+// v5.0 — INCOME-DRIVEN ENVELOPE BUDGET
+// Model: S.budget = {
+//   envelopes:[{id,name,icon,kind:'spending'|'savings',alloc:{mode:'$'|'%',value},catMatch:[..]}],
+//   sinking:[{id,name,icon,target,deadline,saved,alloc:{mode,value}}],
+//   savedTotal: number  // running savings balance (carries forward)
+//   carry:{envId:balance}  // unspent balances carried from prior months
+//   lastRolloverYM: 'YYYY-MM'
+// }
+// Available = income this month − sum of all allocations.
+// Envelope balance = allocated (this month) + carried-in − spent (this month).
+// ═══════════════════════════════════════════════════════════
+function ensureBudget(){
+  if(!S.budget||typeof S.budget!=='object'){
+    S.budget={envelopes:[],sinking:[],savedTotal:0,carry:{},lastRolloverYM:nowYM(),setupDone:false};
+  }
+  const b=S.budget;
+  if(!Array.isArray(b.envelopes))b.envelopes=[];
+  if(!Array.isArray(b.sinking))b.sinking=[];
+  if(typeof b.savedTotal!=='number')b.savedTotal=0;
+  if(!b.carry||typeof b.carry!=='object')b.carry={};
+  if(!b.lastRolloverYM)b.lastRolloverYM=nowYM();
+  // Month rollover: when the month changes, unspent spending-envelope balances
+  // carry forward; savings allocations bank into savedTotal.
+  if(b.lastRolloverYM!==nowYM()){
+    rolloverBudget(b.lastRolloverYM);
+    b.lastRolloverYM=nowYM();
+    save();
+  }
+}
+function rolloverBudget(fromYM){
+  const b=S.budget;
+  // For each spending envelope, its end-of-month balance carries into next month.
+  b.envelopes.forEach(env=>{
+    const bal=envelopeBalance(env,fromYM);
+    if(env.kind==='savings'){
+      // savings allocation banks into the running total; nothing to carry as spendable
+      b.savedTotal=(b.savedTotal||0)+Math.max(0,envAllocatedFor(env,fromYM));
+      b.carry[env.id]=0;
     }else{
-      el.style.display='none';
+      // carry the remaining balance (can be negative if overspent — honest)
+      b.carry[env.id]=bal;
     }
+  });
+  // Sinking funds: add this month's allocation to saved
+  b.sinking.forEach(sf=>{
+    sf.saved=(sf.saved||0)+Math.max(0,sinkingAllocatedFor(sf,fromYM));
+  });
+}
+// ── Allocation math ──────────────────────────────────────────
+function budgetIncome(){return (typeof monthIncome==='function')?monthIncome():0;}
+// Resolve an allocation (mode $/%) to a dollar figure against the income base.
+function resolveAlloc(alloc,incomeBase){
+  if(!alloc)return 0;
+  if(alloc.mode==='%')return Math.round((incomeBase*(alloc.value||0)/100));
+  return Math.round(alloc.value||0);
+}
+function envAllocatedFor(env){return resolveAlloc(env.alloc,budgetIncome());}
+function sinkingAllocatedFor(sf){return resolveAlloc(sf.alloc,budgetIncome());}
+function totalAllocated(){
+  const b=S.budget;let t=0;
+  b.envelopes.forEach(e=>{t+=envAllocatedFor(e);});
+  b.sinking.forEach(s=>{t+=sinkingAllocatedFor(s);});
+  return t;
+}
+function availableToAllocate(){return budgetIncome()-totalAllocated();}
+// Spending drawn from an envelope this month (auto-match by category, honoring overrides).
+function envelopeSpent(env,ym){
+  ym=ym||nowYM();
+  const txns=(S.transactions||[]).filter(t=>t.dir==='out'&&(t.date||'').slice(0,7)===ym);
+  let spent=0;
+  txns.forEach(t=>{
+    // override wins
+    if(t.envId){if(t.envId===env.id)spent+=Math.abs(t.amt||0);return;}
+    // else auto-match by category
+    if((env.catMatch||[]).includes(t.cat))spent+=Math.abs(t.amt||0);
+  });
+  return spent;
+}
+function envelopeBalance(env,ym){
+  const carried=(S.budget.carry&&S.budget.carry[env.id])||0;
+  return carried+envAllocatedFor(env)-envelopeSpent(env,ym);
+}
+
+// ── Builders ─────────────────────────────────────────────────
+let __budExpanded={spending:false,savings:false,sinking:false};
+function buildBudgetPageV4(){
+  ensureBudget();
+  const b=S.budget;
+  const hasContent=b.envelopes.length||b.sinking.length;
+  const fr=document.getElementById('bud-firstrun');
+  if(!hasContent&&!b.setupDone){
+    // First-run empty state
+    document.getElementById('bud-overview').innerHTML='';
+    document.getElementById('bud-nudge').innerHTML='';
+    document.getElementById('bud-groups').innerHTML='';
+    if(fr)fr.innerHTML=`<div class="bud-firstrun">
+      <div class="bud-fr-ico">💰</div>
+      <div class="bud-fr-title">Your money, your plan</div>
+      <div class="bud-fr-body">This budget follows your real income. When money arrives, you decide where it goes — into envelopes for spending, savings, and sinking funds. Nothing is decided for you.</div>
+      <button class="btn btn-acc btn-full" style="margin-top:16px" onclick="seedStarterEnvelopes()">Set up my envelopes</button>
+      <button class="btn btn-ghost btn-full" style="margin-top:8px" onclick="addEnvelope('spending')">Start from scratch</button>
+    </div>`;
+    return;
+  }
+  if(fr)fr.innerHTML='';
+  buildBudgetOverview();
+  buildBudgetNudge();
+  buildBudgetGroups();
+}
+
+function buildBudgetOverview(){
+  const el=document.getElementById('bud-overview');if(!el)return;
+  const income=budgetIncome();
+  const allocated=totalAllocated();
+  const avail=income-allocated;
+  const b=S.budget;
+  // group totals
+  const spendTotal=b.envelopes.filter(e=>e.kind==='spending').reduce((a,e)=>a+envAllocatedFor(e),0);
+  const saveTotal=b.envelopes.filter(e=>e.kind==='savings').reduce((a,e)=>a+envAllocatedFor(e),0);
+  const sinkTotal=b.sinking.reduce((a,s)=>a+sinkingAllocatedFor(s),0);
+  const over=avail<0;
+  const pct=v=>income>0?Math.max(0,Math.min(100,v/income*100)):0;
+  el.innerHTML=`<div class="bud-ov">
+    <div class="bud-ov-top">
+      <div><div class="bud-ov-lbl">Income this month</div><div class="bud-ov-val">${fmtDI(income)}</div></div>
+      <div style="text-align:right"><div class="bud-ov-lbl">${over?'Over-allocated':'Unallocated'}</div><div class="bud-ov-val" style="color:${over?'var(--r)':'var(--acc)'}">${over?'−':''}${fmtDI(Math.abs(avail))}</div></div>
+    </div>
+    <div class="bud-ov-bar">
+      <div style="width:${pct(spendTotal)}%;background:var(--b-spend)"></div>
+      <div style="width:${pct(saveTotal)}%;background:var(--b-save)"></div>
+      <div style="width:${pct(sinkTotal)}%;background:var(--b-sink)"></div>
+      ${!over?`<div style="width:${pct(avail)}%;background:var(--bdr2)"></div>`:''}
+    </div>
+    <div class="bud-ov-legend">
+      ${spendTotal>0?`<span><i class="bud-dot" style="background:var(--b-spend)"></i>Spending ${fmtDI(spendTotal)}</span>`:''}
+      ${saveTotal>0?`<span><i class="bud-dot" style="background:var(--b-save)"></i>Savings ${fmtDI(saveTotal)}</span>`:''}
+      ${sinkTotal>0?`<span><i class="bud-dot" style="background:var(--b-sink)"></i>Sinking ${fmtDI(sinkTotal)}</span>`:''}
+    </div>
+  </div>`;
+}
+
+function buildBudgetNudge(){
+  const el=document.getElementById('bud-nudge');if(!el)return;
+  const avail=availableToAllocate();
+  if(avail>1){
+    el.innerHTML=`<button class="bud-nudge bud-nudge-avail" onclick="openAllocateRemaining()">
+      <i class="ti ti-arrow-down-circle" aria-hidden="true"></i>
+      <span>You have <strong>${fmtDI(avail)}</strong> still to allocate</span>
+      <span class="bud-nudge-cta">Allocate ›</span>
+    </button>`;
+  }else if(avail<-1){
+    el.innerHTML=`<div class="bud-nudge bud-nudge-over">
+      <i class="ti ti-alert-triangle" aria-hidden="true"></i>
+      <span>You've allocated <strong>${fmtDI(Math.abs(avail))}</strong> more than your income</span>
+    </div>`;
+  }else{
+    el.innerHTML=`<div class="bud-nudge bud-nudge-done">
+      <i class="ti ti-circle-check" aria-hidden="true"></i>
+      <span>Every dollar allocated</span>
+    </div>`;
   }
 }
 
+function buildBudgetGroups(){
+  const el=document.getElementById('bud-groups');if(!el)return;
+  const b=S.budget;
+  const spendEnvs=b.envelopes.filter(e=>e.kind==='spending');
+  const saveEnvs=b.envelopes.filter(e=>e.kind==='savings');
+  let html='';
+  // SPENDING group
+  html+=groupCard('spending','💸','Spending',spendEnvs.length+' envelope'+(spendEnvs.length===1?'':'s'),
+    spendEnvs.reduce((a,e)=>a+envAllocatedFor(e),0),
+    spendEnvs.map(e=>envelopeRow(e)).join('')+addRow('spending'));
+  // SAVINGS group
+  html+=groupCard('savings','🐷','Savings',fmtDI(b.savedTotal||0)+' saved total',
+    saveEnvs.reduce((a,e)=>a+envAllocatedFor(e),0),
+    (saveEnvs.length?saveEnvs.map(e=>envelopeRow(e)).join(''):`<div class="bud-empty-row">No savings envelope yet.</div>`)+addRow('savings'),'save');
+  // SINKING group
+  html+=groupCard('sinking','🎯','Sinking funds',b.sinking.length?b.sinking.map(s=>s.name).join(', '):'For known future costs',
+    b.sinking.reduce((a,s)=>a+sinkingAllocatedFor(s),0),
+    (b.sinking.length?b.sinking.map(s=>sinkingRow(s)).join(''):`<div class="bud-empty-row">Add a fund for a big irregular cost — car rego, Christmas, insurance.</div>`)+addSinkingRow(),'sink');
+  el.innerHTML=html;
+}
+
+function groupCard(key,icon,title,sub,total,inner,tint){
+  const open=__budExpanded[key];
+  const tintClass=tint?` bud-grp-${tint}`:'';
+  return`<div class="bud-grp${tintClass}">
+    <button class="bud-grp-head" onclick="toggleBudGroup('${key}')">
+      <div class="bud-grp-ico">${icon}</div>
+      <div class="bud-grp-meta"><div class="bud-grp-title">${title}</div><div class="bud-grp-sub">${sub}</div></div>
+      <div class="bud-grp-right"><div class="bud-grp-total">${fmtDI(total)}</div><i class="ti ti-chevron-${open?'up':'down'}" aria-hidden="true"></i></div>
+    </button>
+    <div class="bud-grp-body" style="display:${open?'block':'none'}">${inner}</div>
+  </div>`;
+}
+function toggleBudGroup(key){__budExpanded[key]=!__budExpanded[key];buildBudgetGroups();}
+
+function envelopeRow(env){
+  const income=budgetIncome();
+  const alloc=env.alloc||{mode:'$',value:0};
+  const dollars=resolveAlloc(alloc,income);
+  const spent=envelopeSpent(env);
+  const bal=envelopeBalance(env);
+  const over=bal<0;
+  const isPct=alloc.mode==='%';
+  const inputVal=isPct?(alloc.value||0):dollars;
+  return`<div class="bud-env">
+    <div class="bud-env-top">
+      <span class="bud-env-ico">${env.icon||'📦'}</span>
+      <span class="bud-env-name" onclick="renameEnvelope('${env.id}')">${escapeHtml(env.name)}</span>
+      <div class="bud-alloc-input">
+        ${isPct?'':'<span class="bud-alloc-sym">$</span>'}
+        <input type="text" inputmode="decimal" value="${inputVal}" data-env="${env.id}"
+          onchange="setEnvAlloc('${env.id}',this.value)" onfocus="this.select()">
+        ${isPct?'<span class="bud-alloc-sym">%</span>':''}
+        <button class="bud-alloc-tog" onclick="toggleAllocMode('${env.id}')" title="Switch ${isPct?'to dollars':'to percent'}">${isPct?'$':'%'}</button>
+      </div>
+    </div>
+    <div class="bud-env-bar-row">
+      <div class="bud-env-bar"><div style="width:${dollars>0?Math.min(100,spent/dollars*100):0}%;background:${over?'var(--r)':'var(--acc)'}"></div></div>
+      <span class="bud-env-bal" style="color:${over?'var(--r)':'var(--t2)'}">${over?fmtDI(Math.abs(bal))+' over':fmtDI(bal)+' left'}</span>
+      <button class="bud-env-x" onclick="deleteEnvelope('${env.id}')" title="Remove">✕</button>
+    </div>
+    ${isPct?`<div class="bud-env-note">= ${fmtDI(dollars)} of your income</div>`:''}
+  </div>`;
+}
+
+function sinkingRow(sf){
+  const income=budgetIncome();
+  const alloc=sf.alloc||{mode:'$',value:0};
+  const dollars=resolveAlloc(alloc,income);
+  const saved=sf.saved||0;
+  const target=sf.target||0;
+  const rem=Math.max(0,target-saved);
+  const p=target>0?Math.min(100,saved/target*100):0;
+  return`<div class="bud-env">
+    <div class="bud-env-top">
+      <span class="bud-env-ico">${sf.icon||'🎯'}</span>
+      <div style="flex:1;min-width:0" onclick="editSinking('${sf.id}')">
+        <div class="bud-env-name">${escapeHtml(sf.name)}</div>
+        <div class="bud-sink-meta">${fmtDI(saved)}${target>0?' of '+fmtDI(target):''}${sf.deadline?' · '+escapeHtml(sf.deadline):''}${target>0&&rem>0?' · '+fmtDI(rem)+' to go':''}</div>
+      </div>
+      <div class="bud-alloc-input">
+        <span class="bud-alloc-sym">$</span>
+        <input type="text" inputmode="decimal" value="${dollars}" onchange="setSinkingAlloc('${sf.id}',this.value)" onfocus="this.select()">
+      </div>
+    </div>
+    ${target>0?`<div class="bud-env-bar-row"><div class="bud-env-bar"><div style="width:${p}%;background:var(--b-sink)"></div></div><button class="bud-env-x" onclick="deleteSinking('${sf.id}')" title="Remove">✕</button></div>`:`<div style="text-align:right"><button class="bud-env-x" onclick="deleteSinking('${sf.id}')" title="Remove">✕</button></div>`}
+  </div>`;
+}
+
+function addRow(kind){return`<button class="bud-add-row" onclick="addEnvelope('${kind}')"><i class="ti ti-plus" aria-hidden="true"></i> Add ${kind==='savings'?'savings envelope':'envelope'}</button>`;}
+function addSinkingRow(){return`<button class="bud-add-row" onclick="addSinking()"><i class="ti ti-plus" aria-hidden="true"></i> Add sinking fund</button>`;}
+
+// ── Mutations ────────────────────────────────────────────────
+function setEnvAlloc(id,raw){
+  ensureBudget();const env=S.budget.envelopes.find(e=>e.id===id);if(!env)return;
+  const v=Math.max(0,parseFloat(raw)||0);
+  env.alloc=env.alloc||{mode:'$',value:0};env.alloc.value=v;
+  save();buildBudgetOverview();buildBudgetNudge();buildBudgetGroups();
+}
+function setSinkingAlloc(id,raw){
+  ensureBudget();const sf=S.budget.sinking.find(s=>s.id===id);if(!sf)return;
+  const v=Math.max(0,parseFloat(raw)||0);
+  sf.alloc=sf.alloc||{mode:'$',value:0};sf.alloc.value=v;sf.alloc.mode='$';
+  save();buildBudgetOverview();buildBudgetNudge();buildBudgetGroups();
+}
+function toggleAllocMode(id){
+  ensureBudget();const env=S.budget.envelopes.find(e=>e.id===id);if(!env)return;
+  const income=budgetIncome();
+  env.alloc=env.alloc||{mode:'$',value:0};
+  if(env.alloc.mode==='%'){
+    // convert % → $
+    env.alloc.value=resolveAlloc(env.alloc,income);env.alloc.mode='$';
+  }else{
+    // convert $ → % (of income)
+    env.alloc.value=income>0?Math.round(env.alloc.value/income*100):0;env.alloc.mode='%';
+  }
+  save();buildBudgetGroups();
+}
+function addEnvelope(kind){
+  ensureBudget();
+  const name=kind==='savings'?'Savings':'New envelope';
+  const env={id:uid(),name,icon:kind==='savings'?'🐷':'📦',kind,alloc:{mode:'$',value:0},catMatch:[]};
+  S.budget.envelopes.push(env);S.budget.setupDone=true;
+  __budExpanded[kind]=true;
+  save();buildBudgetPageV4();
+  // immediately let them name + pick category
+  setTimeout(()=>openEnvelopeEditor(env.id),80);
+}
+function renameEnvelope(id){openEnvelopeEditor(id);}
+function deleteEnvelope(id){
+  ensureBudget();
+  S.budget.envelopes=S.budget.envelopes.filter(e=>e.id!==id);
+  if(S.budget.carry)delete S.budget.carry[id];
+  save();buildBudgetPageV4();
+}
+function addSinking(){
+  ensureBudget();
+  const sf={id:uid(),name:'New fund',icon:'🎯',target:0,deadline:'',saved:0,alloc:{mode:'$',value:0}};
+  S.budget.sinking.push(sf);S.budget.setupDone=true;__budExpanded.sinking=true;
+  save();buildBudgetPageV4();
+  setTimeout(()=>editSinking(sf.id),80);
+}
+function deleteSinking(id){
+  ensureBudget();
+  S.budget.sinking=S.budget.sinking.filter(s=>s.id!==id);
+  save();buildBudgetPageV4();
+}
+function seedStarterEnvelopes(){
+  ensureBudget();const b=S.budget;
+  const starters=[
+    {name:'Groceries',icon:'🛒',kind:'spending',cats:['groceries','food']},
+    {name:'Fuel',icon:'⛽',kind:'spending',cats:['fuel','transport']},
+    {name:'Subscriptions',icon:'📱',kind:'spending',cats:['subscriptions']},
+    {name:'Bills',icon:'🧾',kind:'spending',cats:['utilities','insurance','rent']},
+    {name:'Fun',icon:'🎉',kind:'spending',cats:['entertainment','eating_out']},
+    {name:'Savings',icon:'🐷',kind:'savings',cats:[]}
+  ];
+  starters.forEach(s=>b.envelopes.push({id:uid(),name:s.name,icon:s.icon,kind:s.kind,alloc:{mode:'$',value:0},catMatch:s.cats}));
+  b.setupDone=true;__budExpanded.spending=true;
+  save();buildBudgetPageV4();
+  showToast('Envelopes ready — now allocate your income');
+}
+function openAllocateRemaining(){
+  __budExpanded.spending=true;buildBudgetGroups();
+  document.getElementById('bud-groups')?.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// Category-match editor (name, icon, which categories draw from this envelope)
+function openEnvelopeEditor(id){
+  ensureBudget();const env=S.budget.envelopes.find(e=>e.id===id);if(!env)return;
+  const cats=DEFAULT_CATS.filter(c=>c.type!=='income'&&c.type!=='transfer');
+  const catChips=cats.map(c=>{
+    const on=(env.catMatch||[]).includes(c.id);
+    return`<button class="bud-cat-chip ${on?'on':''}" onclick="toggleEnvCat('${env.id}','${c.id}',this)">${c.icon} ${escapeHtml(c.label)}</button>`;
+  }).join('');
+  const html=`<div class="modal-hdr"><div class="modal-title">Edit envelope</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="bud-ed-row"><label class="bud-ed-lbl">Name</label><input class="bud-ed-inp" id="env-ed-name" value="${escapeHtml(env.name)}"></div>
+    <div class="bud-ed-row"><label class="bud-ed-lbl">Icon</label><input class="bud-ed-inp" id="env-ed-icon" value="${env.icon||''}" maxlength="2" style="width:60px;text-align:center"></div>
+    ${env.kind==='spending'?`<div class="bud-ed-row" style="display:block">
+      <label class="bud-ed-lbl" style="margin-bottom:8px;display:block">Spending in these categories draws from this envelope</label>
+      <div class="bud-cat-chips">${catChips}</div>
+    </div>`:''}
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeModal()">Done</button>
+      <button class="btn btn-acc btn-sm" style="flex:1" onclick="saveEnvelopeEditor('${env.id}')">Save</button>
+    </div>`;
+  openModal(html);
+}
+function toggleEnvCat(envId,catId,btn){
+  ensureBudget();const env=S.budget.envelopes.find(e=>e.id===envId);if(!env)return;
+  env.catMatch=env.catMatch||[];
+  const i=env.catMatch.indexOf(catId);
+  if(i>-1){env.catMatch.splice(i,1);btn.classList.remove('on');}
+  else{env.catMatch.push(catId);btn.classList.add('on');}
+}
+function saveEnvelopeEditor(id){
+  ensureBudget();const env=S.budget.envelopes.find(e=>e.id===id);if(!env)return;
+  const nm=document.getElementById('env-ed-name')?.value.trim();
+  const ic=document.getElementById('env-ed-icon')?.value.trim();
+  if(nm)env.name=nm;if(ic)env.icon=ic;
+  save();closeModal();buildBudgetPageV4();
+}
+
+function editSinking(id){
+  ensureBudget();const sf=S.budget.sinking.find(s=>s.id===id);if(!sf)return;
+  const html=`<div class="modal-hdr"><div class="modal-title">Sinking fund</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="bud-ed-row"><label class="bud-ed-lbl">Name</label><input class="bud-ed-inp" id="sf-ed-name" value="${escapeHtml(sf.name)}"></div>
+    <div class="bud-ed-row"><label class="bud-ed-lbl">Icon</label><input class="bud-ed-inp" id="sf-ed-icon" value="${sf.icon||''}" maxlength="2" style="width:60px;text-align:center"></div>
+    <div class="bud-ed-row"><label class="bud-ed-lbl">Target $</label><input class="bud-ed-inp" id="sf-ed-target" type="text" inputmode="decimal" value="${sf.target||''}" placeholder="optional"></div>
+    <div class="bud-ed-row"><label class="bud-ed-lbl">Saved so far $</label><input class="bud-ed-inp" id="sf-ed-saved" type="text" inputmode="decimal" value="${sf.saved||0}"></div>
+    <div class="bud-ed-row"><label class="bud-ed-lbl">Due (optional)</label><input class="bud-ed-inp" id="sf-ed-deadline" value="${escapeHtml(sf.deadline||'')}" placeholder="e.g. Mar 2026"></div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-acc btn-sm" style="flex:1" onclick="saveSinkingEditor('${sf.id}')">Save</button>
+    </div>`;
+  openModal(html);
+}
+function saveSinkingEditor(id){
+  ensureBudget();const sf=S.budget.sinking.find(s=>s.id===id);if(!sf)return;
+  const nm=document.getElementById('sf-ed-name')?.value.trim();
+  const ic=document.getElementById('sf-ed-icon')?.value.trim();
+  const tg=parseFloat(document.getElementById('sf-ed-target')?.value)||0;
+  const sv=parseFloat(document.getElementById('sf-ed-saved')?.value)||0;
+  const dl=document.getElementById('sf-ed-deadline')?.value.trim();
+  if(nm)sf.name=nm;if(ic)sf.icon=ic;sf.target=tg;sf.saved=sv;sf.deadline=dl;
+  save();closeModal();buildBudgetPageV4();
+}
+
 // Category limits modal — set/edit spending caps
+
 function openCategoryLimitsModal(){
   const cats=DEFAULT_CATS.filter(c=>c.type!=='income'&&c.type!=='transfer');
   const limits=S.categoryLimits||{};
@@ -9637,7 +10043,10 @@ function setupNavAutoHide(){
       }
     });
   }
-  document.addEventListener('scroll',onAnyScroll,{capture:true,passive:true});
+  // v4.6 — Steady State: nav stays visible always. Hiding it on scroll was a
+  // source of stutter (layout/paint on every scroll-direction change) for
+  // marginal benefit. A calm, always-present nav is smoother.
+  // (Scroll handler intentionally not attached.)
   _lastScrollTop=0;_scrollAccum=0;
   // v2.7.20: on the AI page, the nav stays visible so the user isn't trapped.
   // The back button + persistent nav provide the escape.
@@ -10437,7 +10846,7 @@ const PAGE_BUILDERS={
   txns:()=>typeof buildTxnsPage==='function'&&buildTxnsPage(),
   ai:()=>{}, // AI page rebuilds happen on message send, not here
   recurring:()=>typeof buildRecurringPage==='function'&&buildRecurringPage(),
-  budget:()=>{if(typeof upAll==='function')upAll();if(typeof buildBudgetPageV4==='function')buildBudgetPageV4();if(typeof buildBudgetPerformance==='function')buildBudgetPerformance();},
+  budget:()=>{if(typeof buildBudgetPageV4==='function')buildBudgetPageV4();},
   analytics:()=>typeof buildAnalytics==='function'&&buildAnalytics(),
   kmart:()=>typeof buildKmartPage==='function'&&buildKmartPage(),
   jobs:()=>typeof buildJobsPage==='function'&&buildJobsPage(),
@@ -13297,7 +13706,7 @@ function showPg(id,btn){
   if(id==='goals')buildGoalsPage();
   if(id==='invest')buildInvestPage();
   if(id==='timeline')buildTimeline();
-  if(id==='budget'){upAll();buildBudgetPageV4();}
+  if(id==='budget'){buildBudgetPageV4();}
   if(id==='analytics')buildAnalytics();
   if(id==='kmart')buildKmartPage();
   if(id==='settings'){buildThemeGrid();buildSettingsPage();buildCustomCatsList();}
@@ -13352,7 +13761,7 @@ function showPgFromMore(id){
 // SLIDERS
 // ═══════════════════════════════════════════════════════════
 function syncSliderUI(){['kmart','rent','spend','goals','invest'].forEach(id=>{const el=document.getElementById('sl-'+id);if(el){el.value=S.sliders[id]||0;const out=document.getElementById('out-'+id);if(out)out.textContent='$'+(S.sliders[id]||0).toLocaleString();}});}
-function upAll(){
+function upAll(){/* v5.0 legacy no-op: budget rebuilt as envelopes */return;
   ['kmart','rent','spend','goals','invest'].forEach(id=>{const el=document.getElementById('sl-'+id);if(!el)return;S.sliders[id]=parseInt(el.value)||0;const out=document.getElementById('out-'+id);if(out)out.textContent='$'+S.sliders[id].toLocaleString();});
   const sl=S.sliders,income=monthIncome(),spendMo=sl.spend*4.33,totalOut=spendMo+sl.rent+sl.goals+sl.invest,left=income-totalOut;
   const bm=document.getElementById('bud-metrics');
@@ -13363,7 +13772,7 @@ function upAll(){
   if(al)al.innerHTML=left<0?`<div class="alert alert-r">⚠️ Outgoings exceed income by ${fmtDI(Math.abs(left))}.</div>`:left>200?`<div class="alert alert-acc">✅ ${fmtDI(left)} unallocated — boost your invest slider.</div>`:'';
   buildBudgetActual();save();
 }
-function buildBudgetActual(){
+function buildBudgetActual(){/* v5.0 legacy no-op: budget rebuilt as envelopes */return;
   const el=document.getElementById('bud-actual');if(!el)return;
   const monthlyFixed=(S.sliders.rent||0)+recurringFixedMonthly();
   const rows=[
@@ -17486,20 +17895,35 @@ function buildAnIncome(){
   const expectedPeriod=period==='all'?null:Math.round(expectedMonthly*scale);
 
   // ── Source breakdown cards ──
+  // v4.6 — for the CURRENT (in-progress) period, pro-rate the expected figure
+  // by how far through the period we are, so "% of expected" is meaningful
+  // mid-month instead of always showing "behind".
+  const periodProgress=(()=>{
+    const now=new Date();
+    if(period==='month'){
+      const dim=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+      return now.getDate()/dim;
+    }
+    if(period==='week'){return (now.getDay()===0?7:now.getDay())/7;}
+    if(period==='quarter'){const qStart=new Date(now.getFullYear(),Math.floor(now.getMonth()/3)*3,1);const days=(now-qStart)/864e5;return Math.min(1,days/91.3);}
+    if(period==='year'){const yStart=new Date(now.getFullYear(),0,1);const days=(now-yStart)/864e5;return Math.min(1,days/365);}
+    return 1; // 'all' or unknown → no pro-rating
+  })();
   const sourceRows=jobs.map(j=>{
     const got=bySource[j.id]?bySource[j.id].amt:0;
-    const exp=jobExpected[j.id]*scale;
+    const expFull=jobExpected[j.id]*scale;
+    const exp=expFull*periodProgress; // expected-so-far
     const pct=exp>0?Math.round(got/exp*100):null;
     const col=j.id==='fulltime'?'#2a78d6':j.id==='dominos'?'#eb6834':'#1baf7a';
     return`<div class="an-tbl-row" ${bySource[j.id]?`onclick="openIncomeSourceDrill('${j.id}')"`:''}>
       <div class="an-tbl-ico" style="background:${col}22;color:${col}">${j.id==='fulltime'?'💼':j.id==='dominos'?'🍕':'💰'}</div>
       <div class="an-tbl-main">
         <div class="an-tbl-name">${escapeHtml(j.label)}</div>
-        <div class="an-tbl-sub">${bySource[j.id]?`${bySource[j.id].count} payment${bySource[j.id].count===1?'':'s'}`:'nothing logged'}${exp>0&&period!=='all'?` · expected ${fmtDI(exp)}`:''}</div>
+        <div class="an-tbl-sub">${bySource[j.id]?`${bySource[j.id].count} payment${bySource[j.id].count===1?'':'s'}`:'nothing logged'}${expFull>0&&period!=='all'?` · ${fmtDI(expFull)}/period`:''}</div>
       </div>
       <div class="an-tbl-right">
         <div class="an-tbl-amt">${fmtDI(got)}</div>
-        ${pct!=null&&period!=='all'?`<div class="an-tbl-delta" style="color:${pct>=95?'var(--acc)':pct>=70?'var(--y)':'var(--r)'}">${pct}% of expected</div>`:''}
+        ${pct!=null&&period!=='all'&&periodProgress>=0.15?`<div class="an-tbl-delta" style="color:${pct>=90?'var(--acc)':pct>=65?'var(--y)':'var(--r)'}">${pct}% of pace</div>`:''}
       </div>
     </div>`;
   }).join('');
@@ -17510,17 +17934,25 @@ function buildAnIncome(){
     <div class="an-tbl-amt">${fmtDI(otherIncome.amt)}</div>
   </div>`:'';
 
-  // ── Expected vs actual headline ──
+  // ── Expected vs actual headline (pace-aware for the current period) ──
+  const expectedSoFar=(expectedPeriod!=null)?Math.round(expectedPeriod*periodProgress):null;
   const evaCard=(expectedPeriod!=null)?`<div class="an-card">
-    <div class="an-card-t">Expected vs actual</div>
+    <div class="an-card-t">Income ${period==='all'?'total':'this '+period}</div>
     <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
       <span style="font-size:24px;font-weight:800;color:var(--t);font-variant-numeric:tabular-nums">${fmtDI(actualTotal)}</span>
-      <span style="font-size:12px;color:var(--t3)">of ${fmtDI(expectedPeriod)} expected</span>
+      <span style="font-size:12px;color:var(--t3)">of ${fmtDI(expectedPeriod)} expected${period!=='all'&&periodProgress<0.98?` this ${period}`:''}</span>
     </div>
     <div style="height:10px;background:var(--bg4);border-radius:5px;overflow:hidden;margin-bottom:6px">
-      <div style="width:${Math.min(100,expectedPeriod>0?Math.round(actualTotal/expectedPeriod*100):0)}%;height:100%;background:${actualTotal>=expectedPeriod*0.95?'var(--acc)':actualTotal>=expectedPeriod*0.7?'var(--y)':'var(--r)'}"></div>
+      <div style="width:${Math.min(100,expectedPeriod>0?Math.round(actualTotal/expectedPeriod*100):0)}%;height:100%;background:${(expectedSoFar&&actualTotal>=expectedSoFar*0.9)?'var(--acc)':(expectedSoFar&&actualTotal>=expectedSoFar*0.65)?'var(--y)':'var(--r)'}"></div>
     </div>
-    <div style="font-size:10px;color:var(--t3);line-height:1.5">${actualTotal>=expectedPeriod*0.95?'Your income is landing as expected.':actualTotal>=expectedPeriod*0.7?'Some expected income has not landed yet this period.':period==='month'?'Well below expected — either paydays have not arrived yet or income was not logged.':'Below expected for this period.'}</div>
+    <div style="font-size:10px;color:var(--t3);line-height:1.5">${
+      period==='all'?'Total income logged across all time.'
+      :expectedSoFar==null?'Tracking your income this period.'
+      :actualTotal>=expectedSoFar*0.9?`On pace — you're ${Math.round(periodProgress*100)}% through the ${period} and income is tracking as expected.`
+      :actualTotal>=expectedSoFar*0.65?`Slightly behind pace for this point in the ${period}, or a payday is still due.`
+      :periodProgress<0.15?`Early in the ${period} — most income has not landed yet.`
+      :`Behind expected pace — a payday may still be due, or income was not logged.`
+    }</div>
   </div>`:'';
 
   // ── Pay reliability: gaps between full-time paydays ──
@@ -18131,7 +18563,7 @@ function buildCatBreakdown(){
   if(!sorted.length){el.innerHTML=`<div class="empty"><div class="empty-ico">📊</div><div class="empty-txt">No spending recorded for ${periodLabel(p).toLowerCase()}.</div></div>`;return;}
   el.innerHTML=sorted.map(([id,v])=>{const c=cm[id]||{icon:'📌',col:'#7d8fa3',label:id,type:'variable'};const pp=Math.round(v/total*100);const typeTag=c.type==='fixed'?'<span class="tag tb" style="font-size:8px;margin-left:4px">FIXED</span>':'<span class="tag ty" style="font-size:8px;margin-left:4px">VAR</span>';return`<div class="cat-bar-row" onclick="openCategoryDetail('${id}')" style="cursor:pointer"><div class="cat-ico-sm" style="background:${c.col}22">${c.icon}</div><div class="cat-bar-info"><div class="cat-bar-name">${c.label}${typeTag} <span style="font-size:9px;color:var(--t3)">${pp}%</span></div><div class="cat-bar-track"><div class="cat-bar-fill" style="width:${pp}%;background:${c.col}"></div></div></div><div class="cat-bar-val">${fmtDI(v)}</div></div>`;}).join('');
 }
-function buildBudgetPerformance(){
+function buildBudgetPerformance(){/* v5.0 legacy no-op: budget rebuilt as envelopes */return;
   const el=document.getElementById('budget-performance');if(!el)return;
   const p=S.analyticsPeriod||'month';
   const txns=periodTxns(p);
