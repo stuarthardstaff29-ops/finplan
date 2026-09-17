@@ -1893,6 +1893,18 @@ body.light{--b-spend:#2d7a55;--b-save:#2a78d6;--b-sink:#7c4dcc}
 .cls-rule{background:rgba(201,160,255,.16);color:var(--b-sink)}
 .cls-inf{background:var(--glass);color:var(--t3)}
 select.bud-ed-inp{appearance:none;-webkit-appearance:none}
+/* v6.1 facet analytics */
+.fx-bar{display:flex;height:9px;border-radius:5px;overflow:hidden;gap:2px;background:var(--bg4);margin:4px 0 10px}
+.fx-bar>div{height:100%}
+.fx-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--t2)}
+.fx-note{font-size:10.5px;color:var(--t3);margin-top:10px;line-height:1.5}
+.fx-row{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:0.5px solid var(--bdr)}
+.fx-row:last-of-type{border-bottom:none}
+.fx-ico{font-size:15px;flex-shrink:0}
+.fx-name{font-size:12.5px;color:var(--t);flex:0 0 96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fx-track{flex:1;height:5px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.fx-track>span{display:block;height:100%;background:var(--acc);border-radius:3px}
+.fx-amt{font:600 12px var(--mono);color:var(--t);font-variant-numeric:tabular-nums;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -3573,7 +3585,7 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='6.0.0';
+const APP_VERSION='6.1.0';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
   {
@@ -6221,8 +6233,10 @@ function thisMonthTxns(){const ym=nowYM();return S.transactions.filter(t=>t.date
 function thisWeekTxns(){const n=new Date();const sw=new Date(n);sw.setDate(n.getDate()-n.getDay());sw.setHours(0,0,0,0);return S.transactions.filter(t=>{if(!t.date)return false;return new Date(t.date+'T12:00:00')>=sw;});}
 // Category type helpers
 function catType(catId){const c=cmap()[catId];return c?(c.type||'variable'):'variable';}
-function isVariableSpend(t){return t.dir==='out'&&catType(t.cat)==='variable';}
-function isFixedSpend(t){return t.dir==='out'&&catType(t.cat)==='fixed'&&t.cat!=='investments';}
+// v6.1 — a transaction classed 'excluded' is left out of every spend total.
+function isExcludedSpend(t){return (typeof facet==='function')&&facet(t,'class')==='excluded';}
+function isVariableSpend(t){return t.dir==='out'&&catType(t.cat)==='variable'&&!isExcludedSpend(t);}
+function isFixedSpend(t){return t.dir==='out'&&catType(t.cat)==='fixed'&&t.cat!=='investments'&&!isExcludedSpend(t);}
 // Spend calculations — variable is the discretionary number budgets compare against
 function monthVariableSpend(){return thisMonthTxns().filter(isVariableSpend).reduce((a,t)=>a+t.amt,0);}
 function monthFixedSpend(){return thisMonthTxns().filter(isFixedSpend).reduce((a,t)=>a+t.amt,0);}
@@ -9977,11 +9991,27 @@ function openFacetPicker(txnId,facetName){
   const opts=facetOptions(facetName);
   const rows=opts.map(o=>`<button class="bud-reassign-row ${o.id===cur?'on':''}" onclick="setTxnFacet('${txnId}','${facetName}','${o.id}')">
       <span style="flex:1;text-align:left">${escapeHtml(o.label)}</span>${o.id===cur?'<span style="color:var(--acc)">✓</span>':''}</button>`).join('');
+  const canAdd=def.dynamic==='purposes';
   const html=`<div class="modal-hdr"><div class="modal-title">${def.label}</div><button class="modal-close" onclick="closeModal()">✕</button></div>
     <div class="bud-reassign-list">${rows||'<div class="bud-empty-row">Nothing to choose yet.</div>'}
       ${(t.facets&&t.facets[facetName])?`<button class="bud-reassign-row" onclick="clearTxnFacet('${txnId}','${facetName}')"><span style="flex:1;text-align:left">↩️ Back to automatic</span></button>`:''}
-    </div>`;
+    </div>
+    ${canAdd?`<div class="bud-ed-row" style="margin-top:14px">
+      <input class="bud-ed-inp" id="new-purpose-name" placeholder="New purpose, e.g. Car maintenance">
+      <button class="btn btn-acc btn-sm" onclick="addCustomPurpose('${txnId}')">Add</button>
+    </div>`:''}`;
   openModal(html);
+}
+function addCustomPurpose(txnId){
+  ensureClassify();
+  const name=(document.getElementById('new-purpose-name')?.value||'').trim();
+  if(!name){showToast('Give it a name first');return;}
+  const id='p_'+name.toLowerCase().replace(/[^a-z0-9]+/g,'_').slice(0,24);
+  if(!allPurposes().some(p=>p.id===id)){
+    S.customPurposes.push({id,label:name,icon:'🏷'});
+    save();
+  }
+  setTxnFacet(txnId,'purpose',id);
 }
 function setTxnFacet(txnId,facetName,value){
   const t=(S.transactions||[]).find(x=>x.id===txnId);if(!t)return;
@@ -18199,6 +18229,86 @@ function applyCustomRange(){
 // ── Placeholder sections (Waves 2-4) ─────────────────────
 // ── SPENDING (Wave 2) ────────────────────────────────────
 let _anSpendSort='amount';
+// v6.1 — Facet-driven analysis: what spending MEANS, not just where it went.
+function facetSpendBreakdown(txns){
+  const byClass={essential:0,discretionary:0,goal:0,excluded:0};
+  const byPurpose={};const byGoal={};
+  let classified=0,total=0;
+  (txns||[]).forEach(t=>{
+    if(t.dir!=='out')return;
+    const amt=Math.abs(t.amt||0);
+    const cls=facet(t,'class')||'discretionary';
+    byClass[cls]=(byClass[cls]||0)+amt;
+    if(cls!=='excluded')total+=amt;
+    const p=facet(t,'purpose');
+    if(p){byPurpose[p]=(byPurpose[p]||0)+amt;classified+=amt;}
+    const g=facet(t,'goal');
+    if(g)byGoal[g]=(byGoal[g]||0)+amt;
+  });
+  return{byClass,byPurpose,byGoal,classified,total};
+}
+function buildFacetBreakdowns(A){
+  const txns=(A&&A.txns)?A.txns:[];
+  const b=facetSpendBreakdown(txns);
+  const ess=b.byClass.essential||0,dis=b.byClass.discretionary||0,gl=b.byClass.goal||0,exc=b.byClass.excluded||0;
+  const denom=ess+dis+gl;
+  let html='';
+  // ── Essential vs discretionary ──
+  if(denom>0){
+    const p=v=>Math.round(v/denom*100);
+    html+=`<div class="an-card">
+      <div class="an-card-t">Essential vs discretionary</div>
+      <div class="fx-bar">
+        ${ess>0?`<div style="width:${p(ess)}%;background:var(--acc)"></div>`:''}
+        ${gl>0?`<div style="width:${p(gl)}%;background:var(--b-sink)"></div>`:''}
+        ${dis>0?`<div style="width:${p(dis)}%;background:var(--y)"></div>`:''}
+      </div>
+      <div class="fx-legend">
+        ${ess>0?`<span><i class="bud-dot" style="background:var(--acc)"></i>Essential ${fmtDI(ess)} · ${p(ess)}%</span>`:''}
+        ${gl>0?`<span><i class="bud-dot" style="background:var(--b-sink)"></i>Goal ${fmtDI(gl)} · ${p(gl)}%</span>`:''}
+        ${dis>0?`<span><i class="bud-dot" style="background:var(--y)"></i>Discretionary ${fmtDI(dis)} · ${p(dis)}%</span>`:''}
+      </div>
+      <div class="fx-note">${dis>0&&ess>0?`${p(dis)}% of your spending is discretionary — that's the part you can flex.`:'Set a spending class on a transaction to refine this.'}${exc>0?` ${fmtDI(exc)} excluded from totals.`:''}</div>
+    </div>`;
+  }
+  // ── Spending by purpose ──
+  const purposes=allPurposes();
+  const pEntries=Object.entries(b.byPurpose).sort((a,c)=>c[1]-a[1]);
+  if(pEntries.length){
+    const max=pEntries[0][1]||1;
+    html+=`<div class="an-card">
+      <div class="an-card-t">Spending by purpose</div>
+      ${pEntries.map(([pid,amt])=>{
+        const p=purposes.find(x=>x.id===pid)||{icon:'🏷',label:pid};
+        return`<div class="fx-row">
+          <span class="fx-ico">${p.icon}</span>
+          <span class="fx-name">${escapeHtml(p.label)}</span>
+          <span class="fx-track"><span style="width:${Math.round(amt/max*100)}%"></span></span>
+          <span class="fx-amt">${fmtDI(amt)}</span>
+        </div>`;}).join('')}
+      <div class="fx-note">Purpose captures why you spent, not just where. Tag a transaction or write a rule to grow this.</div>
+    </div>`;
+  }else{
+    html+=`<div class="an-card">
+      <div class="an-card-t">Spending by purpose</div>
+      <div class="fx-note" style="margin-top:0">Nothing tagged with a purpose yet. Open a transaction → “How this is classified” → set a Purpose, or make a rule so it happens automatically.</div>
+    </div>`;
+  }
+  // ── Goal-related spending ──
+  const gEntries=Object.entries(b.byGoal).sort((a,c)=>c[1]-a[1]);
+  if(gEntries.length){
+    html+=`<div class="an-card">
+      <div class="an-card-t">Spending toward goals</div>
+      ${gEntries.map(([gid,amt])=>{
+        const lbl=classifyValueLabel('goal',gid);
+        return`<div class="fx-row"><span class="fx-ico">🎯</span><span class="fx-name">${escapeHtml(lbl)}</span><span class="fx-amt">${fmtDI(amt)}</span></div>`;
+      }).join('')}
+      <div class="fx-note">Spending you've marked as supporting a goal.</div>
+    </div>`;
+  }
+  return html;
+}
+
 function buildAnSpending(){
   const el=document.getElementById('an-sec-spending');if(!el)return;
   const period=S.analyticsPeriod||'month';
@@ -18208,7 +18318,6 @@ function buildAnSpending(){
     return;
   }
   const totalSpend=A.cur.spend;
-
   // ── Treemap: top categories sized by amount ──
   const top=A.cats.slice(0,6);
   const tmTotal=top.reduce((a,c)=>a+c.amt,0)||1;
@@ -18306,6 +18415,7 @@ function buildAnSpending(){
   }
 
   el.innerHTML=`
+    ${buildFacetBreakdowns(A)}
     <div class="an-card">
       <div class="an-card-t">Category treemap · tap to drill in</div>
       ${treemap}
