@@ -1879,6 +1879,20 @@ body.light{--b-spend:#2d7a55;--b-save:#2a78d6;--b-sink:#7c4dcc}
 .bud-ov-basis{font-size:10.5px;color:var(--t3);margin-top:8px;line-height:1.5}
 .bud-remember{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:11.5px;color:var(--t2);cursor:pointer}
 .bud-remember input{width:16px;height:16px;accent-color:var(--acc)}
+/* v6.0 classification sheet */
+.cls-head{font-size:13px;color:var(--t);margin-bottom:14px;font-weight:600}
+.cls-note{font-size:11.5px;color:var(--t2);font-weight:400;margin-top:3px;font-style:italic}
+.cls-list{display:flex;flex-direction:column}
+.cls-row{display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;border-bottom:0.5px solid var(--bdr);padding:11px 2px;cursor:pointer;font-family:var(--sans);text-align:left}
+.cls-k{font-size:12px;color:var(--t2);flex:0 0 108px}
+.cls-v{flex:1;font-size:13px;color:var(--t);display:flex;align-items:center;gap:6px;min-width:0}
+.cls-chev{color:var(--t3);font-size:14px}
+.cls-why{font-size:10.5px;color:var(--t3);padding:0 2px 9px 118px;line-height:1.45;margin-top:-4px}
+.cls-badge{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 5px;border-radius:4px;flex-shrink:0}
+.cls-user{background:var(--accd);color:var(--acc)}
+.cls-rule{background:rgba(201,160,255,.16);color:var(--b-sink)}
+.cls-inf{background:var(--glass);color:var(--t3)}
+select.bud-ed-inp{appearance:none;-webkit-appearance:none}
 </style>
 </head>
 <body>
@@ -3559,7 +3573,7 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='5.2.0';
+const APP_VERSION='6.0.0';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
   {
@@ -7138,6 +7152,7 @@ function openTxnDetail(txnId){
       <div class="ed-tdrow"><span class="ed-tdk">Category</span><span class="ed-tdv">${c.icon} ${c.label}</span></div>
       ${envelopeRow}
       ${incomeSourceRow}
+      <div class="ed-tdrow" onclick="closeDetail();setTimeout(()=>openClassifySheet('${t.id}'),200)" style="cursor:pointer"><span class="ed-tdk">How this is classified</span><span class="ed-tdv">View & edit ›</span></div>
       <div class="ed-tdrow ed-td-last" onclick="closeDetail();setTimeout(()=>openTxnModal('${t.id}'),200)"><span class="ed-tdk">Notes</span><span class="${notesCls}">${notesVal}</span></div>
     </div>
 
@@ -9295,21 +9310,270 @@ function rolloverBudget(fromYM){
 //   • an employment job (matched by explicit tag, then keyword)
 //   • or "Other income" (friends, gifts, refunds, anything not a job)
 // Both count toward money available to allocate; they are reported separately.
+// ═══════════════════════════════════════════════════════════════════
+// v6.0 — CLASSIFICATION FRAMEWORK
+// A transaction is described by independent FACETS rather than one label.
+// Adding a facet or a value is a data change here, not an engine change.
+//
+//   type        expense | income | transfer
+//   category    groceries, fuel, …            (what was bought)
+//   purpose     mealPrep, treat, commute, …   (why it was bought)
+//   class       essential | discretionary | goal | excluded
+//   goal        id of a goal/sinking fund this supports
+//   envelope    which budget envelope it draws from
+//   recurring   yes | no
+//   source      employment | other            (income only)
+//   employment  fulltime | parttime | casual  (income only)
+//   primary     yes | no                      (income only)
+//
+// Every facet value carries PROVENANCE so user decisions are never
+// silently overwritten and every classification can explain itself:
+//   user  > rule > inference > default
+// ═══════════════════════════════════════════════════════════════════
+const FACETS={
+  type:      {label:'Type',        values:['expense','income','transfer']},
+  category:  {label:'Category',    dynamic:'categories'},
+  purpose:   {label:'Purpose',     dynamic:'purposes',  optional:true},
+  class:     {label:'Spending class', values:['essential','discretionary','goal','excluded']},
+  goal:      {label:'Goal',        dynamic:'goals',     optional:true},
+  envelope:  {label:'Budget',      dynamic:'envelopes', optional:true},
+  recurring: {label:'Recurring',   values:['yes','no']},
+  source:    {label:'Income source',   values:['employment','other'], appliesTo:'income'},
+  employment:{label:'Employment type',values:['fulltime','parttime','casual'], appliesTo:'income', optional:true},
+  primary:   {label:'Primary income', values:['yes','no'], appliesTo:'income', optional:true}
+};
+const PROVENANCE_RANK={user:4,rule:3,inference:2,default:1};
+
+// Built-in purposes — user can add more; this is data, not logic.
+const DEFAULT_PURPOSES=[
+  {id:'mealPrep',   label:'Meal prep',      icon:'🥗'},
+  {id:'treat',      label:'Treat',          icon:'🍫'},
+  {id:'commute',    label:'Commute',        icon:'🚗'},
+  {id:'household',  label:'Household',      icon:'🏠'},
+  {id:'health',     label:'Health & fitness',icon:'💪'},
+  {id:'work',       label:'Work expense',   icon:'💼'},
+  {id:'gift',       label:'Gift',           icon:'🎁'}
+];
+function allPurposes(){return [...DEFAULT_PURPOSES,...((S.customPurposes)||[])];}
+
+function ensureClassify(){
+  if(!S.classify||typeof S.classify!=='object')S.classify={rules:[],version:1};
+  if(!Array.isArray(S.classify.rules))S.classify.rules=[];
+  if(!Array.isArray(S.customPurposes))S.customPurposes=[];
+}
+
+// ── Rule model ──────────────────────────────────────────────────────
+// {id, name, priority, enabled, when:{payee?,noteContains?,narrative?,
+//   dir?,acct?,amountMin?,amountMax?,category?}, set:{facet:value,…}}
+// Specificity = number of conditions; more specific rules win.
+function ruleMatches(rule,t){
+  const w=rule.when||{};
+  const payee=(t.payee||'').toLowerCase();
+  const note=(t.note||'').toLowerCase();
+  const narr=(t.narrative||'').toLowerCase();
+  const hay=payee+' '+note+' '+narr;
+  if(w.payee&&!payee.includes(String(w.payee).toLowerCase()))return false;
+  if(w.noteContains&&!note.includes(String(w.noteContains).toLowerCase()))return false;
+  if(w.anyContains&&!hay.includes(String(w.anyContains).toLowerCase()))return false;
+  if(w.dir&&t.dir!==w.dir)return false;
+  if(w.acct&&t.acct!==w.acct)return false;
+  if(w.category&&t.cat!==w.category)return false;
+  const amt=Math.abs(t.amt||0);
+  if(w.amountMin!=null&&amt<w.amountMin)return false;
+  if(w.amountMax!=null&&amt>w.amountMax)return false;
+  return true;
+}
+function ruleSpecificity(rule){return Object.keys(rule.when||{}).length;}
+
+// ── Recurrence / pattern analysis (a signal, reusable by any facet) ──
+function payeePattern(t){
+  const key=(t.payee||'').toLowerCase().trim();
+  if(!key)return {count:0,regular:false,consistent:false,cadence:null};
+  const peers=(S.transactions||[]).filter(x=>(x.payee||'').toLowerCase().trim()===key&&x.dir===t.dir&&x.date);
+  if(peers.length<2)return {count:peers.length,regular:false,consistent:false,cadence:null};
+  const dates=peers.map(x=>new Date(x.date)).sort((a,b)=>a-b);
+  const gaps=[];for(let i=1;i<dates.length;i++)gaps.push((dates[i]-dates[i-1])/864e5);
+  const avgGap=gaps.reduce((a,v)=>a+v,0)/gaps.length;
+  const gapVar=gaps.length>1?Math.max(...gaps.map(g=>Math.abs(g-avgGap))):0;
+  const amts=peers.map(x=>Math.abs(x.amt||0));
+  const meanAmt=amts.reduce((a,v)=>a+v,0)/amts.length;
+  const amtDev=meanAmt>0?Math.max(...amts.map(a=>Math.abs(a-meanAmt)/meanAmt)):1;
+  let cadence=null;
+  if(avgGap>=5&&avgGap<=9)cadence='weekly';
+  else if(avgGap>=12&&avgGap<=17)cadence='fortnightly';
+  else if(avgGap>=26&&avgGap<=35)cadence='monthly';
+  return{
+    count:peers.length,
+    cadence,
+    regular:!!cadence&&gapVar<=Math.max(4,avgGap*0.3),
+    consistent:amtDev<=0.2,
+    meanAmt,
+    total:amts.reduce((a,v)=>a+v,0)
+  };
+}
+
+// ── The engine ──────────────────────────────────────────────────────
+// Returns {facets:{name:{value,provenance,confidence,why}}, explain:[…]}
+let __classifyCache={gen:-1,map:{}};
+function classifyTxn(t){
+  ensureClassify();
+  if(__classifyCache.gen!==__computeGen)__classifyCache={gen:__computeGen,map:{}};
+  if(t.id&&__classifyCache.map[t.id])return __classifyCache.map[t.id];
+  const F={};const explain=[];
+  const put=(facet,value,provenance,why,confidence)=>{
+    if(value==null||value==='')return;
+    const cur=F[facet];
+    if(cur&&PROVENANCE_RANK[cur.provenance]>=PROVENANCE_RANK[provenance])return;
+    F[facet]={value,provenance,confidence:confidence||(provenance==='user'?100:provenance==='rule'?90:60),why};
+    explain.push({facet,value,provenance,why});
+  };
+
+  // ── Tier 1: explicit user facets (never overridden) ──
+  const uf=t.facets||{};
+  Object.keys(uf).forEach(k=>put(k,uf[k],'user','You set this'));
+  // Legacy user decisions are user-level facts too
+  if(t.envId)put('envelope',t.envId,'user','You chose this envelope');
+  if(t.jobId===OTHER_INCOME_ID)put('source','other','user','You marked this as other income');
+  else if(t.jobId)put('source','employment','user','You assigned this to a job');
+
+  // ── Tier 2: user-defined rules, most specific first ──
+  const rules=(S.classify.rules||[]).filter(r=>r.enabled!==false&&ruleMatches(r,t))
+    .sort((a,b)=>(b.priority||0)-(a.priority||0)||ruleSpecificity(b)-ruleSpecificity(a));
+  rules.forEach(r=>{
+    Object.entries(r.set||{}).forEach(([facet,value])=>put(facet,value,'rule',`Rule: ${r.name||'custom'}`));
+  });
+
+  // ── Tier 3: contextual inference (multi-signal, explainable) ──
+  const dir=t.dir;
+  put('type',dir==='in'?'income':(t.cat==='transfer'?'transfer':'expense'),'inference','From the transaction direction');
+  if(t.cat)put('category',t.cat,'inference','From the transaction category');
+  const pat=payeePattern(t);
+  put('recurring',(pat.regular&&pat.count>=2)?'yes':'no','inference',
+      pat.regular?`Seen ${pat.count}× on a ${pat.cadence} cadence`:'No regular pattern detected');
+
+  if(dir==='in'){
+    const inc=inferIncomeSource(t,pat);
+    put('source',inc.source,'inference',inc.why,inc.confidence);
+    if(inc.jobId)put('employmentJobId',inc.jobId,'inference',inc.why,inc.confidence);
+    if(inc.employment)put('employment',inc.employment,'inference',inc.why,inc.confidence);
+    if(inc.primary)put('primary',inc.primary,'inference',inc.why,inc.confidence);
+  }else if(dir==='out'){
+    // Spending class from category defaults (data-driven, overridable)
+    const essentialCats=['groceries','rent','utilities','insurance','fuel','transport','health','medical','bills'];
+    put('class',essentialCats.includes(t.cat)?'essential':'discretionary','inference','Based on the category');
+    // Envelope by category match
+    if(S.budget&&Array.isArray(S.budget.envelopes)){
+      const env=S.budget.envelopes.find(e=>(e.catMatch||[]).includes(t.cat));
+      if(env)put('envelope',env.id,'inference',`${env.name} covers ${t.cat}`);
+    }
+  }
+  // ── Tier 4: defaults ──
+  put('class','discretionary','default','Default when nothing more specific applies');
+  put('recurring','no','default','Default');
+
+  const res={facets:F,explain};
+  if(t.id)__classifyCache.map[t.id]=res;
+  return res;
+}
+function facet(t,name){const c=classifyTxn(t);return c.facets[name]?c.facets[name].value:null;}
+function facetInfo(t,name){return classifyTxn(t).facets[name]||null;}
+
+// ── Income source inference: several weak signals, combined ──────────
+// Deliberately NOT a keyword list. Keywords are one signal among many.
+function inferIncomeSource(t,pat){
+  const jobs=(S.jobs||[]).filter(j=>j.active!==false);
+  const payee=(t.payee||'').toLowerCase();
+  const hay=payee+' '+((t.note||'')+' '+(t.narrative||'')).toLowerCase();
+  const amt=Math.abs(t.amt||0);
+  pat=pat||payeePattern(t);
+
+  // Signal 1 — job keyword match (strong, but only one signal)
+  for(const j of jobs){
+    if((j.keywords||[]).some(k=>k&&hay.includes(String(k).toLowerCase()))){
+      return{source:'employment',jobId:j.id,employment:jobEmploymentType(j),
+             primary:isPrimaryJob(j)?'yes':'no',confidence:95,
+             why:`Matches a keyword on your ${j.label||'job'}`};
+    }
+  }
+  // Signal 2 — history: this payee has been confirmed as employment before
+  const confirmed=(S.transactions||[]).find(x=>x!==t&&(x.payee||'').toLowerCase().trim()===payee.trim()&&x.jobId&&x.jobId!==OTHER_INCOME_ID);
+  if(confirmed&&payee.trim()){
+    const j=jobs.find(j=>j.id===confirmed.jobId);
+    return{source:'employment',jobId:confirmed.jobId,employment:j?jobEmploymentType(j):null,
+           primary:j&&isPrimaryJob(j)?'yes':'no',confidence:90,
+           why:'You previously assigned this payer to a job'};
+  }
+  // Signal 3 — non-employment markers (interest, refunds, gov, internal)
+  const NON_EMPLOYMENT=[/interest/,/refund/,/reversal/,/cashback/,/rebate/,/dividend/,/centrelink/,/services austra/,/ato\b/,/tax return/];
+  if(NON_EMPLOYMENT.some(re=>re.test(hay))){
+    return{source:'other',confidence:88,why:'Looks like interest, a refund or a government payment'};
+  }
+  // Signal 4 — payroll-shaped pattern: regular cadence + consistent amount +
+  // materially large. This is what actually distinguishes wages from a friend
+  // sending money, without depending on the employer's name.
+  const expected=expectedEmploymentIncome();
+  const looksMaterial=expected>0?pat.meanAmt>=expected*0.15:amt>=300;
+  if(pat.regular&&pat.consistent&&pat.count>=2&&looksMaterial){
+    // Attach to the job whose expected pay is closest, if one fits
+    const perMonth=pat.cadence==='weekly'?pat.meanAmt*52/12:pat.cadence==='fortnightly'?pat.meanAmt*26/12:pat.meanAmt;
+    let best=null,bestDiff=Infinity;
+    jobs.forEach(j=>{
+      const jm=jobMonthly(j);if(!jm)return;
+      const d=Math.abs(jm-perMonth)/jm;
+      if(d<bestDiff){bestDiff=d;best=j;}
+    });
+    if(best&&bestDiff<=0.35){
+      return{source:'employment',jobId:best.id,employment:jobEmploymentType(best),
+             primary:isPrimaryJob(best)?'yes':'no',confidence:80,
+             why:`Paid ${pat.cadence} in consistent amounts matching your ${best.label||'job'}`};
+    }
+    return{source:'employment',employment:null,primary:'no',confidence:65,
+           why:`Regular ${pat.cadence} payments of a consistent amount — looks like wages`};
+  }
+  // Signal 5 — irregular one-off from a person-shaped payee → other
+  return{source:'other',confidence:70,
+         why:pat.count<2?'A one-off payment with no regular pattern':'Irregular amounts or timing — not payroll-shaped'};
+}
+function jobMonthly(j){
+  if(!j)return 0;
+  if(j.netMonthly>0)return j.netMonthly;
+  if(j.grossAnnual>0)return Math.round((typeof calcNetAnnual==='function'?calcNetAnnual(j.grossAnnual):j.grossAnnual*0.75)/12);
+  if(j.grossWeekly>0)return Math.round((typeof calcNetAnnual==='function'?calcNetAnnual(j.grossWeekly*52):j.grossWeekly*52*0.75)/12);
+  return 0;
+}
+function jobEmploymentType(j){
+  if(!j)return null;
+  if(j.employmentType)return j.employmentType;
+  const l=((j.label||'')+' '+(j.id||'')).toLowerCase();
+  if(/full/.test(l))return 'fulltime';
+  if(/part/.test(l))return 'parttime';
+  if(/casual|shift|delivery/.test(l))return 'casual';
+  return null;
+}
+function isPrimaryJob(j){
+  const jobs=(S.jobs||[]).filter(x=>x.active!==false);
+  if(jobs.length<=1)return true;
+  const top=jobs.slice().sort((a,b)=>jobMonthly(b)-jobMonthly(a))[0];
+  return top&&top.id===j.id;
+}
+
 const OTHER_INCOME_ID='other-income';
 function isIncomeTxn(t){return t&&t.dir==='in'&&t.cat!=='transfer';}
 function incomeJobFor(txn){
+  // v6.0 — delegates to the classification framework. Employment vs other is
+  // decided by combined signals with provenance, not a single keyword list.
+  if(!txn)return null;
+  const c=classifyTxn(txn);
+  const src=c.facets.source?c.facets.source.value:'other';
+  if(src!=='employment')return null;
+  const jid=c.facets.employmentJobId?c.facets.employmentJobId.value:null;
+  if(jid&&(S.jobs||[]).some(j=>j.id===jid))return jid;
+  if(txn.jobId&&txn.jobId!==OTHER_INCOME_ID&&(S.jobs||[]).some(j=>j.id===txn.jobId))return txn.jobId;
+  // Employment but no specific job identified — attribute to the primary job
   const jobs=(S.jobs||[]).filter(j=>j.active!==false);
-  // 1. Explicit tag wins. 'other-income' means the user said this is NOT employment.
-  if(txn.jobId===OTHER_INCOME_ID)return null;
-  if(txn.jobId&&jobs.some(j=>j.id===txn.jobId))return txn.jobId;
-  // 2. Keyword match against each job
-  const hay=((txn.payee||'')+' '+(txn.note||'')+' '+(txn.narrative||'')).toLowerCase();
-  for(const j of jobs){
-    const kws=j.keywords||[];
-    if(kws.some(k=>k&&hay.includes(k.toLowerCase())))return j.id;
-  }
-  // 3. No guessing. Unmatched income is Other income, never assumed to be a job.
-  return null;
+  if(!jobs.length)return null;
+  const primary=jobs.find(j=>isPrimaryJob(j))||jobs[0];
+  return primary?primary.id:null;
 }
 function incomeStreams(ym){
   ym=ym||nowYM();
@@ -9361,9 +9625,15 @@ function envelopeSpent(env,ym){
   const txns=(S.transactions||[]).filter(t=>t.dir==='out'&&(t.date||'').slice(0,7)===ym);
   let spent=0;
   txns.forEach(t=>{
-    // override wins
+    // v6.0 — the classifier decides, honouring user overrides then rules then
+    // category matching. Excluded spending never draws from an envelope.
+    if(typeof facet==='function'){
+      if(facet(t,'class')==='excluded')return;
+      const envId=facet(t,'envelope');
+      if(envId){if(envId===env.id)spent+=Math.abs(t.amt||0);return;}
+      return;
+    }
     if(t.envId){if(t.envId===env.id)spent+=Math.abs(t.amt||0);return;}
-    // else auto-match by category
     if((env.catMatch||[]).includes(t.cat))spent+=Math.abs(t.amt||0);
   });
   return spent;
@@ -9652,6 +9922,163 @@ function openAllocateRemaining(){
 }
 
 // Category-match editor (name, icon, which categories draw from this envelope)
+// ═══ v6.0 — Classification UI: inspect, correct, and teach ═══
+function openClassifySheet(txnId){
+  const t=(S.transactions||[]).find(x=>x.id===txnId);if(!t)return;
+  ensureClassify();
+  const c=classifyTxn(t);
+  const row=(facetName)=>{
+    const def=FACETS[facetName];if(!def)return'';
+    if(def.appliesTo==='income'&&t.dir!=='in')return'';
+    const info=c.facets[facetName];
+    const val=info?info.value:'—';
+    const label=classifyValueLabel(facetName,val);
+    const prov=info?info.provenance:'default';
+    const badge=prov==='user'?'<span class="cls-badge cls-user">you</span>'
+      :prov==='rule'?'<span class="cls-badge cls-rule">rule</span>'
+      :prov==='inference'?'<span class="cls-badge cls-inf">auto</span>':'';
+    return`<button class="cls-row" onclick="openFacetPicker('${t.id}','${facetName}')">
+      <span class="cls-k">${def.label}</span>
+      <span class="cls-v">${escapeHtml(label)}${badge}</span>
+      <span class="cls-chev">›</span>
+    </button>
+    ${info&&info.why?`<div class="cls-why">${escapeHtml(info.why)}</div>`:''}`;
+  };
+  const order=['type','category','purpose','class','envelope','goal','recurring','source','employment','primary'];
+  const html=`<div class="modal-hdr"><div class="modal-title">How this is classified</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="cls-head">${escapeHtml(t.payee||'Transaction')} · ${fmtD(t.amt)}${t.note?`<div class="cls-note">“${escapeHtml(t.note)}”</div>`:''}</div>
+    <div class="cls-list">${order.map(row).join('')}</div>
+    <button class="btn btn-ghost btn-full" style="margin-top:14px" onclick="openRuleBuilder('${t.id}')">Make a rule from this…</button>`;
+  openModal(html);
+}
+function classifyValueLabel(facetName,val){
+  if(val==null||val==='')return '—';
+  if(facetName==='purpose'){const p=allPurposes().find(p=>p.id===val);return p?`${p.icon} ${p.label}`:val;}
+  if(facetName==='envelope'){const e=(S.budget&&S.budget.envelopes||[]).find(e=>e.id===val);return e?`${e.icon||'📦'} ${e.name}`:'—';}
+  if(facetName==='goal'){const g=(S.goals||[]).find(g=>g.id===val);return g?`${g.icon||'🎯'} ${g.label}`:val;}
+  if(facetName==='category'){const cm=(typeof cmap==='function')?cmap():{};const c=cm[val];return c?`${c.icon} ${c.label}`:val;}
+  if(facetName==='employmentJobId'){const j=(S.jobs||[]).find(j=>j.id===val);return j?j.label:val;}
+  return String(val).replace(/^[a-z]/,m=>m.toUpperCase());
+}
+function facetOptions(facetName){
+  const def=FACETS[facetName];if(!def)return[];
+  if(def.values)return def.values.map(v=>({id:v,label:classifyValueLabel(facetName,v)}));
+  if(def.dynamic==='categories')return ((typeof allCats==='function')?allCats():[]).map(c=>({id:c.id,label:`${c.icon} ${c.label}`}));
+  if(def.dynamic==='purposes')return allPurposes().map(p=>({id:p.id,label:`${p.icon} ${p.label}`}));
+  if(def.dynamic==='envelopes')return ((S.budget&&S.budget.envelopes)||[]).map(e=>({id:e.id,label:`${e.icon||'📦'} ${e.name}`}));
+  if(def.dynamic==='goals')return [...((S.goals)||[]).map(g=>({id:g.id,label:`${g.icon||'🎯'} ${g.label}`})),
+                                   ...(((S.budget&&S.budget.sinking)||[]).map(s=>({id:s.id,label:`${s.icon||'🎯'} ${s.name}`})))];
+  return [];
+}
+function openFacetPicker(txnId,facetName){
+  const t=(S.transactions||[]).find(x=>x.id===txnId);if(!t)return;
+  const def=FACETS[facetName];if(!def)return;
+  const cur=facet(t,facetName);
+  const opts=facetOptions(facetName);
+  const rows=opts.map(o=>`<button class="bud-reassign-row ${o.id===cur?'on':''}" onclick="setTxnFacet('${txnId}','${facetName}','${o.id}')">
+      <span style="flex:1;text-align:left">${escapeHtml(o.label)}</span>${o.id===cur?'<span style="color:var(--acc)">✓</span>':''}</button>`).join('');
+  const html=`<div class="modal-hdr"><div class="modal-title">${def.label}</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="bud-reassign-list">${rows||'<div class="bud-empty-row">Nothing to choose yet.</div>'}
+      ${(t.facets&&t.facets[facetName])?`<button class="bud-reassign-row" onclick="clearTxnFacet('${txnId}','${facetName}')"><span style="flex:1;text-align:left">↩️ Back to automatic</span></button>`:''}
+    </div>`;
+  openModal(html);
+}
+function setTxnFacet(txnId,facetName,value){
+  const t=(S.transactions||[]).find(x=>x.id===txnId);if(!t)return;
+  t.facets=t.facets||{};t.facets[facetName]=value;
+  // Keep legacy fields in step so older code paths stay correct
+  if(facetName==='category')t.cat=value;
+  if(facetName==='envelope')t.envId=value;
+  if(facetName==='source')t.jobId=(value==='other')?OTHER_INCOME_ID:(t.jobId||'');
+  save();closeModal();
+  if(typeof refreshAll==='function')refreshAll();
+  setTimeout(()=>openClassifySheet(txnId),120);
+  showToast('Updated');
+}
+function clearTxnFacet(txnId,facetName){
+  const t=(S.transactions||[]).find(x=>x.id===txnId);if(!t)return;
+  if(t.facets)delete t.facets[facetName];
+  if(facetName==='envelope')delete t.envId;
+  if(facetName==='source')delete t.jobId;
+  save();closeModal();
+  if(typeof refreshAll==='function')refreshAll();
+  setTimeout(()=>openClassifySheet(txnId),120);
+}
+// Build a specific rule from a transaction — conditions are opt-in so the
+// rule is never broader than the user intends.
+function openRuleBuilder(txnId){
+  const t=(S.transactions||[]).find(x=>x.id===txnId);if(!t)return;
+  const facetRows=['category','purpose','class','envelope','goal'].map(f=>{
+    const opts=facetOptions(f);if(!opts.length)return'';
+    const cur=facet(t,f);
+    return`<div class="bud-ed-row"><label class="bud-ed-lbl">${FACETS[f].label}</label>
+      <select class="bud-ed-inp" id="rb-set-${f}"><option value="">— leave —</option>
+      ${opts.map(o=>`<option value="${o.id}" ${o.id===cur?'selected':''}>${escapeHtml(o.label)}</option>`).join('')}</select></div>`;
+  }).join('');
+  const html=`<div class="modal-hdr"><div class="modal-title">New rule</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div style="font-size:12px;color:var(--t2);margin-bottom:12px">Pick the conditions that should trigger this rule. The more you tick, the more specific it stays.</div>
+    <label class="bud-remember"><input type="checkbox" id="rb-w-payee" checked> Payee contains “${escapeHtml(t.payee||'')}”</label>
+    ${t.note?`<label class="bud-remember"><input type="checkbox" id="rb-w-note" checked> Note contains “${escapeHtml(t.note)}”</label>`:''}
+    <label class="bud-remember"><input type="checkbox" id="rb-w-dir"> Only for ${t.dir==='in'?'income':'spending'}</label>
+    <hr class="dvdr" style="margin:14px 0">
+    <div style="font-size:12px;color:var(--t2);margin-bottom:10px">Then set:</div>
+    ${facetRows}
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-acc btn-sm" style="flex:1" onclick="saveRuleFromBuilder('${txnId}')">Save rule</button>
+    </div>`;
+  openModal(html);
+}
+function saveRuleFromBuilder(txnId){
+  const t=(S.transactions||[]).find(x=>x.id===txnId);if(!t)return;
+  ensureClassify();
+  const when={};
+  if(document.getElementById('rb-w-payee')?.checked&&t.payee)when.payee=t.payee;
+  if(document.getElementById('rb-w-note')?.checked&&t.note)when.noteContains=t.note;
+  if(document.getElementById('rb-w-dir')?.checked)when.dir=t.dir;
+  const set={};
+  ['category','purpose','class','envelope','goal'].forEach(f=>{
+    const v=document.getElementById('rb-set-'+f)?.value;if(v)set[f]=v;
+  });
+  if(!Object.keys(when).length||!Object.keys(set).length){showToast('Pick at least one condition and one setting');return;}
+  const name=[when.payee,when.noteContains].filter(Boolean).join(' + ')||'Custom rule';
+  S.classify.rules.push({id:uid(),name,when,set,enabled:true,priority:0,createdAt:Date.now()});
+  save();closeModal();
+  if(typeof refreshAll==='function')refreshAll();
+  showToast('Rule saved — it applies to matching transactions');
+}
+function buildRules9(){
+  ensureClassify();
+  const el=document.getElementById('rules9-list');
+  if(!el)return;
+  const rules=S.classify.rules||[];
+  const body=rules.length?rules.map(r=>{
+    const conds=Object.entries(r.when||{}).map(([k,v])=>`${k}: ${escapeHtml(String(v))}`).join(' · ');
+    const sets=Object.entries(r.set||{}).map(([k,v])=>`${FACETS[k]?FACETS[k].label:k} → ${escapeHtml(classifyValueLabel(k,v))}`).join(', ');
+    return`<div class="bud-env"><div class="bud-env-top">
+      <span class="bud-env-ico">⚡</span>
+      <div style="flex:1;min-width:0"><div class="bud-env-name">${escapeHtml(r.name)}</div>
+      <div class="bud-sink-meta">If ${escapeHtml(conds)} → ${sets}</div></div>
+      <button class="bud-env-x" onclick="deleteClassifyRule('${r.id}')">✕</button>
+    </div></div>`;
+  }).join(''):'<div class="bud-empty-row">No rules yet. Open any transaction, tap “How this is classified”, then “Make a rule from this”.</div>';
+  let html=`<div class="card"><div class="ctitle"><div class="ctitle-l">Classification rules</div></div>${body}</div>`;
+  // Legacy merchant→category rules are preserved and still applied by the importer.
+  const legacy=(S.customRules||[]);
+  if(legacy.length){
+    html+=`<div class="card"><div class="ctitle"><div class="ctitle-l">Learned merchant rules</div></div>
+      ${legacy.map(r=>`<div class="bud-env"><div class="bud-env-top"><span class="bud-env-ico">🏷</span>
+        <div style="flex:1;min-width:0"><div class="bud-env-name">${escapeHtml(r.payee||r.match||'Rule')}</div>
+        <div class="bud-sink-meta">→ ${escapeHtml(classifyValueLabel('category',r.cat))}</div></div></div></div>`).join('')}</div>`;
+  }
+  el.innerHTML=html;
+}
+function deleteClassifyRule(id){
+  ensureClassify();
+  S.classify.rules=S.classify.rules.filter(r=>r.id!==id);
+  save();if(typeof refreshAll==='function')refreshAll();buildRules9();
+}
+
 function openIncomeSourcePicker(txnId){
   const t=(S.transactions||[]).find(x=>x.id===txnId);if(!t)return;
   const jobs=(S.jobs||[]).filter(j=>j.active!==false);
@@ -20674,7 +21101,7 @@ function buildAccountSparkline(acctKey,currentBal){
   return (typeof sparklineSvg==='function')?sparklineSvg(points,{width:200,height:32,inline:true}):'';
 }
 
-function buildRules9(){
+function buildLegacyCustomRules(){
   const el=document.getElementById('rules9-list');if(!el)return;
   const rules=ensureCustomRules();
   const cm=cmap();
