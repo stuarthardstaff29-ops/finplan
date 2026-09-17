@@ -1864,6 +1864,21 @@ body.light{--b-spend:#2d7a55;--b-save:#2a78d6;--b-sink:#7c4dcc}
 .bud-quick{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
 .bud-quick-btn{flex:1;min-width:0;background:var(--glass);border:0.5px solid var(--bdr);border-radius:9px;padding:8px 6px;font-size:11px;color:var(--t2);cursor:pointer;font-family:var(--sans);white-space:nowrap}
 .bud-quick-btn:active{transform:scale(.96)}
+.bud-env>.bud-env-bar{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;margin-top:9px;flex:none}
+.bud-env-bar>div{height:100%;border-radius:3px;transition:width .25s ease}
+.bud-env-figs{display:flex;align-items:flex-end;gap:14px;margin-top:9px}
+.bud-fig{display:flex;flex-direction:column;gap:2px;min-width:0}
+.bud-fig-k{font-size:9.5px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.bud-fig-v{font:600 13px var(--mono);color:var(--t);font-variant-numeric:tabular-nums;white-space:nowrap}
+.bud-fig-carry{font-size:9.5px;color:var(--t3);font-weight:500}
+.bud-env-figs .bud-env-x{margin-left:auto;align-self:center}
+.bud-ov-streams{display:flex;gap:10px;margin-top:12px;padding-top:12px;border-top:0.5px solid var(--bdr);flex-wrap:wrap}
+.bud-stream{display:flex;flex-direction:column;gap:2px}
+.bud-stream-k{font-size:9.5px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.bud-stream-v{font:600 13px var(--mono);color:var(--t2);font-variant-numeric:tabular-nums}
+.bud-ov-basis{font-size:10.5px;color:var(--t3);margin-top:8px;line-height:1.5}
+.bud-remember{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:11.5px;color:var(--t2);cursor:pointer}
+.bud-remember input{width:16px;height:16px;accent-color:var(--acc)}
 </style>
 </head>
 <body>
@@ -3544,7 +3559,7 @@ let S={
 // ═══════════════════════════════════════════════════════════
 // APP VERSION & CHANGELOG  (Priority 1)
 // ═══════════════════════════════════════════════════════════
-const APP_VERSION='5.1.0';
+const APP_VERSION='5.2.0';
 // Newest first. Each entry: {v, date, title, sections:{features:[],improvements:[],fixes:[]}}
 const CHANGELOG=[
   {
@@ -7101,6 +7116,15 @@ function openTxnDetail(txnId){
     const tag=t.envId?' <span style="font-size:9px;color:var(--t3)">(manual)</span>':'';
     envelopeRow=`<div class="ed-tdrow" onclick="openEnvelopeReassign('${t.id}')" style="cursor:pointer"><span class="ed-tdk">Draws from</span><span class="ed-tdv">${label}${tag} ›</span></div>`;
   }
+  // v5.2 — which income stream is this? (job, or Other income)
+  let incomeSourceRow='';
+  if(typeof isIncomeTxn==='function'&&isIncomeTxn(t)){
+    const jid=incomeJobFor(t);
+    const job=jid?(S.jobs||[]).find(j=>j.id===jid):null;
+    const label=job?`💼 ${escapeHtml(job.label||job.name||'Job')}`:'🎁 Other income';
+    const tag=t.jobId?' <span style="font-size:9px;color:var(--t3)">(manual)</span>':'';
+    incomeSourceRow=`<div class="ed-tdrow" onclick="openIncomeSourcePicker('${t.id}')" style="cursor:pointer"><span class="ed-tdk">Income source</span><span class="ed-tdv">${label}${tag} ›</span></div>`;
+  }
   openDetail(`
     <div class="ed-td-hero">
       <div class="ed-td-ico">${c.icon}</div>
@@ -7113,6 +7137,7 @@ function openTxnDetail(txnId){
       <div class="ed-tdrow"><span class="ed-tdk">Payee</span><span class="ed-tdv">${escapeHtml(t.payee||'—')}</span></div>
       <div class="ed-tdrow"><span class="ed-tdk">Category</span><span class="ed-tdv">${c.icon} ${c.label}</span></div>
       ${envelopeRow}
+      ${incomeSourceRow}
       <div class="ed-tdrow ed-td-last" onclick="closeDetail();setTimeout(()=>openTxnModal('${t.id}'),200)"><span class="ed-tdk">Notes</span><span class="${notesCls}">${notesVal}</span></div>
     </div>
 
@@ -9264,15 +9289,65 @@ function rolloverBudget(fromYM){
   });
 }
 // ── Allocation math ──────────────────────────────────────────
-function budgetIncome(){return (typeof monthIncome==='function')?monthIncome():0;}
+// ── Income streams ───────────────────────────────────────────
+// v5.2 — ONE source of truth for income: actual transactions.
+// Every income transaction belongs to exactly one stream:
+//   • an employment job (matched by explicit tag, then keyword)
+//   • or "Other income" (friends, gifts, refunds, anything not a job)
+// Both count toward money available to allocate; they are reported separately.
+const OTHER_INCOME_ID='other-income';
+function isIncomeTxn(t){return t&&t.dir==='in'&&t.cat!=='transfer';}
+function incomeJobFor(txn){
+  const jobs=(S.jobs||[]).filter(j=>j.active!==false);
+  // 1. Explicit tag wins. 'other-income' means the user said this is NOT employment.
+  if(txn.jobId===OTHER_INCOME_ID)return null;
+  if(txn.jobId&&jobs.some(j=>j.id===txn.jobId))return txn.jobId;
+  // 2. Keyword match against each job
+  const hay=((txn.payee||'')+' '+(txn.note||'')+' '+(txn.narrative||'')).toLowerCase();
+  for(const j of jobs){
+    const kws=j.keywords||[];
+    if(kws.some(k=>k&&hay.includes(k.toLowerCase())))return j.id;
+  }
+  // 3. No guessing. Unmatched income is Other income, never assumed to be a job.
+  return null;
+}
+function incomeStreams(ym){
+  ym=ym||nowYM();
+  const txns=(S.transactions||[]).filter(t=>isIncomeTxn(t)&&(t.date||'').slice(0,7)===ym);
+  const byJob={};let employment=0,other=0;const otherTxns=[];
+  txns.forEach(t=>{
+    const amt=Math.abs(t.amt||0);
+    const jid=incomeJobFor(t);
+    if(jid){
+      if(!byJob[jid])byJob[jid]={amt:0,count:0,txns:[]};
+      byJob[jid].amt+=amt;byJob[jid].count++;byJob[jid].txns.push(t);
+      employment+=amt;
+    }else{
+      other+=amt;otherTxns.push(t);
+    }
+  });
+  return {employment,other,total:employment+other,byJob,otherTxns,txns};
+}
+// Expected employment income from job setup (an estimate, not money in hand).
+function expectedEmploymentIncome(){return (typeof monthIncome==='function')?monthIncome():0;}
+
+function budgetIncome(ym){
+  // The envelope budget allocates money actually received in the given month
+  // (default: this month). If nothing has been logged, fall back to the jobs
+  // estimate so the budget is still usable — the overview says which is in play.
+  const s=incomeStreams(ym);
+  if(s.total>0)return Math.round(s.total);
+  return Math.round(expectedEmploymentIncome());
+}
+function budgetIncomeIsEstimate(){return incomeStreams().total<=0;}
 // Resolve an allocation (mode $/%) to a dollar figure against the income base.
 function resolveAlloc(alloc,incomeBase){
   if(!alloc)return 0;
   if(alloc.mode==='%')return Math.round((incomeBase*(alloc.value||0)/100));
   return Math.round(alloc.value||0);
 }
-function envAllocatedFor(env){return resolveAlloc(env.alloc,budgetIncome());}
-function sinkingAllocatedFor(sf){return resolveAlloc(sf.alloc,budgetIncome());}
+function envAllocatedFor(env,ym){return resolveAlloc(env.alloc,budgetIncome(ym));}
+function sinkingAllocatedFor(sf,ym){return resolveAlloc(sf.alloc,budgetIncome(ym));}
 function totalAllocated(){
   const b=S.budget;let t=0;
   b.envelopes.forEach(e=>{t+=envAllocatedFor(e);});
@@ -9295,7 +9370,7 @@ function envelopeSpent(env,ym){
 }
 function envelopeBalance(env,ym){
   const carried=(S.budget.carry&&S.budget.carry[env.id])||0;
-  return carried+envAllocatedFor(env)-envelopeSpent(env,ym);
+  return carried+envAllocatedFor(env,ym)-envelopeSpent(env,ym);
 }
 
 // ── Builders ─────────────────────────────────────────────────
@@ -9328,6 +9403,8 @@ function buildBudgetPageV4(){
 function buildBudgetOverview(){
   const el=document.getElementById('bud-overview');if(!el)return;
   const income=budgetIncome();
+  const streams=incomeStreams();
+  const isEst=budgetIncomeIsEstimate();
   const allocated=totalAllocated();
   const avail=income-allocated;
   const b=S.budget;
@@ -9339,7 +9416,7 @@ function buildBudgetOverview(){
   const pct=v=>income>0?Math.max(0,Math.min(100,v/income*100)):0;
   el.innerHTML=`<div class="bud-ov">
     <div class="bud-ov-top">
-      <div><div class="bud-ov-lbl">Income this month</div><div class="bud-ov-val">${fmtDI(income)}</div></div>
+      <div><div class="bud-ov-lbl">${isEst?'Expected income':'Income received'}</div><div class="bud-ov-val">${fmtDI(income)}</div></div>
       <div style="text-align:right"><div class="bud-ov-lbl">${over?'Over-allocated':'Unallocated'}</div><div class="bud-ov-val" style="color:${over?'var(--r)':'var(--acc)'}">${over?'−':''}${fmtDI(Math.abs(avail))}</div></div>
     </div>
     <div class="bud-ov-bar">
@@ -9353,6 +9430,11 @@ function buildBudgetOverview(){
       ${saveTotal>0?`<span><i class="bud-dot" style="background:var(--b-save)"></i>Savings ${fmtDI(saveTotal)}</span>`:''}
       ${sinkTotal>0?`<span><i class="bud-dot" style="background:var(--b-sink)"></i>Sinking ${fmtDI(sinkTotal)}</span>`:''}
     </div>
+    ${(!isEst&&(streams.employment>0||streams.other>0))?`<div class="bud-ov-streams">
+      ${streams.employment>0?`<div class="bud-stream"><span class="bud-stream-k">From jobs</span><span class="bud-stream-v">${fmtDI(streams.employment)}</span></div>`:''}
+      ${streams.other>0?`<div class="bud-stream"><span class="bud-stream-k">Other income</span><span class="bud-stream-v" style="color:var(--b-save)">${fmtDI(streams.other)}</span></div>`:''}
+    </div>`:''}
+    ${isEst?`<div class="bud-ov-basis">No income logged this month yet — showing what your jobs are expected to pay. Log income and this switches to the real amount.</div>`:''}
   </div>`;
 }
 
@@ -9435,11 +9517,14 @@ function envelopeRow(env){
   const income=budgetIncome();
   const alloc=env.alloc||{mode:'$',value:0};
   const dollars=resolveAlloc(alloc,income);
+  const carried=(S.budget.carry&&S.budget.carry[env.id])||0;
   const spent=envelopeSpent(env);
-  const bal=envelopeBalance(env);
-  const over=bal<0;
+  const available=dollars+carried;      // allocated this month + carried in
+  const remaining=available-spent;
+  const over=remaining<0;
   const isPct=alloc.mode==='%';
   const inputVal=isPct?(alloc.value||0):dollars;
+  const pctUsed=available>0?Math.min(100,spent/available*100):(spent>0?100:0);
   return`<div class="bud-env">
     <div class="bud-env-top">
       <span class="bud-env-ico">${env.icon||'📦'}</span>
@@ -9452,12 +9537,14 @@ function envelopeRow(env){
         <button class="bud-alloc-tog" onclick="toggleAllocMode('${env.id}')" title="Switch ${isPct?'to dollars':'to percent'}">${isPct?'$':'%'}</button>
       </div>
     </div>
-    <div class="bud-env-bar-row">
-      <div class="bud-env-bar"><div style="width:${dollars>0?Math.min(100,spent/dollars*100):0}%;background:${over?'var(--r)':'var(--acc)'}"></div></div>
-      <span class="bud-env-bal" style="color:${over?'var(--r)':'var(--t2)'}">${over?fmtDI(Math.abs(bal))+' over':fmtDI(bal)+' left'}</span>
-      <button class="bud-env-x" onclick="deleteEnvelope('${env.id}')" title="Remove">✕</button>
+    <div class="bud-env-bar"><div style="width:${pctUsed}%;background:${over?'var(--r)':'var(--acc)'}"></div></div>
+    <div class="bud-env-figs">
+      <div class="bud-fig"><span class="bud-fig-k">Allocated</span><span class="bud-fig-v">${fmtDI(dollars)}${carried?`<span class="bud-fig-carry"> +${fmtDI(carried)} carried</span>`:''}</span></div>
+      <div class="bud-fig"><span class="bud-fig-k">Spent</span><span class="bud-fig-v">${fmtDI(spent)}</span></div>
+      <div class="bud-fig"><span class="bud-fig-k">${over?'Over by':'Remaining'}</span><span class="bud-fig-v" style="color:${over?'var(--r)':'var(--acc)'}">${fmtDI(Math.abs(remaining))}</span></div>
+      <button class="bud-env-x" onclick="deleteEnvelope('${env.id}')" title="Remove envelope">✕</button>
     </div>
-    ${isPct?`<div class="bud-env-note">= ${fmtDI(dollars)} of your income</div>`:''}
+    ${isPct?`<div class="bud-env-note">${alloc.value||0}% of ${fmtDI(income)} income = ${fmtDI(dollars)}</div>`:''}
   </div>`;
 }
 
@@ -9565,6 +9652,60 @@ function openAllocateRemaining(){
 }
 
 // Category-match editor (name, icon, which categories draw from this envelope)
+function openIncomeSourcePicker(txnId){
+  const t=(S.transactions||[]).find(x=>x.id===txnId);if(!t)return;
+  const jobs=(S.jobs||[]).filter(j=>j.active!==false);
+  const curJid=incomeJobFor(t);
+  const rows=jobs.map(j=>{
+    const isCur=curJid===j.id;
+    return`<button class="bud-reassign-row ${isCur?'on':''}" onclick="setIncomeSource('${txnId}','${j.id}')">
+      <span class="bud-env-ico">💼</span>
+      <span style="flex:1;text-align:left">${escapeHtml(j.label||j.name||'Job')}</span>
+      ${isCur?'<span style="color:var(--acc)">✓</span>':''}
+    </button>`;
+  }).join('');
+  const otherCur=!curJid;
+  const html=`<div class="modal-hdr"><div class="modal-title">Where did this come from?</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div style="font-size:12px;color:var(--t2);margin-bottom:12px">${fmtD(t.amt)} from ${escapeHtml(t.payee||'unknown')}. Other income still counts toward your budget — it just isn't counted as employment pay.</div>
+    <div class="bud-reassign-list">
+      ${rows}
+      <button class="bud-reassign-row ${otherCur?'on':''}" onclick="setIncomeSource('${txnId}','${OTHER_INCOME_ID}')">
+        <span class="bud-env-ico">🎁</span>
+        <span style="flex:1;text-align:left">Other income <span style="font-size:9px;color:var(--t3)">gift, transfer, refund</span></span>
+        ${otherCur?'<span style="color:var(--acc)">✓</span>':''}
+      </button>
+      ${t.jobId?`<button class="bud-reassign-row" onclick="setIncomeSource('${txnId}','')"><span class="bud-env-ico">↩️</span><span style="flex:1;text-align:left">Back to automatic</span></button>`:''}
+    </div>
+    ${t.payee?`<label class="bud-remember"><input type="checkbox" id="inc-remember" checked> Remember ${escapeHtml(t.payee)} as this source</label>`:''}`;
+  openModal(html);
+}
+function setIncomeSource(txnId,jobId){
+  const t=(S.transactions||[]).find(x=>x.id===txnId);if(!t)return;
+  const remember=document.getElementById('inc-remember')?.checked;
+  if(jobId)t.jobId=jobId;else delete t.jobId;
+  // Learn the payee so future payments from this source match automatically.
+  if(remember&&t.payee&&jobId&&jobId!==OTHER_INCOME_ID){
+    const job=(S.jobs||[]).find(j=>j.id===jobId);
+    if(job){
+      job.keywords=job.keywords||[];
+      const kw=t.payee.toLowerCase().trim();
+      if(kw&&!job.keywords.includes(kw))job.keywords.push(kw);
+    }
+  }
+  // If marked as Other, strip this payee from any job keyword that was catching it.
+  if(remember&&t.payee&&jobId===OTHER_INCOME_ID){
+    const hay=t.payee.toLowerCase();
+    (S.jobs||[]).forEach(j=>{
+      if(!j.keywords)return;
+      j.keywords=j.keywords.filter(k=>!(k&&hay.includes(k.toLowerCase())&&k.length>3));
+    });
+  }
+  save();closeModal();
+  if(typeof refreshAll==='function')refreshAll();
+  setTimeout(()=>{if(typeof openTxnDetail==='function')openTxnDetail(txnId);},100);
+  showToast(jobId===OTHER_INCOME_ID?'Marked as other income':(jobId?'Income source set':'Back to automatic'));
+}
+
 function openEnvelopeReassign(txnId){
   ensureBudget();
   const t=(S.transactions||[]).find(x=>x.id===txnId);if(!t)return;
@@ -17906,23 +18047,9 @@ function buildAnIncome(){
 
   // Attribute each income transaction to a job via keywords
   function attributeToJob(txn){
-    // 1. Explicit tag wins (user assigned this txn to a job)
-    if(txn.jobId&&jobs.some(j=>j.id===txn.jobId))return txn.jobId;
-    // 2. Keyword match
-    const hay=((txn.payee||'')+' '+(txn.note||'')+' '+(txn.narrative||'')).toLowerCase();
-    for(const j of jobs){
-      const kws=j.keywords||[];
-      if(kws.some(k=>k&&hay.includes(k.toLowerCase())))return j.id;
-    }
-    // 3. Smart fallback: if a single full-time job exists, attribute large
-    //    recurring income (≥ 60% of its expected monthly pay) to it. This
-    //    catches salary paid under a payee like "Payroll" that has no keyword.
-    const ft=jobs.find(j=>j.id==='fulltime')||jobs.find(j=>/full.?time/i.test(j.label||''));
-    if(ft){
-      const ftMonthly=ft.netMonthly>0?ft.netMonthly:(ft.grossAnnual>0?ft.grossAnnual/12:0);
-      if(ftMonthly>0&&(txn.amt||0)>=ftMonthly*0.6)return ft.id;
-    }
-    return null;
+    // v5.2 — delegate to the app-wide income engine so Stats and Budget
+    // always agree. Returns a job id, or null for Other income.
+    return (typeof incomeJobFor==='function')?incomeJobFor(txn):null;
   }
   const bySource={};
   let attributed=0;
@@ -17982,8 +18109,8 @@ function buildAnIncome(){
   }).join('');
   const otherIncome=bySource.other;
   const otherRow=otherIncome?`<div class="an-tbl-row" onclick="openIncomeSourceDrill('other')">
-    <div class="an-tbl-ico" style="background:#7d8fa322;color:#7d8fa3">❓</div>
-    <div class="an-tbl-main"><div class="an-tbl-name">Unattributed</div><div class="an-tbl-sub">${otherIncome.count} payment${otherIncome.count===1?'':'s'} · no matching job keyword</div></div>
+    <div class="an-tbl-ico" style="background:#5cb1ff22;color:#5cb1ff">🎁</div>
+    <div class="an-tbl-main"><div class="an-tbl-name">Other income</div><div class="an-tbl-sub">${otherIncome.count} payment${otherIncome.count===1?'':'s'} · gifts, transfers, refunds</div></div>
     <div class="an-tbl-amt">${fmtDI(otherIncome.amt)}</div>
   </div>`:'';
 
@@ -18085,7 +18212,7 @@ function openIncomeSourceDrill(jobId){
   const A=computeAnalytics(period);
   const jobs=(S.jobs||[]);
   const job=jobs.find(j=>j.id===jobId);
-  const label=job?job.label:'Unattributed income';
+  const label=job?job.label:'Other income';
   const incomeTxns=A.txns.filter(t=>t.dir==='in'&&t.cat==='income');
   function matches(t){
     const hay=((t.payee||'')+' '+(t.note||'')+' '+(t.narrative||'')).toLowerCase();
